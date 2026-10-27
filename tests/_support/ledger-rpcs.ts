@@ -143,6 +143,8 @@ export function installLedgerRpcs(db: MemDb): void {
     const out = { removed: 0, claims_archived: 0, updated: 0, inserted: 0 };
     for (const s of d.rows("intelligence_item_sections").filter((x) => x.item_id === itemId && !keys.has(x.section_key))) {
       for (const c of d.rows("section_claim_provenance").filter((x) => x.section_row_id === s.id)) {
+        // item_forward_events_source_claim_id_fkey (no cascade): a claim a forward event is sourced from cannot go
+        if (d.rows("item_forward_events").some((e) => e.source_claim_id === c.id)) throw new Refusal(`update or delete on section_claim_provenance violates foreign key constraint item_forward_events_source_claim_id_fkey (${String(c.id)})`, "23503");
         archive(d, c, "orphaned_no_prose_referent", { reason: "section_removed", section_key: s.section_key }, null, a.p_now);
         out.claims_archived += 1;
       }

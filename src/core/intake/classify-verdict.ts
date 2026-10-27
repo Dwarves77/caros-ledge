@@ -83,25 +83,15 @@ export function validateClassifyVerdict(input: ClassifyInput, raw: unknown, opts
 const PROMPT_VERSION_RE = /^sha256:[0-9a-f]{16}$/;
 const entry = z
   .object({
-    candidate_id: z.string().min(1),
-    url: z.string().min(1),
-    entity_verdict: z.enum(ENTITY_VERDICTS),
-    item_type: z.string().nullable(),
-    confidence: z.number().min(0).max(1),
-    rationale: z.string(),
-    classified_by: z.literal("session-haiku"),
-    classified_at: z.string().refine((s) => !Number.isNaN(Date.parse(s)), "must be an ISO 8601 date-time"),
-    prompt_version: z.string().regex(PROMPT_VERSION_RE),
-    domain: z.number().int().min(1).max(7).nullable().optional(),
-    severity: z.string().nullable().optional(),
-    priority: z.string().nullable().optional(),
-    urgency_tier: z.string().nullable().optional(),
-    topic_tags: z.array(z.string()).optional(),
-    jurisdictions: z.array(z.string()).optional(),
-    surface_tags: z.array(z.enum(SURFACES)).optional(),
-    relevance: z.number().int().min(0).max(100).nullable().optional(),
-    title_candidate: z.string().nullable().optional(),
-    summary: z.string().nullable().optional(),
+    candidate_id: z.string().min(1), url: z.string().min(1), entity_verdict: z.enum(ENTITY_VERDICTS),
+    item_type: z.string().nullable(), confidence: z.number().min(0).max(1),
+    rationale: z.string(), classified_by: z.literal("session-haiku"),
+    classified_at: z.string().refine((s) => !Number.isNaN(Date.parse(s)), "must be an ISO 8601 date-time"), prompt_version: z.string().regex(PROMPT_VERSION_RE),
+    domain: z.number().int().min(1).max(7).nullable().optional(), severity: z.string().nullable().optional(),
+    priority: z.string().nullable().optional(), urgency_tier: z.string().nullable().optional(),
+    topic_tags: z.array(z.string()).optional(), jurisdictions: z.array(z.string()).optional(),
+    surface_tags: z.array(z.enum(SURFACES)).optional(), relevance: z.number().int().min(0).max(100).nullable().optional(),
+    title_candidate: z.string().nullable().optional(), summary: z.string().nullable().optional(),
   })
   .superRefine((e, ctx) => {
     if (e.entity_verdict === "specific_document") {

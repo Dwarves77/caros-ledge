@@ -224,3 +224,20 @@ test("reconcileSections and eraseItem are the ledger module's doors: the claims 
   assert.equal(db.rows("intelligence_items").length, 0);
   assert.equal(db.rows("disposition_ledger")[0]?.disposition_by, "h");
 });
+
+test("ENGINE-FIX-2: reconciling an item whose vanishing section's claim is referenced by a forward event succeeds; the event follows an identical surviving claim, else keeps its quote on its capture", async () => {
+  const db = ledgerWorld();
+  db.seed("intelligence_item_sections", [{ id: "s-keep", item_id: INTAKE_ITEM, section_key: "1", section_order: 1, content_md: "old" }, { id: "s-gone", item_id: INTAKE_ITEM, section_key: "2", section_order: 2, content_md: "gone" }]);
+  db.seed("section_claim_provenance", [
+    { id: "k-twin", intelligence_item_id: INTAKE_ITEM, section_row_id: "s-keep", claim_kind: "FACT", claim_text: "duty by 2027", source_span: "by 2027", search_result_id: "cap-law" },
+    { id: "k-gone", intelligence_item_id: INTAKE_ITEM, section_row_id: "s-gone", claim_kind: "FACT", claim_text: "duty by 2027", source_span: "by 2027", search_result_id: "cap-law" },
+    { id: "k-solo", intelligence_item_id: INTAKE_ITEM, section_row_id: "s-gone", claim_kind: "FACT", claim_text: "report by 2030", source_span: "by 2030", search_result_id: "cap-law" },
+  ]);
+  const ev = (id: string, claim: string, span: string) => ({ id, intelligence_item_id: INTAKE_ITEM, event_date: "2027-01-01", date_precision: "year", event_kind: "target", obligation_text: span, source_kind: "claim", source_claim_id: claim, source_section_id: null, source_capture_id: null, source_span: span, confidence: "high" });
+  db.seed("item_forward_events", [ev("e-twin", "k-gone", "by 2027"), ev("e-solo", "k-solo", "by 2030")]);
+  const r = await reconcileSections(db.client, INTAKE_ITEM, [{ section_key: "1", section_order: 1, content_md: "new", is_conditional: false }], NOW.toISOString());
+  assert.equal(r.removed, 1);
+  const rows = Object.fromEntries(db.rows("item_forward_events").map((e) => [e.id, e]));
+  assert.deepEqual([rows["e-twin"]?.source_claim_id, rows["e-twin"]?.source_kind, rows["e-twin"]?.confidence], ["k-twin", "claim", "high"], "re-pointed to the claim of the same text and span");
+  assert.deepEqual([rows["e-solo"]?.source_claim_id, rows["e-solo"]?.source_kind, rows["e-solo"]?.source_capture_id, rows["e-solo"]?.confidence, rows["e-solo"]?.source_span], [null, "capture", "cap-law", "medium", "by 2030"], "no twin: the quote stays, on its capture");
+});

@@ -94,3 +94,22 @@ test("ranking and truncation: clusters rank by surface count then rows; the clus
   const again = await assembleClusters(db, { limit: 1, input: input(facts), maxRows: 5 });
   assert.equal(again.clusters[0]?.id, out.clusters[0]?.id, "the id is a function of the rows");
 });
+
+test("ENGINE-FIX-2: the id is the anchors and the angles; the same rows twice, in another input order, or with an unrelated row added (even one cut by maxRows or dropped) give the same id", async () => {
+  const uco = E("feed:uco");
+  const base = [
+    fact({ table: "obligation_objects", pk: "o1", role: "ratchet", entities: [uco], due: day(100), item: "i1", surface: "regulations" }),
+    fact({ table: "oem_tech_roadmaps", pk: "r1", role: "capacity", entities: [uco], due: day(300), surface: "operations" }),
+    fact({ table: "market_series", pk: "m1", role: "series", entities: [uco], at: day(-5), qty: 1, unit: "EUR/t", surface: "market" }),
+  ];
+  const idOf = async (facts: Fact[], maxRows?: number) => (await assembleClusters(db, { limit: 10, input: input(facts), ...(maxRows ? { maxRows } : {}) })).clusters.find((c) => c.axes.includes("shared_entity") && c.anchor_entity_ids.includes(uco))?.id;
+  const first = await idOf(base);
+  assert.match(first ?? "", /^[0-9a-f]{16}$/);
+  assert.equal(await idOf(base), first, "the same rows assembled twice");
+  assert.equal(await idOf([...base].reverse()), first, "another input order");
+  const extra = fact({ table: "market_series", pk: "m9", role: "series", entities: [uco], at: day(-1), qty: 2, unit: "EUR/t", surface: "market" });
+  assert.equal(await idOf([...base, extra]), first, "an unrelated row added to the cluster");
+  assert.equal(await idOf([...base, extra], 2), first, "a cut by maxRows");
+  const claim = fact({ table: "section_claim_provenance", pk: "c1", role: "claim", entities: [uco], surface: "regulations" });
+  assert.equal(await idOf([...base, claim]), first, "a row of the cluster added that moves no angle");
+});

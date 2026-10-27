@@ -7,17 +7,9 @@ import raw from "./data/vocabularies.json";
 /** One member of a closed vocabulary; the optional fields are the per-vocabulary flags the readers use. */
 const entry = z
   .object({
-    code: z.string(),
-    label: z.string(),
-    order: z.number().optional(),
-    strength: z.number().optional(),
-    isPresent: z.boolean().optional(),
-    contractable: z.boolean().optional(),
-    statutory: z.boolean().optional(),
-    degraded: z.boolean().optional(),
-    citableAsFact: z.boolean().optional(),
-    admissibleInCalculation: z.boolean().optional(),
-    corridorOnly: z.boolean().optional(),
+    code: z.string(), label: z.string(), order: z.number().optional(), strength: z.number().optional(),
+    isPresent: z.boolean().optional(), contractable: z.boolean().optional(), statutory: z.boolean().optional(), degraded: z.boolean().optional(),
+    citableAsFact: z.boolean().optional(), admissibleInCalculation: z.boolean().optional(), corridorOnly: z.boolean().optional(),
     orgRoles: z.array(z.string()).optional(),
   })
   .loose();
