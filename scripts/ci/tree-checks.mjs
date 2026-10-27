@@ -147,6 +147,20 @@ export function engineDataProblems(files, pins) {
   return problems;
 }
 
+/**
+ * LOCK-NO-BLOAT-1: the new-files allowlist is frozen. The set of allowlist files and the count of path entries are pinned at their post-cleanup size, so a new .txt file, or a new entry (a new src/ path with no "Ported from" header), is a problem.
+ * The one way past the freeze is an explicit operator ruling: a file that carries a line `# OPERATOR-OVERRIDE: <the ruling>` is outside the pins (its file and its entries), and the problem message names the marker.
+ */
+export const NEW_FILES_FROZEN = { files: 66, entries: 411 };
+export const OVERRIDE_MARKER = "# OPERATOR-OVERRIDE:";
+export function frozenAllowProblems(texts, frozen = NEW_FILES_FROZEN) {
+  const lines = (t) => t.split("\n");
+  const counted = [...texts.values()].filter((t) => !lines(t).some((l) => l.startsWith(OVERRIDE_MARKER) && l.slice(OVERRIDE_MARKER.length).trim()));
+  const entries = counted.reduce((n, t) => n + lines(t).filter((l) => l.trim() && !l.startsWith("#")).length, 0);
+  const how = `add a line "${OVERRIDE_MARKER} <the operator's ruling>" to the file only on an explicit operator ruling`;
+  return [...(counted.length > frozen.files ? [`scripts/ci/new-files: ${counted.length} allowlist files, pinned at ${frozen.files} (frozen by LOCK-NO-BLOAT-1): ${how}`] : []), ...(entries > frozen.entries ? [`scripts/ci/new-files: ${entries} entries, pinned at ${frozen.entries} (frozen by LOCK-NO-BLOAT-1): a new src/ path needs an operator override; ${how}`] : [])];
+}
+
 function allowFiles() {
   const allowed = new Map();
   for (const name of readdirSync("scripts/ci/new-files").filter((n) => n.endsWith(".txt"))) {
@@ -187,6 +201,7 @@ export function treeProblems() {
     if (/\.(ts|tsx|js|mjs|css)$/.test(f) && /^(src|scripts|tests)\//.test(f)) problems.push(...headerRangeProblems(f, t, old));
     if (f.startsWith("src/")) problems.push(...sourceOriginProblems(f, t, allowed));
   }
+  problems.push(...frozenAllowProblems(new Map(readdirSync("scripts/ci/new-files").filter((n) => n.endsWith(".txt")).map((n) => [n, readFileSync(`scripts/ci/new-files/${n}`, "utf8")]))));
   problems.push(...dependencyProblems(JSON.parse(readFileSync("package.json", "utf8"))));
   problems.push(...engineDataProblems(engineDataFiles(), engineDataPins()));
   return problems;

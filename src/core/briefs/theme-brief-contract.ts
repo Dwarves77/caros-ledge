@@ -2,7 +2,7 @@
 // The theme-brief contract: the five sections, their ceilings, the surface headings, and the validator of one authored entry against the theme's LIVE material. A figure or acronym in a section is
 // allowed only inside a listed claim's text, a labelled analysis paragraph, a heading, a member title or a gap description; a claim must name a grounded claim of a live member. Pure: the caller loads the material.
 import { computeMemberHash } from "@/core/flywheel/themes";
-import { findFigures, isFigure, stateFigure } from "@/core/parse";
+import { findFigures, isFigure, stateFigure, type Figure } from "@/core/parse";
 
 const THEME_BRIEF_SECTIONS = ["connection", "meaning", "ramifications", "watch", "gaps"] as const;
 export type ThemeSection = (typeof THEME_BRIEF_SECTIONS)[number];
@@ -112,8 +112,7 @@ export function parseRamifications(text: string): { subs: Map<string, string>; p
  */
 export type ClaimComparator = (listed: string, grounded: readonly string[]) => string[];
 export const figureCoverage: ClaimComparator = (listed, grounded) => {
-  const text = grounded.join(" ");
-  return findFigures(listed).flatMap((hit) => (isFigure(hit.result) && stateFigure(text, hit.result) ? [] : [hit.result.literal]));
+  return findFigures(listed).flatMap((hit) => (isFigure(hit.result) && grounded.some((text) => stateFigure(text, hit.result as Figure)) ? [] : [hit.result.literal]));
 };
 
 export interface ThemeContext {

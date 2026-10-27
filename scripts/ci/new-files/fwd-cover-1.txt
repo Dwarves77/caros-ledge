@@ -1,2 +1,0 @@
-# path | reason (files with no "Ported from" header)
-src/core/brief/rules/forward-events-covered.ts | new in FWD-COVER-1: R33: every supplied forward event and timeline date appears in the brief (events block, a section, or omitted_events with a reason).

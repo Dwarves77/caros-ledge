@@ -1,7 +1,7 @@
 // New in DIGEST-1 PR B (scripts/ci/new-files/digest-1b.txt), UNIFIED-PRB-DESIGN section 1, ADR-053: the validator of the reader's typed blocks. An item-brief entry may carry entity_ids, obligation_fields, connections, events, document_date and new_entity_candidates; every value
 // that is present carries a quote {capture_id, text} that must be in a capture of THE ITEM: the locate door (CAPTURE-STRUCT-1) returns the capture's own slice, the exact isVerbatim rule runs on that slice, and the slice is what is stored. Closed vocabularies are checked as tokens,
 // dates as ISO dates the quote states, quantities through the figure parser and statutoryUnit, an entity id against the menu (or a formal code the crosswalk resolves), a relation against couplings.json. Pure: the caller supplies the live material. A refusal names the block, the index and the token.
-import { stated } from "@/core/brief/rules/stored-date-stated";
+import { stated } from "@/core/brief/rules";
 import { RELATIONS } from "@/core/coupling";
 import { isVerbatim } from "@/core/contracts/verbatim";
 import { isKindToken } from "@/core/entities/kinds";

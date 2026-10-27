@@ -1,38 +1,5 @@
 # path | reason (files with no "Ported from" header)
-src/core/brief/rules/_sev.ts | new in VALID-1: the five severity tokens, their labels and the locked priority, read once from the contract (ADR-052: the token is stored, the space-separated label is rendered from it).
-src/core/brief/rules/_text.ts | new in VALID-1: the shared text helpers of the rules: the compiled pattern lists (data), the prose view of a brief, and the one-line pattern rule.
-src/core/brief/rules/as-of-has-date.ts | new in VALID-1: R11 (V17): an "as of" with no date within 30 characters.
-src/core/brief/rules/band-or-theme-present.ts | new in VALID-1: R29 (V31): a market signal brief carries its signal_band and a research summary its theme.
-src/core/brief/rules/banner-matches-column.ts | new in VALID-1: R20 (V07): the SET of severity labels in the banner (the first 600 characters) equals the label of the severity token; a body with no banner passes.
-src/core/brief/rules/dash-outside-verbatim.ts | new in VALID-1: R1 (V01): an em or en dash in the prose view (outside «...» runs and FACT claim text).
-src/core/brief/rules/do-now-severity-label.ts | new in VALID-1: R9 (V08): each do-now section the brief has (regulatory 3 and 11, technology 7, market 7) carries one of the five severity labels, in the space-separated form rendered from the tokens (ADR-052).
-src/core/brief/rules/fact-span-in-capture.ts | new in VALID-1: R16 (V34): a FACT span is verbatim in its attributed capture (the item pool for a batch entry, the claim's search result for a stored row). Wraps assertVerbatim, the JavaScript twin of public.is_verbatim.
-src/core/brief/rules/generic-action-phrase.ts | new in VALID-1: R3 (V03): a generic action phrase the writer skills ban.
-src/core/brief/rules/h1-in-section-list.ts | new in VALID-1: R25 (V20): after the title, an H1 is a heading or heading alternate of the format, compared case-insensitively after the title numbering is stripped. The section extractor also folds -ize/-ise; this rule does not, so a British-spelled heading is named.
 src/core/brief/rules/index.ts | new in VALID-1: the rule registry and its runner. data/rules.json names every rule (id, refuse or residue, the formats it applies to, the text scope it reads); this module holds the rule functions by id and refuses to load when the two disagree.
-src/core/brief/rules/no-bare-url-in-prose.ts | new in VALID-1: R22 (V14): no URL in the prose outside the Sources section and the citation lines the renderer consumes (*Source: ... lines).
-src/core/brief/rules/no-claim-ledger-json.ts | new in VALID-1: R14 (V18): no claim-ledger JSON key and no internal marker in the body. Wraps findInternalMarkers (sentinels, the ledger name, a JSON object literal) and adds the ledger's own keys.
-src/core/brief/rules/no-double-hyphen-dash.ts | new in VALID-1: R30 (V32): a double hyphen standing in for a dash.
-src/core/brief/rules/no-html-entity-outside-spans.ts | new in VALID-1: R23 (V15): an HTML entity in the prose view.
-src/core/brief/rules/no-ibid.ts | new in VALID-1: R24 (V16): "ibid" in place of a citation.
-src/core/brief/rules/no-section-sign.ts | new in VALID-1: R31 (V32): the section-sign glyph.
-src/core/brief/rules/pipeline-narration.ts | new in VALID-1: R15 (V13): the pipeline narrated in customer text (convention notes, source pool, integrity rule).
-src/core/brief/rules/pool-or-slot-narration.ts | new in VALID-1: R21 (V13b): the source pool, the five-claim floor, slot brackets or slot words in customer text.
-src/core/brief/rules/priority-follows-map.ts | new in VALID-1: R19 (V06): the priority is the locked map's priority for the severity token.
-src/core/brief/rules/required-sections-present.ts | new in VALID-1: R12 (V19): every non-conditional section of the format has a row. An omission note is no row.
-src/core/brief/rules/score-or-schema-token.ts | new in VALID-1: R5 (V10): a score, rating or schema name in customer text.
-src/core/brief/rules/severity-in-vocabulary.ts | new in VALID-1: R17 (V04): severity is null or one of the five ADR-052 tokens.
-src/core/brief/rules/severity-present.ts | new in VALID-1: R18 (V05): severity is set on the four formats whose skill makes it mandatory (the registry row names them).
-src/core/brief/rules/sources-used-non-empty.ts | new in VALID-1: R10 (V30): sources_used holds at least one source id.
-src/core/brief/rules/stored-date-stated.ts | new in VALID-1: R6 (V11): each stored entry_into_force and compliance_deadline is written in the body in one of the accepted renderings (data/date-renderings.json).
-src/core/brief/rules/structural-controls.ts | new in VALID-1: R32 (V35): an empty Markdown table cell or a doubled slot prefix.
-src/core/brief/rules/summary-fields-non-blank.ts | new in VALID-1: R27 (V27): why_matters and what_is_it are not null or blank.
-src/core/brief/rules/tier-phrase-exposure.ts | new in VALID-1: R4 (V09): a T1 to T7 token or a source-tier phrase in customer text.
-src/core/brief/rules/topic-tags-vocabulary-and-cap.ts | new in VALID-1: R28 (V29): topic_tags are in the seven-value vocabulary and at most the contract's cap.
-src/core/brief/rules/types.ts | new in VALID-1: the brief validator's rule vocabulary (VALID-1). A rule is a pure function of a parsed brief and the item's columns: it reads no database, no clock and no environment.
-src/core/brief/rules/urgency-tier-in-vocabulary.ts | new in VALID-1: R26 (V26): urgency_tier is one of the contract's four values.
-src/core/brief/rules/what-it-changes-length.ts | new in VALID-1: R7 (V28): what_it_changes is present and within the contract's 80 to 200 characters (contract.json, the what_it_changes field).
-src/core/brief/rules/workspace-or-client-named.ts | new in VALID-1: R2 (V02): the workspace or a named client appears in the brief (names from data/workspace-names.json).
 src/core/brief/data/rules.json | new in VALID-1: the registry of the brief validator: one row per rule (id, refuse or residue, the formats it applies to, the text scope it reads); the operator's ruling of 2026-10-25 made every code-checkable rule a binary check
 src/core/brief/data/rule-patterns.json | new in VALID-1: every phrase list and pattern a text rule uses, each with the register block it came from (docs/audits/VALIDATOR-RULES-STEP-A-2026-10-25.md), and the numeric limits the column rules read
 src/core/brief/data/workspace-names.json | new in VALID-1: the names the workspace-anchoring rule forbids in a brief: the workspace's organization names split on the slash, and the named examples of rule-workspace-anchored-output

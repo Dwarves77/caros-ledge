@@ -138,9 +138,7 @@ test("HUNT: a coverage gap is queued once as a find-source need that needs-searc
   const realFetch = globalThis.fetch;
   globalThis.fetch = (() => { throw new Error("a network call was attempted"); }) as never;
   try {
-    const only = adminEntry({ patterns: [], findings: [], tagged_inferences: [], signposts: [], connections: [] });
-    delete only.review;
-    const r = await apply(w, [{ ...only, review: { reviewed_by: "t", judges: {} } }]);
+    const r = await apply(w, [adminEntry({ patterns: [], findings: [], tagged_inferences: [], signposts: [], connections: [] })]);
     assert.equal(r.counts.applied, 1, notes(r));
   } finally { globalThis.fetch = realFetch; }
   const flags = w.db.rows("integrity_flags").filter((f) => f.created_by === "holdings-need:synthesis-gap");
@@ -189,4 +187,21 @@ test("the export states every cut: rows over the cap are counted, a long capture
   const out2 = await exportIt(w2);
   const row = (out2.items[0] as { rows: { ref: string; quote_text: string; quote_truncated: boolean; quote_chars_total: number }[] }).rows.find((r) => r.ref === ref(ROWS.grid))!;
   assert.deepEqual([row.quote_text.length, row.quote_truncated, row.quote_chars_total > 2000], [2000, true, true]);
+});
+
+test("LOCK-NO-BLOAT-1: a gaps-only entry is reviewed like any other: a missing or failing verdict set is residue, a passing one is valid", async () => {
+  const w = adminWorld();
+  const gaps = { patterns: [], findings: [], tagged_inferences: [], connections: [], signposts: [] };
+  const bare = { ...adminEntry(gaps) } as Record<string, unknown>;
+  delete bare.review;
+  assert.match(notes(await apply(w, [bare])), /second reader.*verdicts are missing/);
+  assert.equal((await apply(w, [adminEntry(gaps)], true)).counts.valid, 1, "the passing twin stays valid");
+  nothingWritten(w);
+});
+
+test("LOCK-NO-BLOAT-1: a signpost's figure is held to the cited rows even when the entry has no pattern or finding", async () => {
+  const w = adminWorld();
+  const sign = (text: string) => adminEntry({ patterns: [], findings: [], tagged_inferences: [], connections: [], signposts: [{ claim_text: text, observable: "the published index", source_class: "govIntergov", confirms_if: "it rises", falsified_if: "it falls", by: "2028-09-01" }], coverage_gaps: [{ missing_input: "the feedstock series", source_class: "govIntergov" }] });
+  assert.match(notes(await apply(w, [sign("The price passes 9999 EUR/t")])), /grounding pre-check: figure .*9999/);
+  assert.equal((await apply(w, [sign("The price stays near the stated level")], true)).counts.valid, 1, "a signpost without a figure stays valid");
 });

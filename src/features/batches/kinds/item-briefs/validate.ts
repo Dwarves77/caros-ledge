@@ -5,8 +5,7 @@
 // the numeric figure (decimals kept), and criterion 5 (a required slot without a covering FACT or, where its description allows, GAP). Section boundaries come from the REAL format registry
 // (core/brief FORMAT_SPECS), so the old second copy of the section list and its drift test are gone. Pure: the caller supplies the live material.
 import { analysisLabelRe, buildTimelineRows, checkBriefContent, findTimelineSection, FORMAT_SPECS, LEGAL_CALLOUT, MODAL_RE, parseTimeline, validateClaimRecords, validateMetadata, type AdoptedTerms, type BriefMetadata, type SectionRow } from "@/core/brief";
-import { severityToken, validateBrief, type ItemColumns } from "@/core/brief/rules";
-import { precisionKey } from "@/core/brief/rules/forward-events-covered";
+import { precisionKey, severityToken, validateBrief, type ItemColumns } from "@/core/brief/rules";
 import { scanGateA, uncoveredSlots, type SlotRow } from "@/core/grounding";
 import { digestKind } from "@/core/digest/kinds";
 import { review } from "@/core/digest/review";
