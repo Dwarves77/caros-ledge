@@ -8,8 +8,8 @@ import { proposedEntityId } from "@/core/vocabulary/adopted";
 import { applyBatch } from "@/features/batches";
 import { loadEmit, writeEmission } from "@/features/batches/kinds/item-briefs/emit";
 import { validateEmission, type EmissionPlan } from "@/features/batches/kinds/item-briefs/emission";
-
 import { locateSpan } from "@/core/contracts/verbatim";
+
 import { batchFile, ITEM, NOW, SPAN_FORCE } from "../batches/world.ts";
 
 import { emissionEntry, emissionWorld, HVO, OCEAN, ORG, SELF, UCO, type EmissionWorld } from "./emission-world.ts";
