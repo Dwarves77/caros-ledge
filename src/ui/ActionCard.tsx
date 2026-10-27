@@ -95,11 +95,6 @@ export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags
         </div>
         {meta && <span className="cl-ac-meta">{meta}</span>}
       </div>
-      {hasBiasTags(biasTags) && (
-        <div className="cl-ac-row">
-          <BiasChips tags={biasTags} variant="detail" label="Primary source" />
-        </div>
-      )}
       {hasTags && (
         <div className="cl-ac-tags">
           {tags.map((t) => (
@@ -108,8 +103,15 @@ export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags
         </div>
       )}
       {tagPopover && <div style={{ marginTop: hasTags ? "var(--sp-8)" : "var(--sp-10)" }}>{tagPopover}</div>}
-      <div className="cl-ac-actions">
-        <ActionRow onExport={onExport} onShare={onShare} watch={watch} onTag={onTag} exportDisabled={exportDisabled} overflow={overflow} {...(viewer !== undefined ? { viewer } : {})} />
+      <div className="cl-ac-bar">
+        {hasBiasTags(biasTags) && (
+          <div className="cl-ac-row">
+            <BiasChips tags={biasTags} variant="detail" label="Primary source" />
+          </div>
+        )}
+        <div className="cl-ac-actions">
+          <ActionRow onExport={onExport} onShare={onShare} watch={watch} onTag={onTag} exportDisabled={exportDisabled} overflow={overflow} {...(viewer !== undefined ? { viewer } : {})} />
+        </div>
       </div>
       <div className="cl-ac-rule" aria-hidden="true" />
       <div>
