@@ -28,7 +28,7 @@ function inputsOf(p: Pattern, facts: ReadonlyMap<string, Fact>): InputRef[] {
     const k = `${e.table}/${e.pk}/${e.kind}`;
     if (seen.has(k)) return [];
     seen.add(k);
-    return [{ table: e.table, pk: e.pk, kind: e.kind, entities: e.entities, surface: facts.get(`${e.table}/${e.pk}`)?.surface ?? "unknown", ...(facts.get(`${e.table}/${e.pk}`)?.at ? { at: facts.get(`${e.table}/${e.pk}`)?.at as string } : {}), ...(e.relation ? { relation: e.relation } : {}), ...(e.summary ? { summary: e.summary } : {}) }];
+    return [{ table: e.table, pk: e.pk, kind: e.kind, entities: e.entities, surface: facts.get(`${e.table}/${e.pk}`)?.surface ?? "unknown", ...(facts.get(`${e.table}/${e.pk}`)?.at ? { at: facts.get(`${e.table}/${e.pk}`)?.at as string } : {}), ...(e.relation ? { relation: e.relation } : {}), ...(e.summary ? { summary: e.summary } : {}), ...(e.role ? { role: e.role } : {}), ...(e.dueSource ? { dueSource: e.dueSource } : {}), ...(e.trl !== undefined ? { trl: e.trl } : {}), ...(e.onto ? { onto: e.onto } : {}), ...(e.marker ? { marker: e.marker } : {}) }];
   });
 }
 
@@ -92,7 +92,7 @@ export async function runPatterns(deps: { sb: Db; now: () => Date }, input: { dr
   }
   // downstream, in the same run (rule 17): the signposts of the patterns found, and the needs-search rows a packet leaves open
   Object.assign(counts, await trackPatterns(deps, { dry: input.dry, found, facts }));
-  const needs = await raiseNeeds(sb, patternGaps({ patterns: found, facts: loaded.input.facts, readerEdges: loaded.input.readerEdges ?? [], now }), input.dry, now.toISOString());
+  const needs = await raiseNeeds(sb, patternGaps({ patterns: found, facts: loaded.input.facts, readerEdges: loaded.input.readerEdges ?? [], now, ...(loaded.input.classOf ? { classOf: loaded.input.classOf } : {}) }), input.dry, now.toISOString());
   Object.assign(counts, needs.counts);
   notes.push(...needs.notes);
   return { counts, outcome: notes.length ? "partial" : "ok", notes: input.dry ? [...notes, "dry: nothing written"] : notes };

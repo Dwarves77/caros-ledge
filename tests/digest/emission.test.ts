@@ -87,10 +87,11 @@ test("a locate door that is not wired refuses an entry with typed blocks and lea
 
 test("INV-DIG-5: the entry applies end to end: the blocks reach their tables with the reader's version and their quotes, the downstream passes run, and a second apply writes nothing", async () => {
   const w = emissionWorld();
+  const seededRefs = w.db.rows("entity_refs").length; // the closed-mode ref the ontology reads is part of the world, not a write
   const e = emissionEntry(w);
   const dry = await apply(w, e, true);
   assert.equal(dry.counts.valid, 1, dry.notes.join("\n"));
-  assert.equal(w.db.rows("entity_refs").length + w.db.rows("obligation_objects").length + w.db.rows("entity_relations").length + w.db.rows("vocabulary_terms").length, 0, "a dry run wrote nothing");
+  assert.equal(w.db.rows("entity_refs").length - seededRefs + w.db.rows("obligation_objects").length + w.db.rows("entity_relations").length + w.db.rows("vocabulary_terms").length, 0, "a dry run wrote nothing");
   const r = await apply(w, e);
   assert.equal(r.counts.applied, 1, r.notes.join("\n"));
   assert.equal((r.data as { downstream: { counts: Record<string, number> } }).downstream.counts.flywheel_passes, 3, "the tag, term and corpus passes ran after the batch");

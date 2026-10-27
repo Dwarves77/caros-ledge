@@ -1,6 +1,6 @@
 // New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): the adapter from a stored row to the fact a detector reads (spec per table in data/facts.json), and the grade of a pattern's evidence. Pure: the same function builds the facts the connect stage detects over and the
 // facts the propagation drain re-reads when an evidence row changes, so a pattern is recomputed by the code that found it.
-import { couplingById } from "@/core/coupling/coupling";
+import type { Ontology } from "@/core/coupling/ontology";
 import { findFigures, isFigure, statutoryUnit } from "@/core/parse";
 
 import { FACT_SPECS, PATTERNS, UNIT_FORMS, type FactSpec } from "./config";
@@ -24,7 +24,7 @@ const specOfEdge = (table: string, role?: FactRole): { spec: FactSpec } | null =
 
 /** The fact a row is, or null when the table has no spec or the row is no fact of that role: a ceiling with no figure, one outside its [enforcement start, in-force end] window at `over.now` (an ended ceiling is no fact), a ratchet with neither a date nor a quantity.
  * `entities` are the entities the row is filed under; `over` carries what a row takes from its item: the surface it is read on and the day the item was added (a claim re-extracted by a backfill is no newer than its item), the role to read it as, the clock, and a claim's document date. */
-export function factOf(table: string, row: Row, entities: readonly string[], over: { surface?: string | undefined; at?: string | null | undefined; role?: FactRole; now?: Date; docAt?: string | null } = {}): Fact | null {
+export function factOf(table: string, row: Row, entities: readonly string[], over: { surface?: string | undefined; at?: string | null | undefined; role?: FactRole; now?: Date; docAt?: string | null; ontology?: Pick<Ontology, "classOf" | "modesOf"> } = {}): Fact | null {
   const hit = specOfEdge(table, over.role);
   if (!hit) return null;
   const s = hit.spec;
@@ -41,12 +41,16 @@ export function factOf(table: string, row: Row, entities: readonly string[], ove
   const unitUnknown = compared && rawQty !== null && canonical === null;
   const qty = unitUnknown ? null : rawQty;
   const year = s.dueYear && /^\d{4}$/.test(String(row[s.dueYear] ?? "")) ? String(row[s.dueYear]) : null;
-  const due = s.due ? asDay(row[s.due]) : year ? `${year}-01-01` : s.dueMonthsAfterAt && at && asNumber(row[s.dueMonthsAfterAt]) !== null ? plusMonths(at, asNumber(row[s.dueMonthsAfterAt]) as number) : null;
+  // a date column may be a list tried in order (a ratchet's due_date, else first_deadline, else date_of_application); the column that supplied it is kept on the fact
+  const dueFound = [s.due ?? []].flat().map((col) => ({ col, day: asDay(row[col]) })).find((c) => c.day !== null);
+  const due = dueFound ? (dueFound.day as string) : year ? `${year}-01-01` : s.dueMonthsAfterAt && at && asNumber(row[s.dueMonthsAfterAt]) !== null ? plusMonths(at, asNumber(row[s.dueMonthsAfterAt]) as number) : null;
+  const dueSource = dueFound ? dueFound.col : due ? (year ? (s.dueYear as string) : (s.dueMonthsAfterAt as string)) : undefined;
+  const onto = over.ontology;
   if (s.role === "ratchet" && due === null && qty === null) return null;
   return {
-    table, pk: String(row[s.pk]), role: s.role, entities: [...entities], modes: [...new Set(entities.flatMap((e) => couplingById(e)?.modes ?? []))].sort(), surface: over.surface ?? s.surface ?? "unknown", at, due,
+    table, pk: String(row[s.pk]), role: s.role, ...(dueSource ? { dueSource } : {}), entities: [...entities], modes: [...new Set(entities.flatMap((e) => onto?.modesOf(e) ?? []))].sort(), ...(onto && entities.length ? { onto: Object.fromEntries(entities.map((e) => [e, { class: onto.classOf(e), modes: onto.modesOf(e) }])) } : {}), surface: over.surface ?? s.surface ?? "unknown", at, due,
     source: s.source ? asText(row[s.source]) : null, tier: s.tier ? asNumber(row[s.tier]) : null, qty, unit: qty === null ? null : compared ? canonical : figure ? figure.unit : s.qty?.unit ?? (s.qty?.unitColumn ? asText(row[s.qty.unitColumn]) : null), ...(unitUnknown ? { unitUnknown: true } : {}), ...(table === "derived_values" && row.admissibility === "display_only" ? { displayOnly: true as const } : {}), trl: s.trl ? asNumber(row[s.trl]) : null,
-    kind: s.kind ? asText(row[s.kind]) : null, group: s.group ? asText(row[s.group]) : null, item: s.owner ? asText(row[s.owner]) : null,
+    capture: s.capture ? asText(row[s.capture]) : null, kind: s.kind ? asText(row[s.kind]) : null, group: s.group ? asText(row[s.group]) : null, item: s.owner ? asText(row[s.owner]) : null,
     ...(s.resolved && row[s.resolved] ? { resolved: true as const } : {}), ...(over.docAt !== undefined ? { docAt: over.docAt } : {}),
   };
 }

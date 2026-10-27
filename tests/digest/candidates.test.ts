@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { COUPLINGS, couplingByKey } from "@/core/coupling";
+import { ontologyOf } from "@/core/coupling";
 import { MENU } from "@/core/digest/kinds";
 import { entityId } from "@/core/entities/id";
 import { drainExporters } from "@/features/batches";
@@ -11,20 +11,26 @@ import { candidateMenu } from "@/features/batches/kinds/item-briefs/candidates";
 import type { BatchExport } from "@/features/batches";
 
 import { MemDb } from "../_support/memdb.ts";
+import { couplingByKey, FIXTURE_ENTITIES, FIXTURE_RELATIONS, fixtureRows } from "../_support/ontology.ts";
 
 import { emissionWorld, HVO, OCEAN, SELF, UCO } from "./emission-world.ts";
 
-const ONTOLOGY = COUPLINGS.filter((c) => c.named);
+const fixtureOnto = ontologyOf({ entities: fixtureRows().entities as never, refs: fixtureRows().refs as never, relations: fixtureRows().relations as never });
+const IN_RELATIONS = new Set(FIXTURE_RELATIONS.flatMap((r) => [r.parent, r.child]));
+// the ontology of the menu: the vocabulary kinds and the entities the relation graph connects, minus the closed tokens
+const ONTOLOGY = FIXTURE_ENTITIES.filter((c) => !["mode", "hub", "window"].includes(c.class) && (["material", "node", "asset", "method"].includes(c.kind) || IN_RELATIONS.has(c.key)));
 const HUB = couplingByKey("hub:seaport")?.entityId as string;
 function seeded(extra: { linked?: number } = {}) {
   const db = new MemDb();
   db.seed("entities", [
-    ...COUPLINGS.map((c) => ({ entity_id: c.entityId, kind: c.kind, canonical_name: c.name, status: "active" })),
+    ...fixtureRows().entities,
     { entity_id: SELF, kind: "instrument", canonical_name: "32023R9999", status: "active" },
     { entity_id: entityId("jurisdiction", "EU"), kind: "jurisdiction", canonical_name: "EU", status: "active" },
     { entity_id: entityId("organisation", "eur-lex.europa.eu"), kind: "organisation", canonical_name: "eur-lex.europa.eu", status: "active" },
     ...Array.from({ length: extra.linked ?? 0 }, (_, i) => ({ entity_id: entityId("organisation", `linked-${i}.example`), kind: "organisation", canonical_name: `Linked ${i}`, status: "active" })),
   ]);
+  db.seed("entity_relations", fixtureRows().relations);
+  db.seed("entity_refs", fixtureRows().refs);
   db.seed("entity_aliases", ["a", "b", "c", "d", "e", "f"].map((a) => ({ entity_id: HVO, alias: `alias ${a}`, alias_kind: "name", asserted_by: "t" })));
   return db;
 }
@@ -35,11 +41,12 @@ test("rank: the item's own instrument first, linked entities by weight, the onto
   const m = await candidateMenu(db.client, { self: SELF, weights: new Map([...linked(3), [UCO, 9], [OCEAN, 8], [HUB, 7]]), region: [entityId("jurisdiction", "EU")], publisher: entityId("organisation", "eur-lex.europa.eu") });
   assert.equal(m.ids[0], SELF);
   assert.deepEqual(m.ids.slice(1, 5), [UCO, ...[...linked(3).keys()]], "linked by weight desc: the ontology entity carrying 9 first, then 3, 2, 1");
-  const classOf = (id: string) => ONTOLOGY.find((c) => c.entityId === id)?.class;
+  // the class the menu ranks by is the one the live refs give an entity
+  const classOf = (id: string) => (ONTOLOGY.some((c) => c.entityId === id) ? fixtureOnto.classOf(id) : undefined);
   const onto = m.ids.filter((id) => classOf(id) !== undefined && id !== UCO);
-  assert.deepEqual([...new Set(onto.map(classOf))], MENU.kindOrder.filter((k) => ONTOLOGY.some((c) => c.class === k)), "the rest of the ontology in the configured kind order");
+  assert.deepEqual([...new Set(onto.map(classOf))], MENU.kindOrder.filter((k) => ONTOLOGY.some((c) => fixtureOnto.classOf(c.entityId) === k)), "the rest of the ontology in the configured kind order");
   assert.deepEqual(m.ids.slice(-2), [entityId("jurisdiction", "EU"), entityId("organisation", "eur-lex.europa.eu")]);
-  assert.ok(!m.ids.includes(OCEAN) && COUPLINGS.filter((c) => ["mode", "hub", "window"].includes(c.class)).every((c) => !m.ids.includes(c.entityId)), "closed tokens stay out of the menu even when linked");
+  assert.ok(!m.ids.includes(OCEAN) && FIXTURE_ENTITIES.filter((c) => ["mode", "hub", "window"].includes(c.class)).every((c) => !m.ids.includes(c.entityId)), "closed tokens stay out of the menu even when linked");
   const line = m.lines.find((l) => l.startsWith(HVO)) as string;
   assert.deepEqual(line.split(" | ").length, 5);
   assert.equal(line.split(" | ")[3]?.split("; ").length, 4, "aliases up to four");

@@ -9,7 +9,7 @@ import { z } from "zod";
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
 import { normaliseMode } from "@/core/contracts/vocabularies";
-import { couplingByKey } from "@/core/coupling/coupling";
+import { loadOntology } from "@/core/coupling/ontology";
 import { entityId, corridorSeed } from "@/core/entities/id";
 import { parseCorridorName } from "@/core/entities/kinds";
 import { planJurisdiction } from "@/core/entities/plan";
@@ -75,22 +75,26 @@ function planDisplayNameBackfill(rows: readonly { entity_id: string; canonical_n
   return out;
 }
 /** A lane corridor is sailed, flown or driven in the mode its name states: it is linked to that mode's asset (corridor_links), so the engine can carry a lane's facts to the mode and the mode's facts to the lane. One relation per corridor; a name without a leg mode links nothing. */
-function planModeLinks(corridors: readonly { entity_id: string; canonical_name: string }[], have: Set<string>): { rows: { parent_entity_id: string; child_entity_id: string; relation: "corridor_links"; asserted_by: string; provenance: object }[]; skipped: number } {
+function planModeLinks(corridors: readonly { entity_id: string; canonical_name: string }[], have: Set<string>, modeEntity: (token: string) => string | undefined): { rows: { parent_entity_id: string; child_entity_id: string; relation: "corridor_links"; asserted_by: string; provenance: object }[]; skipped: number; unfiled: number } {
   const rows: ReturnType<typeof planModeLinks>["rows"] = [];
   let skipped = 0;
+  let unfiled = 0;
   for (const c of corridors) {
     const p = parseCorridorName(c.canonical_name);
-    const mode = p ? couplingByKey(`mode:${normaliseMode(p.mode)}`) : undefined;
+    const token = p ? normaliseMode(p.mode) : null;
+    const mode = token ? modeEntity(token) : undefined;
     if (!mode) {
-      skipped += 1;
+      // a name with a leg mode whose mode entity no row has been filed under yet is counted as not seeded; a name with no leg mode links nothing
+      if (token) unfiled += 1;
+      else skipped += 1;
       continue;
     }
-    const key = `${c.entity_id}|${mode.entityId}`;
+    const key = `${c.entity_id}|${mode}`;
     if (have.has(key)) continue;
     have.add(key);
-    rows.push({ parent_entity_id: c.entity_id, child_entity_id: mode.entityId, relation: "corridor_links", asserted_by: MODE_LINK_BY, provenance: { rule: "the mode a lane corridor's name states", corridor: c.canonical_name } });
+    rows.push({ parent_entity_id: c.entity_id, child_entity_id: mode, relation: "corridor_links", asserted_by: MODE_LINK_BY, provenance: { rule: "the mode a lane corridor's name states", corridor: c.canonical_name } });
   }
-  return { rows, skipped };
+  return { rows, skipped, unfiled };
 }
 
 /** Corridor-to-country pairs: the first two letters of each UN/LOCODE endpoint are the ISO 3166-1 country. */
@@ -185,10 +189,10 @@ export async function seedCorridors(deps: { sb: Db; now: () => Date }, input: { 
   }
   // each lane corridor is linked to the asset of its mode (the mode assets exist once the coupling seeds have run; until then the link is counted and written by the next run)
   const [assets, links] = await Promise.all([all<{ entity_id: string }>(sb, "entities", "entity_id", "entity_id", "asset"), all<{ parent_entity_id: string; child_entity_id: string }>(sb, "entity_relations", "parent_entity_id, child_entity_id", "parent_entity_id")]);
-  const planned = planModeLinks(live, new Set(links.map((l) => `${l.parent_entity_id}|${l.child_entity_id}`)));
+  const planned = planModeLinks(live, new Set(links.map((l) => `${l.parent_entity_id}|${l.child_entity_id}`)), (await loadOntology(sb)).modeEntity);
   const present = new Set(assets.map((a) => a.entity_id));
   const linkRows = planned.rows.filter((r) => present.has(r.child_entity_id));
-  Object.assign(counts, { mode_links_planned: linkRows.length, mode_links_mode_not_seeded: planned.rows.length - linkRows.length, mode_links_no_mode: planned.skipped });
+  Object.assign(counts, { mode_links_planned: linkRows.length, mode_links_mode_not_seeded: planned.rows.length - linkRows.length + planned.unfiled, mode_links_no_mode: planned.skipped });
   if (!input.dry && linkRows.length) {
     const { error } = await sb.from("entity_relations").insert(linkRows);
     if (error) {

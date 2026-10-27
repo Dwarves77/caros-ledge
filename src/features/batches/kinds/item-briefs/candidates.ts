@@ -1,7 +1,7 @@
 // New in DIGEST-1 PR B (scripts/ci/new-files/digest-1b.txt), ADR-053 / TRIANGLE-TRACE Q3: the candidate_entities block of a reader bundle. The reader may file an entity only by an id on this menu (or a formal code), so the menu is every entity the text could be about: the item's
 // own instrument first, then the entities its claims, events and obligations are typed-linked to (entity_refs with a method version; never a prose match), then the rest of the closed ontology of couplings.json, then at most three region or publisher lines. Modes, hubs and windows
 // are closed tokens and stay out. The cap is MENU.cap; over it the lowest-ranked linked entities drop and the block says `truncated: n`. A line is `entity_id | kind | canonical_name | aliases | links: n`. The same function serves the theme and admin bundles (their seed is the packet's members).
-import { COUPLINGS, couplingById, uuidOf } from "@/core/coupling";
+import { loadOntology, uuidOf, type Ontology } from "@/core/coupling";
 import { fetchAllByIdChunks, rowsByIds, type Db } from "@/core/db";
 import { MENU } from "@/core/digest/kinds";
 import type { Packet } from "@/core/digest/packets-client";
@@ -15,20 +15,30 @@ export interface Menu { lines: string[]; ids: string[]; truncated: number }
 interface Ent { entity_id: string; kind: string; canonical_name: string; status: string }
 
 const OUT = new Set(["mode", "hub", "window"]);
-const rank = (e: Ent): number => { const i = MENU.kindOrder.indexOf(couplingById(e.entity_id)?.class ?? e.kind); return i < 0 ? MENU.kindOrder.length : i; };
-const byRank = (a: Ent, b: Ent): number => rank(a) - rank(b) || (a.entity_id < b.entity_id ? -1 : 1);
-const isOntology = (id: string): boolean => couplingById(id)?.named === true;
+/** The entity kinds the ontology of the database is made of (the seeded vocabulary: feedstocks, carriers, nodes, assets, methods); the spine kinds (jurisdiction, organisation, instrument, obligation) are not menu ontology. */
+const ONTOLOGY_KINDS = ["material", "node", "asset", "method"];
+const rank = (onto: Ontology) => (e: Ent): number => { const i = MENU.kindOrder.indexOf(onto.classOf(e.entity_id) || e.kind); return i < 0 ? MENU.kindOrder.length : i; };
+const byRank = (onto: Ontology) => (a: Ent, b: Ent): number => rank(onto)(a) - rank(onto)(b) || (a.entity_id < b.entity_id ? -1 : 1);
 
 /** The menu for a seed: rank, cap and state the truncation. Dropped entities are the lowest-ranked linked ones that are not already in the ontology. */
 export async function candidateMenu(sb: Db, seed: Seed): Promise<Menu> {
   const region = [...(seed.region ?? []), ...(seed.publisher ? [seed.publisher] : [])].slice(0, MENU.maxRegion);
-  const want = [...new Set([...COUPLINGS.filter((c) => c.named).map((c) => c.entityId), ...(seed.self ? [seed.self] : []), ...seed.weights.keys(), ...region])];
-  const ents = new Map((await rowsByIds<Ent>(sb, "entities", "entity_id, kind, canonical_name, status", want, "entity_id", "entity_id")).filter((e) => e.status === "active" && !OUT.has(couplingById(e.entity_id)?.class ?? "")).map((e) => [e.entity_id, e]));
+  const onto = await loadOntology(sb);
+  const byRank_ = byRank(onto);
+  // the ontology is the database: the entities of the vocabulary kinds, and any entity the relation graph connects (an instrument the vocabulary relates to a node or a fuel)
+  const seededKinds = await readAll<Ent>(sb, "entities", "entity_id, kind, canonical_name, status", ["entity_id"], (q) => q.in("kind", ONTOLOGY_KINDS).eq("status", "active"));
+  const related = new Set((await readAll<{ parent_entity_id: string; child_entity_id: string }>(sb, "entity_relations", "parent_entity_id, child_entity_id", ["parent_entity_id", "child_entity_id", "relation"])).flatMap((r) => [r.parent_entity_id, r.child_entity_id]));
+  const heldKinds = new Set(seededKinds.map((e) => e.entity_id));
+  const seeded = [...seededKinds, ...(await rowsByIds<Ent>(sb, "entities", "entity_id, kind, canonical_name, status", [...related].filter((id) => !heldKinds.has(id)), "entity_id", "entity_id")).filter((e) => e.status === "active")];
+  const ontologyIds = new Set(seeded.filter((e) => !OUT.has(onto.classOf(e.entity_id))).map((e) => e.entity_id));
+  const isOntology = (id: string): boolean => ontologyIds.has(id);
+  const want = [...new Set([...ontologyIds, ...(seed.self ? [seed.self] : []), ...seed.weights.keys(), ...region])];
+  const ents = new Map((await rowsByIds<Ent>(sb, "entities", "entity_id, kind, canonical_name, status", want, "entity_id", "entity_id")).filter((e) => e.status === "active" && !OUT.has(onto.classOf(e.entity_id))).map((e) => [e.entity_id, e]));
   const take = (ids: Iterable<string>): Ent[] => [...ids].flatMap((id) => (ents.has(id) ? [ents.get(id) as Ent] : []));
   const self = take(seed.self ? [seed.self] : []);
   const used = new Set(self.map((e) => e.entity_id));
-  const linked = take([...seed.weights.keys()].filter((id) => !used.has(id))).sort((a, b) => (seed.weights.get(b.entity_id) ?? 0) - (seed.weights.get(a.entity_id) ?? 0) || byRank(a, b));
-  const ontology = take(COUPLINGS.filter((c) => c.named).map((c) => c.entityId)).sort(byRank);
+  const linked = take([...seed.weights.keys()].filter((id) => !used.has(id))).sort((a, b) => (seed.weights.get(b.entity_id) ?? 0) - (seed.weights.get(a.entity_id) ?? 0) || byRank_(a, b));
+  const ontology = take(ontologyIds).sort(byRank_);
   const regions = take(region).filter((e) => !ontology.includes(e) && !linked.includes(e));
   const room = MENU.cap - self.length - ontology.filter((e) => !linked.includes(e)).length - regions.length;
   let free = Math.min(MENU.maxLinked, room);

@@ -21,11 +21,11 @@ const table = (f: Awaited<ReturnType<typeof turn>>) => patterns(f).map((r) => `$
 
 test("the fixture turn yields exactly the planted patterns: one per kind and one per relation kind, and no velocity pattern (no claim is dated)", async () => {
   const f = await turn();
-  assert.deepEqual(table(f), ["cross_modal 0.48 strength", "cross_modal 0.49 strength", "lead_lag 68.00 days", "mandate_capacity 11.00 months", "mandate_capacity 13.00 months", "penalty_abatement 12.50 ratio"]);
+  assert.deepEqual(table(f), ["cross_modal 0.48 strength", "lead_lag 68.00 days", "mandate_capacity 11.00 months", "mandate_capacity 13.00 months", "penalty_abatement 12.50 ratio"]);
   const cross = patterns(f).filter((r) => r.method_id === "pattern_cross_modal").map((r) => keyOf(r).split("|")[1]).sort();
-  assert.deepEqual(cross, ["competes_for_feedstock", "corridor_links"]);
+  assert.deepEqual(cross, ["competes_for_feedstock"]); // the lane corridor is linked to its mode, so its modes are the mode's: a move on the lane crosses to no other mode, and no pattern says it does
   const counts = countsOf(f, "corpus-turn");
-  assert.deepEqual([counts.patterns, counts.patterns_velocity, counts.patterns_mandateCapacity, counts.patterns_leadLag, counts.patterns_crossModal, counts.patterns_penaltyAbatement], [6, 0, 2, 1, 2, 1]);
+  assert.deepEqual([counts.patterns, counts.patterns_velocity, counts.patterns_mandateCapacity, counts.patterns_leadLag, counts.patterns_crossModal, counts.patterns_penaltyAbatement], [5, 0, 2, 1, 1, 1]);
   // the edges: the lead-lag pattern rests on the trigger, the reroute and the rate move; the abatement pattern on the technology, the cost and the ceiling
   const edges = (method: string) => f.db.rows("derivation_edges").filter((e) => e.to_value_id === patterns(f).find((p) => p.method_id === method)?.value_id).map((e) => `${String(e.edge_kind)}:${String(e.from_table)}`).sort();
   assert.deepEqual(edges("pattern_lead_lag"), ["evidence:market_series", "evidence:reroute_events", "key:item_forward_events"]);
@@ -84,14 +84,14 @@ test("a second turn writes nothing: the same patterns, the same signposts and th
   assert.equal((await connect(f)).exit, 0);
   assert.deepEqual(sizes(), before);
   const c = countsOf(f, "corpus-turn");
-  assert.deepEqual([c.patterns, c.patterns_unchanged, c.patterns_new, c.patterns_superseded, c.patterns_obsolete, c.signposts_new, c.pattern_needs_raised], [6, 6, 0, 0, 0, 0, 0]);
+  assert.deepEqual([c.patterns, c.patterns_unchanged, c.patterns_new, c.patterns_superseded, c.patterns_obsolete, c.signposts_new, c.pattern_needs_raised], [5, 5, 0, 0, 0, 0, 0]);
 });
 
 test("an ended ceiling yields no penalty-abatement pattern: the EUR 40 transitional ceiling (in force 2005 to 2007, same unit as the cost) stands beside the live EUR 100 one and the turn still yields the one pattern at 12.5, not a second at 31.25", async () => {
   const f = await turn({ endedCeiling: true });
   assert.equal(f.db.rows("obligation_objects").filter((o) => o.obligation_id === OBL.ended).length, 1, "the ended ceiling is in the database");
   assert.deepEqual(patterns(f).filter((p) => p.method_id === "pattern_penalty_abatement").map((p) => Number(p.value)), [12.5]);
-  assert.deepEqual(table(f), ["cross_modal 0.48 strength", "cross_modal 0.49 strength", "lead_lag 68.00 days", "mandate_capacity 11.00 months", "mandate_capacity 13.00 months", "penalty_abatement 12.50 ratio"]);
+  assert.deepEqual(table(f), ["cross_modal 0.48 strength", "lead_lag 68.00 days", "mandate_capacity 11.00 months", "mandate_capacity 13.00 months", "penalty_abatement 12.50 ratio"]);
 });
 
 test("a ratchet filed under mode:ocean yields one cross-modal pattern for its own step, not one per relation of the mode: the FuelEU step is filed under Bio-bunkers, its instrument and mode:ocean", async () => {

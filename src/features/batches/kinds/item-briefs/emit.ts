@@ -3,7 +3,8 @@
 // connections are entity_relations with a basis; events are capture-backed item_forward_events; a document date fills a capture the producer could not date; new entities are proposed as vocabulary terms (never minted inline; adoption is the recurrence rule's).
 import { createHash } from "node:crypto";
 
-import { COUPLINGS, roleOf, uuidOf } from "@/core/coupling";
+import { loadOntology, uuidOf, type Ontology } from "@/core/coupling";
+import { LEG_MODE_CODES as MODE_TOKENS } from "@/core/contracts/vocabularies";
 import { readAll } from "@/core/coupling/read";
 import { allRows, fetchAllByIdChunks, rowsByIds, type Db } from "@/core/db";
 import { READER_METHOD } from "@/core/digest/kinds";
@@ -35,8 +36,9 @@ export async function loadEmit(deps: BatchDeps, itemId: string, tokens: readonly
   const [it] = await rowsByIds<{ id: string; instrument_entity_id: string | null; jurisdiction_iso: string[] | null; source_url: string | null }>(sb, "intelligence_items", "id, instrument_entity_id, jurisdiction_iso, source_url", [itemId]);
   const captures = new Map((await readPool(sb, itemId)).map((p) => [p.id, p.text]));
   const [claims, events, objects] = [await allRows<{ id: string }>(sb, "section_claim_provenance", "id", { where: (q) => q.eq("intelligence_item_id", itemId) }), await allRows<{ id: string }>(sb, "item_forward_events", "id", { where: (q) => q.eq("intelligence_item_id", itemId) }), await readObjects(sb, itemId)];
+  const onto = await loadOntology(sb);
   const menu = it ? await candidateMenu(sb, await itemSeed(sb, it, { claimIds: claims.map((c) => c.id), eventIds: events.map((e) => e.id), obligationIds: objects.map((o) => String(o.obligation_id)) })) : { ids: [] as string[] };
-  const ids = new Map<string, string>([...menu.ids.map((id) => [id, id] as const), ...COUPLINGS.filter((c) => c.class === "mode" || c.class === "hub").map((c) => [c.key, c.entityId] as const)]);
+  const ids = new Map<string, string>([...menu.ids.map((id) => [id, id] as const), ...MODE_TOKENS.flatMap((t) => { const e = onto.modeEntity(t); return e ? [[`mode:${t}`, e] as const] : []; })]);
   for (const t of new Set(tokens)) {
     const m = FORMAL.exec(t);
     if (!m || !VALIDATORS[m[1] as keyof typeof VALIDATORS](m[2])) continue;
@@ -50,7 +52,7 @@ export async function loadEmit(deps: BatchDeps, itemId: string, tokens: readonly
 const readObjects = (sb: Db, itemId: string): Promise<Row[]> => allRows<Row>(sb, "obligation_objects", "*", { order: "obligation_id", where: (q) => q.eq("instrument_item_id", itemId) });
 
 const NOT_CARRIED = new Set(["obligation_id", "version", "supersedes", "instrument_entity_id", "status", "created_at", "updated_at", "capture_id", "instrument_item_id", "pinpoint_citation", "verbatim_text", "method_version", "basis"]);
-const ref = (table: string, id: string, entity: string, basis: Row): Row => ({ ref_table: table, ref_id: id, entity_id: entity, role: roleOf(entity), asserted_by: "reader", basis, method_version: READER_METHOD });
+const ref = (onto: Ontology, table: string, id: string, entity: string, basis: Row): Row => ({ ref_table: table, ref_id: id, entity_id: entity, role: onto.roleOf(entity), asserted_by: "reader", basis, method_version: READER_METHOD });
 /** File refs: a ref the reader already holds under this version is left; one that exists from the mining is replaced by the reader's (its basis is the quote). Returns rows written. */
 async function fileRefs(sb: Db, rows: readonly Row[], notes: string[]): Promise<number> {
   const held = await fetchAllByIdChunks<Row>(rows.map((r) => String(r.ref_id)), (slice) => readAll<Row>(sb, "entity_refs", "ref_table, ref_id, entity_id, role, asserted_by, method_version", ["ref_table", "ref_id", "entity_id", "role"], (q) => q.in("ref_id", slice)), { manyPerId: true });
@@ -65,9 +67,10 @@ async function fileRefs(sb: Db, rows: readonly Row[], notes: string[]): Promise<
 /** The writes of one entry's plan. Counts and notes only; a refusal of one value never stops the others (it is a note and a count, and the entry's step reports failed). */
 export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: string | null, plan: EmissionPlan, captureIds: ReadonlySet<string>): Promise<{ counts: Record<string, number>; notes: string[] }> {
   const { sb } = deps;
+  const onto = await loadOntology(sb);
   const [counts, notes]: [Record<string, number>, string[]] = [{}, []];
   const bump = (k: string, n = 1) => void (counts[k] = (counts[k] ?? 0) + n);
-  const refs: Row[] = plan.entities.map((e) => ref("intelligence_items", itemId, e.entity_id, { quote: e.quote.text, capture_id: e.quote.capture_id }));
+  const refs: Row[] = plan.entities.map((e) => ref(onto, "intelligence_items", itemId, e.entity_id, { quote: e.quote.text, capture_id: e.quote.capture_id }));
   // obligation_fields: candidates through the derive's buildObjectRow; the prior object's columns are carried under the reader's values (a carried figure the new provision no longer states is dropped)
   if (plan.objects.length) {
     const prior = new Map(currentObligationObjects<Row & { obligation_id: string; pinpoint_citation: string }>((await readObjects(sb, itemId)) as never).map((o) => [norm(o.pinpoint_citation), o]));
@@ -85,7 +88,7 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
     }
     bump("objects_written", (r.data?.plan.toInsert ?? []).filter((p) => p.row.method_version === READER_METHOD).length);
     const current = new Map(currentObligationObjects<Row & { pinpoint_citation: string; obligation_id: string }>((await readObjects(sb, itemId)) as never).map((o) => [norm(o.pinpoint_citation), o.obligation_id]));
-    for (const o of plan.objects) for (const e of o.entity_ids) if (current.has(norm(o.pinpoint))) refs.push(ref("obligation_objects", uuidOf(current.get(norm(o.pinpoint)) as string), e, { quote: o.provision.text, capture_id: o.provision.capture_id, pinpoint: o.pinpoint }));
+    for (const o of plan.objects) for (const e of o.entity_ids) if (current.has(norm(o.pinpoint))) refs.push(ref(onto, "obligation_objects", uuidOf(current.get(norm(o.pinpoint)) as string), e, { quote: o.provision.text, capture_id: o.provision.capture_id, pinpoint: o.pinpoint }));
   }
   // connections: an edge the table already holds (a seed or another brief's) stands; a refusal (the cycle trigger) is counted
   for (const c of plan.connections) {
@@ -102,8 +105,8 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
     const stored = new Map((await allRows<Row & { id: string; event_date: string; event_kind: string; obligation_text: string }>(sb, "item_forward_events", "id, event_date, event_kind, obligation_text", { where: (q) => q.eq("intelligence_item_id", itemId) })).map((s) => [forwardEventKey(s), s.id]));
     for (const e of plan.events) {
       const id = stored.get(forwardEventKey({ event_date: e.event_date, event_kind: e.event_kind, obligation_text: e.quote.text }));
-      const mode = e.mode ? COUPLINGS.find((c) => c.key === `mode:${e.mode}`)?.entityId : undefined;
-      for (const ent of [...e.entity_ids, ...(mode ? [mode] : [])]) if (id) refs.push(ref("item_forward_events", id, ent, { quote: e.quote.text, capture_id: e.quote.capture_id, event_kind: e.event_kind }));
+      const mode = e.mode ? onto.modeEntity(e.mode) : undefined;
+      for (const ent of [...e.entity_ids, ...(mode ? [mode] : [])]) if (id) refs.push(ref(onto, "item_forward_events", id, ent, { quote: e.quote.text, capture_id: e.quote.capture_id, event_kind: e.event_kind }));
     }
   }
   bump("refs_written", await fileRefs(sb, refs, notes));

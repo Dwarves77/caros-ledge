@@ -1,6 +1,6 @@
 // New in CONNECT-2 PR A (scripts/ci/new-files/connect-2a.txt): the reads of the connect stage's pattern step. Joins what the spine holds into the input the five detectors read: the entity refs the mining wrote (claims, typed rows, tags), the coupling relations (both directions), and for every table with a
 // fact spec the rows that carry a ref, each as a fact filed under its entities. Every read is paged under a total order and throws on error; a table with no rows yields no facts and the detectors run over what is there.
-import { couplingByKey, RELATIONS, uuidOf, type Relation } from "@/core/coupling";
+import { loadOntology, RELATIONS, uuidOf, type Relation } from "@/core/coupling";
 import { statutoryUnit } from "@/core/parse";
 import { readAll, type Row } from "@/core/coupling/read";
 import type { Db } from "@/core/db";
@@ -12,7 +12,7 @@ import type { Fact, PatternInput } from "./types";
 
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const columnsOf = (table: string): string =>
-  [...new Set((FACT_SPECS[table] ?? []).flatMap((s) => [s.pk, s.at, s.due, s.dueYear, s.dueMonthsAfterAt, s.qty?.column, s.qty?.unitColumn, s.qty?.figure, s.source, s.tier, s.kind, s.trl, s.group, s.item, s.owner, s.capture, s.resolved, s.from, s.until]).filter((c): c is string => !!c))].join(",");
+  [...new Set((FACT_SPECS[table] ?? []).flatMap((s) => [s.pk, s.at, ...[s.due ?? []].flat(), s.dueYear, s.dueMonthsAfterAt, s.qty?.column, s.qty?.unitColumn, s.qty?.figure, s.source, s.tier, s.kind, s.trl, s.group, s.item, s.owner, s.capture, s.resolved, s.from, s.until]).filter((c): c is string => !!c))].join(",");
 
 /** A series' points become their moves: each point's relative change from the previous point of the same series, dated at the point. The first point of a series has no move and is dropped. */
 function seriesMoves(facts: readonly Fact[]): Fact[] {
@@ -29,10 +29,12 @@ function seriesMoves(facts: readonly Fact[]): Fact[] {
   return out;
 }
 
-export async function loadPatternInput(sb: Db, now: Date): Promise<{ input: PatternInput; counts: Record<string, number> }> {
+export async function loadPatternInput(sb: Db, now: Date, opts: { extraRefs?: readonly { ref_table: string; ref_id: string; entity_id: string }[] } = {}): Promise<{ input: PatternInput; counts: Record<string, number> }> {
+  const onto = await loadOntology(sb);
   const refs = await readAll<{ ref_table: string; ref_id: string; entity_id: string }>(sb, "entity_refs", "ref_table,ref_id,entity_id", ["ref_table", "ref_id", "entity_id", "role"], (q) => q.not("method_version", "is", null));
   const filed = new Map<string, string[]>();
-  for (const r of refs) filed.set(`${r.ref_table}|${r.ref_id}`, [...(filed.get(`${r.ref_table}|${r.ref_id}`) ?? []), r.entity_id]);
+  // `extraRefs`: refs not yet written (a dry plan of the mining), read as if held; a ref already held is not counted twice
+  for (const r of [...refs, ...(opts.extraRefs ?? [])]) if (!(filed.get(`${r.ref_table}|${r.ref_id}`) ?? []).includes(r.entity_id)) filed.set(`${r.ref_table}|${r.ref_id}`, [...(filed.get(`${r.ref_table}|${r.ref_id}`) ?? []), r.entity_id]);
   const links = await readAll<{ parent_entity_id: string; child_entity_id: string; relation: string; method_version: string | null }>(sb, "entity_relations", "parent_entity_id,child_entity_id,relation,method_version", ["parent_entity_id", "child_entity_id", "relation"]);
   const near = new Map<string, { entity: string; relation: Relation }[]>();
   for (const l of links.filter((x) => (RELATIONS as readonly string[]).includes(x.relation))) {
@@ -54,7 +56,7 @@ export async function loadPatternInput(sb: Db, now: Date): Promise<{ input: Patt
         const pk = String(r[spec.pk]);
         const item = spec.item ? items.get(String(r[spec.item])) : undefined;
         const es = filed.get(`${table}|${UUID_SHAPE.test(pk) ? pk : uuidOf(pk)}`);
-        const f = es ? factOf(spec.edge ?? table, r, es, { surface: item?.surface, ...(item?.added ? { at: item.added } : {}), role: spec.role, now, ...(spec.capture ? { docAt: documentDates.get(String(r[spec.capture])) ?? null } : {}) }) : null;
+        const f = es ? factOf(spec.edge ?? table, r, es, { surface: item?.surface, ...(item?.added ? { at: item.added } : {}), role: spec.role, now, ontology: onto, ...(spec.capture ? { docAt: documentDates.get(String(r[spec.capture])) ?? null } : {}) }) : null;
         return f ? [f] : [];
       }),
     );
@@ -67,11 +69,11 @@ export async function loadPatternInput(sb: Db, now: Date): Promise<{ input: Patt
     facts.push(...(table === "market_series" ? seriesMoves(made) : made));
   }
   // the derived abatement costs: the current derived values in the unit the abatement attribute is measured in, each filed under its own entity
-  const unit = couplingByKey("attr:abatement_cost_per_tco2e")?.unit;
+  const unit = PATTERNS.penaltyAbatement.abatementUnit;
   const abatement = unit ? await readAll<Row>(sb, "derived_values", `${columnsOf("derived_values")},entity_id,admissibility,lifecycle`, ["value_id"], (q) => q.not("unit", "is", null)) : [];
   const live = abatement.filter((r) => r.entity_id && statutoryUnit(String(r.unit), UNIT_FORMS) === unit && r.admissibility !== "stale" && !["falsified", "obsolete", "superseded"].includes(String(r.lifecycle)));
-  facts.push(...live.flatMap((r) => factOf("derived_values", r, [String(r.entity_id)], { now }) ?? []));
+  facts.push(...live.flatMap((r) => factOf("derived_values", r, [String(r.entity_id)], { now, ontology: onto }) ?? []));
   counts.facts_derived_values = live.length;
   counts.facts_unit_unknown = facts.filter((f) => f.unitUnknown).length;
-  return { input: { now, facts, related: (e) => near.get(e) ?? [], readerEdges, flow }, counts };
+  return { input: { now, facts, related: (e) => near.get(e) ?? [], readerEdges, flow, classOf: onto.classOf, modesOf: onto.modesOf }, counts };
 }

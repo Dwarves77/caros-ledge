@@ -25,6 +25,11 @@ export interface ResolvedMethodInput {
   surface?: string;
   at?: string;
   summary?: Record<string, number>;
+  role?: string;
+  dueSource?: string;
+  trl?: number;
+  onto?: Record<string, { class: string; modes: string[] }>;
+  marker?: Record<string, string | number | boolean>;
 }
 export interface MethodContext {
   entityId: string | null;
@@ -258,15 +263,16 @@ const costPerFeu: MethodFn = (ctx) => {
   return { ok: true, value, unit: CARBON.cost.unit, currency: price.currency, derivation: filing ? "calculated" : "estimated", originClass: "derived", lifecycle: filing ? "verified" : "corroborated", admissibility: filing ? "filing_ok" : "display_only", confidence: Math.min(...inputs.map((r) => Number(r.base_confidence))), halfLifeDays: null, basis: CARBON.cost.basis };
 };
 
-const VELOCITY_ID = "pattern_velocity_burst", VELOCITY_VERSION = "1.3.0";
-const MANDATE_ID = "pattern_mandate_capacity", MANDATE_VERSION = "1.3.0";
-const LEADLAG_ID = "pattern_lead_lag", LEADLAG_VERSION = "1.3.0";
-const CROSSMODAL_ID = "pattern_cross_modal", CROSSMODAL_VERSION = "1.3.0";
-const ABATEMENT_ID = "pattern_penalty_abatement", ABATEMENT_VERSION = "1.4.0";
-/** The five pattern detectors (CONNECT-2) by kind: the id and version a pattern is registered under. */
+const VELOCITY_ID = "pattern_velocity_burst", VELOCITY_VERSION = "1.4.0";
+const MANDATE_ID = "pattern_mandate_capacity", MANDATE_VERSION = "1.4.0";
+const LEADLAG_ID = "pattern_lead_lag", LEADLAG_VERSION = "1.4.0";
+const CROSSMODAL_ID = "pattern_cross_modal", CROSSMODAL_VERSION = "1.4.0";
+const ABATEMENT_ID = "pattern_penalty_abatement", ABATEMENT_VERSION = "1.5.0";
+const STACKING_ID = "pattern_regulatory_stacking", STACKING_VERSION = "1.0.0";
+/** The six pattern detectors (CONNECT-2, ENGINE-CORE-FIX-1) by kind: the id and version a pattern is registered under. */
 export const PATTERN_METHODS = {
   velocity: { id: VELOCITY_ID, version: VELOCITY_VERSION }, mandateCapacity: { id: MANDATE_ID, version: MANDATE_VERSION }, leadLag: { id: LEADLAG_ID, version: LEADLAG_VERSION },
-  crossModal: { id: CROSSMODAL_ID, version: CROSSMODAL_VERSION }, penaltyAbatement: { id: ABATEMENT_ID, version: ABATEMENT_VERSION },
+  crossModal: { id: CROSSMODAL_ID, version: CROSSMODAL_VERSION }, penaltyAbatement: { id: ABATEMENT_ID, version: ABATEMENT_VERSION }, regulatoryStacking: { id: STACKING_ID, version: STACKING_VERSION },
 } as const;
 
 export type { MethodRegistry };
@@ -295,6 +301,7 @@ export function createMethodRegistry(): MethodRegistry {
   r.register("derived_values", LEADLAG_ID, LEADLAG_VERSION, patternMethod("leadLag"));
   r.register("derived_values", CROSSMODAL_ID, CROSSMODAL_VERSION, patternMethod("crossModal"));
   r.register("derived_values", ABATEMENT_ID, ABATEMENT_VERSION, patternMethod("penaltyAbatement"));
+  r.register("derived_values", STACKING_ID, STACKING_VERSION, patternMethod("regulatoryStacking"));
   return r;
 }
 /** The process-wide registry the drain and authorEdges default to. */
