@@ -6,7 +6,7 @@ import { test } from "node:test";
 import { MENU } from "@/core/digest/kinds";
 import { entityId } from "@/core/entities/id";
 import { drainExporters } from "@/features/batches";
-import { candidateMenu, neighbourhood } from "@/features/batches/kinds/item-briefs/candidates";
+import { candidateMenu } from "@/features/batches/kinds/item-briefs/candidates";
 import type { BatchExport } from "@/features/batches";
 
 import { MemDb } from "../_support/memdb.ts";
@@ -62,11 +62,13 @@ test("rank: own instrument, linked by weight, then relation and shared-code neig
 
 test("the neighbourhood reads the live graph: relations in both directions, shared codes, the domain's most-filed entities, never the item's own", async () => {
   const db = graph();
-  const n = await neighbourhood(db.client, { self: SELF, weights: new Map([[id("material", "HVO"), 1]]), domain: 3 });
-  assert.deepEqual([...n.near.keys()].sort(), [id("organisation", "Neighbour via code"), id("organisation", "Neighbour via relation")].sort());
-  assert.deepEqual([...n.domain.keys()].sort(), [id("organisation", "Retired one"), id("technology", "Domain technology")].sort(), "raw weights: status is filtered by the menu");
-  const own = await neighbourhood(db.client, { self: SELF, weights: new Map(), domain: 3, itemId: OTHER_ITEM });
-  assert.equal(own.domain.size, 0, "an item's own refs are not its domain neighbours");
+  const hvo = id("material", "HVO");
+  const menu = await candidateMenu(db.client, { self: SELF, weights: new Map([[hvo, 1]]), domain: 3 });
+  assert.ok(menu.ids.includes(id("organisation", "Neighbour via relation")), "the child end of a relation the linked entity is the parent of");
+  assert.ok(menu.ids.includes(id("organisation", "Neighbour via code")), "an entity sharing a formal code with the item's instrument");
+  assert.ok(menu.ids.includes(id("technology", "Domain technology")), "an entity the domain files");
+  const own = await candidateMenu(db.client, { self: SELF, weights: new Map(), domain: 3, itemId: OTHER_ITEM });
+  assert.ok(!own.ids.includes(id("technology", "Domain technology")), "an item's own refs are not its domain neighbours");
 });
 
 test("cap: over the cap the lowest-ranked linked entities drop and the block states the count, never silent; the own instrument and the region lines always stay", async () => {

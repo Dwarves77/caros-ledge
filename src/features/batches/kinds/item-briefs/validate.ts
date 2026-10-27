@@ -65,7 +65,7 @@ export interface RecordLive { items: Map<string, RecordItemLive>; slots: Map<str
 export interface RecordPlan { itemId: string; bytes: number; claims: Obj[]; emission: EmissionPlan | null; /** EMIT-ON-RESIDUE: the blocks a residue entry does not write, each with why (its own judge failed, or the kind does not emit it on residue). */ skipped?: string[] }
 
 /** EMIT-ON-RESIDUE: what a residue entry (valid emission, prose held back) may still write. A block whose OWN judge failed is not written: J20 failed skips the connections, J18 failed skips the entity_ids (the joins that make spurious patterns). J19 does not block obligation_fields. New-entity candidates are proposals about the prose and wait with it. */
-export function residueEmission(entry: Obj, plan: EmissionPlan): { emission: EmissionPlan; skipped: string[] } {
+function residueEmission(entry: Obj, plan: EmissionPlan): { emission: EmissionPlan; skipped: string[] } {
   const failed = new Set(review("item-briefs", entry).failed);
   const skipped: string[] = [];
   const out: EmissionPlan = { ...plan };

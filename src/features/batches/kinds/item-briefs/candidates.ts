@@ -26,7 +26,7 @@ const identsOf = (sb: Db, ids: readonly string[]) => fetchAllByIdChunks<Ident>(i
  * The LIVE graph around an item (GRAPH-GROW-1, no static list): the entities one hop from its own and its linked entities in entity_relations, the entities that share a formal code (entity_identifiers) with them,
  * and, for the item's domain, the entities the other items of that domain are most often filed under. Weights: relations and shared codes counted per entity; the domain by how many items file the entity.
  */
-export async function neighbourhood(sb: Db, seed: Seed): Promise<{ near: Map<string, number>; domain: Map<string, number> }> {
+async function neighbourhood(sb: Db, seed: Seed): Promise<{ near: Map<string, number>; domain: Map<string, number> }> {
   const core = [...new Set([...(seed.self ? [seed.self] : []), ...seed.weights.keys()])];
   const near = new Map<string, number>();
   if (core.length) {
