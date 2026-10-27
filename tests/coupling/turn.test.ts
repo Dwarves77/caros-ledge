@@ -37,7 +37,7 @@ test("INV-CN2-1: every pattern value names its evidence: member, evidence or key
     assert.ok(mine.length >= 1, `${String(p.method_id)} has evidence edges`);
     assert.ok(mine.every((e) => ["member", "evidence", "key"].includes(String(e.edge_kind))));
     assert.equal(new Set(mine.map((e) => `${String(e.from_table)}/${String(e.from_pk)}/${String(e.edge_kind)}`)).size, mine.length, "one edge per evidence row");
-    assert.equal(p.method_version, p.method_id === "pattern_penalty_abatement" ? "1.4.0" : "1.3.0");
+    assert.equal(p.method_version, p.method_id === "pattern_penalty_abatement" ? "1.4.1" : "1.3.1");
     assert.ok(["analysis_ok", "display_only"].includes(String(p.admissibility)), "graded");
   }
   const velocity = patterns(f).find((p) => p.method_id === "pattern_velocity_burst");
@@ -84,7 +84,7 @@ test("the invalidation DAG: a changed evidence row marks the patterns citing it 
   assert.equal(after.length, before * 2, "each stale value is kept, its successor is a new row");
   const successor = after.find((p) => p.supersedes === first?.value_id);
   assert.ok(successor, "the recomputed pattern supersedes the stale one");
-  assert.equal(successor?.method_version, "1.3.0");
+  assert.equal(successor?.method_version, "1.3.1");
   assert.equal(first?.admissibility, "stale");
   assert.ok((countsOf(f, "propagation").recomputed ?? 0) >= 1);
   // the roadmap now lands before the deadline: the pattern no longer holds, the method refuses, the value stays stale

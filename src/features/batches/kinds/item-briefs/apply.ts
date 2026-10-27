@@ -212,7 +212,7 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       for (const s of slotRows) slots.set(s.item_type, [...(slots.get(s.item_type) ?? []), { slot_key: s.slot_key, description: s.description }]);
       const entries = (file.entries as unknown[]).filter(isObj);
       const emit: Map<string, EmitLive> = new Map();
-      for (const e of entries) if (typeof e.item_id === "string" && items.has(e.item_id) && hasEmission(e)) emit.set(e.item_id, await loadEmit(deps, e.item_id, entityTokens(e)));
+      for (const e of entries) if (typeof e.item_id === "string" && items.has(e.item_id) && hasEmission(e)) emit.set(e.item_id, { ...(await loadEmit(deps, e.item_id, entityTokens(e))), ...(typeof file.generated_at === "string" ? { generatedAt: file.generated_at } : {}) });
       return { items, slots, adopted: (await readAdoptedTerms(deps.sb)).adopted, now: deps.now(), allowOverwrite: opts.allowBriefOverwrite === true, emit };
     },
     entry: (e, i, live) => {
