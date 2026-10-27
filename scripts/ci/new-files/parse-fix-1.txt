@@ -1,0 +1,2 @@
+# path | reason (files with no "Ported from" header)
+src/core/parse/space.ts | new in PARSE-FIX-1: the one definition of the HTML whitespace entities every formal matcher (date grammar, findFigures callers, stated, locateSpan) reads as a space.
