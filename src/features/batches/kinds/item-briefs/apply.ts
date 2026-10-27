@@ -12,6 +12,7 @@ import { stripUrlMarkers } from "@/core/shared/url";
 import type { Db } from "@/core/db";
 import { runResult, worst, type RunResult } from "@/core/types/run-result";
 import { recordBriefTerms } from "@/core/vocabulary";
+import { ledgerCoversClaims } from "@/core/grounding/ledger";
 import { corpusPass, tagPass, termPass } from "@/features/flywheel";
 import { groundInjectedLedger, injectBrief, readAdoptedTerms, sectionBrief, sectionsDeriveFromBrief } from "@/features/intake";
 import { runParticipation } from "@/features/intake/flywheel-participation";
@@ -76,9 +77,8 @@ const STEPS: ReadonlyArray<readonly [string, Step]> = [
   ["ground", async (c) => {
     const r = await groundInjectedLedger(intake(c), { itemId: c.itemId, ledger: c.entry.claims, replaceLedger: true, batchId: c.batch });
     c.provenance = (await itemRow(c.deps.sb, c.itemId))?.provenance_status ?? null;
-    // The ground answers "already verified" without storing the ledger when the item is still verified after its brief was written: the entry's claims did not land, and that is a failed step, never a quiet success.
-    const skipped = r.ok && r.detail === "already verified";
-    return { outcome: skipped ? "ground_skipped: the item was still verified when its brief was written, so the authored ledger was not stored" : `${r.ok ? "grounded" : `ground_failed: ${r.detail}`}; provenance_status ${c.provenance ?? "unknown"}`, ok: r.ok && !skipped };
+    // GROUND-FIX-1: "already verified" now means the stored ledger already holds every authored claim (a replaced brief is grounded again), so it is a recorded no-op, not a failure.
+    return { outcome: r.ok && r.detail === "already verified" ? "ground unchanged: the stored ledger already holds the authored claims" : `${r.ok ? "grounded" : `ground_failed: ${r.detail}`}; provenance_status ${c.provenance ?? "unknown"}`, ok: r.ok };
   }],
   // The reader's typed blocks (DIGEST-1 PR B): entity refs, obligation fields through the derive's own path, connections, capture-backed events, the document date, new entity candidates; then the second reader's record (brief_reviews).
   ["emission", async (c) => {
@@ -199,13 +199,14 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       const ids = [...new Set((file.entries as unknown[]).map((e) => (isObj(e) && typeof e.item_id === "string" ? e.item_id : "")).filter((x) => /^[0-9a-f-]{36}$/i.test(x)))];
       const rows = await rowsByIds<{ id: string; item_type: string; item_grade: string | null; provenance_status: string | null; full_brief: string | null; entry_into_force: string | null; compliance_deadline: string | null }>(deps.sb, "intelligence_items", "id, item_type, item_grade, provenance_status, full_brief, entry_into_force, compliance_deadline", ids);
       const items: RecordLive["items"] = new Map();
-      const stored = await rowsByIds<{ id: string; item_id: string; content_md: string | null }>(deps.sb, "intelligence_item_sections", "id, item_id, content_md", ids, "item_id");
+      const stored = await rowsByIds<{ id: string; item_id: string; content_md: string | null; section_key: string; section_order: number }>(deps.sb, "intelligence_item_sections", "id, item_id, content_md, section_key, section_order", ids, "item_id");
+      const ledger = await rowsByIds<{ id: string; intelligence_item_id: string; claim_text: string; source_span: string | null; section_row_id: string | null }>(deps.sb, "section_claim_provenance", "id, intelligence_item_id, claim_text, source_span, section_row_id", ids, "intelligence_item_id");
       for (const r of rows) {
         const p = await itemPool(deps.sb, r.id);
         const [evs, tls] = [await allRows<{ event_date: string | null; date_precision: string | null }>(deps.sb, "item_forward_events", "event_date, date_precision", { where: (q) => q.eq("intelligence_item_id", r.id) }), await allRows<{ milestone_date: string | null; date_precision: string | null }>(deps.sb, "item_timelines", "milestone_date, date_precision", { where: (q) => q.eq("item_id", r.id) })];
         // FWD-COVER-1 + precision: a month or year row is compared at its precision (YYYY-MM, YYYY), a day row as before.
         const suppliedDates = [...evs.map((e) => e.event_date && precisionKey(e.event_date, e.date_precision)), ...tls.map((t) => t.milestone_date && precisionKey(t.milestone_date, t.date_precision))].filter((d): d is string => !!d);
-        items.set(r.id, { sectionsOk: sectionsDeriveFromBrief(r.full_brief, stored.filter((x) => x.item_id === r.id)), suppliedDates, itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief, entryIntoForce: r.entry_into_force, complianceDeadline: r.compliance_deadline });
+        items.set(r.id, { sectionsOk: sectionsDeriveFromBrief(r.full_brief, stored.filter((x) => x.item_id === r.id)), claims: ledger.filter((x) => x.intelligence_item_id === r.id), sections: stored.filter((x) => x.item_id === r.id), suppliedDates, itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief, entryIntoForce: r.entry_into_force, complianceDeadline: r.compliance_deadline });
       }
       const slotRows = await allRows<{ item_type: string; slot_key: string; description: string | null }>(deps.sb, "item_type_required_slots", "item_type, slot_key, description", { cap: 5000 });
       const slots: RecordLive["slots"] = new Map();
@@ -216,7 +217,7 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       return { items, slots, adopted: (await readAdoptedTerms(deps.sb)).adopted, now: deps.now(), allowOverwrite: opts.allowBriefOverwrite === true, emit };
     },
     entry: (e, i, live) => {
-      const done = isObj(e) && typeof e.item_id === "string" && typeof e.body === "string" ? sameBrief(live.items.get(e.item_id)?.fullBrief, e.body) && live.items.get(e.item_id)?.grade === "brief" && live.items.get(e.item_id)?.sectionsOk === true : false;
+      const done = isObj(e) && typeof e.item_id === "string" && typeof e.body === "string" ? sameBrief(live.items.get(e.item_id)?.fullBrief, e.body) && live.items.get(e.item_id)?.grade === "brief" && live.items.get(e.item_id)?.sectionsOk === true && ledgerCoversClaims(live.items.get(e.item_id)?.claims ?? [], Array.isArray(e.claims) ? e.claims : [], live.items.get(e.item_id)?.sections ?? []) : false;
       return done ? { errors: [], done: true } : validateRecordBriefEntry(e, i, live);
     },
     residueReview: (e, key) => (key ? { subjectId: key, score: review("item-briefs", e).score, reviewedBy: review("item-briefs", e).reviewed_by ?? "none" } : null),
