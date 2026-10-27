@@ -1,5 +1,5 @@
 {
-  "ruling": "operator and coordinator 2026-10-27 (DRAIN-2B): the seventeen triangle item briefs that passed the second reader clean are applied to production through the briefs stage (full_brief, sections and the grounded ledger through injectBrief, sectionBrief and groundInjectedLedger; their structured emissions are already live from DRAIN-2). The bad-capture entry (947e08f3) and the residue entries are not carried. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "ruling": "operator and coordinator 2026-10-27 (DRAIN-2B): the sixteen triangle item briefs that passed the second reader clean are applied to production through the briefs stage (full_brief, sections and the grounded ledger through injectBrief, sectionBrief and groundInjectedLedger; their structured emissions are already live from DRAIN-2). The bad-capture entry (947e08f3) and the residue entries are not carried. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
   "steps": [
     {
       "name": "drain-2b-dry",
