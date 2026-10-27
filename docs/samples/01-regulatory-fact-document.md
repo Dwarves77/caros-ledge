@@ -32,7 +32,7 @@ MONITORING: no immediate action is required for operators whose oil cargoes alre
 
 The Regulation binds vessels, flag States and port States, and it places one explicit duty on Member States. Each Member State shall inform the IMO of its decision to deny entry to oil tankers, pursuant to Article 7 of this Regulation, operating in accordance with Regulation 20.5 of Annex I to MARPOL 73/78 into the ports or offshore terminals under its jurisdiction, on the basis of Regulation 20.8.2 of Annex I to MARPOL 73/78.
 
-A forwarder or non-vessel operating carrier that books oil cargo is not named as a duty holder; the practical exposure is a booking that cannot be performed because the contracted vessel is refused entry. Legal Confirmation Required: whether a forwarder arranging a voyage charter carries any contractual liability for a refused vessel depends on the charter terms.
+A forwarder that books oil cargo is not named as a duty holder; the practical exposure is a booking that cannot be performed because the contracted vessel is refused entry. Legal Confirmation Required: whether a forwarder arranging a voyage charter carries any contractual liability for a refused vessel depends on the charter terms.
 
 ### 5. Authoritative Guidance Document Analysis
 
@@ -76,7 +76,7 @@ Effect by vertical: effect on each cargo vertical requires carrier-specific data
 
 After the anniversary of the date of delivery of the ship in 2015, the following shall no longer be allowed: The two categories it names are Category 2 and Category 3 oil tankers operating under Regulation 20.5 of Annex I to MARPOL 73/78. The anniversary falls in 2015, so the date has passed.
 
-*Legal Confirmation Required:* the application of the categories to a given vessel is for counsel and the flag State.
+*Legal Confirmation Required:* the double-hull requirement, the heavy grade oil condition and the Condition Assessment Scheme: whether Category 2 and Category 3 apply to a given vessel is a question for counsel and the flag State.
 
 No phase-in is stated in Articles 4 to 7 beyond the final date above.
 No exceptions are stated in Articles 4 to 7 other than those in Article 8, covered in section 12.
