@@ -9,11 +9,11 @@ import { parse } from 'yaml';
 
 const workflow = parse(readFileSync('.github/workflows/ci.yml', 'utf8'));
 const jobs = workflow.jobs;
-const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'ref', 'isFork', 'parityScope', 'windowsScope', 'edgeScope', 'plansScope', 'migrateResult', 'ruledResult', 'sender', 'targetUrl', 'startsWith'];
+const VARIABLES = ['ev', 'only', 'sctx', 'sstate', 'production', 'ref', 'isFork', 'parityScope', 'edgeScope', 'plansScope', 'migrateResult', 'ruledResult', 'sender', 'targetUrl', 'startsWith'];
 // The ref the run is on and whether the repository is a fork (a test sets them for one case and puts them back).
 const where = { ref: 'refs/heads/main', fork: false };
 // Evaluates a job's `if` for an event, the dispatch input `only`, a status event's context and state, whether the target job derived production, and the scope the `changes` job decided (the expressions use only ==, !=, &&, || and parentheses on those values).
-const runs = (job, event, only = '', status = {}, scope = { parity: 'true', windows: 'true', edge: 'false' }, production = '', migrateResult = 'success', ruledResult = 'skipped') => {
+const runs = (job, event, only = '', status = {}, scope = { parity: 'true', edge: 'false' }, production = '', migrateResult = 'success', ruledResult = 'skipped') => {
   const expr = String(jobs[job].if ?? 'true')
     .replace(/^\$\{\{|\}\}$/g, '')
     .replaceAll('!cancelled()', 'true')
@@ -27,7 +27,6 @@ const runs = (job, event, only = '', status = {}, scope = { parity: 'true', wind
     .replaceAll('github.event.target_url', 'targetUrl')
     .replaceAll('needs.target.outputs.production', 'production')
     .replaceAll('needs.changes.outputs.parity', 'parityScope')
-    .replaceAll('needs.changes.outputs.windows', 'windowsScope')
     .replaceAll('needs.changes.outputs.edge', 'edgeScope')
     .replaceAll('needs.changes.outputs.plans', 'plansScope')
     .replaceAll('needs.changes.result', "'success'")
@@ -35,7 +34,7 @@ const runs = (job, event, only = '', status = {}, scope = { parity: 'true', wind
     .replaceAll('needs.ruled-runs.result', 'ruledResult')
     .replaceAll('==', '===')
     .replaceAll('!=', '!==');
-  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, where.ref, where.fork, scope.parity, scope.windows, scope.edge ?? 'false', scope.plans ?? '', migrateResult, ruledResult, status.sender ?? '', status.target_url ?? '', (value, prefix) => String(value).startsWith(prefix));
+  return Function(...VARIABLES, `return (${expr});`)(event, only, status.context ?? '', status.state ?? '', production, where.ref, where.fork, scope.parity, scope.edge ?? 'false', scope.plans ?? '', migrateResult, ruledResult, status.sender ?? '', status.target_url ?? '', (value, prefix) => String(value).startsWith(prefix));
 };
 // The jobs that run: a job whose `if` holds AND whose needs all ran (a job with no status function in its `if` is skipped with a skipped need; edge-deploy's `!cancelled()` states its own rule on needs.migrate.result).
 const on = (event, only, status, scope, production, migrateResult, ruledResult) => {
@@ -52,23 +51,29 @@ const on = (event, only, status, scope, production, migrateResult, ruledResult) 
 // The status Vercel really posts (read with `gh api repos/Dwarves77/caros-ledge/commits/<sha>/statuses`): creator vercel[bot], target_url on vercel.com.
 const VERCEL_OK = { context: 'Vercel', state: 'success', sender: 'vercel[bot]', target_url: 'https://vercel.com/dwarves77s-projects/caros-ledge/ByMHeLDZdiCHgaD8tZqnooCRd1jQ' };
 
-test('a dispatch with only empty runs everything but baseline, live and screens; only=baseline runs baseline alone; only=turn runs turn alone; only=live runs the live checks and the deployed-preview parity alone', () => {
-  assert.deepEqual(on('workflow_dispatch', ''), ['changes', 'ci', 'parity', 'schema', 'turn', 'windows']);
+test('a dispatch with only empty runs the checks and the turn but not baseline, live, screens or windows; only=windows runs ci-windows alone; only=baseline runs baseline alone; only=turn runs turn alone; only=live runs the live checks and the deployed-preview parity alone', () => {
+  assert.deepEqual(on('workflow_dispatch', ''), ['changes', 'ci', 'parity', 'schema', 'turn']);
+  assert.deepEqual(on('workflow_dispatch', 'windows'), ['windows']);
   assert.deepEqual(on('workflow_dispatch', 'baseline'), ['baseline']);
   assert.deepEqual(on('workflow_dispatch', 'turn'), ['turn']);
   assert.deepEqual(on('workflow_dispatch', 'live'), ['live', 'preview-parity', 'target']);
 });
 
-test('a pull request never runs baseline, the turn or the live jobs; a push to main runs the checks and windows but not the turn, baseline or the live jobs', () => {
-  assert.deepEqual(on('pull_request'), ['changes', 'ci', 'parity', 'schema', 'windows']);
-  assert.deepEqual(on('push'), ['changes', 'ci', 'migrate', 'parity', 'schema', 'windows']);
+test('CI-TRIM-1: a pull request runs changes, ci, schema and parity and never windows, baseline, the turn or the live jobs; a push to main runs changes and migrate alone (edge-deploy and ruled-runs when their outputs say so)', () => {
+  assert.deepEqual(on('pull_request'), ['changes', 'ci', 'parity', 'schema']);
+  assert.deepEqual(on('push'), ['changes', 'migrate']);
+  const both = { parity: 'true', edge: 'true', plans: 'scripts/runs/plans/x.json' };
+  assert.deepEqual(on('push', '', {}, both), ['changes', 'edge-deploy', 'migrate', 'ruled-runs']);
+  for (const job of ['ci', 'schema', 'parity', 'windows']) assert.ok(!on('push', '', {}, both).includes(job), `${job} does not run on a push to main`);
+  assert.ok(!on('pull_request', '', {}, both).includes('windows'), 'ci-windows never runs on a pull request');
 });
 
-test('the expensive jobs follow the scope the `changes` job decided on a pull request, and run unconditionally on a push to main', () => {
-  assert.deepEqual(on('pull_request', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'schema']);
-  assert.deepEqual(on('pull_request', '', {}, { parity: 'true', windows: 'false' }), ['changes', 'ci', 'parity', 'schema']);
-  assert.deepEqual(on('pull_request', '', {}, { parity: 'false', windows: 'true' }), ['changes', 'ci', 'schema', 'windows']);
-  assert.deepEqual(on('push', '', {}, { parity: 'false', windows: 'false' }), ['changes', 'ci', 'migrate', 'parity', 'schema', 'windows'], 'main is never skipped');
+test('parity follows the scope the `changes` job decided on a pull request; ci and schema gate every pull request; nothing but migrate (and the two output-gated jobs) runs on a push to main', () => {
+  assert.deepEqual(on('pull_request', '', {}, { parity: 'false' }), ['changes', 'ci', 'schema']);
+  assert.deepEqual(on('pull_request', '', {}, { parity: 'true' }), ['changes', 'ci', 'parity', 'schema']);
+  assert.deepEqual(on('push', '', {}, { parity: 'true' }), ['changes', 'migrate'], 'main is not re-tested: the pull request was the gate');
+  assert.equal(jobs.windows.needs, undefined, 'ci-windows needs nothing: it is a dispatch');
+  assert.equal(jobs.changes.outputs.windows, undefined, 'the changes job no longer decides a windows scope');
 });
 
 test('migrate runs on a push to main and on a dispatch with only=migrate on any ref, nowhere else: not on a pull request, a fork, a push to another branch, another dispatch or a status; it holds the one database secret and writes nothing to the repository', () => {
@@ -97,7 +102,7 @@ test('migrate runs on a push to main and on a dispatch with only=migrate on any 
 });
 
 test('edge-deploy runs on a push to main that changed the function (edge output true) after a successful migrate, and on a dispatch with only=edge-deploy; nowhere else; it needs migrate and holds only SUPABASE_ACCESS_TOKEN', () => {
-  const edge = { parity: 'true', windows: 'true', edge: 'true' };
+  const edge = { parity: 'true', edge: 'true' };
   assert.ok(on('push', '', {}, edge).includes('edge-deploy'));
   assert.ok(!on('push').includes('edge-deploy'), 'a push that changed no function skips it');
   assert.ok(!on('push', '', {}, edge, '', 'failure').includes('edge-deploy'), 'a failed migrate stops the deploy');
@@ -292,7 +297,7 @@ test('no install runs a package install script: every npm ci and every npm insta
 });
 
 test('RUN-1: ruled-runs runs on a push to main that changed a pending plan, after migrate, and on nothing else: not without a pending plan, not on a pull request, a dispatch, a status, another ref or a fork', () => {
-  const pending = { parity: 'true', windows: 'true', edge: 'false', plans: 'scripts/runs/plans/2026-10-24-arm-1.json' };
+  const pending = { parity: 'true', edge: 'false', plans: 'scripts/runs/plans/2026-10-24-arm-1.json' };
   assert.ok(on('push', '', {}, pending).includes('ruled-runs'));
   assert.ok(!on('push').includes('ruled-runs'), 'a push that changed no plan runs nothing');
   assert.deepEqual(jobs['ruled-runs'].needs, ['changes', 'migrate']);
@@ -312,14 +317,13 @@ test('RUN-1: ruled-runs runs on a push to main that changed a pending plan, afte
   }
 });
 
-test('parity waits for migrate on a push to main (rule 3: the schema is ahead of the code parity reads) and runs as before everywhere else', () => {
-  assert.deepEqual(jobs.parity.needs, ['changes', 'migrate', 'ruled-runs']);
-  assert.ok(on('push', '', {}, undefined, '', 'success').includes('parity'), 'a push to main: parity runs after a successful migrate');
-  for (const result of ['failure', 'skipped', 'cancelled']) assert.ok(!on('push', '', {}, undefined, '', result).includes('parity'), `a push whose migrate is ${result} skips parity`);
-  assert.deepEqual(on('pull_request', '', {}, undefined, '', 'skipped'), ['changes', 'ci', 'parity', 'schema', 'windows'], 'a pull request: migrate is skipped and parity still runs');
-  assert.ok(on('workflow_dispatch', '', {}, undefined, '', 'skipped').includes('parity'), 'a dispatch with only empty: migrate is skipped and parity still runs');
-  assert.ok(!on('pull_request', '', {}, { parity: 'false', windows: 'true' }, '', 'skipped').includes('parity'), 'the scope still skips parity on a pull request');
-  for (const only of ['baseline', 'turn', 'live', 'screens', 'edge-deploy']) assert.ok(!on('workflow_dispatch', only).includes('parity'), `only=${only} runs no parity`);
+test('CI-TRIM-1: parity gates a pull request and a dispatch with only empty and never runs on a push to main, so it waits for neither migrate nor ruled-runs; the scope still skips it on a pull request', () => {
+  assert.deepEqual(jobs.parity.needs, 'changes');
+  for (const result of ['success', 'failure', 'skipped', 'cancelled']) assert.ok(!on('push', '', {}, undefined, '', result).includes('parity'), `a push (migrate ${result}) runs no parity`);
+  assert.deepEqual(on('pull_request', '', {}, undefined, '', 'skipped'), ['changes', 'ci', 'parity', 'schema'], 'a pull request: migrate is skipped and parity still runs');
+  assert.ok(on('workflow_dispatch', '', {}, undefined, '', 'skipped').includes('parity'), 'a dispatch with only empty runs parity');
+  assert.ok(!on('pull_request', '', {}, { parity: 'false' }, '', 'skipped').includes('parity'), 'the scope still skips parity on a pull request');
+  for (const only of ['baseline', 'turn', 'live', 'screens', 'edge-deploy', 'windows']) assert.ok(!on('workflow_dispatch', only).includes('parity'), `only=${only} runs no parity`);
 });
 
 test('a change to ci.yml is in the parity scope, so the workflow edit that orders parity after migrate is itself checked by parity', async () => {
@@ -331,11 +335,49 @@ test('FIX-QUOTE-1: the ruled-runs job receives the free EIA key as the turn job 
   assert.match(String(jobs['ruled-runs'].env.EIA_API_KEY), /secrets\.EIA_API_KEY/);
 });
 
-test('PARITY-4: parity waits for ruled-runs on a push to main and runs whether it succeeded, was skipped or failed; a cancelled ruled-runs or a migrate that did not succeed skips it', () => {
-  const pending = { parity: 'true', windows: 'true', edge: 'false', plans: 'scripts/runs/plans/x.json' };
-  assert.ok(jobs.parity.needs.includes('ruled-runs'), 'the capture never reads production while a plan writes it');
-  for (const result of ['success', 'skipped', 'failure']) assert.ok(on('push', '', {}, pending, '', 'success', result).includes('parity'), `ruled-runs ${result}`);
-  assert.ok(!on('push', '', {}, pending, '', 'success', 'cancelled').includes('parity'), 'ruled-runs cancelled');
-  assert.ok(!on('push', '', {}, pending, '', 'failure', 'success').includes('parity'), 'migrate failed');
-  assert.ok(on('push').includes('parity') && on('pull_request').includes('parity') && on('workflow_dispatch', '').includes('parity'), 'no plan, no change');
+test('CI-TRIM-1: ruled-runs holds the main production signed-in group and the member account, and runs the visibility check only when the newest results file names applied items; parity no longer carries it', () => {
+  const steps = jobs['ruled-runs'].steps;
+  assert.equal(jobs['ruled-runs'].concurrency.group, 'signed-in-browser-main');
+  assert.equal(jobs['ruled-runs'].concurrency['cancel-in-progress'], false);
+  assert.ok(secretsOf('ruled-runs').has('LIVE_SMOKE_EMAIL') && secretsOf('ruled-runs').has('LIVE_SMOKE_PASSWORD'), 'the visibility check signs in as the member');
+  const visible = steps.find((s) => /scripts\/runs\/visible\.mjs/.test(String(s.run ?? '')));
+  assert.ok(visible, 'ruled-runs runs visible.mjs');
+  assert.match(String(visible.run), /--base https:\/\/carosledge\.com/);
+  assert.match(String(visible.if), /steps\.visible\.outputs\.visible == 'true'/);
+  const deciding = steps.find((s) => s.id === 'visible');
+  assert.match(String(deciding.run), /changes\.mjs --visible/);
+  assert.ok(steps.indexOf(deciding) > steps.findIndex((s) => /execute\.mjs/.test(String(s.run ?? ''))), 'the decision reads the results the plans just wrote');
+  assert.ok(steps.indexOf(visible) > steps.indexOf(deciding));
+  assert.ok(!jobs.parity.steps.some((s) => /visible\.mjs/.test(String(s.run ?? '')) || String(s.uses ?? '').startsWith('actions/download-artifact')), 'parity no longer runs the visibility check');
+});
+
+test('CI-TRIM-1: ruled-runs installs Playwright Chromium only when a pending plan drives a browser or the visibility check will run; no install is unconditional', () => {
+  const steps = jobs['ruled-runs'].steps;
+  const installs = steps.filter((s) => /playwright install/.test(String(s.run ?? '')));
+  assert.equal(installs.length, 2, 'one before the plans (a browser step), one after them (the visibility check)');
+  for (const s of installs) assert.ok(s.if, `${s.name} is conditional`);
+  assert.match(String(installs[0].if), /steps\.browser\.outputs\.browser == 'true'/);
+  assert.match(String(installs[1].if), /steps\.visible\.outputs\.visible == 'true' && steps\.browser\.outputs\.browser != 'true'/, 'a Chromium the plans already installed is not installed twice');
+  assert.match(String(steps.find((s) => s.id === 'browser').run), /changes\.mjs --browser/);
+  const exec = steps.findIndex((s) => /execute\.mjs/.test(String(s.run ?? '')));
+  assert.ok(steps.indexOf(installs[0]) < exec && steps.indexOf(installs[1]) > exec);
+});
+
+test('CI-TRIM-1: a plan needs a browser when a step runs a capture or sweep stage or chains; briefs, connect, propagate and ops steps alone do not', async () => {
+  const { needsBrowser, latestResults } = await import('../../scripts/ci/changes.mjs');
+  const plan = (...steps) => JSON.stringify({ steps });
+  const files = { 'a.json': plan({ stage: 'briefs' }, { stage: 'connect', chain: false }, { stage: 'propagate' }, { stage: 'ops' }), 'b.json': plan({ stage: 'briefs' }, { stage: 'capture' }), 'c.json': plan({ stage: 'sweep' }), 'd.json': plan({ stage: 'sweep-research' }), 'e.json': plan({ stage: 'briefs', chain: true }), 'f.json': 'not json' };
+  const read = (p) => files[p];
+  assert.equal(needsBrowser(['a.json'], read), false);
+  for (const p of ['b.json', 'c.json', 'd.json', 'e.json', 'f.json']) assert.equal(needsBrowser([p], read), true, p);
+  assert.equal(needsBrowser(['a.json', 'b.json'], read), true, 'one browser plan among several');
+  assert.equal(needsBrowser([], read), false);
+  // the newest results file decides the visibility check
+  const dir = { 'old.json': { m: 1, body: JSON.stringify({ applied_item_ids: ['x'] }) }, 'new.json': { m: 2, body: JSON.stringify({ applied_item_ids: [] }) } };
+  const seams = { list: () => Object.keys(dir), mtime: (p) => dir[p.split('/').pop()].m, read: (p) => dir[p.split('/').pop()].body };
+  assert.deepEqual(latestResults('r', seams), { file: 'r/new.json', ids: [] }, 'the newest file is empty, so no visibility check');
+  dir['new.json'].body = JSON.stringify({ applied_item_ids: ['a', 'b'] });
+  assert.deepEqual(latestResults('r', seams), { file: 'r/new.json', ids: ['a', 'b'] });
+  assert.equal(latestResults('r', { ...seams, list: () => [] }), null);
+  assert.equal(latestResults('r', { ...seams, list: () => { throw new Error('ENOENT'); } }), null, 'no results directory is no results');
 });
