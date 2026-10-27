@@ -17,7 +17,6 @@ import { themeWorld } from "../batches/worlds.ts";
 import { adminEntry, adminWorld, ref, ROWS } from "./admin-world.ts";
 
 const apply = (w: ReturnType<typeof adminWorld>, entries: unknown[]) => applyBatch("admin-opportunity-findings", w.deps, { content: JSON.stringify(batchFile("admin-opportunity-findings", entries)), dry: true, runId: "a1" });
-const ten = Array.from({ length: 10 }, (_, i) => `substation ${i + 1}: feeder`).join("\n");
 
 test("CONTAIN-FIX-1 in the admin kind: an invented figure is residue naming it; a gap denying a held figure is refused by the shared write-back; the grounded entry is unaffected", async () => {
   const w = adminWorld();
