@@ -3,9 +3,9 @@
 // Ported from old_repo/scripts/entities/write-entity-scope.mjs (lines 22-32)
 // Browser-safe: the closed list of entity kinds, the id shape check, the corridor id scheme and the ONE corridor-name parser. No hashing here
 // (that needs node:crypto and lives in id.ts), so a client bundle can read a kind from an id without pulling a hash in (B-1025).
-/** The kinds the platform seeds. The kind is OPEN (migration 0144): any snake_case token is a kind, and the reader mints new ones. This list names the seeded ones for code that wants them (labels, ordering), never as a gate. */
-const KINDS = ["corridor", "node", "jurisdiction", "organisation", "asset", "instrument", "obligation", "method", "technology", "signpost", "person", "material"] as const;
-export type EntityKind = (typeof KINDS)[number] | (string & {});
+/** The kinds the platform seeds, as a type only. The kind is OPEN (migration 0144): any snake_case token is a kind, and the reader mints new ones; nothing gates on this list. */
+type SeededKind = "corridor" | "node" | "jurisdiction" | "organisation" | "asset" | "instrument" | "obligation" | "method" | "technology" | "signpost" | "person" | "material";
+export type EntityKind = SeededKind | (string & {});
 /** The shape of a kind token: the same check the database holds (entities_kind_shape). */
 const KIND_TOKEN = /^[a-z][a-z0-9_]*$/;
 export const isKindToken = (k: unknown): k is string => typeof k === "string" && KIND_TOKEN.test(k);
