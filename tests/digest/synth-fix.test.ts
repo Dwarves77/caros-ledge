@@ -20,20 +20,22 @@ import { adminEntry, adminWorld, ref, ROWS } from "./admin-world.ts";
 const apply = (w: ReturnType<typeof adminWorld>, entries: unknown[]) => applyBatch("admin-opportunity-findings", w.deps, { content: JSON.stringify(batchFile("admin-opportunity-findings", entries)), dry: true, runId: "a1" });
 const ten = Array.from({ length: 10 }, (_, i) => `substation ${i + 1}: feeder`).join("\n");
 
-test("B2: a count word the evidence does not hold fails (eleven against a cluster of ten rows); the same word as the cluster's own count passes", () => {
-  assert.match(groundingReasons({ texts: { finding: "The cluster names eleven substations in the zone." }, evidence: [ten], counts: [10] }).join(), /count "eleven"/);
-  assert.deepEqual(groundingReasons({ texts: { finding: "The cluster names ten substations in the zone." }, evidence: [ten], counts: [10] }), []);
+test("B2: a digit count the evidence does not hold fails (11 against a cluster of ten rows); the cluster's own count passes; spelled-out counts are not read", () => {
+  assert.match(groundingReasons({ texts: { finding: "The cluster names 11 substations in the zone." }, evidence: [ten], counts: [10] }).join(), /number "11"/);
+  assert.deepEqual(groundingReasons({ texts: { finding: "The cluster names 10 substations in the zone." }, evidence: [ten], counts: [10] }), []);
+  assert.deepEqual(groundingReasons({ texts: { finding: "The cluster names eleven substations in the zone." }, evidence: [ten], counts: [10] }), [], "no count-word list (ADR-053)");
 });
 
-test("B2: an acronym or term absent from every cited capture fails, naming it; present, it passes; numbers match as the same normalised number and a percent keeps its sign", () => {
+test("B2: digit numbers match as the same normalised number and a percent keeps its sign; terms, acronyms and TitleCase phrases are never word-matched", () => {
   const cap = "Ports on the core network (TEN-T) must offer shore power; the 1,000 kW limit applies to 45 % of calls.";
-  assert.match(groundingReasons({ texts: { signpost: "Watch TEN-T core and comprehensive ports" }, evidence: ["Shore power is required at ports."] }).join(), /term "TEN-T"/);
   assert.deepEqual(groundingReasons({ texts: { signpost: "Watch TEN-T core ports; limit 1000 kW for 45% of calls" }, evidence: [cap] }), []);
+  assert.match(groundingReasons({ texts: { signpost: "limit 2000 kW for 45% of calls" }, evidence: [cap] }).join(), /number "2000"/);
   assert.match(groundingReasons({ texts: { f: "a 45% share" }, evidence: ["a 45 kW limit"] }).join(), /percent "45%"/);
-  assert.deepEqual(groundingReasons({ texts: { f: "## 1. What It Is\n\nThe Emissions Trading System applies." }, evidence: ["The Emissions Trading System applies."], ignore: ["## 1. What It Is"] }), [], "a heading passed as ignore is not read, and a sentence-initial word is not part of a term");
+  assert.deepEqual(groundingReasons({ texts: { f: "Watch TEN-T and the European Union Member States; Operational Impact follows." }, evidence: ["The Union sets shore power rules."] }), [], "ungrounded terms are the second reader's, not a literal-substring check");
+  assert.deepEqual(groundingReasons({ texts: { f: "## 1. What It Is\n\nThe rule applies." }, evidence: ["The rule applies."], ignore: ["## 1. What It Is"] }), [], "a heading passed as ignore is not read");
 });
 
-test("B3: a coverage gap whose every figure and term a cited capture already holds is a contradiction; a gap naming what no capture holds passes", () => {
+test("B3: a coverage gap whose figure and unit a cited capture already holds is a contradiction; a gap naming what no capture holds passes", () => {
   const evidence = ["The median grid connection queue is 31 months in the transmission zone."];
   assert.match(groundingReasons({ texts: {}, gaps: ["the 31 months queue length"], evidence }).join(), /gap contradiction: coverage_gaps\[0\]/);
   assert.deepEqual(groundingReasons({ texts: {}, gaps: ["no HVO price series for the zone"], evidence }), [], "a gap naming an absent series passes");
@@ -43,17 +45,16 @@ test("B3: a coverage gap whose every figure and term a cited capture already hol
   assert.deepEqual(groundingReasons({ texts: {}, gaps: ["the installed charging capacity at the mandate date"], evidence }), []);
 });
 
-test("B2/B3 and B4 in the admin kind: an invented count, an invented term and a contradicted gap are all residue, and the dry apply lists EVERY failing rule of the entry in one note", async () => {
+test("B2/B3 and B4 in the admin kind: an invented count and a contradicted gap are all residue, and the dry apply lists EVERY failing rule of the entry in one note", async () => {
   const w = adminWorld();
   const base = adminEntry();
-  const findings = [{ ...(base.findings as Record<string, unknown>[])[0], sourced_finding_md: `The mandate requires 50 MW [${ref(ROWS.item)}] and eleven substations [${ref(ROWS.grid)}], also [${ref(ROWS.oem)}].` }];
-  const signposts = [{ ...(base.signposts as Record<string, unknown>[])[0], observable: "TEN-T core ports reporting" }];
-  const r = await apply(w, [adminEntry({ findings, signposts, coverage_gaps: [{ missing_input: "the queue of 31 months", source_class: "govIntergov" }] })]);
+  const findings = [{ ...(base.findings as Record<string, unknown>[])[0], sourced_finding_md: `The mandate requires 50 MW [${ref(ROWS.item)}] and 11 substations [${ref(ROWS.grid)}], also [${ref(ROWS.oem)}].` }];
+  const r = await apply(w, [adminEntry({ findings, coverage_gaps: [{ missing_input: "the queue of 31 months", source_class: "govIntergov" }] })]);
   assert.equal(r.counts.residue, 1);
   const note = r.notes[0] ?? "";
   assert.doesNotMatch(note, /coverage_gaps\[0\] states/);
-  assert.match(note, /3 failing rule\(s\)/);
-  for (const part of [/count "eleven"/, /term "TEN-T"/, /gap contradiction/]) assert.match(note, part);
+  assert.match(note, /2 failing rule\(s\)/);
+  for (const part of [/number "11"/, /gap contradiction/]) assert.match(note, part);
   assert.equal(r.counts.valid, 0);
   assert.equal((await apply(w, [adminEntry()])).counts.valid, 1, "the grounded entry is unaffected");
 });

@@ -155,11 +155,11 @@ export function validateSynthesisEntry(e: unknown, i: number, live: SynthLive): 
   errors.push(...wb.errors.filter((m) => !errors.includes(m)));
   if (errors.length) return { errors };
   // a reading with no pattern, finding or inference (only coverage gaps) holds no analysis for the second reader to judge
-  // SYNTH-FIX-1 B2/B3: every number, count word, acronym and term stated holds in a cited row or capture; a gap is held to it and contradicted by what a capture holds
+  // SYNTH-FIX-1 B2/B3: every digit number or percentage stated holds in a cited row or capture; a gap is held to it and contradicted by what a capture holds
   const evidence = [...cited].flatMap((k) => { const r = rows.get(k) as ClusterRow; return [JSON.stringify(r.figure ?? ""), r.date ?? "", live.captures.get(r.quote_capture_id ?? "") ?? "", live.claims?.get(k) ?? ""]; });
   const grounding = patterns.length || findings.length ? groundingReasons({
     texts: { ...Object.fromEntries(findings.flatMap((f, n) => [[`finding[${n}]`, [f.title, f.md].join(String.fromCharCode(10))], ...f.inferences.map((x, m) => [`finding[${n}].inference[${m}]`, String(x.text)])])), ...Object.fromEntries(tagged.map((x, n) => [`tagged_inference[${n}]`, x.text])), ...writebackOf(e).texts },
-    gaps: writebackOf(e).gaps, evidence, values: [...cited].flatMap((k) => { const r = rows.get(k) as ClusterRow; return [JSON.stringify(r.figure ?? ""), r.date ?? "", live.claims?.get(k) ?? ""]; }), counts: [cluster.rows.length, cluster.surfaces.length, cited.size, items.length, ...cluster.surfaces.map((s) => cluster.rows.filter((r) => r.surface === s).length)],
+    gaps: writebackOf(e).gaps, evidence, counts: [cluster.rows.length, cluster.surfaces.length, cited.size, items.length, ...cluster.surfaces.map((s) => cluster.rows.filter((r) => r.surface === s).length)],
   }) : [];
   const rv = patterns.length || findings.length || tagged.length ? review("admin-opportunity-findings", e) : { required: [] as string[], score: 1, reasons: [] as string[], residue: false, reviewed_by: null };
   const why = [...(patterns.length || findings.length ? [singleSourceReason([...cited].map((k) => ({ table: (rows.get(k) as ClusterRow).table, surface: (rows.get(k) as ClusterRow).surface })))].flatMap((r) => r ?? []) : []), ...grounding, ...rv.reasons.map((r) => `second reader: ${r}`)];

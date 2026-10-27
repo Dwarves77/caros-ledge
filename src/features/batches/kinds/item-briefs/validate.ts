@@ -173,7 +173,7 @@ export function validateRecordBriefEntry(entry: unknown, i: number, live: Record
   // The reader's typed blocks (UNIFIED-PRB-DESIGN section 1): structural checks first, then the second reader's binary judges; every required check passes or the brief is residue naming the criterion.
   const emission = validateEmission(entry, tag, live.emit.get(entry.item_id) ?? { captures: new Map(), ids: new Map(), objects: new Map(), locate: null });
   errors.push(...emission.errors);
-  // SYNTH-FIX-1 B2: the body and the metadata prose state no number, count, acronym or term the item's pool does not hold (headings and the legal callout are structure, not claims)
+  // SYNTH-FIX-1 B2: the body and the metadata prose state no digit number or percentage the item's pool does not hold (headings and the legal callout are structure, not claims)
   if (body.trim()) {
     const prose = meta.ok ? [meta.value.what_is_it, meta.value.why_matters, meta.value.what_it_changes].filter((x): x is string => typeof x === "string") : [];
     for (const r of groundingReasons({ texts: { body, ...Object.fromEntries(prose.map((x, n) => [`metadata[${n}]`, x])) }, evidence: [item.poolText], counts: [claims.length, sections.length], ignore: [LEGAL_CALLOUT, ...SEVERITIES.map((v) => v.label), ...body.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("#"))] })) residue.push(`${tag}: ${r}`);
