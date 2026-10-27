@@ -215,7 +215,9 @@ export function makeDb(client, log = []) {
     from: (t) => new Q(t),
     async rpc(name, args = {}) {
       const keys = Object.keys(args);
-      const params = keys.map((k) => (args[k] !== null && typeof args[k] === "object" && !Array.isArray(args[k]) ? JSON.stringify(args[k]) : args[k]));
+      // a json argument (an object, or an array of objects) is sent as json text; an array of scalars stays an array (text[], uuid[])
+      const isJson = (v) => v !== null && typeof v === "object" && (!Array.isArray(v) || v.some((x) => x !== null && typeof x === "object"));
+      const params = keys.map((k) => (isJson(args[k]) ? JSON.stringify(args[k]) : args[k]));
       const r = await run(`select * from public.${q(name)}(${keys.map((k, i) => `${q(k)} => $${i + 1}`).join(", ")})`, params);
       if (!r.ok) return { data: null, error: r.error };
       const rows = r.r.rows;

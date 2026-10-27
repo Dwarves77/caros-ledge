@@ -226,7 +226,7 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       if (!plan) return { counts: {}, notes: [], account: "emission blocks written: none (no typed blocks)" };
       const it = await itemRow(deps.sb, item.plan.itemId);
       const w = await writeEmission(deps, item.plan.itemId, it?.source_id ?? null, plan, new Set(plan.captureIds));
-      const planned = { entity_ids: plan.entities.length, obligation_fields: plan.objects.length, connections: plan.connections.length, events: plan.events.length, document_date: plan.document_date ? 1 : 0 };
+      const planned = { entity_ids: plan.entities.length, obligation_fields: plan.objects.length, connections: plan.connections.length, events: plan.events.length, document_date: plan.document_date ? 1 : 0, new_entity_candidates: plan.candidates.length };
       const done = Object.entries(planned).filter(([, n]) => n > 0).map(([k, n]) => `${k} ${n}`);
       return { counts: w.counts, notes: w.notes, account: `emission blocks written: ${done.join(", ") || "none"}${skipped.length ? `; skipped: ${skipped.join(", ")}` : ""}${w.notes.length ? "; failed: " + w.notes.length : ""}` };
     },

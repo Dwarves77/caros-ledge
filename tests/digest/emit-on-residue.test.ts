@@ -34,13 +34,14 @@ test("a residue entry with a valid emission writes its blocks, not its prose, an
   assert.equal(r.counts.residue_emitted, 1, r.notes.join("\n"));
   const c = counts(w);
   assert.ok(c.refs > 0 && c.objects === 2 && c.relations === 1 && c.events === 1, JSON.stringify(c));
-  assert.equal(c.terms, 0, "a new-entity candidate is about the prose and waits with it");
+  assert.equal(c.terms, 1, "a new-entity candidate rests on its own verified quote: it is minted and proposed although the prose waits");
+  assert.ok(w.db.rows("entities").some((e) => e.canonical_name === "Maersk Line A/S" && e.method_version != null), "the candidate is minted");
   assert.equal(String((w.db.rows("intelligence_items")[0] as { full_brief?: string }).full_brief ?? ""), stored, "the prose is not written");
   assert.equal(w.db.rows("intelligence_item_sections").length, 0);
   assert.equal(w.db.rows("agent_run_searches").find((x) => x.id === w.cap)?.document_date, "2023-09-13");
   const row = reviewRow(w);
   assert.equal(row.residue, true);
-  assert.match(row.reasons, /emission blocks written: entity_ids \d+, obligation_fields 2, connections 1, events 1, document_date 1; skipped: new_entity_candidates/);
+  assert.match(row.reasons, /emission blocks written: entity_ids \d+, obligation_fields 2, connections 1, events 1, document_date 1, new_entity_candidates 1/);
 });
 
 test("a J20 failure skips the entry's connections and a J18 failure its entity_ids; a J19 failure does not block obligation_fields", async () => {

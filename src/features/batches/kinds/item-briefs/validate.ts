@@ -64,14 +64,13 @@ export interface RecordItemLive { /** The stored sections derive from the stored
 export interface RecordLive { items: Map<string, RecordItemLive>; slots: Map<string, SlotRow[]>; adopted: AdoptedTerms; now: Date; allowOverwrite: boolean; /** The live material of the entries that carry typed blocks (DIGEST-1 PR B), by item. */ emit: ReadonlyMap<string, EmitLive> }
 export interface RecordPlan { itemId: string; bytes: number; claims: Obj[]; emission: EmissionPlan | null; /** EMIT-ON-RESIDUE: the blocks a residue entry does not write, each with why (its own judge failed, or the kind does not emit it on residue). */ skipped?: string[] }
 
-/** EMIT-ON-RESIDUE: what a residue entry (valid emission, prose held back) may still write. A block whose OWN judge failed is not written: J20 failed skips the connections, J18 failed skips the entity_ids (the joins that make spurious patterns). J19 does not block obligation_fields. New-entity candidates are proposals about the prose and wait with it. */
+/** EMIT-ON-RESIDUE: what a residue entry (valid emission, prose held back) may still write. A block whose OWN judge failed is not written: J20 failed skips the connections, J18 failed skips the entity_ids (the joins that make spurious patterns). J19 does not block obligation_fields. New-entity candidates are NOT skipped: a block of the same entry may name the minted id, and the mint rests on its own verified quote, not on the prose. */
 function residueEmission(entry: Obj, plan: EmissionPlan): { emission: EmissionPlan; skipped: string[] } {
   const failed = new Set(review("item-briefs", entry).failed);
   const skipped: string[] = [];
   const out: EmissionPlan = { ...plan };
   if (plan.connections.length && failed.has("J20")) { out.connections = []; skipped.push("connections (J20 failed)"); }
   if (plan.entities.length && failed.has("J18")) { out.entities = []; skipped.push("entity_ids (J18 failed)"); }
-  if (plan.candidates.length) { out.candidates = []; skipped.push("new_entity_candidates (wait with the prose)"); }
   return { emission: out, skipped };
 }
 
