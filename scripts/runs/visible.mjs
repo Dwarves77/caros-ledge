@@ -7,7 +7,6 @@ import { register } from "node:module";
 import { parseArgs } from "node:util";
 
 import { isMain } from "../lib/fs.mjs";
-
 import { itemOnPageFinding as finding, MARKER, ITEM_ATTR } from "../lib/item-on-page.mjs";
 
 export { finding, MARKER, ITEM_ATTR };
