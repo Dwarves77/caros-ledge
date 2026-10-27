@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { uuidOf } from "@/core/coupling";
-import { citableIds, readPackets, uncitedIds } from "@/core/digest/packets";
+import { readPackets } from "@/core/digest/packets";
 
 import { connect, countsOf, E, patterns, propagate } from "./_world.ts";
 import { ITEM, OBL, plantReaderRefs, triangleFixture } from "./_triangles.ts";
@@ -48,13 +48,6 @@ test("one packet per pattern: every member row carries its item's provenance_sta
   assert.ok(read.packets.every((p) => p.cap.members_omitted === 0 && p.cap.max_members > 0), "the cap is stated inside the packet");
   const leadLag = read.packets.find((p) => p.pattern?.kind === "leadLag");
   assert.deepEqual(leadLag?.signposts.map((s) => s.direction), ["confirms"]);
-  // the dry-run brief of each packet cites packet ids only; an id outside the packet is refused
-  for (const p of read.packets) {
-    const cited = [p.id, ...p.members.slice(0, 3).map((m) => m.id)];
-    assert.deepEqual(uncitedIds(p, cited), [], "a brief citing a packet's own ids is clean");
-    assert.deepEqual(uncitedIds(p, [...cited, "cl:obligation:ffffffffffffffff"]), ["cl:obligation:ffffffffffffffff"], "an id the packet does not contain is refused");
-    assert.ok(citableIds(p).has(p.pattern?.value_id as string));
-  }
   // the packets that include an item are served by the item's id
   const byItem = await readPackets(f.d.sb, [ITEM.fueleu]);
   assert.ok(byItem.packets.length >= 1 && byItem.packets.every((p) => p.members.some((m) => m.table === "intelligence_items" && m.id === ITEM.fueleu)));

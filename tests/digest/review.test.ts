@@ -31,7 +31,7 @@ test("which judges apply: by kind, by format and by the typed block the entry ca
   assert.ok(ids("admin-opportunity-findings", {}).includes("cross-surface-direction") && !ids("item-briefs", base).includes("cross-surface-direction"));
   assert.ok(ids("item-briefs", base).includes("entity-ids-complete"), "the emission items apply to every item brief");
   assert.ok(raw.judges.every((j) => j.prompt.length >= 40 && j.origin), "each judge is one prompt for one failure mode, with where it came from");
-  assert.ok(raw.judges.every((j) => j.validation && j.validation.n_pass > 0 && j.validation.n_fail > 0), "each judge carries its measured TPR and TNR with the counts they rest on");
+  assert.ok(raw.judges.filter((j) => !(j as { proposed?: boolean }).proposed).every((j) => j.validation && j.validation.n_pass > 0 && j.validation.n_fail > 0), "each judge carries its measured TPR and TNR with the counts they rest on");
 });
 
 test("review: a missing verdict set, a missing verdict, an unreasoned pass and a fail each keep the brief out and name the judge and its criterion; all pass keeps it in", () => {

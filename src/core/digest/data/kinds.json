@@ -197,7 +197,7 @@
   },
   {
    "id": "admin-opportunity-findings",
-   "label": "Admin capital and bottleneck findings (platform admin only)",
+   "label": "Admin capital and bottleneck findings from graph clusters (platform admin only)",
    "exporter": "admin-opportunity-findings",
    "authoringGuide": {
     "schema": "docs/authoring/admin-opportunity-findings.md",
@@ -210,32 +210,19 @@
      "source-credibility-model"
     ]
    },
-   "validator": "src/features/batches/kinds/admin-opportunity-findings/validate.ts#validateAdminFindingEntry",
+   "validator": "src/features/batches/kinds/admin-opportunity-findings/validate.ts#validateSynthesisEntry",
    "batchDir": "drain/batches/admin-opportunity-findings",
    "batchRe": "^admin-opportunity-findings-\\d{3}\\.json$",
    "batchPrefix": "admin-opportunity-findings",
-   "leaseKey": "pattern_value_id",
-   "idKey": "pattern_value_id",
+   "leaseKey": null,
+   "idKey": "cluster_id",
    "applyPath": "src/features/batches/kinds/admin-opportunity-findings/apply.ts#applyAdminFindings",
    "applyStep": "admin-findings",
-   "needsPackets": true,
+   "needsPackets": false,
    "namesFile": true,
    "batchSize": 15,
    "maxBatchesPerRun": 1,
    "windowDays": 180,
-   "lensOfMethod": {
-    "pattern_mandate_capacity": "supply_demand_bottleneck",
-    "pattern_penalty_abatement": "penalty_abatement_crossover",
-    "pattern_lead_lag": "capital_offtake_grant"
-   },
-   "conditionalMethods": [
-    "pattern_velocity_burst",
-    "pattern_cross_modal"
-   ],
-   "memberLens": {
-    "capacity": "supply_demand_bottleneck",
-    "capital": "capital_offtake_grant"
-   },
    "secondReader": true
   }
  ]
