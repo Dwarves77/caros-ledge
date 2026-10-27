@@ -199,17 +199,16 @@ jobs:
     timeout-minutes: 60
     # Same `production` environment and secrets as `turn`. If the environment has required reviewers (a repository setting), the job waits for one and runs nothing meanwhile.
     environment: production
-    # CI-TRIM-1 (CI-BROWSER-1): this job also signs in to production as the member (the visibility check below), so it serialises with the other production signed-in jobs in signed-in-browser-main. GitHub keeps one running and one pending job per group.
+    # CI-TRIM-1: a plan's data must always apply, so this job is in NO signed-in group and its group can never drop it. GitHub keeps one running and one pending job per group and a newer pending job replaces the older one, so a shared or dedicated group could drop a push's plan;
+    # the group is therefore per commit (every push has its own, nothing to replace) and never cancels. The ledger (harness_runs) makes two overlapping runs skip the steps already applied. The visibility check is the separate `visible` job.
     concurrency:
-      group: signed-in-browser-main
+      group: ruled-runs-${{ github.sha }}
       cancel-in-progress: false
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
       EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
-      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
-      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -229,18 +228,6 @@ jobs:
         env:
           PLANS: ${{ needs.changes.outputs.plans }}
         run: node scripts/runs/execute.mjs $PLANS
-      - name: Did a plan apply items? (the newest results file names them; scripts/ci/changes.mjs --visible)
-        id: visible
-        run: node scripts/ci/changes.mjs --visible
-      - name: Playwright Chromium (for the visibility check, when no plan installed one)
-        if: ${{ steps.visible.outputs.visible == 'true' && steps.browser.outputs.browser != 'true' }}
-        run: npx playwright install --with-deps chromium
-      # DRAIN-FIX-2 / CI-BROWSER-1 item 5: the signed-in visibility check over the items the ruled run applied (moved here from parity by CI-TRIM-1); it runs only when the newest results file has a non-empty applied_item_ids.
-      - name: Visibility of the items a ruled run applied (scripts/runs/visible.mjs)
-        if: ${{ steps.visible.outputs.visible == 'true' }}
-        env:
-          RESULTS_FILE: ${{ steps.visible.outputs.file }}
-        run: node scripts/runs/visible.mjs "$RESULTS_FILE" --base https://carosledge.com
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -248,6 +235,46 @@ jobs:
           name: ruled-run-results
           path: scripts/runs/results
           if-no-files-found: ignore
+
+  # CI-TRIM-1: the signed-in visibility check over the items a ruled run applied (DRAIN-FIX-2 / CI-BROWSER-1 item 5; scripts/runs/visible.mjs, the judgement in scripts/lib/item-on-page.mjs). Its own job so that being superseded in the production signed-in group
+  # (one running, one pending) costs a check and never a plan: the plans' data has applied by then, and the report job labels a cancelled `visible` SUPERSEDED. It starts only after `ruled-runs` succeeded, downloads that job's results artifact, and installs Chromium only for itself,
+  # only when the newest results file names applied items.
+  visible:
+    name: visible
+    needs: [changes, ruled-runs]
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.fork == false && needs.ruled-runs.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: signed-in-browser-main
+      cancel-in-progress: false
+    env:
+      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
+      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ruled-run-results
+          path: scripts/runs/results
+      - name: Did a plan apply items? (the newest results file names them; scripts/ci/changes.mjs --visible)
+        id: visible
+        run: node scripts/ci/changes.mjs --visible
+      - name: Install (only when a plan applied items)
+        if: ${{ steps.visible.outputs.visible == 'true' }}
+        run: npm ci --no-audit --ignore-scripts
+      - name: Playwright Chromium (for this check alone)
+        if: ${{ steps.visible.outputs.visible == 'true' }}
+        run: npx playwright install --with-deps chromium
+      - name: Visibility of the items a ruled run applied (scripts/runs/visible.mjs)
+        if: ${{ steps.visible.outputs.visible == 'true' }}
+        env:
+          RESULTS_FILE: ${{ steps.visible.outputs.file }}
+        run: node scripts/runs/visible.mjs "$RESULTS_FILE" --base https://carosledge.com
 
   windows:
     name: ci-windows
@@ -634,7 +661,7 @@ jobs:
   # The one writer of the run's record: runs after every job that can run on a pull request or a push, polls nothing, holds no secrets, and never fails the run itself (it reports the others' conclusions).
   report:
     name: report
-    needs: [changes, ci, schema, turn, windows, parity]
+    needs: [changes, ci, schema, turn, windows, parity, visible]
     if: always() && github.event_name != 'status'
     runs-on: ubuntu-latest
     timeout-minutes: 10

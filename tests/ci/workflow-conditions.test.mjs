@@ -63,7 +63,7 @@ test('CI-TRIM-1: a pull request runs changes, ci, schema and parity and never wi
   assert.deepEqual(on('pull_request'), ['changes', 'ci', 'parity', 'schema']);
   assert.deepEqual(on('push'), ['changes', 'migrate']);
   const both = { parity: 'true', edge: 'true', plans: 'scripts/runs/plans/x.json' };
-  assert.deepEqual(on('push', '', {}, both), ['changes', 'edge-deploy', 'migrate', 'ruled-runs']);
+  assert.deepEqual(on('push', '', {}, both), ['changes', 'edge-deploy', 'migrate', 'ruled-runs', 'visible']);
   for (const job of ['ci', 'schema', 'parity', 'windows']) assert.ok(!on('push', '', {}, both).includes(job), `${job} does not run on a push to main`);
   assert.ok(!on('pull_request', '', {}, both).includes('windows'), 'ci-windows never runs on a pull request');
 });
@@ -233,7 +233,7 @@ test('G13: every action is pinned to a commit SHA, and the concurrency group nam
 
 test('G3: no step turns exit 2 into success: a green job means the check ran, and the report waits for every job that can run on a pull request', () => {
   for (const [name, job] of Object.entries(jobs)) for (const step of job.steps ?? []) assert.doesNotMatch(String(step.run ?? ''), /-eq 2|== 2|exit 0.*self-skip|self-skipped \(exit 2\)/, `${name}: ${step.name ?? ''}`);
-  assert.deepEqual([...jobs.report.needs].sort(), ['changes', 'ci', 'parity', 'schema', 'turn', 'windows']);
+  assert.deepEqual([...jobs.report.needs].sort(), ['changes', 'ci', 'parity', 'schema', 'turn', 'visible', 'windows']);
 });
 
 test('the turn job receives the free EIA key the market producer reads by name', () => {
@@ -335,32 +335,43 @@ test('FIX-QUOTE-1: the ruled-runs job receives the free EIA key as the turn job 
   assert.match(String(jobs['ruled-runs'].env.EIA_API_KEY), /secrets\.EIA_API_KEY/);
 });
 
-test('CI-TRIM-1: ruled-runs holds the main production signed-in group and the member account, and runs the visibility check only when the newest results file names applied items; parity no longer carries it', () => {
-  const steps = jobs['ruled-runs'].steps;
-  assert.equal(jobs['ruled-runs'].concurrency.group, 'signed-in-browser-main');
-  assert.equal(jobs['ruled-runs'].concurrency['cancel-in-progress'], false);
-  assert.ok(secretsOf('ruled-runs').has('LIVE_SMOKE_EMAIL') && secretsOf('ruled-runs').has('LIVE_SMOKE_PASSWORD'), 'the visibility check signs in as the member');
-  const visible = steps.find((s) => /scripts\/runs\/visible\.mjs/.test(String(s.run ?? '')));
-  assert.ok(visible, 'ruled-runs runs visible.mjs');
-  assert.match(String(visible.run), /--base https:\/\/carosledge\.com/);
-  assert.match(String(visible.if), /steps\.visible\.outputs\.visible == 'true'/);
-  const deciding = steps.find((s) => s.id === 'visible');
-  assert.match(String(deciding.run), /changes\.mjs --visible/);
-  assert.ok(steps.indexOf(deciding) > steps.findIndex((s) => /execute\.mjs/.test(String(s.run ?? ''))), 'the decision reads the results the plans just wrote');
-  assert.ok(steps.indexOf(visible) > steps.indexOf(deciding));
+test('CI-TRIM-1: ruled-runs is in no signed-in group and its group can never cancel or replace a push\'s plan; visible is its own job after ruled-runs, in the main signed-in group, and parity no longer carries the check', () => {
+  const rr = jobs['ruled-runs'];
+  assert.doesNotMatch(String(rr.concurrency.group), /signed-in/);
+  assert.match(String(rr.concurrency.group), /github\.sha/, 'a group per commit: a newer pending run has nothing to replace');
+  assert.equal(rr.concurrency['cancel-in-progress'], false);
+  assert.ok(!secretsOf('ruled-runs').has('LIVE_SMOKE_EMAIL'), 'the plans job does not sign in as the member');
+  const v = jobs.visible;
+  assert.deepEqual(v.needs, ['changes', 'ruled-runs']);
+  assert.equal(v.concurrency.group, 'signed-in-browser-main');
+  assert.equal(v.concurrency['cancel-in-progress'], false);
+  assert.ok(secretsOf('visible').has('LIVE_SMOKE_EMAIL') && secretsOf('visible').has('LIVE_SMOKE_PASSWORD'), 'the visibility check signs in as the member');
+  assert.equal(v.environment, undefined);
+  for (const j of Object.keys(jobs).filter((x) => x !== 'visible')) assert.ok(!(jobs[j].steps ?? []).some((s) => /visible\.mjs/.test(String(s.run ?? ''))), `${j} does not run visible.mjs`);
+  const pending = { parity: 'true', edge: 'false', plans: 'scripts/runs/plans/x.json' };
+  assert.ok(on('push', '', {}, pending).includes('visible'), 'after a successful ruled-runs');
+  assert.ok(!on('push').includes('visible'), 'no plan, no visibility check');
+  for (const result of ['failure', 'skipped', 'cancelled']) assert.ok(!on('push', '', {}, pending, '', 'success', result).includes('visible'), `ruled-runs ${result}`);
+  for (const event of ['pull_request', 'workflow_dispatch', 'status']) assert.ok(!on(event, '', VERCEL_OK, pending).includes('visible'), event);
+  const steps = v.steps;
+  const dl = steps.find((s) => String(s.uses).startsWith('actions/download-artifact'));
+  assert.equal(dl.with.name, 'ruled-run-results');
+  assert.match(String(jobs['ruled-runs'].steps.find((s) => String(s.uses).startsWith('actions/upload-artifact')).with.name), /ruled-run-results/);
+  const decide = steps.find((s) => s.id === 'visible');
+  assert.ok(steps.indexOf(dl) < steps.indexOf(decide));
+  const run = steps.find((s) => /visible\.mjs/.test(String(s.run ?? '')));
+  assert.match(String(run.if), /steps\.visible\.outputs\.visible == 'true'/);
+  for (const s of steps.filter((x) => /npm ci|playwright install/.test(String(x.run ?? '')))) assert.match(String(s.if), /steps\.visible\.outputs\.visible == 'true'/, `${s.name} only when items were applied`);
   assert.ok(!jobs.parity.steps.some((s) => /visible\.mjs/.test(String(s.run ?? '')) || String(s.uses ?? '').startsWith('actions/download-artifact')), 'parity no longer runs the visibility check');
 });
 
-test('CI-TRIM-1: ruled-runs installs Playwright Chromium only when a pending plan drives a browser or the visibility check will run; no install is unconditional', () => {
+test('CI-TRIM-1: ruled-runs installs Playwright Chromium only when a pending plan drives a browser (a capture or sweep stage, or a chained step)', () => {
   const steps = jobs['ruled-runs'].steps;
   const installs = steps.filter((s) => /playwright install/.test(String(s.run ?? '')));
-  assert.equal(installs.length, 2, 'one before the plans (a browser step), one after them (the visibility check)');
-  for (const s of installs) assert.ok(s.if, `${s.name} is conditional`);
+  assert.equal(installs.length, 1);
   assert.match(String(installs[0].if), /steps\.browser\.outputs\.browser == 'true'/);
-  assert.match(String(installs[1].if), /steps\.visible\.outputs\.visible == 'true' && steps\.browser\.outputs\.browser != 'true'/, 'a Chromium the plans already installed is not installed twice');
   assert.match(String(steps.find((s) => s.id === 'browser').run), /changes\.mjs --browser/);
-  const exec = steps.findIndex((s) => /execute\.mjs/.test(String(s.run ?? '')));
-  assert.ok(steps.indexOf(installs[0]) < exec && steps.indexOf(installs[1]) > exec);
+  assert.ok(steps.indexOf(installs[0]) < steps.findIndex((s) => /execute\.mjs/.test(String(s.run ?? ''))));
 });
 
 test('CI-TRIM-1: a plan needs a browser when a step runs a capture or sweep stage or chains; briefs, connect, propagate and ops steps alone do not', async () => {

@@ -20,7 +20,7 @@ export function jobRows(needsJson) {
 }
 
 /** The jobs that sign in as the member test account; each sits in a concurrency group that keeps one running and one pending job. */
-export const SIGNED_IN_JOBS = new Set(["parity", "live", "preview-parity", "baseline", "screens"]);
+export const SIGNED_IN_JOBS = new Set(["parity", "live", "preview-parity", "baseline", "screens", "visible"]);
 
 /** What the table says for a conclusion: a cancelled signed-in job lost its pending slot to a newer run (CI-BROWSER-1), which proves nothing either way, so it is SUPERSEDED, never a pass and never a fail. */
 export function conclusionLabel(name, result, supersededBy) {

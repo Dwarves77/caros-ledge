@@ -4,7 +4,7 @@
 //   edge     a push to main that touches the Edge Function or the fetch core it bundles (the diff of the push, BEFORE..HEAD): the only event that deploys capture-worker;
 //   plans    a push to main that changed a ruled-run plan (scripts/runs/plans/*.json) whose `applied` is not true: the paths, space separated, for the `ruled-runs` job (INV-RUN-3: the results commit flips `applied`, so a plan runs once);
 //   browser  inside `ruled-runs`: do the pending plans run a step that drives a browser (a capture or sweep stage, or a chained step), so the Playwright Chromium install is needed before the plans run;
-//   visible  inside `ruled-runs`: the newest results file names applied items, so scripts/runs/visible.mjs runs (and needs a Chromium if the plans did not already install one);
+//   visible  inside the `visible` job (after ruled-runs, from its results artifact): the newest results file names applied items, so scripts/runs/visible.mjs runs and a Chromium is installed for it alone;
 //   node scripts/ci/changes.mjs            reads EVENT, BASE (the pull request's base branch) and BEFORE (the push's previous head) from the environment and writes parity, edge and plans to $GITHUB_OUTPUT.
 //   node scripts/ci/changes.mjs --browser  reads PLANS (the pending plan paths) and writes browser=true|false.   node scripts/ci/changes.mjs --visible  reads the newest scripts/runs/results/*.json and writes visible=true|false and file=<path>.
 import { execFileSync } from "node:child_process";
