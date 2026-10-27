@@ -10,7 +10,7 @@ test("INV-VAL-5: the report runs in --fixture mode through a gates registration 
   assert.match(readFileSync("scripts/ci/gates.mjs", "utf8"), /cmd: "validator-report"/, "npm run gates runs it");
   const r = spawnSync(process.execPath, ["scripts/ci/validator-report.mjs", "--fixture"], { encoding: "utf8" });
   assert.equal(r.status, 0, r.stdout + r.stderr);
-  assert.match(r.stdout, /validator-report --fixture: \d+ rows, 35 rules, 0 problem\(s\)/);
+  assert.match(r.stdout, /validator-report --fixture: \d+ rows, 32 rules, 0 problem\(s\)/);
   assert.doesNotMatch(r.stdout, /MISMATCH|NO FIXTURE ROW/);
 });
 

@@ -1,6 +1,6 @@
 // The validator report's fixture set (VALID-1, INV-VAL-5): one clean brief per format, the exempt twins of the dash rule, and one planted violation per rule, each row labelled with the rules it must trip.
 // The plants are the register's own samples (docs/audits/VALIDATOR-RULES-STEP-A-2026-10-25.md section 3) where production has one; the rest are built from the rule's definition. The report script
-// (scripts/ci/validator-report.mjs --fixture) fails when a row trips another set than its label or a rule trips on no row; tests/brief/rules/<rule>.test.ts reads its plant and its clean twin from here.
+// (scripts/ci/validator-report.mjs --fixture) fails when a row trips another set than its label or a rule trips on no row; tests/brief/rules-edge.test.ts reads its plant and its clean twin from here.
 import { FORMATS, TOPIC_TAGS } from "@/core/brief";
 import type { BriefClaim, BriefModel, ItemColumns } from "@/core/brief/rules";
 
@@ -80,7 +80,6 @@ export const ROWS: Row[] = [
   one("no-claim-ledger-json", { sec: { "4": "\"claim_kind\": \"FACT\", \"source_span\": \"Signed into law in July 2019 and became effective on January 1, 2020.\"" } }),
   make("pipeline-narration", ["pipeline-narration", "pool-or-slot-narration"], { sec: { "2": "Source URLs used in FACT citations are drawn exclusively from this item's captured pool." } }),
   one("fact-span-in-capture", { sec: { "2": "Airlines push the surcharge on. The surcharge starts with the next tariff cycle." }, claims: [fact("2", "The surcharge starts with the next tariff cycle.", "A different source text altogether.")] }),
-  one("severity-in-vocabulary", { item: { severity: "reference", priority: "LOW" } }),
   one("severity-present", { item: { severity: null } }),
   one("priority-follows-map", { item: { severity: "monitoring", priority: "HIGH" } }),
   one("banner-matches-column", { prefix: "## COST ALERT | MONITORING\n\n", item: { severity: "monitoring", priority: "LOW" } }),
@@ -89,9 +88,7 @@ export const ROWS: Row[] = [
   one("no-html-entity-outside-spans", { sec: { "4": "Every air quote needs a line of the Council&nbsp; ( 68 ) , respectively." } }),
   one("no-ibid", { sec: { "3": "Forwarders expect the surcharge to apply. *Source: ibid.*" } }),
   one("h1-in-section-list", { prefix: "# Carrier surcharge on air freight\n\n", sec: { "4": "Every air quote needs a surcharge line.\n\n# Appendix of loose notes" } }),
-  one("urgency-tier-in-vocabulary", { item: { urgency_tier: null } }),
   one("summary-fields-non-blank", { item: { why_matters: "  " } }),
-  one("topic-tags-vocabulary-and-cap", { item: { topic_tags: ["fashion"] } }),
   one("band-or-theme-present", { item: { signal_band: null } }),
   one("no-double-hyphen-dash", { sec: { "2": "Shortfall: none -- K equals M." } }),
   one("no-section-sign", { sec: { "4": "Every air quote needs a surcharge line (42 U.S.C. §6945)." } }),

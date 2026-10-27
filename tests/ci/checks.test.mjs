@@ -2,7 +2,7 @@
 // the machine that runs the pre-push hook) are the first two cases and fail on the code as it was.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
@@ -13,7 +13,7 @@ import { bundleExports, bundleProblems, declaredNames, sourceExports } from '../
 import { codeLines, limitProblems, totalsOf } from '../../scripts/ci/loc.mjs';
 import { scopeOf } from '../../scripts/ci/changes.mjs';
 import { PROFILES, STEPS, profileFrom, stepsFor } from '../../scripts/ci/gates.mjs';
-import { dependencyProblems, engineDataFiles, engineDataPins, engineDataProblems, headerRangeProblems, identifierProblems, pushGateProblems, sourceOriginProblems } from '../../scripts/ci/tree-checks.mjs';
+import { dependencyProblems, engineDataFiles, engineDataPins, engineDataProblems, frozenAllowProblems, headerRangeProblems, identifierProblems, NEW_FILES_FROZEN, OVERRIDE_MARKER, pushGateProblems, sourceOriginProblems } from '../../scripts/ci/tree-checks.mjs';
 import { textProblems } from '../../scripts/ci/workflow-yaml.mjs';
 
 const tmp = (prefix) => mkdtempSync(join(tmpdir(), prefix));
@@ -23,6 +23,27 @@ const put = (root, rel, text) => {
 };
 
 // ---- tree-checks ----
+test('LOCK-NO-BLOAT-1: the new-files allowlist is frozen: a new file or a new entry is a problem that names the override marker, and a file carrying the marker is outside the pins', () => {
+  const at = (files, entries) => new Map(Array.from({ length: files }, (_, i) => [`f${i}.txt`, i === 0 ? ['# header', ...Array(entries).fill('src/a.ts | r'), ''].join('\n') : '']));
+  const pins = { files: 3, entries: 2 };
+  assert.deepEqual(frozenAllowProblems(at(3, 2), pins), []);
+  assert.match(frozenAllowProblems(at(4, 2), pins).join('|'), /4 allowlist files, pinned at 3.*OPERATOR-OVERRIDE/);
+  assert.match(frozenAllowProblems(at(3, 3), pins).join('|'), /3 entries, pinned at 2.*OPERATOR-OVERRIDE/);
+  const over = at(3, 2);
+  over.set('new.txt', `${OVERRIDE_MARKER} the operator's ruling of the day
+src/new.ts | new
+src/new2.ts | new
+`);
+  assert.deepEqual(frozenAllowProblems(over, pins), [], 'a file with the marker and a ruling is outside the pins');
+  over.set('new.txt', `${OVERRIDE_MARKER}
+src/new.ts | new
+`);
+  assert.notDeepEqual(frozenAllowProblems(over, pins), [], 'a marker with no ruling text is no override');
+  const live = new Map(readdirSync('scripts/ci/new-files').filter((n) => n.endsWith('.txt')).map((n) => [n, readFileSync(`scripts/ci/new-files/${n}`, 'utf8')]));
+  assert.deepEqual(frozenAllowProblems(live), [], 'the repository is at or under its pins');
+  assert.ok(NEW_FILES_FROZEN.files > 0 && NEW_FILES_FROZEN.entries > 0);
+});
+
 test('R1: a package.json with its prepare script deleted is a problem (the check was `(!x) === "string"`, always false)', () => {
   const ok = { packageText: JSON.stringify({ scripts: { prepare: 'node scripts/prepare.mjs' } }), prepareText: 'git config core.hooksPath .githooks', hookMode: '100755' };
   assert.deepEqual(pushGateProblems(ok), []);

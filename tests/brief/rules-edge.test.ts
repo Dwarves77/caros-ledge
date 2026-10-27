@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-import { severityToken, validateBrief, type BriefModel, type ItemColumns } from "@/core/brief/rules";
+import { namesLacking, nameAt, REGISTRY, severityToken, validateBrief, type BriefModel, type ItemColumns } from "@/core/brief/rules";
+import { tokenHash } from "@/core/contracts/token-hash";
 
-import { fixtureRow, run } from "./_cases.ts";
+import { fixtureRow, run, ruleTests } from "./_cases.ts";
 
 const clean = fixtureRow("clean-market");
 const withBody = (body: string): BriefModel => ({ ...clean.brief, body });
@@ -13,11 +15,11 @@ test("the severity rules behave the same on a batch entry's display label and on
   assert.equal(severityToken("COST ALERT"), "cost_alert");
   assert.equal(severityToken("cost_alert"), "cost_alert");
   assert.equal(severityToken(null), null);
-  assert.equal(severityToken("reference"), "reference", "a value outside the five is kept as written, for severity-in-vocabulary to name");
-  for (const rule of ["severity-in-vocabulary", "severity-present", "priority-follows-map", "banner-matches-column"]) {
+  assert.equal(severityToken("reference"), "reference", "a value outside the five is kept as written (validateMetadata names it)");
+  for (const rule of ["severity-present", "priority-follows-map", "banner-matches-column"]) {
     assert.deepEqual(run(rule, clean.brief, withItem({ severity: severityToken("COST ALERT") })), run(rule, clean.brief, withItem({ severity: "cost_alert" })), rule);
   }
-  assert.equal(run("severity-in-vocabulary", clean.brief, withItem({ severity: "COST ALERT" }))?.rule, "severity-in-vocabulary", "an unnormalised label is not a stored token");
+  assert.equal(run("priority-follows-map", clean.brief, withItem({ severity: "COST ALERT" }))?.rule ?? null, null, "an unnormalised label maps to no priority, so the map has nothing to lock");
 });
 
 test("banner-matches-column compares the SET of banner labels, not the first label", () => {
@@ -49,12 +51,6 @@ test("do-now-severity-label names the section, and only the sections the brief h
   assert.equal(run("do-now-severity-label", { ...clean.brief, sections }, clean.item), null, "a missing section is required-sections-present's finding");
 });
 
-test("topic-tags-vocabulary-and-cap names the cap and the vocabulary separately", () => {
-  const over = run("topic-tags-vocabulary-and-cap", clean.brief, withItem({ topic_tags: ["emissions", "fuels", "transport", "reporting"] }));
-  assert.match(over?.detail ?? "", /4 tags, cap 3/);
-  assert.doesNotMatch(over?.detail ?? "", /outside the vocabulary/);
-});
-
 test("fact-span-in-own-section names a claim whose declared section is not one of the format's", () => {
   const stray = { kind: "FACT", section: "99", span: "x", text: "x", capture: "x" };
   assert.match(run("fact-span-in-own-section", { ...clean.brief, claims: [stray] }, clean.item)?.detail ?? "", /claims\[0\]: section "99" is not a canonical section key/);
@@ -66,4 +62,126 @@ test("validateBrief splits the violations by the registry row: a refuse rule and
   assert.deepEqual(refuse.map((v) => v.rule), ["dash-outside-verbatim"]);
   assert.deepEqual(residue.map((v) => v.rule), ["as-of-has-date"]);
   assert.deepEqual(validateBrief(clean.brief, clean.item), { refuse: [], residue: [] });
+});
+
+// One planted violation and one clean twin per registered rule (the per-rule files of tests/brief/rules are folded into this file).
+for (const r of REGISTRY) ruleTests(r.id);
+
+// ---- moved from tests/brief/rules/dash-outside-verbatim.test.ts (LOCK-NO-BLOAT-1)
+{
+  // INV-VAL-4: the exemption of a source's own punctuation is tested both ways, so the rule cannot be loosened to ignore dashes or tightened to refuse quotations.
+  const DASH = "—";
+  const inside = (id: string) => run("dash-outside-verbatim", fixtureRow(id).brief, fixtureRow(id).item);
+
+  test("INV-VAL-4: a dash inside a guillemet run passes, and the same dash outside it fails", () => {
+    const quoted = fixtureRow("exempt-dash-guillemets");
+    assert.ok(quoted.brief.body.includes(DASH), "the exempt twin carries a dash");
+    assert.equal(inside("exempt-dash-guillemets"), null);
+    const bare = { ...quoted.brief, body: quoted.brief.body.replace(/[«»]/g, "") };
+    assert.equal(run("dash-outside-verbatim", bare, quoted.item)?.rule, "dash-outside-verbatim");
+  });
+
+  test("INV-VAL-4: a dash inside a FACT claim's span passes, and with the claim gone it fails", () => {
+    const row = fixtureRow("exempt-dash-fact-span");
+    assert.ok(row.brief.body.includes(DASH));
+    assert.equal(inside("exempt-dash-fact-span"), null);
+    assert.equal(run("dash-outside-verbatim", { ...row.brief, claims: [] }, row.item)?.rule, "dash-outside-verbatim");
+  });
+
+  test("INV-VAL-4: the exemption is the source_span only: a banned dash in a FACT claim's text outside its span is refused", () => {
+    const row = fixtureRow("dash-in-claim-text-outside-span");
+    assert.ok(row.brief.body.includes(DASH));
+    assert.equal(row.brief.claims[0]?.kind, "FACT");
+    assert.ok(row.brief.claims[0]?.text.includes(DASH), "the dash is in the claim's text");
+    assert.equal(run("dash-outside-verbatim", row.brief, row.item)?.rule, "dash-outside-verbatim");
+    // The same dash inside the span is exempt (the span-case twin above), so the span, not the claim, is what is source wording.
+    const inSpan = { ...row.brief, claims: [{ ...row.brief.claims[0] as NonNullable<(typeof row.brief.claims)[0]>, span: row.brief.claims[0]?.text ?? null }] };
+    assert.equal(run("dash-outside-verbatim", inSpan, row.item), null);
+  });
+
+  test("an en dash is a dash too, and an adapter's exempt run (an old-tree quotation) is verbatim text", () => {
+    const clean = fixtureRow("clean-market");
+    const en = { ...clean.brief, body: `${clean.brief.body}\n\nQuotes run 2026–2027.` };
+    assert.equal(run("dash-outside-verbatim", en, clean.item)?.rule, "dash-outside-verbatim");
+    assert.equal(run("dash-outside-verbatim", { ...en, exempt: ["Quotes run 2026–2027."] }, clean.item), null);
+  });
+}
+
+// ---- moved from tests/brief/rules/forward-events-covered.test.ts (LOCK-NO-BLOAT-1)
+{
+  const base = fixtureRow("forward-events-covered");
+  const D = "2031-02-03";
+  const go = (b: Record<string, unknown>) => run("forward-events-covered", { ...base.brief, ...b }, base.item);
+
+  test("forward-events-covered: a supplied date missing from the entry is residue naming the rule", () => assert.equal(go({})?.rule, "forward-events-covered"));
+  test("forward-events-covered: the date in the events block passes", () => assert.equal(go({ events: [D] }), null));
+  test("forward-events-covered: the date quoted in a section passes", () => assert.equal(go({ body: `${base.brief.body}\n\nThe step falls on ${D}.` }), null));
+  test("forward-events-covered: a stated reason for omitting passes, a blank reason does not", () => {
+    assert.equal(go({ omitted: [{ date: D, reason: "the source gives it as a meeting, not an event" }] }), null);
+    assert.equal(go({ omitted: [{ date: D, reason: "  " }] })?.rule, "forward-events-covered");
+  });
+  test("forward-events-covered: an item with no supplied events passes", () => assert.equal(run("forward-events-covered", base.brief, { ...base.item, supplied_dates: [] }), null));
+
+  // Precision (PR 139): a month-precision row (stored YYYY-MM-01) arrives as the key YYYY-MM and a year-precision row (YYYY-01-01) as YYYY.
+  const at = (key: string, b: Record<string, unknown>) => run("forward-events-covered", { ...base.brief, ...b }, { ...base.item, supplied_dates: [key] });
+  test("forward-events-covered: a month-precision date is covered by an events entry of that month and precision, by the month and year in a section, or by an omitted_events entry; the day alone does not cover it", () => {
+    assert.equal(at("2031-02", {})?.rule, "forward-events-covered");
+    assert.equal(at("2031-02", { events: ["2031-02"] }), null);
+    assert.equal(at("2031-02", { events: ["2031-02-03"] })?.rule, "forward-events-covered");
+    assert.equal(at("2031-02", { body: `${base.brief.body}
+
+  The step falls in February 2031.` }), null);
+    assert.equal(at("2031-02", { omitted: [{ date: "2031-02-01", reason: "a meeting, not an event" }] }), null);
+  });
+  test("forward-events-covered: a year-precision date is covered by an events entry of that year and precision, by the year in a section, or by an omitted_events entry", () => {
+    assert.equal(at("2031", {})?.rule, "forward-events-covered");
+    assert.equal(at("2031", { events: ["2031"] }), null);
+    assert.equal(at("2031", { events: ["2031-02"] })?.rule, "forward-events-covered");
+    assert.equal(at("2031", { body: `${base.brief.body}
+
+  The review is due during 2031.` }), null);
+    assert.equal(at("2031", { omitted: [{ date: "2031-01-01", reason: "a placeholder year" }] }), null);
+  });
+}
+
+// ---- moved from tests/brief/rules/workspace-or-client-named.test.ts (LOCK-NO-BLOAT-1)
+{
+  // The names are held only as hashes. The plant is a fictional name whose hash ships beside the real ones, so the match is proved through the hash and no test file holds a real name.
+  const PLANT = "Zorblax Quillfeather";
+
+  test("the match goes through the hash: a clear planted name is found case-insensitively, a word alone is not, and the data holds no clear name", () => {
+    const data = JSON.parse(readFileSync("src/core/brief/data/workspace-names.json", "utf8")) as { hashes: string[] };
+    assert.ok(data.hashes.every((h) => /^[0-9a-f]{64}$/.test(h)), "every entry is a SHA-256 hex digest");
+    assert.ok(data.hashes.includes(tokenHash(PLANT)));
+    assert.equal(nameAt(`Prefix text. ${PLANT.toUpperCase()} commissions crates.`), 13);
+    assert.equal(nameAt("Zorblax alone, and Quillfeather alone, are not the name."), -1);
+    assert.equal(nameAt("Zorblax and Quillfeather, a clause apart."), -1);
+    const row = fixtureRow("workspace-or-client-named");
+    assert.ok(row.brief.body.includes(PLANT));
+    assert.equal(run("workspace-or-client-named", row.brief, row.item)?.rule, "workspace-or-client-named");
+  });
+
+  test("nameAt takes any hash set (a test plants its own), and tokenHash is the helper tree-checks uses for its banned token", () => {
+    const mine = new Set([tokenHash("Frobnitz"), tokenHash("Ada Lovelace-Smith")]);
+    assert.equal(nameAt("A note on Frobnitz.", mine), 10);
+    assert.equal(nameAt("Ada Lovelace-Smith wrote it.", mine, 2), -1, "a hyphen splits the word: the hash is of whole words");
+    assert.equal(tokenHash("ABC"), tokenHash("abc"));
+    assert.match(readFileSync("scripts/ci/tree-checks.mjs", "utf8"), /tokenHash\(t\)/);
+  });
+
+  test("the live report's organization check names a part whose hash the list lacks, and nothing else", () => {
+    const mine = new Set([tokenHash("Acme"), tokenHash("Globex")]);
+    assert.deepEqual(namesLacking(["Acme / Globex"], mine), []);
+    assert.deepEqual(namesLacking(["Acme / Initech"], mine), [tokenHash("Initech")]);
+  });
+}
+
+test("do-now-restates-gap: the GAP claim that answers the action_now slot may carry the lead action sentence; a gap for any other slot is still refused when the do-now section restates it", () => {
+  const plant = fixtureRow("do-now-restates-gap");
+  const claim = plant.brief.claims[0] as NonNullable<(typeof plant.brief.claims)[0]>;
+  assert.equal(run("do-now-restates-gap", plant.brief, plant.item)?.rule, "do-now-restates-gap");
+  const slot = { ...plant.brief, claims: [{ ...claim, text: claim.text.replace("[start_date]", "[action_now]") }] };
+  assert.equal(run("do-now-restates-gap", slot, plant.item), null);
+  const both = { ...plant.brief, claims: [claim, { ...claim, text: "[action_now] Ask carriers for the schedule." }] };
+  assert.equal(run("do-now-restates-gap", both, plant.item)?.rule, "do-now-restates-gap", "the exemption is the slot's own claim, not every claim of a brief that has one");
 });

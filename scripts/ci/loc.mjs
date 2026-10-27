@@ -1,9 +1,9 @@
-// Code lines (non-blank, non-comment) per directory under src/. Exit 1 when src/core > 25000 or src > 75000.
+// Code lines (non-blank, non-comment) per directory under src/. Exit 1 when a directory exceeds its pinned LIMIT (LOCK-NO-BLOAT-1: the post-cleanup counts; a cut lowers the pin, growth is a problem).
 import { appendFileSync, readFileSync } from "node:fs";
 
 import { isMain, walk } from "../lib/fs.mjs";
 
-export const LIMITS = { "src/core": 25000, src: 75000 };
+export const LIMITS = { src: 66274, "src/core": 20420, "src/core/brief": 1340, "src/core/digest": 270, "src/features": 39268 };
 const CODE_FILE = /\.(ts|tsx|js|jsx|mjs)$/;
 
 /** The code lines of one source text: blank lines, `//` lines and block comments do not count. */

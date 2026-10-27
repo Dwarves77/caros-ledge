@@ -2,7 +2,7 @@
 //   node scripts/ci/validator-report.mjs --fixture   the CI mode: tests/fixtures/validator-report/rows.ts, each row labelled with the rules it must trip; exits 1 when a row trips another set or a rule trips on no row
 //   node scripts/ci/validator-report.mjs --live      read-only: the 535 live old-tree briefs through DATABASE_URL in a read-only transaction (stored sections and claims adapted to the rules' model); never wired into CI
 // Live columns: `rule` is the rule as registered (prose view); `repro` is the rule's predicate in the form the register counted it (the whole body, or the register's own variant where it differs); `register` is the register's count; `diff` is repro minus register.
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { register } from "node:module";
 import { parseArgs } from "node:util";
 
@@ -13,16 +13,9 @@ if (values.fixture === values.live) {
   console.error("usage: node scripts/ci/validator-report.mjs (--fixture | --live)");
   process.exit(1);
 }
-const { assertRegistry, REGISTRY, runRule, severityToken } = await import("../../src/core/brief/rules/index.ts");
-const { namesLacking, patternsOf } = await import("../../src/core/brief/rules/_text.ts");
-const { LABELS, LABEL_OF } = await import("../../src/core/brief/rules/_sev.ts");
-const { REGISTER_RENDERINGS, stated } = await import("../../src/core/brief/rules/stored-date-stated.ts");
-const { ACCOUNTING_RE } = await import("../../src/core/brief/rules/accounting-line-present.ts");
-const { CAPS, TOPIC_TAGS } = await import("../../src/core/brief/contract.ts");
+const { namesLacking, REGISTRY, runRule } = await import("../../src/core/brief/rules/index.ts");
+const { ACCOUNTING_RE, LABELS, LABEL_OF, patternsOf, REGISTER_RENDERINGS, severityToken, stated } = await import("../../src/core/brief/validate.ts");
 const { isVerbatim } = await import("../../src/core/contracts/verbatim.ts");
-
-// Every rule file on disk is registered (the import guard sees only the files index.ts imports).
-assertRegistry(readdirSync(new URL("../../src/core/brief/rules/", import.meta.url)).filter((f) => f.endsWith(".ts") && !f.startsWith("_") && !["index.ts", "types.ts"].includes(f)).map((f) => f.slice(0, -3)), REGISTRY);
 
 const REGISTER = JSON.parse(readFileSync(new URL("./data/validator-register.json", import.meta.url), "utf8")).counts;
 const strip = (t) => t.replace(/"[^"\n]*"/g, "").replace(/“[^”\n]*”/g, "");
@@ -40,7 +33,6 @@ const REPRO = {
   },
   "pool-or-slot-narration": (b) => patternsOf("pool-slot").map((r) => r.test(b.body)),
   "summary-fields-non-blank": (_b, i) => [!i.why_matters?.trim(), !i.what_is_it?.trim()],
-  "topic-tags-vocabulary-and-cap": (_b, i) => [i.topic_tags.some((t) => !TOPIC_TAGS.includes(t)), i.topic_tags.length > CAPS.topicTags],
   "structural-controls": (b) => patternsOf("structural").map((r) => r.test(b.body)),
 };
 const add = (into, v) => [v].flat().forEach((x, k) => (into[k] = (into[k] ?? 0) + (x ? 1 : 0)));

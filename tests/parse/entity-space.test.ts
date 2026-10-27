@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { stated } from "@/core/brief/rules/stored-date-stated";
+import { stated } from "@/core/brief/validate";
 import { locateSpan } from "@/core/contracts/verbatim";
 import { findFigures, foldHtmlSpace, isFigure, statutoryUnit, tryParseDateAt } from "@/core/parse";
 

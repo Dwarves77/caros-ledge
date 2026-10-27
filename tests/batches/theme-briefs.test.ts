@@ -176,3 +176,10 @@ test("DIGEST-FIX-1: a requested id that is not exported is named in the residue 
   assert.equal(done.items.length, 0);
   assert.deepEqual(done.residue, [{ theme_id: THEME, reason: "not_needing_brief: its brief is current (generated_by theme-briefs-001)" }]);
 });
+
+test("LOCK-NO-BLOAT-1: each grounded text is read in its own number convention; a comma-decimal text cited beside a point-decimal one flips nothing", () => {
+  const comma = "Der Satz beträgt 1.234,56 EUR; 12,5 % und 3,75 EUR je Tonne.";
+  assert.deepEqual(figureCoverage("The fee is EUR 78.23 per tonne.", ["The fee is EUR 78.23 per tonne.", comma]), []);
+  assert.deepEqual(figureCoverage("The fee is EUR 78.23 per tonne.", [comma, "The fee is EUR 78.23 per tonne."]), []);
+  assert.deepEqual(figureCoverage("The fee is EUR 99.99 per tonne.", ["The fee is EUR 78.23 per tonne.", comma]), ["EUR 99.99"], "a figure no single text states is still returned");
+});

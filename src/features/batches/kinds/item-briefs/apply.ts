@@ -19,7 +19,7 @@ import { runParticipation } from "@/features/intake/flywheel-participation";
 import { recordItemChange } from "@/features/sources/change";
 import { growSources } from "@/features/sources";
 import { allRows, rowsByIds } from "@/core/db";
-import { precisionKey } from "@/core/brief/rules/forward-events-covered";
+import { precisionKey } from "@/core/brief/validate";
 import { review } from "@/core/digest/review";
 
 import { BUDGET_STOP_REASON, budgetBytes, POOL_REREADS, preflight } from "../../kit/budget";

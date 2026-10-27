@@ -1,3 +1,0 @@
-# path | reason (files with no "Ported from" header)
-src/core/brief/rules/do-now-restates-gap.ts | new in AUTHOR-FIX-1: R34: a do-now sentence that restates a GAP claim is gap narration, not an action.
-src/core/brief/rules/section-8-legal-callout.ts | new in AUTHOR-FIX-1: R35: section 8 of a regulatory fact document carries the legal callout.
