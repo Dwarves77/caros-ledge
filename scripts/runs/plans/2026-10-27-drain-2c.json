@@ -1,0 +1,21 @@
+{
+  "ruling": "operator 2026-10-27 (scope ruling Q8, DRAIN-2C): solo apply of 1615aa92 (proven verified in rollback after ENGINE-FIX-2) with allowBriefOverwrite, plus the 8 already-applied DRAIN-2B briefs (0053d552, 0980d468, c26f4ac6, 7e4f2b36, 663f593c, 8a9af9ef, 63acfa2f, 58bf0406; skipped as done and passed to visible via already_applied_ids). Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "drain-2c-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-10-27-drain-2c.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "drain-2c-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-27-drain-2c.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
