@@ -13,7 +13,7 @@ name: CI
 # (scripts/ci/live-checks.mjs) with the service key, and the admin account on production or a dispatch only, so it checks out MAIN, never the deployed commit: a branch cannot change the script that holds the secrets. `preview-parity` runs MAIN's capture and compare against the deployed URL and holds the member test account only.
 # Jobs `migrate`, `turn` and `ruled-runs` run in the `production` environment (required reviewers, if the repository sets any). No job runs a package install script (npm ci --ignore-scripts); the Supabase CLI of `edge-deploy` is a devDependency at an exact version.
 # Job `report`: after the others (needs, if always), downloads the parity and test artifacts and writes the one job summary and the one PR comment with the default branch's scripts; it polls nothing and never fails the run.
-# Artifacts live 3 days (retention-days on every upload): the report job reads them in the same run and a person looks within hours; admin-console screenshots and next-start.log are not kept for the 90-day default.
+# Artifacts live 3 days (retention-days on every upload; 1 day for ci-results, apply-plan, ruled-run-results and the two failure-only parity captures; every upload is continue-on-error: artifact storage is a quota, never a verdict): the report job reads them in the same run and a person looks within hours; admin-console screenshots and next-start.log are not kept for the 90-day default.
 # Every action is pinned to a commit SHA (the tag it was taken from is the comment): a moved tag cannot change a gate.
 # Exit 2 (a self-skip) is never converted here: a script exits 2 only where the event cannot carry secrets (src/core/harness/exit.ts), so a green job means the check ran.
 
@@ -104,8 +104,9 @@ jobs:
         run: npm run gates -- --profile full
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
+        continue-on-error: true
         with:
-          retention-days: 3
+          retention-days: 1
           name: ci-results
           path: test-output.txt
           if-no-files-found: ignore
@@ -138,8 +139,9 @@ jobs:
       - name: Derive the apply plan from supabase/migrations (never committed; a problem in the directory fails here)
         run: node scripts/ci/apply-plan.mjs > "$RUNNER_TEMP/apply-plan.md"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        continue-on-error: true
         with:
-          retention-days: 3
+          retention-days: 1
           name: apply-plan
           path: ${{ runner.temp }}/apply-plan.md
       - name: Apply schema.sql to an empty Postgres 15, then the migrations, the down files and the property checks
@@ -230,8 +232,9 @@ jobs:
         run: node scripts/runs/execute.mjs $PLANS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
+        continue-on-error: true
         with:
-          retention-days: 3
+          retention-days: 1
           name: ruled-run-results
           path: scripts/runs/results
           if-no-files-found: ignore
@@ -245,6 +248,8 @@ jobs:
     if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.repository.fork == false && needs.ruled-runs.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      no_artifact: ${{ steps.noartifact.outputs.no_artifact }}
     concurrency:
       group: signed-in-browser-main
       cancel-in-progress: false
@@ -258,9 +263,17 @@ jobs:
           node-version: '24'
           cache: npm
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        id: results
+        continue-on-error: true
         with:
           name: ruled-run-results
           path: scripts/runs/results
+      - name: No results artifact (storage quota), log it; this is a skip and never a pass
+        id: noartifact
+        if: ${{ steps.results.outcome != 'success' }}
+        run: |
+          echo 'visible: no results artifact (storage)'
+          echo 'no_artifact=true' >> "$GITHUB_OUTPUT"
       - name: Did a plan apply items? (the newest results file names them; scripts/ci/changes.mjs --visible)
         id: visible
         run: node scripts/ci/changes.mjs --visible
@@ -367,9 +380,10 @@ jobs:
         run: |
           { echo '### Parity'; echo '```'; cat parity-report.txt 2>/dev/null || echo 'no report'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
+        continue-on-error: true
         with:
-          retention-days: 3
+          retention-days: 1
           name: parity-capture
           path: |
             parity-capture
@@ -509,9 +523,10 @@ jobs:
         run: |
           { echo '### Parity of the deployed preview'; echo '```'; cat parity-report.txt 2>/dev/null || echo 'no report'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: always()
+        if: ${{ failure() }}
+        continue-on-error: true
         with:
-          retention-days: 3
+          retention-days: 1
           name: preview-parity-capture
           path: |
             parity-capture
@@ -549,6 +564,7 @@ jobs:
         run: node tests/parity/capture.mjs --base https://carosledge.com --out parity-baseline --site old --routes "$ROUTES"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
+        continue-on-error: true
         with:
           retention-days: 3
           name: parity-baseline-${{ github.run_id }}
@@ -589,6 +605,7 @@ jobs:
         run: node tests/parity/capture.mjs --base "$SCREENS_BASE" --out screens --fresh
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
+        continue-on-error: true
         with:
           retention-days: 3
           name: screens-${{ github.run_id }}
@@ -691,6 +708,10 @@ jobs:
         with:
           name: ci-results
           path: results-artifact
+      - name: Label visible SKIPPED-NO-ARTIFACT when its results artifact was not stored (not a pass)
+        if: ${{ needs.visible.outputs.no_artifact == 'true' }}
+        run: |
+          echo '### visible: SKIPPED-NO-ARTIFACT (artifact storage); the visibility check did not run' >> "$GITHUB_STEP_SUMMARY"
       - name: Job summary and the PR comment
         continue-on-error: true
         env:
