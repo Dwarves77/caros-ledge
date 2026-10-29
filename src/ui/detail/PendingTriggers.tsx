@@ -17,16 +17,21 @@ export function PendingTriggers({ events, kindLabels = {} }: { events: readonly 
   if (events.length === 0) return null;
   return (
     <div className="cl-summary-subcard cl-summary-subcard--pending">
-      <p className="cl-summary-subcard-title">Pending regulatory triggers</p>
-      <ul className="cl-trigger-list">
+      <p className="cl-summary-subcard-title">
+        <span>Pending regulatory triggers</span>
+        <span className="cl-trigger-count">{events.length} {events.length === 1 ? "mandate" : "mandates"}</span>
+      </p>
+      <div className="cl-trigger-rows">
         {events.map((ev, i) => (
-          <li key={ev.id ?? i}>
-            <span style={{ fontWeight: 600, color: "var(--ink)" }}>{ev.event_date ? formatDate(ev.event_date) : "No date on file"}</span> · {kindLabels[ev.event_kind] ?? ev.event_kind}
-            {ev.obligation_text ? ` · ${ev.obligation_text}` : ""}
-            {ev.source_span ? <span className="cl-trigger-source">Source text: “{ev.source_span}”</span> : null}
-          </li>
+          <div key={ev.id ?? i} className="cl-trigger-row">
+            <div className="cl-trigger-meta">
+              <span className="cl-trigger-date">{ev.event_date ? formatDate(ev.event_date) : "Unscheduled"}</span>
+              <span className="cl-trigger-kind">{kindLabels[ev.event_kind] ?? ev.event_kind.replace(/_/g, " ")}</span>
+            </div>
+            <p className="cl-trigger-text">{ev.obligation_text ?? "Rulemaking mandate scheduled in primary instrument."}</p>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

@@ -6,7 +6,7 @@
 // are the kit's. Nothing reads the clock.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { RecommendedAction } from "@/core/brief";
 import { normalizeDisplayTitle } from "@/core/fetch/titles";
@@ -43,15 +43,27 @@ export function DetailMasthead({ title, band, surface, jurisdiction, dek, placeh
   );
 }
 
-/** One S-section: the numbered head on the band tint, the body capped at 72 characters. */
+/** One S-section: the numbered head on the band tint, the body capped at 72 characters. Sections after S1 can be collapsed/expanded in place. */
 export function DetailSection({ id, title, aside, index, children }: { id: string; title: string; aside?: ReactNode; index?: number | null | undefined; children: ReactNode }) {
   const { band } = useBandContext();
+  const [collapsed, setCollapsed] = useState(false);
+  const canCollapse = index !== 1;
+  const headerAside = canCollapse ? (
+    <span className="cl-detail-section-controls">
+      {aside ? <span>{aside}</span> : null}
+      <button type="button" onClick={() => setCollapsed((v) => !v)} aria-expanded={!collapsed} className="cl-detail-collapse-btn">
+        {collapsed ? "Expand ▾" : "Collapse ▴"}
+      </button>
+    </span>
+  ) : (
+    aside
+  );
   return (
     <SectionCard as="section" id={id} padding="0" className="cl-detail-section">
       <div className="cl-detail-section-head" data-audit="detail-section-head" style={band ? ({ ["--cl-detail-head-tint" as string]: band.tintCssVar } as React.CSSProperties) : undefined}>
-        <SectionHead index={index != null ? `S${index}` : null} title={title} aside={aside} padding="section" size="detail" rule />
+        <SectionHead index={index != null ? `S${index}` : null} title={title} aside={headerAside} padding="section" size="detail" rule={!collapsed} />
       </div>
-      <div className="cl-detail-section-body">{children}</div>
+      {!collapsed && <div className="cl-detail-section-body">{children}</div>}
     </SectionCard>
   );
 }

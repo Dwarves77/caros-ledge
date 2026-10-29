@@ -13,7 +13,6 @@ import { ActionRow } from "./ActionRow";
 import { BiasChips } from "./BiasChips";
 import { BandChip, TagChip, TierChip, WorkspaceTagPill } from "./Chips";
 import { SectionCard } from "./SectionCard";
-import { SectionLabel } from "./SectionLabel";
 import { Timeline } from "./Timeline";
 import { classifyMilestones, nextMilestoneClause } from "./timeline-math";
 
@@ -68,7 +67,7 @@ function ExposureCell({ label, cell }: { label: string; cell: Exposure }) {
   return (
     <div className="cl-exposure-cell">
       <p className="cl-exposure-label">{label}</p>
-      <div ref={ref} data-audit="exposure-value" className={`cl-exposure-value${expanded ? "" : " cl-clamp-3"}`}>
+      <div ref={ref} data-audit="exposure-value" className={`cl-exposure-value${expanded || (typeof cell.value === "string" && cell.value.length <= 240) ? "" : " cl-clamp-3"}`}>
         {hasValue ? cell.value : <Absence reason={cell.absenceReason ?? "not in primary source"} />}
       </div>
       {hasValue && (overflowing || expanded) && (
@@ -92,8 +91,11 @@ export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags
           <TagChip>{kindLabel}</TagChip>
           {extraChips}
           {typeof tier === "number" && <TierChip tier={tier} />}
+          {meta && <span className="cl-ac-meta">{meta}</span>}
         </div>
-        {meta && <span className="cl-ac-meta">{meta}</span>}
+        <div className="cl-ac-actions">
+          <ActionRow onExport={onExport} onShare={onShare} watch={watch} onTag={onTag} exportDisabled={exportDisabled} overflow={overflow} {...(viewer !== undefined ? { viewer } : {})} />
+        </div>
       </div>
       {hasTags && (
         <div className="cl-ac-tags">
@@ -103,27 +105,19 @@ export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags
         </div>
       )}
       {tagPopover && <div style={{ marginTop: hasTags ? "var(--sp-8)" : "var(--sp-10)" }}>{tagPopover}</div>}
-      <div className="cl-ac-bar">
-        {hasBiasTags(biasTags) && (
+      {hasBiasTags(biasTags) && (
+        <div className="cl-ac-bar">
           <div className="cl-ac-row">
             <BiasChips tags={biasTags} variant="detail" label="Primary source" />
           </div>
-        )}
-        <div className="cl-ac-actions">
-          <ActionRow onExport={onExport} onShare={onShare} watch={watch} onTag={onTag} exportDisabled={exportDisabled} overflow={overflow} {...(viewer !== undefined ? { viewer } : {})} />
         </div>
-      </div>
+      )}
       <div className="cl-ac-rule" aria-hidden="true" />
-      <div>
-        <div className="cl-ac-label">
-          <SectionLabel>Exposure</SectionLabel>
-        </div>
-        <div className="cl-exposure-grid">
-          <ExposureCell label="Where" cell={where} />
-          <ExposureCell label="Who pays" cell={whoPays} />
-          <ExposureCell label="Your lanes" cell={yourLanes} />
-          <ExposureCell label="Next milestone" cell={nextClause ? { value: nextClause } : { value: null, absenceReason: "pending" }} />
-        </div>
+      <div className="cl-exposure-grid">
+        <ExposureCell label="Where" cell={where} />
+        <ExposureCell label="Who pays" cell={whoPays} />
+        <ExposureCell label="Your lanes" cell={yourLanes} />
+        <ExposureCell label="Next milestone" cell={nextClause ? { value: nextClause } : { value: null, absenceReason: "pending" }} />
       </div>
       <div className="cl-ac-rule" aria-hidden="true" />
       <Timeline entries={timeline} band={band} nowIso={nowIso} {...(onFullSchedule ? { onFullSchedule } : {})} {...(fullScheduleHref ? { fullScheduleHref } : {})} {...(moreMarkersHref ? { moreMarkersHref } : {})} />

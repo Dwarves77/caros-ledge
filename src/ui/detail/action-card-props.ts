@@ -25,7 +25,9 @@ export function commonActionCardProps(r: Resource, parts: { tagPopover: ReactNod
     }
   }
 
-  // Derive yourLanes from modes and jurisdiction
+  if (whoPaysVal) {
+    whoPaysVal = whoPaysVal.trim().replace(/\s+[a-zA-Z]{1,10}(?:\.{3}|…)$/, "…");
+  }
   const modeStr = r.modes && r.modes.length > 0 ? r.modes.map((m) => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()).join(", ") : null;
   const jurisStr = r.jurisdiction || (r.jurisdictionIso && r.jurisdictionIso.length > 0 ? r.jurisdictionIso.join(", ") : null);
   const lanesVal = [jurisStr, modeStr].filter(Boolean).join(" · ") || null;

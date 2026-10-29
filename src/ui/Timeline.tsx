@@ -40,8 +40,14 @@ function Header({ total, passed, nextDate }: { total: number; passed: number; ne
  * vertical stack (grid in base.css). Markers are interactive buttons: clicking a milestone expands an inline context bar below the timeline showing
  * verbatim details, kind, and quick navigation / search actions.
  */
+const cleanLabel = (raw: string): string => {
+  const s = raw.trim().replace(/\s+[a-zA-Z]{1,10}(?:\.{3}|…)$/, "…");
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+};
+
 export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHref, moreMarkersHref }: TimelineProps) {
   const [selected, setSelected] = useState<number | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const list = entries ?? [];
   if (list.length === 0) {
     return (
@@ -56,9 +62,9 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
   const { visible, hiddenCount, collapsed } = collapseTimeline(classified);
   const clause = nextMilestoneClause(classified, nowIso);
   const lastDate = list[list.length - 1]?.date ?? "";
-  const action = onFullSchedule ? { label: "Full schedule ↓", onClick: onFullSchedule } : fullScheduleHref ? { label: "Full schedule ↓", href: fullScheduleHref } : undefined;
+  const action = onFullSchedule ? { label: "Full schedule ↓", onClick: onFullSchedule } : fullScheduleHref ? { label: "Full schedule ↓", href: fullScheduleHref } : collapsed && hiddenCount > 0 ? { label: showAll ? `Hide full schedule (${counts.total}) ▴` : `Show all ${counts.total} milestones (+${hiddenCount} more) ▾`, onClick: () => setShowAll((v) => !v) } : undefined;
 
-  const selectedMilestone = selected !== null ? visible.find((c) => c.index === selected) : null;
+  const selectedMilestone = selected !== null ? classified.find((c) => c.index === selected) : null;
   const selectedEntry = selectedMilestone?.entry ?? null;
 
   return (
@@ -66,37 +72,57 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
       <Header total={counts.total} passed={counts.passed} nextDate={counts.nextDate} />
       <div role="img" aria-label={`Milestone timeline: ${counts.total} milestones, ${counts.passed} passed`} className="cl-tl-track" style={{ ["--tl-n" as string]: visible.length, ["--tl-green" as string]: `${greenPercent(visible.map((c) => c.state))}%` }}>
         <div aria-hidden="true" className="cl-tl-line" />
-        {visible.map(({ entry, state, index }, i) => (
-          <button
-            key={index}
-            type="button"
-            className="cl-tl-marker"
-            data-state={state}
-            aria-pressed={selected === index}
-            aria-label={`${entry.label} · ${entry.date}`}
-            onClick={() => setSelected(selected === index ? null : index)}
-            style={{ ["--c" as string]: i + 1 }}
-          >
-            <span className="cl-tl-date">{entry.date}</span>
-            <span className="cl-tl-dotcell">
-              <TimelineDot state={state} bandHex={band.hex} size={state === "next" ? 12 : 8} ring={3} />
-            </span>
-            <span title={entry.label} className="cl-tl-label">
-              {entry.label}
-            </span>
-          </button>
-        ))}
+        {visible.map(({ entry, state, index }, i) => {
+          const displayLabel = cleanLabel(entry.label);
+          const displayDate = formatDayMonthYear(entry.date);
+          return (
+            <button
+              key={index}
+              type="button"
+              className="cl-tl-marker"
+              data-state={state}
+              aria-pressed={selected === index}
+              aria-label={`${displayLabel} · ${displayDate}`}
+              onClick={() => setSelected(selected === index ? null : index)}
+              style={{ ["--c" as string]: i + 1 }}
+            >
+              <span className="cl-tl-date">{displayDate}</span>
+              <span className="cl-tl-dotcell">
+                <TimelineDot state={state} bandHex={band.hex} size={state === "next" ? 12 : 8} ring={3} />
+              </span>
+              <span title={displayLabel} className="cl-tl-label">
+                {displayLabel}
+              </span>
+            </button>
+          );
+        })}
       </div>
-      {collapsed && hiddenCount > 0 &&
-        (moreMarkersHref ? (
+      {collapsed && hiddenCount > 0 && moreMarkersHref && (
+        <div className="cl-tl-more-row">
           <Link href={moreMarkersHref} data-audit="timeline-more-markers" className="cl-tl-more cl-tl-more--link">
-            +{hiddenCount} more
+            Open Statutory Obligation Register ↓
           </Link>
-        ) : (
-          <span data-audit="timeline-more-markers" className="cl-tl-more">
-            +{hiddenCount} more
-          </span>
-        ))}
+        </div>
+      )}
+      {showAll && (
+        <div className="cl-tl-schedule" aria-label="Full milestone schedule">
+          {classified.map(({ entry, state, index }) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => setSelected(selected === index ? null : index)}
+              className={`cl-tl-schedule-row${state === "next" ? " cl-tl-schedule-row--next" : ""}`}
+            >
+              <TimelineDot state={state} bandHex={band.hex} size={state === "next" ? 10 : 8} ring={2} />
+              <span className="cl-tl-schedule-date">{formatDayMonthYear(entry.date)}</span>
+              <span className="cl-tl-schedule-label">{cleanLabel(entry.detail ?? entry.label)}</span>
+              <span className={`cl-tl-schedule-badge cl-tl-schedule-badge--${state}`}>
+                {state === "passed" ? "Passed" : state === "next" ? "Next due" : "Upcoming"}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
       {selectedEntry && (
         <div data-part="timeline-context" className="cl-tl-context">
           <div className="cl-tl-context-head">

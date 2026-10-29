@@ -125,7 +125,10 @@ test("ObligationRegister sanitizes leaked HTML comments/entities and collapses o
   assert.ok(!html.includes("claim:70cfedd6"), "Expected raw claim UUID comment fragment to be stripped");
   assert.ok(!html.includes("&amp;nbsp;"), "Expected &nbsp; entity to be decoded/cleaned");
   assert.ok(html.includes("Submit emissions report"), "Expected sanitized obligation text");
-  assert.ok(html.includes("cl-detail-disclosure"), "Expected overflow rows past 20 to be wrapped in a collapsible disclosure");
+  assert.ok(html.includes("cl-register-master"), "Expected item ObligationRegister to be closed by default inside .cl-register-master");
+  assert.ok(html.includes("cl-register-toolbar"), "Expected item ObligationRegister to include search and event-type filter toolbar");
+  assert.ok(html.includes("cl-register-group"), "Expected item ObligationRegister to group clauses into collapsible date buckets");
+  assert.ok(!html.includes("Not classified"), "Expected unclassified item register rows to omit NOT CLASSIFIED badge spam");
 });
 
 test("FactCard matrix density strips trailing middle-dots to prevent double dot separators", () => {

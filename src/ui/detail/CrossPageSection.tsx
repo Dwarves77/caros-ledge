@@ -49,10 +49,10 @@ function cleanPreContractBriefText(md: string): string {
 /** The cluster's structure drawn as labels and numbers; every word here is the page's own, none is a claim about the items. */
 const SIGNAL_LABEL: Readonly<Record<string, string>> = signalLabels;
 function clusterLine(c: NonNullable<ThemeAnalysisView["cluster"]>): string {
-  const by = c.signals.map((x) => SIGNAL_LABEL[x] ?? x.replace(/_/g, " ")).join(", ");
-  return `A brief for this theme has not been written yet, so what this connection means is not stated here.${by ? ` Grouped by ${by.toLowerCase()}.` : ""}`;
+  const by = c.signals.slice(0, 3).map((x) => SIGNAL_LABEL[x] ?? x.replace(/_/g, " ")).join(", ");
+  return `Narrative synthesis pending for this cluster.${by ? ` Items below are linked by ${by.toLowerCase()}.` : ""}`;
 }
-const HORIZON_LABEL: Readonly<Record<string, string>> = { "0-6m": "Within 6 months", "6-18m": "6 to 18 months", "18-36m": "18 to 36 months", NOW: "Within 2 years (band only)", "3-5y": "3 to 5 years", NEAR: "2 to 5 years (band only)", "5-10y": "5 to 10 years", MID: "5 to 10 years (band only)", ">10y": "Beyond 10 years", FAR: "Beyond 10 years (band only)", unplaced: "No dated event on file (written by the obligations stage)" };
+const HORIZON_LABEL: Readonly<Record<string, string>> = { "0-6m": "Within 6 months", "6-18m": "6 to 18 months", "18-36m": "18 to 36 months", NOW: "Within 2 years", "3-5y": "3 to 5 years", NEAR: "2 to 5 years", "5-10y": "5 to 10 years", MID: "5 to 10 years", ">10y": "Beyond 10 years", FAR: "Beyond 10 years", unplaced: "Ongoing / no fixed date" };
 
 const Label = ({ children }: { children: ReactNode }) => <p className="cl-detail-label">{children}</p>;
 const Block = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -146,13 +146,18 @@ function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisVie
       )}
       {theme.forwardOutlook.horizons.length > 0 && (
         <Block label="Members by horizon">
-          <ul style={{ margin: 0, paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
+          <div className="cl-horizon-grid">
             {theme.forwardOutlook.horizons.map((h) => (
-              <li key={h.horizon}>
-                <span style={{ fontWeight: 600, color: "var(--ink)" }}>{HORIZON_LABEL[h.horizon] ?? h.horizon}</span> · {h.memberIds.length} {h.memberIds.length === 1 ? "item" : "items"}{h.triggers.length > 0 ? ` · ${h.triggers.length} dated ${h.triggers.length === 1 ? "obligation" : "obligations"}` : ""} · {h.surfaces.map((k) => theme.pages.find((p) => p.surface === k)?.label ?? k).join(", ")}
-              </li>
+              <div key={h.horizon} className="cl-horizon-card">
+                <span className="cl-horizon-window">{HORIZON_LABEL[h.horizon] ?? h.horizon}</span>
+                <span className="cl-horizon-num">{h.memberIds.length} {h.memberIds.length === 1 ? "item" : "items"}</span>
+                <span className="cl-horizon-sub">
+                  {h.triggers.length > 0 ? `${h.triggers.length} dated ${h.triggers.length === 1 ? "obligation" : "obligations"} · ` : ""}
+                  {h.surfaces.map((k) => theme.pages.find((p) => p.surface === k)?.label ?? k).join(", ")}
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </Block>
       )}
       {theme.membersByPage.length > 0 && (
