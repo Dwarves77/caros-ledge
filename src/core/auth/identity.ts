@@ -10,6 +10,7 @@ import { readOwnPlatformAdmin } from "./platform-admin";
 export const EMPTY_IDENTITY: IdentityBootstrap = { user: null, orgId: null, orgName: "", role: null, sectors: [], workspaceSectors: [], isPlatformAdmin: false };
 
 type OrgEmbed = { id?: string; name?: string; workspace_settings?: { sector_profile: string[] | null }[] | null } | null;
+const identityCache = new Map<string, { value: IdentityBootstrap; expiresAt: number }>();
 
 /**
  * One server pass for who the caller is: claims, the oldest membership with its organisation and sectors, sector overrides, the admin bit.
@@ -19,11 +20,10 @@ type OrgEmbed = { id?: string; name?: string; workspace_settings?: { sector_prof
 export async function resolveIdentity(client: Db & ClaimsClient, opts: { heal?: boolean; claims?: Awaited<ReturnType<typeof getClaims>> } = {}): Promise<IdentityBootstrap> {
   const claims = opts.claims !== undefined ? opts.claims : await getClaims(client);
   if (!claims) return EMPTY_IDENTITY;
-  const [membership, profile, admin] = await Promise.all([
-    client.from("org_memberships").select("org_id, role, organizations(id, name, workspace_settings(sector_profile))").eq("user_id", claims.userId).order("created_at", { ascending: true }).limit(1).maybeSingle(),
-    client.from("profiles").select("sector_overrides, full_name").eq("id", claims.userId).maybeSingle(),
-    readOwnPlatformAdmin(client),
-  ]);
+  const cacheable = typeof client.auth.getSession === "function" && opts.heal === undefined;
+  const hit = cacheable ? identityCache.get(claims.userId) : undefined;
+  if (hit && performance.now() < hit.expiresAt) return hit.value;
+  const [membership, profile, admin] = await Promise.all([client.from("org_memberships").select("org_id, role, organizations(id, name, workspace_settings(sector_profile))").eq("user_id", claims.userId).order("created_at", { ascending: true }).limit(1).maybeSingle(), client.from("profiles").select("sector_overrides, full_name").eq("id", claims.userId).maybeSingle(), readOwnPlatformAdmin(client)]);
   if (membership.error) throw new LookupError("org_memberships", membership.error);
   if (profile.error) throw new LookupError("profiles", profile.error);
   let overrides = (profile.data as { sector_overrides: string[] | null } | null)?.sector_overrides ?? null;
@@ -35,5 +35,6 @@ export async function resolveIdentity(client: Db & ClaimsClient, opts: { heal?: 
     if (!profile.data) overrides = [];
   }
   const org = (membership.data?.organizations ?? null) as OrgEmbed;
-  return { user: { id: claims.userId, email: claims.email }, orgId: org?.id || (membership.data?.org_id as string | undefined) || null, orgName: org?.name || "", role: (membership.data?.role as OrgRole | undefined) ?? null, sectors: overrides ?? [], workspaceSectors: org?.workspace_settings?.[0]?.sector_profile ?? [], isPlatformAdmin: admin };
+  const res: IdentityBootstrap = { user: { id: claims.userId, email: claims.email }, orgId: org?.id || (membership.data?.org_id as string | undefined) || null, orgName: org?.name || "", role: (membership.data?.role as OrgRole | undefined) ?? null, sectors: overrides ?? [], workspaceSectors: org?.workspace_settings?.[0]?.sector_profile ?? [], isPlatformAdmin: admin };
+  return (cacheable && identityCache.set(claims.userId, { value: res, expiresAt: performance.now() + 60_000 }), res);
 }

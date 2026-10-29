@@ -36,7 +36,7 @@ function Wordmark({ drawer, onNavigate }: { drawer: boolean; onNavigate?: (() =>
  * The footer is two rows, Account (the menu) and, for a platform admin, Admin with its attention count and the caller's workspace role.
  */
 export function NavCard({ variant = "card", onNavigate }: { variant?: "card" | "drawer"; onNavigate?: () => void }) {
-  const pathname = usePathname(); const router = useRouter(); const warm = (href: string) => () => router.prefetch(href);
+  const pathname = usePathname(); const router = useRouter(); const warm = (href: string) => () => router.prefetch(href, { kind: "full" as never });
   const { user, signOut, identityStatus, isPlatformAdmin } = useAuth();
   const role = useWorkspaceStore((s) => s.userRole);
   const orgName = useWorkspaceStore((s) => s.orgName);

@@ -118,7 +118,7 @@ export interface MappedRows {
 }
 
 /** RPC rows to Resources with their timelines, read in chunks of 150 ids; a failed chunk is counted, not hidden. Every row gets its impact (stored scores plus the reading workspace's client score when `orgId` is given) or the sentence of the input it waits for. */
-export async function mapRows(db: Db, items: WorkspaceItemRpcRow[], opts: { orgId?: string | null; profile?: WorkspaceProfile | null | undefined } = {}): Promise<MappedRows> {
+export async function mapRows(db: Db, items: WorkspaceItemRpcRow[], opts: { orgId?: string | null; profile?: WorkspaceProfile | null | Promise<WorkspaceProfile | null> | undefined } = {}): Promise<MappedRows> {
   const uuidToUiId = new Map(items.map((i) => [i.id, i.legacy_id || i.id]));
   const byItem = new Map<string, TimelineRow[]>();
   let timelineFailures = 0;
@@ -141,7 +141,7 @@ export async function mapRows(db: Db, items: WorkspaceItemRpcRow[], opts: { orgI
         timelineFailures += 1;
       }
     }),
-    (async () => await attachImpact(db, [...active, ...archived], new Map([...uuidToUiId].map(([uuid, uiId]) => [uiId, uuid])), opts.orgId ?? null, opts.profile))(),
+    (async () => await attachImpact(db, [...active, ...archived], new Map([...uuidToUiId].map(([uuid, uiId]) => [uiId, uuid])), opts.orgId ?? null, await opts.profile))(),
   ]);
   for (const [id, resource] of pairs) {
     resource.timeline = (byItem.get(id) ?? []).filter((t) => isInstrumentMilestone(t.sort_order)).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((t) => ({ date: timelineDateOf(t.milestone_date ?? "", t.date_precision), label: t.label ?? "", ...(t.is_completed ? { status: "past" as const } : {}) }));

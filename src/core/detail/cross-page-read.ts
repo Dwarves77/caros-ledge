@@ -86,6 +86,6 @@ export async function readCrossPage(db: Db, itemUuid: string, surface: string, i
 export async function readThemeChips(db: Db, opts: { surface: string | null; minPages?: number; max?: number }) {
   const themes = (await readThemes(db)).filter((t) => (opts.surface ? (t.surfaces ?? []).includes(opts.surface) : (t.surfaces ?? []).length >= (opts.minPages ?? 1))).sort((a, b) => (b.convergence ?? 0) - (a.convergence ?? 0)).slice(0, 12);
   if (themes.length === 0) return [];
-  const [briefs, lineage, items] = await Promise.all([readBriefs(db), readLineage(db), readVerifiedItemsByIds(db, themes.flatMap((t) => t.member_ids ?? []))]);
+  const [briefs, lineage, items] = await Promise.all([fetchAllRows<BriefRow>((from, to) => db.from("theme_briefs").select("theme_id, title, member_hash, generated_at, member_ids").order("theme_id", { ascending: true }).range(from, to) as never, { cap: CAP }), readLineage(db), readVerifiedItemsByIds(db, themes.flatMap((t) => t.member_ids ?? []))]);
   return themeChips({ themes, items, briefs, lineage, surface: opts.surface, minPages: opts.minPages ?? 1, max: opts.max ?? 6 });
 }

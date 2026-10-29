@@ -45,7 +45,7 @@ export async function RegulationsIndex() {
       profileP,
       readThemeChips(db, { surface: "regulations" }).catch((e) => warn("themes", e)),
       loadSurfaceDenominator("regulations", { db: () => db }).catch((e) => warn("coverage", e)),
-      profileP.then((p) => readRegulationsFirstPage(db, session.orgId, p && !p.failed ? p.profile : null)),
+      readRegulationsFirstPage(db, session.orgId, profileP.then((p) => (p && !p.failed ? p.profile : null))),
       profileP.then((p) => readUpcoming(db, { limit: 8, jurisdictionFilter: defaultJurisdictionFilter(p?.profile?.jurisdictions) }, today).catch((e) => warn("upcoming obligations", e))),
     ]);
     return { first, chips, upcoming, coverage, profileFailed: profileRead === null || profileRead.failed };

@@ -33,9 +33,9 @@ async function withUuids(db: Db, rows: Resource[]): Promise<LedgerRow[]> {
 
 /** The first page of the regulations list (trimmed to what a row draws), the aggregates, and whether more follows. `failed` is true only when a read errored. */
 /** `profile` is the workspace profile the page read for its own rail (null: that read failed and the page says so); the rows' client score uses it instead of reading it again. */
-export async function readRegulationsFirstPage(db: Db, orgId: string | null, profile?: WorkspaceProfile | null) {
-  const [page, aggregates] = await Promise.all([readListing(db, { orgId, rpc: rpcFor(orgId), page: { offset: 0, limit: pageSizes.first, domain: REGULATIONS_DOMAIN }, profile }), readSurfaceCounts(db, orgId, "regulations")]);
-  const rows = page.failed ? [] : await withUuids(db, page.rows.filter((r) => r.domain === REGULATIONS_DOMAIN).map(trimRemainder));
+export async function readRegulationsFirstPage(db: Db, orgId: string | null, profile?: WorkspaceProfile | null | Promise<WorkspaceProfile | null>) {
+  const [[page, rows], aggregates] = await Promise.all([readListing(db, { orgId, rpc: rpcFor(orgId), page: { offset: 0, limit: pageSizes.first, domain: REGULATIONS_DOMAIN }, profile }).then(async (p) => [p, p.failed ? [] : await withUuids(db, p.rows.filter((r) => r.domain === REGULATIONS_DOMAIN).map(trimRemainder))] as const), readSurfaceCounts(db, orgId, "regulations")]);
+
   // The counts failed (aggregates null): a full first page proves nothing about the end of the list, so the remainder is still requested (and the page, seeing no aggregates and more to come, does not print the row count as the total).
   const fullPage = page.rows.length + page.archived.length >= pageSizes.first;
   const hasMore = aggregates ? aggregates.totalItems > rows.length : fullPage;

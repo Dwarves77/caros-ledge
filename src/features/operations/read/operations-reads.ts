@@ -76,18 +76,18 @@ export async function readRoster(db: Db): Promise<OperationsRegion[]> {
 }
 
 /** The stored coverage per (region, dimension), with its note (the note is shown on the profile and in the matrix). A row whose region is not on the roster is dropped, never given a placeholder code. */
-async function readCoverage(db: Db, roster: readonly OperationsRegion[]): Promise<CoverageRow[]> {
-  const byId = new Map(roster.map((r) => [r.id, r.code]));
-  const rows = await fetchAllRows<{ id: string; region_id: string; dimension: string; state: string; fact_count: number | null; notes: string | null }>((from, to) => db.from("region_dimension_coverage").select("id, region_id, dimension, state, fact_count, notes").order("id", { ascending: true }).range(from, to) as never, { cap: 50_000 });
-  return rows.filter((r) => byId.has(r.region_id)).map((r) => ({ regionCode: byId.get(r.region_id) as string, dimension: r.dimension, state: r.state, factCount: r.fact_count, notes: r.notes }));
+async function readCoverage(db: Db, rosterP: readonly OperationsRegion[] | Promise<readonly OperationsRegion[] | null>): Promise<CoverageRow[]> {
+  const [rows, roster] = await Promise.all([fetchAllRows<{ id: string; region_id: string; dimension: string; state: string; fact_count: number | null; notes: string | null }>((from, to) => db.from("region_dimension_coverage").select("id, region_id, dimension, state, fact_count, notes").order("id", { ascending: true }).range(from, to) as never, { cap: 50_000 }), rosterP]);
+  const byId = new Map((roster ?? []).map((r) => [r.id, r.code]));
+  return roster ? rows.filter((r) => byId.has(r.region_id)).map((r) => ({ regionCode: byId.get(r.region_id) as string, dimension: r.dimension, state: r.state, factCount: r.fact_count, notes: r.notes })) : (null as never);
 }
 
 /** Every regional fact the producers wrote, with the registered source's customer tier and freshness derived from the row's own date against `nowIso` (no instant, no judgement: freshness is unknown). */
-async function readFacts(db: Db, roster: readonly OperationsRegion[], nowIso?: string): Promise<OperationsFact[]> {
-  const byId = new Map(roster.map((r) => [r.id, r.code]));
+async function readFacts(db: Db, rosterP: readonly OperationsRegion[] | Promise<readonly OperationsRegion[] | null>, nowIso?: string): Promise<OperationsFact[]> {
   type Row = Record<string, unknown> & { id: string; region_id: string; sources: SourceEmbed | SourceEmbed[] | null };
-  const rows = await fetchAllRows<Row>((from, to) => db.from("regional_data_facts").select("id, region_id, dimension, fact_label, value, status, trend, source_note, last_updated, value_numeric, unit, currency, derivation, origin_class, source_key, source_ref, n_observations, method_version, as_at_date, reference_period, sources(name, url, base_tier, effective_tier, tier_override)").order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
-  return rows.filter((r) => byId.has(r.region_id)).map((r) => {
+  const [rows, roster] = await Promise.all([fetchAllRows<Row>((from, to) => db.from("regional_data_facts").select("id, region_id, dimension, fact_label, value, status, trend, source_note, last_updated, value_numeric, unit, currency, derivation, origin_class, source_key, source_ref, n_observations, method_version, as_at_date, reference_period, sources(name, url, base_tier, effective_tier, tier_override)").order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 }), rosterP]);
+  const byId = new Map((roster ?? []).map((r) => [r.id, r.code]));
+  return roster ? rows.filter((r) => byId.has(r.region_id)).map((r) => {
     const src = embed(r.sources);
     const last = (r.last_updated as string | null) ?? null;
     const text = (k: string): string | null => (typeof r[k] === "string" ? (r[k] as string) : null);
@@ -102,7 +102,7 @@ async function readFacts(db: Db, roster: readonly OperationsRegion[], nowIso?: s
       valueNumeric: num(r.value_numeric), unit: text("unit"), currency: text("currency"), derivation: text("derivation"), originClass: text("origin_class"), sourceKey: text("source_key"), sourceRef: text("source_ref"),
       nObservations: num(r.n_observations), methodVersion: text("method_version"), asAtDate: text("as_at_date"), referencePeriod: text("reference_period"),
     };
-  });
+  }) : (null as never);
 }
 
 async function readStateCosts(db: Db): Promise<StateCostFact[]> {
@@ -112,9 +112,10 @@ async function readStateCosts(db: Db): Promise<StateCostFact[]> {
 }
 
 /** Regulations per region: the verified, non-archived items the routing table sends to Regulations, counted into every region their jurisdictions fall in. Reported beside coverage, never folded into it. */
-async function readLinkedRegulations(db: Db, roster: readonly OperationsRegion[]): Promise<Record<string, number>> {
+async function readLinkedRegulations(db: Db, rosterP: readonly OperationsRegion[] | Promise<readonly OperationsRegion[] | null>): Promise<Record<string, number>> {
   type Row = { id: string; item_type: string | null; domain: number | null; jurisdictions: string[] | null; jurisdiction_iso: string[] | null };
-  const rows = await fetchAllRows<Row>((from, to) => admitItems(db.from("intelligence_items").select("id, item_type, domain, jurisdictions, jurisdiction_iso")).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
+  const [rows, roster] = await Promise.all([fetchAllRows<Row>((from, to) => admitItems(db.from("intelligence_items").select("id, item_type, domain, jurisdictions, jurisdiction_iso")).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 }), rosterP]);
+  if (!roster) return null as never;
   const counts: Record<string, number> = Object.fromEntries(roster.map((r) => [r.code, 0]));
   for (const row of rows) {
     if (surfaceOf(row.item_type, row.domain) !== "regulations") continue;
@@ -187,8 +188,8 @@ export async function readOperationsPage(db: Db, nowIso: string, orgId: string |
   const rosterP = settle("the region roster", () => readRoster(db));
   const [roster, category, aggregates, coverage, facts, stateCosts, linkedRegulations, derived] = await Promise.all([
     rosterP, readCategory(db, orgId ? "get_operations_items" : "get_operations_items_public", orgId), readSurfaceCounts(db, orgId, "operations"),
-    rosterP.then((r) => (r ? settle("coverage", () => readCoverage(db, r)) : null)), rosterP.then((r) => (r ? settle("facts", () => readFacts(db, r, nowIso)) : null)),
-    settle("state cost facts", () => readStateCosts(db)), rosterP.then((r) => (r ? settle("linked regulations", () => readLinkedRegulations(db, r)) : null)), settle("recomputed figures", () => readDerivedFigures(db)),
+    settle("coverage", () => readCoverage(db, rosterP)), settle("facts", () => readFacts(db, rosterP, nowIso)),
+    settle("state cost facts", () => readStateCosts(db)), settle("linked regulations", () => readLinkedRegulations(db, rosterP)), settle("recomputed figures", () => readDerivedFigures(db)),
   ]);
   return { rows: category.resources, rowsFailed: category.failed, aggregates, roster, coverage, facts, stateCosts, linkedRegulations, derived };
 }

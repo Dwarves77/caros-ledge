@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const config: NextConfig = {
   reactStrictMode: true,
-  poweredByHeader: false,
+  poweredByHeader: false, experimental: { staleTimes: { dynamic: 60, static: 300 } },
   // The fixed browser security headers (audit 2.3.8). The Content-Security-Policy is per request (a nonce), set in src/proxy.ts.
   async headers() {
     return [

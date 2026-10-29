@@ -8,16 +8,13 @@ import { nameFromMetadata } from "./profile-name";
 export interface ClaimsClient {
   auth: {
     getClaims: (jwt?: string) => Promise<{ data: { claims: { sub?: string; email?: string; user_metadata?: unknown } } | null; error: unknown }>;
-    getSession?: () => Promise<{ data: { session: { access_token?: string } | null } | null; error: unknown }>;
+    getSession?: () => Promise<{ data: { session: { access_token?: string; user?: { id?: string; email?: string; user_metadata?: unknown } } | null } | null; error: unknown }>;
   };
 }
 
 /** The auth service could not answer (network, saturation). A 503, never the same as "not signed in". */
 export class ClaimsUnavailable extends LookupError {
-  constructor(cause: unknown) {
-    super("claims verification", cause);
-    this.name = "ClaimsUnavailable";
-  }
+  constructor(cause: unknown) { super("claims verification", cause); this.name = "ClaimsUnavailable"; }
 }
 
 /** The auth errors that mean this caller has no valid session (absent, malformed, expired). Every other error is the auth service failing to answer. */
@@ -42,6 +39,7 @@ async function verifyClaims(client: ClaimsClient, jwt?: string, sessionOnly?: bo
     const hit = tokenCache.get(token);
     if (hit && performance.now() < hit.expiresAt) return hit.claims;
     if (sessionOnly) return { userId: "session", email: null, name: null };
+    if (s.data?.session?.user?.id) return (tokenCache.set(token, { claims: { userId: s.data.session.user.id, email: s.data.session.user.email ?? null, name: nameFromMetadata(s.data.session.user.user_metadata) }, expiresAt: performance.now() + 60_000 }), tokenCache.get(token)!.claims);
   }
   const result = await client.auth.getClaims(token).catch((e) => { throw new ClaimsUnavailable(e); });
   if (result.error && outage(result.error)) throw new ClaimsUnavailable(result.error);

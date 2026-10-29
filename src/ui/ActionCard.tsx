@@ -44,15 +44,13 @@ function ExposureCell({ label, cell }: { label: string; cell: Exposure }) {
   }, [cell.value, expanded]);
   return (
     <div className="cl-exposure-cell">
-      <p className="cl-exposure-label">{label}</p>
+      <div className="cl-exposure-head">
+        <p className="cl-exposure-label">{label}</p>
+        {hasValue && (overflowing || expanded) && <button type="button" data-audit="exposure-expand" onClick={() => setExpanded((v) => !v)} className="cl-exposure-expand">{expanded ? "Show less" : "Show more"}</button>}
+      </div>
       <div ref={ref} data-audit="exposure-value" className={`cl-exposure-value${expanded ? "" : " cl-clamp-2"}`}>
         {hasValue ? cell.value : <Absence reason={cell.absenceReason ?? "not in primary source"} />}
       </div>
-      {hasValue && (overflowing || expanded) && (
-        <button type="button" data-audit="exposure-expand" onClick={() => setExpanded((v) => !v)} className="cl-exposure-expand">
-          {expanded ? "Show less" : "Show more"}
-        </button>
-      )}
     </div>
   );
 }

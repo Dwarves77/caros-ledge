@@ -347,12 +347,13 @@ button, input, select, textarea { font-family: inherit; }
 .cl-ac-actions { margin-top: 0; }
 .cl-ac-rule { height: 1px; background: var(--line-2); margin: 8px 0; }
 .cl-ac-label { margin-bottom: 12px; }
-.cl-exposure-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-10); background: var(--page); border: 1px solid var(--line-2); border-radius: var(--radius-control); padding: var(--sp-6) var(--sp-10); }
+.cl-exposure-grid { display: grid; grid-template-columns: minmax(100px, 0.75fr) minmax(170px, 1.35fr) minmax(90px, 0.55fr) minmax(220px, 1.75fr); align-items: start; gap: var(--sp-10); background: var(--page); border: 1px solid var(--line-2); border-radius: var(--radius-control); padding: var(--sp-6) var(--sp-10); }
 .cl-exposure-cell { min-width: 0; }
-.cl-exposure-label { font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin: 0 0 2px; }
+.cl-exposure-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin: 0 0 2px; }
+.cl-exposure-label { font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin: 0; }
 .cl-exposure-value { font-size: var(--fs-12); line-height: 1.4; color: var(--ink); overflow-wrap: anywhere; }
 .cl-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.cl-exposure-expand { margin: 8px 0; font-size: var(--fs-105); font-weight: 700; color: var(--ink-3); background: none; border: none; padding: 4px 0; min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; text-decoration: underline; }
+.cl-exposure-expand { margin: -4px 0; font-size: var(--fs-105); font-weight: 700; color: var(--ink-3); background: none; border: none; padding: 0 2px; min-height: 24px; display: inline-flex; align-items: center; cursor: pointer; text-decoration: underline; flex-shrink: 0; }
 .cl-action-row { display: flex; align-items: center; gap: var(--sp-8); flex-wrap: wrap; }
 .cl-action-row .cl-btn { padding: 0 var(--sp-12); font-size: var(--fs-115); }
 .cl-watch-wrap { display: inline-flex; flex-direction: column; }

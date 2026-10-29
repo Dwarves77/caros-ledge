@@ -49,7 +49,7 @@ async function readOverrides(db: Db, orgId: string, uiIds: Map<string, string>):
 
 /** One page of a listing RPC, org-scoped (p_org_id) or public (keyset cursor), mapped with timelines. */
 /** `profile` is the workspace profile the caller has read already (null: it failed and the caller states so); absent, the rows' client score reads it. */
-export async function readListing(db: Db, opts: { orgId?: string | null; rpc: ListingRpc; page?: ListingPage; profile?: WorkspaceProfile | null | undefined }): Promise<ListingRead> {
+export async function readListing(db: Db, opts: { orgId?: string | null; rpc: ListingRpc; page?: ListingPage; profile?: WorkspaceProfile | null | Promise<WorkspaceProfile | null> | undefined }): Promise<ListingRead> {
   const { orgId, rpc, page } = opts;
   const args: Record<string, unknown> = orgId ? { p_org_id: orgId } : {};
   if (typeof page?.domain === "number" && DOMAIN_SCOPED.has(rpc)) args.p_domain = page.domain;

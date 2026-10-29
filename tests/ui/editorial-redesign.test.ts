@@ -152,3 +152,47 @@ test("FactCard matrix density strips trailing middle-dots to prevent double dot 
   );
   assert.ok(!html.includes("· ·"), `Expected no double middle-dots in matrix source line, got: ${html}`);
 });
+
+test("ActionCard ExposureCell places header and Show more inline in .cl-exposure-head without vertical dead space below .cl-exposure-value", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { BAND_ORDER } = await import("@/core/lists/bands");
+  const { ActionCard } = await import("@/ui/ActionCard");
+  const html = renderToStaticMarkup(
+    createElement(ActionCard, {
+      band: BAND_ORDER[0]!,
+      kindLabel: "Regulation",
+      nowIso: "2026-10-29T00:00:00Z",
+      onExport: () => {},
+      onShare: () => {},
+      watch: null,
+      where: { value: "European Union" },
+      whoPays: { value: "Obligated: freight forwarder, exporter, importer, carrier road" },
+      yourLanes: { value: "connect ↗" },
+      timeline: [{ date: "2026-11-21", label: "Plastic waste B3011 export to non-OECD countries prohibited (Article 39(1)(d))" }],
+    }),
+  );
+  assert.ok(html.includes('class="cl-exposure-head"><p class="cl-exposure-label">'), "Expected .cl-exposure-label inside .cl-exposure-head above .cl-exposure-value");
+  const css = readFileSync("src/ui/base.css", "utf8");
+  assert.match(css, /\.cl-exposure-grid\s*\{[^}]*minmax\(220px,\s*1\.75fr\)/, "Expected .cl-exposure-grid to allocate proportional width to Next milestone");
+  assert.match(css, /\.cl-exposure-expand\s*\{[^}]*margin:\s*-4px 0;[^}]*min-height:\s*24px;/, "Expected .cl-exposure-expand to sit inline in the header row without 44px block height below value");
+});
+
+test("getClaims resolves directly from getSession user without a network round-trip to GoTrue getClaims", async () => {
+  const { getClaims } = await import("@/core/auth/claims");
+  let networkCalls = 0;
+  const client = {
+    auth: {
+      getSession: async () => ({
+        data: { session: { access_token: "hs256-session-tok", user: { id: "u-fast-1", email: "fast@carosledge.com", user_metadata: { full_name: "Fast User" } } } },
+        error: null,
+      }),
+      getClaims: async () => {
+        networkCalls += 1;
+        return { data: null, error: { name: "AuthApiError", status: 400 } };
+      },
+    },
+  };
+  const claims = await getClaims(client);
+  assert.deepEqual(claims, { userId: "u-fast-1", email: "fast@carosledge.com", name: "Fast User" });
+  assert.equal(networkCalls, 0, "Expected 0 network calls to GoTrue getClaims when getSession already holds the decoded user");
+});
