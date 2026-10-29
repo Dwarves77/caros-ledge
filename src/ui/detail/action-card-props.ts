@@ -11,10 +11,11 @@ export function commonActionCardProps(r: Resource, parts: { tagPopover: ReactNod
   // Derive whoPays from costMechanism or whoIsBound/topic/type
   let whoPaysVal: string | null = r.costMechanism || null;
   if (!whoPaysVal) {
-    const bound = (r as unknown as { whoIsBound?: string[] | string | null }).whoIsBound;
+    const ext = r as unknown as { whoIsBound?: string[] | string | null; complianceObjectTags?: string[] | null };
+    const bound = ext.whoIsBound || ext.complianceObjectTags;
     if (bound) {
       if (Array.isArray(bound) && bound.length > 0) {
-        whoPaysVal = `Obligated: ${bound.join(", ")}`;
+        whoPaysVal = `Obligated: ${bound.map((s) => s.replace(/-/g, " ")).join(", ")}`;
       } else if (typeof bound === "string" && bound.trim()) {
         whoPaysVal = `Obligated: ${bound.trim()}`;
       }

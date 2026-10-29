@@ -212,6 +212,7 @@ export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry 
   return (
     <>
       <DetailSection id={CONNECTED_SECTION_ID} title="Connected intelligence" aside="Intersections and theme analysis" index={crossPageOrd(surfaceKey, CONNECTED_SECTION_ID)}>
+        <p className="cl-section-explainer">How this item connects across the Caro’s Ledge repository — related regulations, market signals, and operations profiles sharing the same legal basis, corridor, or supply-chain scenario.</p>
         <div data-guard-container="cross-page">
           {view && (
             <DetailSubSection title="Intersections" subtitle="Items that share an operational scenario and a compliance object with this one" first>

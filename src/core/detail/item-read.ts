@@ -148,7 +148,7 @@ export async function readDetailItem(db: Db, urlId: string): Promise<DetailRead 
     ...(r.theme ? { theme: r.theme } : {}),
     ...(r.trajectory_points ? { trajectoryPoints: r.trajectory_points } : {}),
     ...(r.conversion_trigger ? { conversionTrigger: r.conversion_trigger } : {}),
-    ...(r.what_it_changes ? { whatItChanges: r.what_it_changes } : {}),
+    ...(r.what_it_changes ? { whatItChanges: r.what_it_changes } : {}), ...(Array.isArray(r.compliance_object_tags) && r.compliance_object_tags.length > 0 ? { complianceObjectTags: r.compliance_object_tags } : {}),
     ...(r.does_not_resolve ? { doesNotResolve: r.does_not_resolve } : {}),
     ...(r.compliance_deadline ? { complianceDeadline: r.compliance_deadline } : {}),
     ...(r.cost_mechanism ? { costMechanism: r.cost_mechanism } : {}),

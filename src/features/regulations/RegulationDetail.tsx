@@ -89,7 +89,7 @@ export function RegulationDetail(p: Props) {
       bare band={band} kindLabel="Regulation" nowIso={nowIso} extraChips={<GradeChip itemGrade={r.itemGrade} />} tier={typeof r.sourceTier === "number" ? r.sourceTier : null} biasTags={r.biasTags} meta={meta}
       onExport={() => void downloadMarkdownBrief(r, { filenamePrefix: "regulation", metaRows: [r.jurisdiction ? `- Jurisdiction: ${r.jurisdiction}` : null, r.priority ? `- Priority: ${r.priority}` : null, r.complianceDeadline ? `- Compliance deadline: ${r.complianceDeadline}` : null, r.url ? `- Source: ${r.url}` : null] })}
       {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <DetailWatch type="reg" id={r.id} />, onTag: () => setTagOpen((v) => !v) })}
-      where={{ value: [r.sub, jurisLabel].filter(Boolean).join(" · ") || null }} timeline={timeline} moreMarkersHref="#obligation-register" overflow={<PriorityMenu itemId={r.id} title={r.title} priority={r.priority} archivable />}
+      where={{ value: [r.sub || r.topic, jurisLabel].filter(Boolean).join(" · ") || null }} timeline={timeline} moreMarkersHref="#obligation-register" overflow={<PriorityMenu itemId={r.id} title={r.title} priority={r.priority} archivable />}
     />
   );
   const directoryItems = [
@@ -119,6 +119,7 @@ export function RegulationDetail(p: Props) {
             }
           >
             <DetailSection id="summary" title="Summary" aside={isRecord ? undefined : "Generated · 30-second read"} index={1}>
+              <p className="cl-section-explainer">Executive overview of what this regulation requires, how its deadlines phase in over time (Trajectory), and any pending regulatory triggers.</p>
               {isRecord ? (
                 <RecordFacts leadNote="This item was captured directly from its source document rather than synthesized into a brief. Every fact below is quoted verbatim from that source." dateFacts={split.dateFacts} otherFacts={split.otherFacts} gapsLine={parsed && parsed.slotFieldCount > 0 ? <>{`${parsed.gaps.length} of ${parsed.slotFieldCount} record fields not stated by the source`}{parsed.gaps.map((g) => <span key={g.slotKey} style={{ display: "block" }}>{g.label}: {g.text}</span>)}</> : undefined} tags={r.tags} />
               ) : (
@@ -130,6 +131,7 @@ export function RegulationDetail(p: Props) {
               const storedContent = stored.get(e.key as string)?.content_md;
               return (
                 <DetailSection key={e.id} id={e.id} title={HEADINGS[e.key as string] as string} aside={e.key === "3" && depth === "summary" ? "Top priority group · switch to Full brief for all sections" : undefined} index={e.ord ?? null}>
+                  {e.key === "3" && <p className="cl-section-explainer">Actionable compliance duties grouped by who is bound and what operational steps must be taken, backed by verbatim statutory citations and source provenance tiers.</p>}
                   {storedContent ? <FactBlocks markdown={storedContent} {...(depth === "summary" ? { maxGroups: 1 } : {})} /> : e.key === "6" ? <p className="cl-detail-link-note">Pending regulatory triggers and unresolved items are summarized in S1 Summary above.</p> : null}
                 </DetailSection>
               );

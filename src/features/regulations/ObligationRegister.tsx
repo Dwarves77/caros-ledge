@@ -107,8 +107,8 @@ export function ObligationRegister({ variant, initial, failed, itemId, jurisdict
         <SectionCard as="section" aria-label="Obligation register" padding="0">
           <details ref={masterRef} data-audit="disclosure-row" className="cl-register-master">
             <summary className="cl-register-master-summary">
-              <div className="cl-register-master-left"><span className="cl-register-master-title">Statutory Obligation Register</span><span className="cl-register-master-sub">Clause-level statutory events extracted from this instrument, grouped into {dateGroups.length} {dateGroups.length === 1 ? "milestone date" : "milestone dates"} matching the timeline above.</span></div>
-              <span className="cl-register-master-pill">{page.total} {page.total === 1 ? "obligation" : "obligations"} · {dateGroups.length} {dateGroups.length === 1 ? "date" : "dates"}</span>
+              <div className="cl-register-master-left"><span className="cl-register-master-title">Statutory Obligation Register — Clause-by-Clause Ledger</span><span className="cl-register-master-sub">What this is: Whereas S2 Obligations above summarizes your operational action plan, this register is the complete raw ledger of every individual dated statutory clause, phase-in step, reporting deadline, and Commission review extracted verbatim from the legal text ({page.total} {page.total === 1 ? "clause" : "clauses"} across {dateGroups.length} {dateGroups.length === 1 ? "date" : "dates"}). Click to expand, search by keyword, or browse by milestone date.</span></div>
+              <span className="cl-register-master-pill">Expand register ({page.total} clauses · {dateGroups.length} dates) ▾</span>
             </summary>
             <div className="cl-register-body">
               <div className="cl-register-toolbar">

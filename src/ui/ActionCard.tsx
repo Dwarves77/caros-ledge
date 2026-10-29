@@ -16,40 +16,18 @@ import { SectionCard } from "./SectionCard";
 import { Timeline } from "./Timeline";
 import { classifyMilestones, nextMilestoneClause } from "./timeline-math";
 
-interface Exposure {
-  value: ReactNode;
-  absenceReason?: AbsenceReason;
-}
+interface Exposure { value: ReactNode; absenceReason?: AbsenceReason }
 
 interface ActionCardProps {
-  band: UrgencyBand;
-  kindLabel: string;
+  band: UrgencyBand; kindLabel: string;
   /** The render instant (ISO date), required: no render reads a clock. */
-  nowIso: string;
-  extraChips?: ReactNode;
-  tier?: number | null | undefined;
-  biasTags?: BiasTagInput[] | null | undefined;
-  meta?: string | null | undefined;
-  tags?: string[] | null | undefined;
-  tagPopover?: ReactNode;
-  onExport: () => void;
-  onShare: () => void;
-  watch: ReactNode;
-  onTag?: (() => void) | undefined;
-  exportDisabled?: boolean | undefined;
-  overflow?: ReactNode;
-  viewer?: boolean;
-  where: Exposure;
-  whoPays: Exposure;
-  yourLanes: Exposure;
-  timeline?: TimelineEntry[] | null | undefined;
-  onFullSchedule?: () => void;
-  fullScheduleHref?: string;
-  moreMarkersHref?: string;
-  bare?: boolean;
+  nowIso: string; extraChips?: ReactNode; tier?: number | null | undefined; biasTags?: BiasTagInput[] | null | undefined; meta?: string | null | undefined; tags?: string[] | null | undefined;
+  tagPopover?: ReactNode; onExport: () => void; onShare: () => void; watch: ReactNode; onTag?: (() => void) | undefined; exportDisabled?: boolean | undefined; overflow?: ReactNode;
+  viewer?: boolean; where: Exposure; whoPays: Exposure; yourLanes: Exposure; timeline?: TimelineEntry[] | null | undefined;
+  onFullSchedule?: () => void; fullScheduleHref?: string; moreMarkersHref?: string; bare?: boolean;
 }
 
-/** One exposure cell: three lines then "Show more". The overflow is re-measured when the cell resizes, so a viewport change cannot leave a stale button. */
+/** One exposure cell: compact two-line summary with "Show more" when overflowing. */
 function ExposureCell({ label, cell }: { label: string; cell: Exposure }) {
   const hasValue = cell.value !== null && cell.value !== undefined && cell.value !== "";
   const [expanded, setExpanded] = useState(false);
@@ -67,7 +45,7 @@ function ExposureCell({ label, cell }: { label: string; cell: Exposure }) {
   return (
     <div className="cl-exposure-cell">
       <p className="cl-exposure-label">{label}</p>
-      <div ref={ref} data-audit="exposure-value" className={`cl-exposure-value${expanded || (typeof cell.value === "string" && cell.value.length <= 240) ? "" : " cl-clamp-3"}`}>
+      <div ref={ref} data-audit="exposure-value" className={`cl-exposure-value${expanded ? "" : " cl-clamp-2"}`}>
         {hasValue ? cell.value : <Absence reason={cell.absenceReason ?? "not in primary source"} />}
       </div>
       {hasValue && (overflowing || expanded) && (
@@ -79,7 +57,7 @@ function ExposureCell({ label, cell }: { label: string; cell: Exposure }) {
   );
 }
 
-/** The one detail action card: pill row, bias row, tags, the action row, the exposure cells and the timeline. */
+/** The one detail action card: unified pill + bias + action bar, compact exposure strip, and streamlined timeline. */
 export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags, meta, tags, tagPopover, onExport, onShare, watch, onTag, exportDisabled, overflow, viewer, where, whoPays, yourLanes, timeline, onFullSchedule, fullScheduleHref, moreMarkersHref, bare = false }: ActionCardProps) {
   const nextClause = nextMilestoneClause(classifyMilestones(timeline ?? []), nowIso);
   const hasTags = !!tags && tags.length > 0;
@@ -92,26 +70,14 @@ export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags
           {extraChips}
           {typeof tier === "number" && <TierChip tier={tier} />}
           {meta && <span className="cl-ac-meta">{meta}</span>}
+          {hasBiasTags(biasTags) && <BiasChips tags={biasTags} variant="detail" label="Source" />}
         </div>
         <div className="cl-ac-actions">
           <ActionRow onExport={onExport} onShare={onShare} watch={watch} onTag={onTag} exportDisabled={exportDisabled} overflow={overflow} {...(viewer !== undefined ? { viewer } : {})} />
         </div>
       </div>
-      {hasTags && (
-        <div className="cl-ac-tags">
-          {tags.map((t) => (
-            <WorkspaceTagPill key={t} name={t} />
-          ))}
-        </div>
-      )}
-      {tagPopover && <div style={{ marginTop: hasTags ? "var(--sp-8)" : "var(--sp-10)" }}>{tagPopover}</div>}
-      {hasBiasTags(biasTags) && (
-        <div className="cl-ac-bar">
-          <div className="cl-ac-row">
-            <BiasChips tags={biasTags} variant="detail" label="Primary source" />
-          </div>
-        </div>
-      )}
+      {hasTags && <div className="cl-ac-tags">{tags.map((t) => <WorkspaceTagPill key={t} name={t} />)}</div>}
+      {tagPopover}
       <div className="cl-ac-rule" aria-hidden="true" />
       <div className="cl-exposure-grid">
         <ExposureCell label="Where" cell={where} />
@@ -123,13 +89,5 @@ export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags
       <Timeline entries={timeline} band={band} nowIso={nowIso} {...(onFullSchedule ? { onFullSchedule } : {})} {...(fullScheduleHref ? { fullScheduleHref } : {})} {...(moreMarkersHref ? { moreMarkersHref } : {})} />
     </>
   );
-  return bare ? (
-    <div data-part="action-card" className="cl-ac-bare">
-      {content}
-    </div>
-  ) : (
-    <SectionCard as="section" dataAttributes={{ "data-part": "action-card" }} padding="16px 20px 18px">
-      {content}
-    </SectionCard>
-  );
+  return bare ? <div data-part="action-card" className="cl-ac-bare">{content}</div> : <SectionCard as="section" dataAttributes={{ "data-part": "action-card" }} padding="10px 20px 12px">{content}</SectionCard>;
 }
