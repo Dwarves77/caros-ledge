@@ -49,16 +49,22 @@ function SummaryDepthSwitch({ depth, onChange }: { depth: SectionIndexDepth; onC
   );
 }
 
-/** The detail section index bar: scroll-spy tabs that never truncate, the depth switch inside the same bordered card. */
+/** The detail section index bar: scroll-spy tabs that never truncate, the depth switch inside the same bordered card. Clicking a full-brief section while in summary depth expands to full brief and scrolls to it. */
 export function SectionIndex({ sections, depth, onDepthChange }: { sections: SectionIndexEntry[]; depth?: SectionIndexDepth; onDepthChange?: (d: SectionIndexDepth) => void }) {
   const active = useSectionScrollSpy(sections.map((s) => s.id));
   if (sections.length === 0) return null;
+  const onTabClick = (id: string) => {
+    if (depth === "summary" && onDepthChange && typeof document !== "undefined" && !document.getElementById(id)) {
+      onDepthChange("full");
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
+    }
+  };
   return (
     <nav aria-label="Section index" data-part="section-index" className="cl-section-index">
       <div data-guard-strip className="cl-section-index-strip">
         <div data-guard-strip className="cl-section-index-tabs">
           {sections.map((s, i) => (
-            <a key={s.id} href={`#${s.id}`} className="cl-section-index-link" aria-current={i === active ? "true" : undefined}>
+            <a key={s.id} href={`#${s.id}`} onClick={() => onTabClick(s.id)} className="cl-section-index-link" aria-current={i === active ? "true" : undefined}>
               S{s.ord ?? i + 1} {s.shortName}
             </a>
           ))}

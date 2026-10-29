@@ -115,7 +115,13 @@ export function ResearchDetail(p: ResearchDetailProps) {
   return (
     <ClaimTierProvider claimTiers={p.claimTiers}>
       <div style={{ paddingTop: 16 }}>
-        <DetailPageWrapper itemId={r.itemUuid ?? r.id} band={band} action={topRecommendedAction(p.recommendedActions)} nowIso={nowIso}>
+        <DetailPageWrapper
+          itemId={r.itemUuid ?? r.id}
+          band={band}
+          action={topRecommendedAction(p.recommendedActions)}
+          nowIso={nowIso}
+          footer={<><CrossPageSection surfaceKey="research" surfaceLabel="Research" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} /><NoticesRail /></>}
+        >
           <DetailMasthead title={r.title} band={band} surface="Research" jurisdiction={jurisLabel} dek={dek} placeholder="Ask about this finding, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} connectionsSlot={p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} />
           {p.claimsDegraded && (
             <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
@@ -214,8 +220,6 @@ export function ResearchDetail(p: ResearchDetailProps) {
                 )}
               </DetailSection>
             )}
-            <CrossPageSection surfaceKey="research" surfaceLabel="Research" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} />
-            <NoticesRail />
           </DetailLayout>
         </DetailPageWrapper>
       </div>

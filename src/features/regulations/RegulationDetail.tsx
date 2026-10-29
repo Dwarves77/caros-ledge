@@ -125,8 +125,14 @@ export function RegulationDetail(p: Props) {
 
   return (
     <ClaimTierProvider claimTiers={p.claimTiers}>
-      <div style={{ paddingTop: 16 }}>
-        <DetailPageWrapper itemId={r.itemUuid ?? r.id} band={band} action={topRecommendedAction(p.recommendedActions)} nowIso={nowIso}>
+      <div style={{ paddingTop: "var(--sp-16)" }}>
+        <DetailPageWrapper
+          itemId={r.itemUuid ?? r.id}
+          band={band}
+          action={topRecommendedAction(p.recommendedActions)}
+          nowIso={nowIso}
+          footer={<CrossPageSection surfaceKey="regulations" surfaceLabel="Regulations" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} />}
+        >
           <DetailMasthead title={r.title} band={band} surface="Regulations" jurisdiction={jurisLabel} dek={dek} placeholder="Ask about this regulation, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} connectionsSlot={p.connectionRows && p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} />
           {isAdminViewer && r.agentIntegrityFlag === true && r.agentIntegrityPhrase && (
             <StateNote tone="error">Flagged for review: the brief carries the phrase “{r.agentIntegrityPhrase}”.</StateNote>
@@ -145,23 +151,10 @@ export function RegulationDetail(p: Props) {
           <DetailLayout
             rail={
               <DetailRail
-                atAGlance={
-                  <AtAGlanceCard
-                    rows={[
-                      { label: "Instrument", value: r.legalInstrument },
-                      { label: "Topic", value: r.topic },
-                      { label: "Deadline", value: r.complianceDeadline ? formatDate(r.complianceDeadline) : null },
-                    ]}
-                  />
-                }
+                atAGlance={<AtAGlanceCard rows={[{ label: "Instrument", value: r.legalInstrument }, { label: "Topic", value: r.topic }, { label: "Deadline", value: r.complianceDeadline ? formatDate(r.complianceDeadline) : null }]} />}
                 impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} />}
                 relevance={<RelevanceRailCard state={p.relevance.phase === "ready" ? { phase: "ready", relevance: p.relevance.data.relevance } : p.relevance.phase === "failed" ? { phase: "failed", retry: p.relevance.retry } : { phase: "loading" }} />}
-                designed={
-                  <>
-                    <OwnerCard itemId={r.id} assigneeName={r.actionOwner ?? null} lastVerifiedDate={r.lastVerifiedDate ?? null} hasWorkspace={p.hasWorkspace} />
-                    <InThisListStat backHref="/regulations" backLabel="Back to list" band={band} />
-                  </>
-                }
+                designed={<><OwnerCard itemId={r.id} assigneeName={r.actionOwner ?? null} lastVerifiedDate={r.lastVerifiedDate ?? null} hasWorkspace={p.hasWorkspace} /><InThisListStat backHref="/regulations" backLabel="Back to list" band={band} /></>}
                 legend={<LegendRailCard />}
               />
             }
@@ -179,7 +172,7 @@ export function RegulationDetail(p: Props) {
                 <BriefSummary r={r} changelog={p.changelog} dispute={p.dispute} trajectory={trajectory || r.conversionTrigger || null} doesNotResolve={r.doesNotResolve} pendingEvents={pendingEvents} kindLabels={p.kindLabels} />
               )}
               {depth === "full" && unparsedBrief && (
-                <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line-3)" }}>
+                <div style={{ marginTop: "var(--sp-16)", paddingTop: "var(--sp-14)", borderTop: "1px solid var(--line-3)" }}>
                   <GfmSection markdown={unparsedBrief} />
                 </div>
               )}
@@ -188,20 +181,10 @@ export function RegulationDetail(p: Props) {
               .filter((e) => depth === "full" || e.key === "3")
               .map((e) => {
                 const storedContent = stored.get(e.key as string)?.content_md;
+                const isObligationsPreview = e.key === "3" && depth === "summary";
                 return (
-                  <DetailSection key={e.id} id={e.id} title={HEADINGS[e.key as string] as string} index={e.ord ?? null}>
-                    {storedContent && <FactBlocks markdown={storedContent} {...(depth === "summary" ? { maxGroups: 1 } : {})} />}
-                    {e.key === "6" && (
-                      <>
-                        {r.doesNotResolve && (
-                          <div style={{ marginTop: storedContent ? "var(--sp-12)" : 0 }}>
-                            <p className="cl-detail-label">Does not resolve</p>
-                            <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>{r.doesNotResolve}</p>
-                          </div>
-                        )}
-                        <PendingTriggers events={pendingEvents} kindLabels={p.kindLabels ?? {}} />
-                      </>
-                    )}
+                  <DetailSection key={e.id} id={e.id} title={HEADINGS[e.key as string] as string} aside={isObligationsPreview ? "Top priority group · switch to Full brief for all sections" : undefined} index={e.ord ?? null}>
+                    {storedContent ? <FactBlocks markdown={storedContent} {...(depth === "summary" ? { maxGroups: 1 } : {})} /> : e.key === "6" ? <p className="cl-detail-link-note">Pending regulatory triggers and unresolved items are summarized in S1 Summary above.</p> : null}
                   </DetailSection>
                 );
               })}
@@ -215,7 +198,6 @@ export function RegulationDetail(p: Props) {
                 {rows.length > 0 ? <SourcesGrid rows={rows} /> : <StateNote>No sources are listed for this item.</StateNote>}
               </DetailSection>
             )}
-            <CrossPageSection surfaceKey="regulations" surfaceLabel="Regulations" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} />
           </DetailLayout>
         </DetailPageWrapper>
       </div>
@@ -249,9 +231,9 @@ function PenaltyObjects({ views }: { views: readonly PenaltyView[] }) {
 function PenaltyFacts({ r }: { r: Resource }) {
   const rows: Array<[string, string]> = [r.penaltyRange ? ["Penalty amount", r.penaltyRange] : null, r.costMechanism ? ["Cost mechanism", r.costMechanism] : null, r.enforcementBody ? ["Enforcement body", r.enforcementBody] : null, r.complianceDeadline ? ["Compliance deadline", r.complianceDeadline] : null].filter((x): x is [string, string] => x !== null);
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-8)" }}>
       {rows.map(([label, value]) => (
-        <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: "var(--fs-13)" }}>
+        <div key={label} style={FACT_ROW}>
           <span style={{ color: "var(--ink-3)", fontWeight: 700 }}>{label}</span>
           <span style={{ color: "var(--ink)", textAlign: "right" }}>{value}</span>
         </div>
@@ -264,40 +246,34 @@ function BriefSummary({ r, changelog, dispute, trajectory, doesNotResolve, pendi
   const shortText = r.whatIsIt || r.note || "";
   if (!shortText && !r.fullBrief) return <StateNote>The narrative brief for this regulation has not been written yet. The details elsewhere on this page are accurate.</StateNote>;
   const changes = changelog.map((c) => c.impact).filter((s): s is string => !!s);
+  const hasSubcards = !!trajectory || changes.length > 0 || !!doesNotResolve;
   return (
     <>
-      {shortText && <p style={{ fontSize: 15, lineHeight: 1.7, margin: "0 0 14px", maxWidth: "72ch", color: "var(--ink)" }}>{shortText}</p>}
-      {trajectory && (
-        <div style={{ margin: "0 0 14px" }}>
-          <p className="cl-detail-label">Trajectory</p>
-          <div style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>{trajectory}</div>
+      {shortText && <p className="cl-summary-lead">{shortText}</p>}
+      {hasSubcards && (
+        <div className="cl-summary-grid">
+          {trajectory && (
+            <div className="cl-summary-subcard">
+              <p className="cl-summary-subcard-title">Trajectory</p>
+              <div className="cl-summary-subcard-body">{trajectory}</div>
+            </div>
+          )}
+          {changes.length > 0 && (
+            <div className="cl-summary-subcard cl-summary-subcard--changed">
+              <p className="cl-summary-subcard-title">What changed</p>
+              {changes.slice(0, 3).map((s, i) => <p key={i} className="cl-summary-subcard-body">{s}</p>)}
+            </div>
+          )}
+          {doesNotResolve && (
+            <div className="cl-summary-subcard cl-summary-subcard--unresolved">
+              <p className="cl-summary-subcard-title">What does not resolve</p>
+              <p className="cl-summary-subcard-body">{doesNotResolve}</p>
+            </div>
+          )}
         </div>
       )}
-      {changes.length > 0 && (
-        <div style={{ marginTop: 6 }}>
-          <p className="cl-detail-label">What changed</p>
-          {changes.slice(0, 3).map((s, i) => (
-            <p key={i} style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, margin: "0 0 6px", color: "var(--ink-2)" }}>
-              {s}
-            </p>
-          ))}
-        </div>
-      )}
-      {dispute?.note && (
-        <div style={{ marginTop: 12 }}>
-          <StateNote>{dispute.note}</StateNote>
-        </div>
-      )}
-      {doesNotResolve && (
-        <div style={{ marginTop: "var(--sp-10)" }}>
-          <p className="cl-detail-label">What does not resolve</p>
-          <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, margin: "0 0 var(--sp-6)", color: "var(--ink-2)" }}>
-            {doesNotResolve}
-          </p>
-        </div>
-      )}
+      {dispute?.note && <div style={{ marginTop: "var(--sp-12)" }}><StateNote>{dispute.note}</StateNote></div>}
       <PendingTriggers events={pendingEvents} kindLabels={kindLabels} />
     </>
   );
 }
-

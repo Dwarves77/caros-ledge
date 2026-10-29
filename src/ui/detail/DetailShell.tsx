@@ -58,11 +58,9 @@ export function DetailSection({ id, title, aside, index, children }: { id: strin
 
 export function DetailLayout({ children, rail }: { children: ReactNode; rail: ReactNode }) {
   return (
-    <div className="cl-detail-layout">
+    <div className={rail ? "cl-detail-layout" : "cl-detail-layout cl-detail-layout--solo"}>
       <div style={{ minWidth: 0 }}>{children}</div>
-      <div data-audit="detail-rail" className="cl-detail-rail">
-        {rail}
-      </div>
+      {rail ? <div data-audit="detail-rail" className="cl-detail-rail">{rail}</div> : null}
     </div>
   );
 }
@@ -74,23 +72,26 @@ function ItemCollabSlot({ todayIso }: { todayIso: string }) {
   if (!itemId || members == null) return null;
   return (
     <DetailLayout rail={null}>
-      <DetailSection id="notes" title="Notes" aside="Visible to your workspace only">
-        <ItemNotesBlock itemId={itemId} />
-      </DetailSection>
-      <DetailSection id="assignments" title="Assignments" aside="Assign teammates, with a notification">
-        <ItemAssignBlock itemId={itemId} todayIso={todayIso} />
-      </DetailSection>
+      <div className="cl-collab-grid">
+        <DetailSection id="notes" title="Notes" aside="Visible to your workspace only">
+          <ItemNotesBlock itemId={itemId} />
+        </DetailSection>
+        <DetailSection id="assignments" title="Assignments" aside="Assign teammates, with a notification">
+          <ItemAssignBlock itemId={itemId} todayIso={todayIso} />
+        </DetailSection>
+      </div>
     </DetailLayout>
   );
 }
 
 /** `itemId` is the uuid of the item the page shows, in a typed attribute: the signed-in visibility check (scripts/runs/visible.mjs) reads it, since a uuid URL redirects to the legacy slug. */
-export function DetailPageWrapper({ children, itemId, band = null, action = null, nowIso }: { children: ReactNode; itemId: string; band?: UrgencyBand | null; action?: string | null; nowIso: string }) {
+export function DetailPageWrapper({ children, footer, itemId, band = null, action = null, nowIso }: { children: ReactNode; footer?: ReactNode; itemId: string; band?: UrgencyBand | null; action?: string | null; nowIso: string }) {
   return (
     <BandProvider band={band} action={action}>
       <div className="cl-detail-wrap" data-item-id={itemId}>
         {children}
         <ItemCollabSlot todayIso={nowIso} />
+        {footer ? <DetailLayout rail={null}>{footer}</DetailLayout> : null}
       </div>
     </BandProvider>
   );

@@ -94,8 +94,8 @@ function MatrixBody({ fact: f }: { fact: MatrixFact }) {
       )}
       <div data-audit="ops-fact-source" className="cl-fc-matrix-source">
         <span className="cl-fc-matrix-tier">{f.sourceTier != null ? <TierChip tier={f.sourceTier} size="square" /> : <TierAbsence />}</span>
-        {f.sourceName ? f.sourceUrl ? <SourceLink href={f.sourceUrl}>{f.sourceName}</SourceLink> : f.sourceName : "source not linked"}
-        {f.period ? ` · ${f.period}` : ""}
+        {(() => { const clean = (s?: string | null) => (s ? s.replace(/^[·|\-–—\s]+|[·|\-–—\s]+$/g, "").trim() : ""); const src = clean(f.sourceName); return src ? (f.sourceUrl ? <SourceLink href={f.sourceUrl}>{src}</SourceLink> : src) : "source not linked"; })()}
+        {f.period && f.period.replace(/^[·|\-–—\s]+|[·|\-–—\s]+$/g, "").trim() ? ` · ${f.period.replace(/^[·|\-–—\s]+|[·|\-–—\s]+$/g, "").trim()}` : ""}
         {f.provenance ? ` · ${f.provenance}` : f.written ? ` · row written ${f.written}` : " · no date on row"}
       </div>
     </div>

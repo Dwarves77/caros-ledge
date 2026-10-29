@@ -16,14 +16,14 @@ export const pendingTriggers = <E extends { event_kind: string }>(events: readon
 export function PendingTriggers({ events, kindLabels = {} }: { events: readonly PendingEvent[]; kindLabels?: Readonly<Record<string, string>> }) {
   if (events.length === 0) return null;
   return (
-    <div style={{ marginTop: "var(--sp-10)" }}>
-      <p className="cl-detail-label">Pending regulatory triggers</p>
-      <ul style={{ margin: "var(--sp-4) 0 0", paddingLeft: "var(--sp-18)", fontSize: "var(--fs-13)", lineHeight: 1.6, color: "var(--ink-2)" }}>
+    <div className="cl-summary-subcard cl-summary-subcard--pending">
+      <p className="cl-summary-subcard-title">Pending regulatory triggers</p>
+      <ul className="cl-trigger-list">
         {events.map((ev, i) => (
           <li key={ev.id ?? i}>
             <span style={{ fontWeight: 600, color: "var(--ink)" }}>{ev.event_date ? formatDate(ev.event_date) : "No date on file"}</span> · {kindLabels[ev.event_kind] ?? ev.event_kind}
             {ev.obligation_text ? ` · ${ev.obligation_text}` : ""}
-            {ev.source_span ? <span style={{ display: "block", color: "var(--ink-3)", fontSize: "var(--fs-12)" }}>Source text: “{ev.source_span}”</span> : null}
+            {ev.source_span ? <span className="cl-trigger-source">Source text: “{ev.source_span}”</span> : null}
           </li>
         ))}
       </ul>

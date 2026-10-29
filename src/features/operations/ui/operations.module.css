@@ -2,7 +2,7 @@
    matrix cells are 44 px tall where artboard 08 draws 40 (DESIGN CHANGES OWED, artboard 08). */
 .card { display: flex; flex-direction: column; min-width: 0; }
 .head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 16px 10px; border-bottom: 1px solid var(--line-2); flex-wrap: wrap; }
-.title { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.04em; font-size: 20px; line-height: 1; margin: 0; color: var(--ink); }
+.title { font-family: var(--font-sans); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: var(--fs-15); line-height: 1.2; margin: 0; color: var(--ink); }
 .hint { font-size: var(--fs-105); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; text-align: right; }
 .scroller { min-width: 0; }
 .table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: var(--fs-125); }

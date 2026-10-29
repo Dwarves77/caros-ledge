@@ -64,7 +64,7 @@ export function collapseTimeline(classified: ClassifiedMilestone[]): { visible: 
 
 export function nextMilestoneClause(classified: ClassifiedMilestone[], nowIso: string): string | null {
   const next = classified.find((c) => c.state === "next");
-  return next ? `${next.entry.label} · ${formatDayMonthYear(next.entry.date)} · ${daysPhrase(daysBetween(next.entry.date, nowIso))}` : null;
+  return next ? `${next.entry.label.replace(/^(?:\d{4}-\d{2}(?:-\d{2})?\s*(?:[—–\-:]|\s)+)+/, "").trim() || next.entry.label} · ${formatDayMonthYear(next.entry.date)} · ${daysPhrase(daysBetween(next.entry.date, nowIso))}` : null;
 }
 
 /** Where the green part of the track ends, as a percent of the first-to-last marker span. */

@@ -9,8 +9,8 @@
   --tag: #F5F2EE;
   /* ink */
   --ink: #1A1A1A;
-  --ink-2: #5A6B67;
-  --ink-3: #7A6E6C;
+  --ink-2: #4A5553;
+  --ink-3: #686461;
   --brand: #5A5552;
   --invert-text: #FFFFFF;
   /* bands: the one urgency vocabulary */
@@ -51,7 +51,7 @@
   --font-sans: var(--font-jakarta), var(--font-jakarta-ext), system-ui, sans-serif;
   --font-display: var(--font-anton), var(--font-anton-ext), system-ui, sans-serif;
   --fs-85: 8.5px; --fs-95: 9.5px; --fs-10: 10px; --fs-105: 10.5px; --fs-11: 11px; --fs-115: 11.5px;
-  --fs-12: 12px; --fs-125: 12.5px; --fs-13: 13px; --fs-14: 14px; --fs-22: 22px;
+  --fs-12: 12px; --fs-125: 12.5px; --fs-13: 13px; --fs-14: 14px; --fs-15: 15px; --fs-22: 22px;
   /* a list row's title wraps to this many lines on the phone and mid layouts; the detail page header keeps the full title */
   --row-title-lines: 2;
   /* interaction */

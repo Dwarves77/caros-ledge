@@ -156,7 +156,13 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
   return (
     <ClaimTierProvider claimTiers={claimTiers}>
       <div style={{ paddingTop: 16 }}>
-        <DetailPageWrapper itemId={r.itemUuid ?? r.id} band={band} action={topRecommendedAction(recommendedActions)} nowIso={nowIso}>
+        <DetailPageWrapper
+          itemId={r.itemUuid ?? r.id}
+          band={band}
+          action={topRecommendedAction(recommendedActions)}
+          nowIso={nowIso}
+          footer={<><CrossPageSection surfaceKey="market" surfaceLabel="Market Intel" crossPage={crossPage} onRetry={retry} kindLabels={kindLabels ?? {}} /><NoticesRail /></>}
+        >
           <DetailMasthead title={r.title} band={band} surface="Market Intel" jurisdiction={jurisLabel} dek={meta} placeholder="Ask about this signal, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} />
           {claimsDegraded && (
             <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
@@ -196,7 +202,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
             <DetailSection id="summary" title="Summary" aside="Generated · 30-second read" index={1}>
               <PriceBoardBlock bundle={bundle} nowIso={nowIso} />
               {map["1"] ? <FactBlocks markdown={map["1"]} /> : note("The movement analysis")}
-              {depth === "full" && !isRecord && !claimsDegraded && r.fullBrief ? (
+              {depth === "full" && !isRecord && !claimsDegraded && Object.keys(map).length === 0 && r.fullBrief ? (
                 <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line-3)" }}>
                   <GfmSection markdown={stripSourcesSection(r.fullBrief)} />
                 </div>
@@ -253,8 +259,6 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
                 <ConnectionList rows={connectionRows} />
               </DetailSection>
             )}
-            <CrossPageSection surfaceKey="market" surfaceLabel="Market Intel" crossPage={crossPage} onRetry={retry} kindLabels={kindLabels ?? {}} />
-            <NoticesRail />
           </DetailLayout>
         </DetailPageWrapper>
       </div>

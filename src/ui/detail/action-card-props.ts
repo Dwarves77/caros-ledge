@@ -19,7 +19,7 @@ export function commonActionCardProps(r: Resource, parts: { tagPopover: ReactNod
         whoPaysVal = `Obligated: ${bound.trim()}`;
       }
     } else if (r.topic && r.type) {
-      whoPaysVal = `${r.type} targeting ${r.topic} duty holders`;
+      whoPaysVal = `${r.type.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())} targeting ${r.topic} duty holders`;
     } else if (r.topic) {
       whoPaysVal = `Duty holders in ${r.topic}`;
     }

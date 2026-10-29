@@ -18,7 +18,7 @@ const APPLIES_WORDS: Record<string, string> = { applies: "Applies to your organi
 /** The connections strip of the masthead card: superseded-by, supersedes and the items this one is linked to, each a link on its own surface; the rest behind a closed disclosure. */
 function formatConnectionContext(r: ConnectionRow): string {
   if (r.basisSummary && r.basisSummary.length > 0) {
-    const signals = r.basisSummary.map((b) => b.signal.replace(/_/g, " ")).join(", ");
+    const signals = [...new Set(r.basisSummary.map((b) => b.signal.replace(/_/g, " ")))].join(", ");
     return `Bound by ${signals}`;
   }
   switch (r.label.toLowerCase()) {

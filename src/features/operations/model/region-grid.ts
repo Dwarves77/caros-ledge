@@ -64,7 +64,7 @@ export const derivationLabel = (code: string | null | undefined): string | null 
 const sourceUrlFromNote = (note: string | null | undefined): string | null => (typeof note === "string" ? (note.match(/https?:\/\/[^\s)]+/)?.[0] ?? null) : null);
 function sourceNameFromNote(note: string | null | undefined): string | null {
   if (typeof note !== "string") return null;
-  const cleaned = note.replace(/https?:\/\/[^\s)]+/g, "").replace(/[·|\-–—\s]+$/, "").trim();
+  const cleaned = note.replace(/https?:\/\/[^\s)]+/g, "").replace(/(?:\s*[·|\-–—]\s*)+/g, " · ").replace(/^[·|\-–—\s]+|[·|\-–—\s]+$/g, "").trim();
   return cleaned.length > 0 ? cleaned : null;
 }
 

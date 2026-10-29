@@ -27,10 +27,10 @@
 
 /* the headline series card */
 .hHead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-16); padding: 14px 16px 10px; flex-wrap: wrap; }
-.hTitle { font-family: var(--font-display); font-weight: 400; font-size: 20px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.hTitle { font-family: var(--font-sans); font-weight: 800; font-size: var(--fs-15); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
 .hCaption { font-size: var(--fs-11); font-weight: 600; color: var(--ink-3); min-width: 0; }
 .hLink { display: inline-flex; align-items: center; min-height: var(--target); color: inherit; text-decoration: underline; }
-.hTrack { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 40px) / 5); gap: var(--sp-10); overflow-x: auto; padding: 0 16px 16px; }
+.hTrack { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(156px, calc((100% - 40px) / 5)); gap: var(--sp-10); overflow-x: auto; scroll-snap-type: x proximity; padding: 0 var(--sp-16) var(--sp-16); }
 .hCard { border: 1px solid var(--line-1); border-radius: var(--radius-card); box-shadow: var(--shadow-card); background: var(--card); padding: 10px 12px; overflow: hidden; min-width: 0; }
 .hLabel { font-size: var(--fs-11); font-weight: 700; color: var(--ink-3); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hValueRow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin-top: var(--sp-6); }
@@ -97,7 +97,7 @@
 
 /* the spec 09 panels */
 .panelHead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-16); flex-wrap: wrap; border-bottom: 2px solid var(--ink); padding-bottom: var(--sp-8); margin-bottom: var(--sp-12); }
-.panelTitle { font-family: var(--font-display); font-weight: 400; font-size: 26px; letter-spacing: 0.02em; text-transform: uppercase; }
+.panelTitle { font-family: var(--font-sans); font-weight: 800; font-size: var(--fs-15); letter-spacing: 0.01em; text-transform: uppercase; }
 .cardGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--sp-12); }
 .cardList { display: grid; gap: var(--sp-8); margin-bottom: var(--sp-12); }
 .panelCard { border: 1px solid var(--line-1); border-radius: var(--radius-card); background: var(--card); padding: 12px 16px; display: grid; gap: var(--sp-4); }

@@ -83,9 +83,11 @@ function GroupList({ groups }: { groups: Group[] }) {
             {g.label}
             {g.samePage ? " (this page)" : ""} · {g.items.length}
           </Label>
-          {g.items.map((it) => (
-            <RowLink key={it.id} href={it.href} title={it.title} note={it.coupling} />
-          ))}
+          <div className="cl-conn-grid">
+            {g.items.map((it) => (
+              <RowLink key={it.id} href={it.href} title={it.title} note={it.coupling} />
+            ))}
+          </div>
         </div>
       ))}
     </>
@@ -161,10 +163,12 @@ function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisVie
                 {g.label}
                 {g.samePage ? " (this page)" : ""} · {g.total} {g.total === 1 ? "item" : "items"}
               </Label>
-              {g.items.map((it) => (
-                <RowLink key={it.id} href={it.href} title={it.title} note={g.label} />
-              ))}
-              {g.moreHref && <RowLink href={g.moreHref} title={`and ${g.total - g.items.length} more on ${g.label}`} />}
+              <div className="cl-conn-grid">
+                {g.items.map((it) => (
+                  <RowLink key={it.id} href={it.href} title={it.title} note={g.label} />
+                ))}
+                {g.moreHref && <RowLink href={g.moreHref} title={`and ${g.total - g.items.length} more on ${g.label}`} />}
+              </div>
             </div>
           ))}
         </Block>
