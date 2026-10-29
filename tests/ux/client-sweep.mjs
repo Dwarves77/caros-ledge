@@ -39,7 +39,7 @@ async function drawn(browser, spec, refuse) {
     // Registered after the smoke's own mock, so it answers first: the refused read gets a stated 503, every other request falls through to the mock.
     await page.route('**/*', (route) => {
       const key = readKey(route.request());
-      if (key && refuse === key) return route.fulfill({ status: 503, contentType: 'application/json', headers: { 'access-control-allow-origin': '*', 'retry-after': '1' }, body: JSON.stringify({ error: REFUSAL_SENTENCE }) });
+      if (key && refuse === key) return route.fulfill({ status: 503, contentType: 'application/json', headers: { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'retry-after', 'retry-after': '0' }, body: JSON.stringify({ error: REFUSAL_SENTENCE }) });
       return route.fallback();
     });
     page.on('request', (r) => {

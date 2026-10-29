@@ -22,7 +22,10 @@
   "band_counts_unavailable": "The band counts did not load, so the tiles are blank rather than zero.",
   "themes_unavailable": "The cross-page themes did not load.",
   "ratings_unavailable": "Source ratings did not load, so tiers are not shown on these rows.",
-  "discussions_unavailable": "discussions could not be loaded"
+  "discussions_unavailable": "discussions could not be loaded",
+  "timelines_unavailable": "Milestone dates did not load for some rows, so their next dates are blank.",
+  "staged_updates_unavailable": "Staged updates did not load.",
+  "members_unavailable": "Workspace memberships did not load."
  },
  "impactAbsence": {
   "obligations": "No obligations extracted yet",

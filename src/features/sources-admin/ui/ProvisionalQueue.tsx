@@ -3,6 +3,7 @@
 // Ported from old_repo/src/components/sources/ProvisionalReviewTable.tsx (lines 38-385)
 import { useState } from "react";
 
+import { refusalSentence } from "@/core/http/failure";
 import { requestJson } from "@/core/http/request-json";
 import { formatNumber, hostOf } from "@/core/shared";
 import { classTierForHost } from "@/core/sources/host-class";
@@ -24,7 +25,7 @@ const rowTier = (r: Pick<AdminProvisional, "url" | "name" | "recommended_tier">)
  * The provisional review queue: the sources the machine could not place on its own, an override surface (the gates already ruled on everything they could). A row approves at its class tier in one tap, or opens the
  * full editor. The head count is the same queue the badge counts (COUNTS-61); a row leaves only when the decision succeeded.
  */
-export function ProvisionalQueue({ rows, pendingTotal, stagedCount, onOpenStaged, onRemoved }: { rows: AdminProvisional[]; pendingTotal: number | null; stagedCount: number; onOpenStaged: () => void; onRemoved: (id: string) => void }) {
+export function ProvisionalQueue({ rows, pendingTotal, stagedCount, onOpenStaged, onRemoved }: { rows: AdminProvisional[]; pendingTotal: number | null; stagedCount: number | null; onOpenStaged: () => void; onRemoved: (id: string) => void }) {
   const [open, setOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +46,7 @@ export function ProvisionalQueue({ rows, pendingTotal, stagedCount, onOpenStaged
   };
   return (
     <div className={styles.stack}>
-      <StateNote action={{ label: "Open staged updates", onClick: onOpenStaged }}>{formatNumber(stagedCount)} staged updates are passing through the gates. Everything below is a source they could not place on their own.</StateNote>
+      <StateNote {...(stagedCount === null ? { tone: "error" as const } : {})} action={{ label: "Open staged updates", onClick: onOpenStaged }}>{stagedCount === null ? refusalSentence("staged_updates_unavailable") : `${formatNumber(stagedCount)} staged updates are passing through the gates. Everything below is a source they could not place on their own.`}</StateNote>
       <p className={styles.note}>{formatNumber(pendingTotal ?? rows.length)} in the queue{pendingTotal !== null && pendingTotal !== rows.length ? ` (${formatNumber(rows.length)} shown)` : ""}.</p>
       {error ? <InlineErrorBanner message={error} /> : null}
       {rows.length === 0 ? (

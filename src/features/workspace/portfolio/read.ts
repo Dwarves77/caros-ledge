@@ -86,5 +86,5 @@ export async function readPortfolioDetail(client: Db, orgId: string, portfolioId
     // Most urgent binding date first; items with no date after, in title order (stable, no invented rank).
     rows: heldItems.filter((h) => h.surface === surface).sort((a, b) => (a.dueDays ?? Infinity) - (b.dueDays ?? Infinity) || a.title.localeCompare(b.title)),
   })).filter((g) => g.rows.length > 0);
-  return { portfolio, rollup, groups, entityRows: entityViews, entitiesUnread: entityIds.length - entityViews.length };
+  return { portfolio, rollup, groups, entityRows: entityViews, entitiesUnread: entityIds.length - entityViews.length, timelinesFailed: held.some((h) => h.timelineFailed) };
 }

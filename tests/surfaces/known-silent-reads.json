@@ -1,24 +1,4 @@
 {
-  "note": "Reads the page sweep (page-sweep.test.ts) found that a page draws without a stated failure (INV-263). The sweep requires this register to equal the sweep's silent set exactly: a new silent read fails the build, and a fixed one must leave this file. Each entry is a finding with a status token (rule 14) and the slice that owes the fix.",
-  "pages": {
-    "/dashboard/portfolio/[id]": {
-      "table item_timelines": {
-        "status": "CONFIRMED",
-        "owner": "R2d (surfaces showing failed values)",
-        "finding": "Found by the widened sweep (G5, 2026-10-19), repro: draw the page over the sweep world with item_timelines refused. The Due column prints dashes and the 'Next date' card says 'no held item carries a future date': a failed read is drawn as the absence of a date, and nothing on the page says the read failed (INV-263)."
-      }
-    },
-    "/admin": {
-      "table org_memberships": {
-        "status": "CONFIRMED",
-        "owner": "R2d (surfaces showing failed values)",
-        "finding": "Found by the widened sweep (G5, 2026-10-19), repro: draw /admin over the admin sweep world with org_memberships refused. The 'Who is using the platform' rail card is rendered only when the members read succeeded, so it vanishes with no sentence (INV-263, class I8)."
-      },
-      "table staged_updates": {
-        "status": "CONFIRMED",
-        "owner": "R2d (surfaces showing failed values)",
-        "finding": "Found by the widened sweep (G5, 2026-10-19), repro: draw /admin over the admin sweep world with staged_updates refused. The registry card reads the failed part as `staged?.total ?? 0` and prints '0 staged updates are passing through the gates': a failed read drawn as a zero (INV-263, class I8)."
-      }
-    }
-  }
+  "note": "Reads the server page sweep (tests/_support/page-sweep.ts, run by tests/surfaces/page-sweep.test.ts) found that a page draws without a stated failure (INV-263). The sweep requires this register to equal its silent set exactly: a new silent read fails the test, and a fixed one must leave this file. Each entry is a finding with a status token (rule 14) and the slice that owes the fix.",
+  "pages": {}
 }

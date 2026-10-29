@@ -35,7 +35,7 @@ function filterRegistry(sources: readonly AdminSource[], f: { tiers: readonly nu
 const overdue = (sources: readonly AdminSource[], nowIso: string): AdminSource[] => sources.filter((s) => s.next_scheduled_check !== null && s.next_scheduled_check < nowIso);
 
 /** The source registry card: the tier legend, the scrape schedule, and seven views (the registry, its health, the provisional queue, canonical source issues, connection pairs, themes, upcoming obligations). Every view that reads says so when the read fails. */
-export function SourceRegistryCard({ sources, provisional, initialView, nowIso, pendingTotal, stagedCount, onOpenStaged, onSourceChanged, onProvisionalRemoved }: { sources: AdminSource[]; provisional: AdminProvisional[]; initialView: RegistryView; nowIso: string; pendingTotal: number | null; stagedCount: number; onOpenStaged: () => void; onSourceChanged: (id: string, patch: Partial<AdminSource>) => void; onProvisionalRemoved: (id: string) => void }) {
+export function SourceRegistryCard({ sources, provisional, initialView, nowIso, pendingTotal, stagedCount, onOpenStaged, onSourceChanged, onProvisionalRemoved }: { sources: AdminSource[]; provisional: AdminProvisional[]; initialView: RegistryView; nowIso: string; pendingTotal: number | null; stagedCount: number | null; onOpenStaged: () => void; onSourceChanged: (id: string, patch: Partial<AdminSource>) => void; onProvisionalRemoved: (id: string) => void }) {
   const [view, setView] = useState<RegistryView>(initialView);
   const [tiers, setTiers] = useState<number[]>([]);
   const [search, setSearch] = useState("");

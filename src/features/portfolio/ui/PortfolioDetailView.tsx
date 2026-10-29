@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { VOCABULARIES } from "@/core/contracts";
+import { refusalSentence } from "@/core/http/failure";
 import { BAND_ORDER, bandFromPriority, NEUTRAL_BAND, type ListRowFields } from "@/core/lists";
 import { countNoun } from "@/core/shared";
 import { Button, CardFoot, InlineErrorBanner, Input, ListRow, ListRowHeader, Masthead, Menu, RailCard, SectionCard, SectionHead, StatBlock, StateNote } from "@/ui";
@@ -86,7 +87,7 @@ export function PortfolioDetailView({ view, readOnly, dateLabel, nowIso }: { vie
               {rollup.byPriority.unscored > 0 && <StatBlock layout="row" label="No band yet" value={rollup.byPriority.unscored} note={`of ${heldCount} held`} />}
             </RailCard>
             <RailCard title="Held data">
-              <StatBlock layout="row" label="Next date" value={rollup.nextDue ? `${rollup.nextDue.days}d` : "No date"} note={nextDueRow ? nextDueRow.title : rollup.nextDue ? undefined : "no held item carries a future date"} />
+              <StatBlock layout="row" label="Next date" value={rollup.nextDue ? `${rollup.nextDue.days}d` : view.timelinesFailed ? "—" : "No date"} note={nextDueRow ? nextDueRow.title : rollup.nextDue ? undefined : view.timelinesFailed ? refusalSentence("timelines_unavailable") : "no held item carries a future date"} />
               <StatBlock layout="row" label="Weakest source class" value={weakest ?? "No class"} note={weakest ? `${rollup.origin.classified} of ${heldCount} classified` : heldCount === 0 ? "nothing held yet" : `0 of ${heldCount} classified`} />
               {rollup.origin.unclassified > 0 && rollup.origin.classified > 0 && <p className={styles.fine}>{countNoun(rollup.origin.unclassified, "held item")} carry no class and are not counted in it.</p>}
             </RailCard>
@@ -125,6 +126,7 @@ export function PortfolioDetailView({ view, readOnly, dateLabel, nowIso }: { vie
       >
         <div className={styles.column}>
           {error && <InlineErrorBanner message={error} />}
+          {view.timelinesFailed && <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>{refusalSentence("timelines_unavailable")}</StateNote>}
           {notHeld.length > 0 && (
             <StateNote {...(readOnly ? {} : { action: { label: busy === "clear" ? "Removing..." : "Remove them", onClick: () => void clearNotHeld() } })}>
               {countNoun(notHeld.length, "item")} in this portfolio {notHeld.length === 1 ? "is" : "are"} no longer held by the platform (archived or withdrawn). They are counted in the total and left out of every figure.

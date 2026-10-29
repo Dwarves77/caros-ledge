@@ -37,7 +37,7 @@ export interface AccountState {
   /** The roster size for the Members tab label, counted from org_memberships under the reader's own RLS (head-only); null when it could not be counted. */
   memberCount: number | null;
   /** One message per read that failed; a failed read is shown with Retry, never rendered as an empty profile or a zero. */
-  errors: { profile?: string; sectors?: string; org?: string };
+  errors: { profile?: string; sectors?: string; org?: string; members?: string };
 }
 
 const EMPTY: ProfileRow = { full_name: null, bio: null, avatar_url: null, jurisdiction_overrides: [], transport_mode_overrides: [], verifier_status: "none", verifier_since: null, created_at: null };
@@ -66,6 +66,7 @@ export function useAccount(userId: string, orgId: string | null) {
       if (p.error) errors.profile = readFailure(p.error);
       if (s?.error) errors.sectors = readFailure(s.error);
       if (o && !o.ok) errors.org = o.error ?? "The organisation could not be loaded.";
+      if (m?.error) errors.members = readFailure(m.error);
       const row = p.data as Partial<ProfileRow> | null;
       setState({
         loading: false,

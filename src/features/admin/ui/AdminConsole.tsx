@@ -100,7 +100,7 @@ export function AdminConsole({ userId, userEmail, nowIso, initial }: { userId: s
               initialView={(sub === "Provisional review" || sub === "Spot-check" ? "provisional" : "registry") as RegistryView}
               nowIso={nowIso}
               pendingTotal={attention?.provisional_sources_pending ?? null}
-              stagedCount={staged?.total ?? 0}
+              stagedCount={staged ? staged.total : null}
               onOpenStaged={() => go({ section: "Ingest", tab: "Staged updates" })}
               onSourceChanged={(id, patch) => setData((d) => (d.sources.ok ? { ...d, sources: { ok: true, data: d.sources.data.map((s) => (s.id === id ? { ...s, ...patch } : s)) } } : d))}
               onProvisionalRemoved={(id) => setData((d) => (d.provisional.ok ? { ...d, provisional: { ok: true, data: d.provisional.data.filter((p) => p.id !== id) } } : d))}
@@ -161,7 +161,7 @@ export function AdminConsole({ userId, userEmail, nowIso, initial }: { userId: s
         </div>
         <aside className={styles.rail}>
           <IssuesRail counts={attention} failed={!data.attention.ok && !live ? data.attention.error : null} onNavigate={go} onRetry={refresh} />
-          {orgs && members ? <UsageCard orgs={orgs} members={members.rows} capped={members.capped} /> : null}
+          {orgs && members ? <UsageCard orgs={orgs} members={members.rows} capped={members.capped} /> : <RailCard title="Who is using the platform"><PartFailure what="Memberships" error={!data.orgs.ok ? data.orgs.error : !data.members.ok ? data.members.error : ""} onRetry={refresh} /></RailCard>}
           <RailCard title="Read-only controls">
             <p className={styles.note}>Per-organization settings are changed in that organization&apos;s own settings. This console observes and overrides after the fact; every override is recorded with a reason.</p>
             <Button variant="secondary" size="sm" onClick={() => void refresh()}>Refresh</Button>

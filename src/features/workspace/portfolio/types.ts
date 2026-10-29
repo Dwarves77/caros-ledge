@@ -53,6 +53,7 @@ export interface HeldRow {
   surface: PortfolioSurfaceKey;
   /** Days to the nearest future binding date, or null. */
   dueDays: number | null;
+  timelineFailed?: boolean;
   /** The list-row fields the surface renders, passed through untouched. */
   fields: Record<string, unknown>;
 }
@@ -88,4 +89,5 @@ export interface PortfolioDetailView {
   entityRows: PortfolioEntityRow[];
   /** Member entities that could not be read (should be none; counted so the denominator stays honest). */
   entitiesUnread: number;
+  timelinesFailed?: boolean;
 }

@@ -45,7 +45,7 @@ export function AccountPage({ userId, userEmail, orgId, orgName, role, nowIso, i
   const jurisdictions = jurisdictionLabels(profile.jurisdiction_overrides);
   const since = monthYear(profile.created_at);
   const counts: Partial<Record<ProfileTabKey, string>> = {
-    ...(account.memberCount !== null ? { members: formatNumber(account.memberCount) } : org ? { members: formatNumber(org.member_count) } : {}),
+    ...(account.memberCount !== null ? { members: formatNumber(account.memberCount) } : org && !errors.members ? { members: formatNumber(org.member_count) } : {}),
     ...(sectors.length > 0 ? { sectors: formatNumber(sectors.length) } : {}),
     ...(jurisdictions.length > 0 ? { jurisdictions: formatNumber(jurisdictions.length) } : {}),
   };
@@ -93,6 +93,7 @@ export function AccountPage({ userId, userEmail, orgId, orgName, role, nowIso, i
           Your profile did not load: {errors.profile}
         </StateNote>
       ) : null}
+      {errors.members ? <StateNote tone="error" action={{ label: "Retry", onClick: account.reload }}>{refusalSentence("members_unavailable")} {errors.members}</StateNote> : null}
       {account.loading && !errors.profile ? <p className={styles.muted}>Loading profile...</p> : null}
       {!account.loading && !errors.profile && tab === "personal" ? <PersonalTab profile={profile} email={userEmail} onSave={account.saveProfile} /> : null}
       {tab === "organization" ? <OrganizationPanel orgId={orgId} org={org} error={errors.org} onReload={account.reload} /> : null}
