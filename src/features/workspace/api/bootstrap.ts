@@ -7,6 +7,7 @@ import { fetchAllByIdChunks, fetchAllRows } from "@/core/db/query";
 import { LookupError, route } from "@/core/http/errors";
 import { isRefusal, requireUser } from "@/core/http/guard";
 import { log } from "@/core/shared/log";
+import type { OrgMembership } from "@/core/types";
 import { loadRoster, type RosterMember } from "@/core/workspace/roster";
 
 import type { WorkspaceOverride } from "../state/types";
@@ -53,15 +54,11 @@ async function loadOverrides(db: Db, orgId: string, roster: readonly RosterMembe
   }));
 }
 
-export const GET = route("/api/workspace/bootstrap", async (request) => {
+export async function loadBootstrapBundle(db: Db, userId: string, timePhase: <T>(phase: string, run: () => Promise<T>) => Promise<T> = (_p, run) => run(), known?: { org?: Promise<OrgMembership | null>; isAdmin?: boolean }) {
   const deps = workspaceDeps();
-  const timePhase = deps.timePhase ?? (<T>(_phase: string, run: () => Promise<T>) => run());
-  const user = await timePhase("auth", () => requireUser(request));
-  if (isRefusal(user)) return user;
-  const db = user.client;
   const degraded: string[] = [];
   // One org and one roster read feed both `members` and the owner names of `overrides`.
-  const org = currentMembership(user.client, user.userId);
+  const org = known?.org ?? currentMembership(db, userId);
   const roster = org.then((m) => (m ? loadRoster(db, m.orgId) : null));
   const phase = <T>(name: string, run: () => Promise<T>): Promise<T | null> =>
     timePhase(name, run).catch((e: unknown) => {
@@ -71,12 +68,12 @@ export const GET = route("/api/workspace/bootstrap", async (request) => {
     });
 
   const [personalState, members, adminAttention, overrides, navCounts] = await Promise.all([
-    phase("personal_state", () => loadPersonalState(db, user.userId)),
+    phase("personal_state", () => loadPersonalState(db, userId)),
     phase("members", async () => (await roster)?.map((m) => ({ user_id: m.user_id, role: m.role, display_name: m.display_name, avatar_url: m.avatar_url })) ?? null),
     phase("admin_attention", async () => {
-      if (!(await readOwnPlatformAdmin(user.client))) return null;
+      if (!(known?.isAdmin ?? (await readOwnPlatformAdmin(db)))) return null;
       if (!deps.adminAttention) throw new Error("admin attention is not wired");
-      return deps.adminAttention(user.userId);
+      return deps.adminAttention(userId);
     }),
     phase("overrides", async () => {
       const [membership, members] = await Promise.all([org, roster]);
@@ -85,11 +82,19 @@ export const GET = route("/api/workspace/bootstrap", async (request) => {
     phase("nav_counts", async () => {
       if (!deps.navCounts) throw new Error("nav counts are not wired");
       const membership = await org;
-      return membership ? deps.navCounts({ orgId: membership.orgId, userId: user.userId }) : null;
+      return membership ? deps.navCounts({ orgId: membership.orgId, userId }) : null;
     }),
   ]);
   // The Assistant is free (no model, no spend), so it is on; the one switch is an exact "false", read fresh each request so turning it off needs no redeploy.
-  const payload = { personalState, members, adminAttention, overrides, navCounts, assistantEnabled: process.env.ASSISTANT_ENABLED !== "false", degraded };
+  return { personalState, members, adminAttention, overrides, navCounts, assistantEnabled: process.env.ASSISTANT_ENABLED !== "false", degraded };
+}
+
+export const GET = route("/api/workspace/bootstrap", async (request) => {
+  const deps = workspaceDeps();
+  const timePhase = deps.timePhase ?? (<T>(_phase: string, run: () => Promise<T>) => run());
+  const user = await timePhase("auth", () => requireUser(request));
+  if (isRefusal(user)) return user;
+  const payload = await loadBootstrapBundle(user.client, user.userId, timePhase);
   const response = Response.json(payload, { headers: { ...user.headers, "Cache-Control": "private, no-store" } });
   return deps.withServerTiming ? deps.withServerTiming(response) : response;
 });

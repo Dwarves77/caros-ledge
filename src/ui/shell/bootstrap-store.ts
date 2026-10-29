@@ -62,6 +62,14 @@ export function resetBootstrap(userId: string | null = null): void {
   useBootstrapStore.setState({ ...IDLE, userId });
 }
 
+/** Seed the store directly when /api/auth/identity returned the shell bundle in the initial round trip. */
+export function seedBootstrap(userId: string, data: WorkspaceBootstrapData): void {
+  epoch += 1;
+  inFlight = null;
+  hydrateItemState(data);
+  useBootstrapStore.setState({ userId, data, status: "ready", error: null, hydratedFrom: data });
+}
+
 /** One bundle read for `userId`; a result that arrives after a reset or a user change is discarded. The fetch, the header source and the sleep are injectable for the tests. */
 export async function loadBootstrap(
   userId: string,
@@ -121,4 +129,3 @@ export function hydrateItemState(data: WorkspaceBootstrapData): void {
   if (data.overrides) store.setOverrides(data.overrides);
   if (data.personalState) store.setPersonalState(data.personalState.map((r) => ({ itemId: r.legacyId || r.itemId, isArchived: r.isArchived, archiveNote: r.archiveNote, archivedAt: r.archivedAt })));
 }
-

@@ -16,8 +16,8 @@ type OrgEmbed = { id?: string; name?: string; workspace_settings?: { sector_prof
  * No session resolves to the empty identity. Any failed lookup throws LookupError, which the route answers 503 and the client retries:
  * a failed lookup is never rendered as "no workspace" (lane AUTH-IDENTITY). A missing profile row is healed (INV-154).
  */
-export async function resolveIdentity(client: Db & ClaimsClient, opts: { heal?: boolean } = {}): Promise<IdentityBootstrap> {
-  const claims = await getClaims(client);
+export async function resolveIdentity(client: Db & ClaimsClient, opts: { heal?: boolean; claims?: Awaited<ReturnType<typeof getClaims>> } = {}): Promise<IdentityBootstrap> {
+  const claims = opts.claims !== undefined ? opts.claims : await getClaims(client);
   if (!claims) return EMPTY_IDENTITY;
   const [membership, profile, admin] = await Promise.all([
     client.from("org_memberships").select("org_id, role, organizations(id, name, workspace_settings(sector_profile))").eq("user_id", claims.userId).order("created_at", { ascending: true }).limit(1).maybeSingle(),

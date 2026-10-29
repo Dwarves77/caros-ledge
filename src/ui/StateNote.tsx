@@ -37,7 +37,7 @@ export function StateNote({ band: bandProp, children, action, tone = "note" }: S
     <div data-part="state-note" role={tone === "error" ? "alert" : undefined} className="cl-state-note" style={{ ["--note-rule" as string]: color, background: bg }}>
       <span className="cl-state-note-text">{children}</span>
       {action?.href ? (
-        <Link href={action.href} className="cl-state-note-action">
+        <Link href={action.href} prefetch={false} className="cl-state-note-action">
           {action.label}
         </Link>
       ) : action ? (

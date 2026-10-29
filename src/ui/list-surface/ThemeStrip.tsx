@@ -29,7 +29,7 @@ export function ThemeStrip({ chips }: { chips: ThemeChip[] }) {
       <div data-guard-strip role="region" aria-label="Themes across the corpus, scroll sideways for more" tabIndex={0} className="cl-themes-strip">
         {chips.map((c) => (
           <div key={c.themeId} className="cl-theme-card">
-            <Link href={c.href} title={c.itemTitle} className="cl-theme-link">
+            <Link href={c.href} prefetch={false} title={c.itemTitle} className="cl-theme-link">
               <span data-guard-title className="cl-theme-label">
                 {c.label}
               </span>
@@ -48,7 +48,7 @@ export function ThemeStrip({ chips }: { chips: ThemeChip[] }) {
             {c.links.length > 0 && (
               <div className="cl-theme-links">
                 {c.links.map((m) => (
-                  <Link key={m.href} href={m.href} title={m.title} className="cl-theme-member">
+                  <Link key={m.href} href={m.href} prefetch={false} title={m.title} className="cl-theme-member">
                     · {m.title}
                   </Link>
                 ))}

@@ -25,5 +25,5 @@ Button.displayName = "Button";
 
 /** A navigation that looks like a button: the same look as Button, rendered as a link. */
 export function ButtonLink({ variant, size, className, ...rest }: Omit<ComponentProps<typeof Link>, "style" | "className"> & { variant?: ButtonVariant; size?: ButtonSize; className?: string }) {
-  return <Link className={buttonClass(variant, size, className)} {...rest} />;
+  return <Link prefetch={false} className={buttonClass(variant, size, className)} {...rest} />;
 }

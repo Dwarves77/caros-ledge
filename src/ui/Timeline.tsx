@@ -69,7 +69,7 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
             </button>
           )}
           {moreMarkersHref && (
-            <Link href={moreMarkersHref} data-audit="timeline-more-markers" className="cl-tl-more cl-tl-more--link">
+            <Link href={moreMarkersHref} prefetch={false} data-audit="timeline-more-markers" className="cl-tl-more cl-tl-more--link">
               Clause register ↓
             </Link>
           )}

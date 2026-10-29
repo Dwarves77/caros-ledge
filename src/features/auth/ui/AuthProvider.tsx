@@ -28,7 +28,7 @@ const AuthContext = createContext<AuthContextValue>({ user: null, orgId: undefin
  * Client auth context: seeds identity from /api/auth/identity with bounded retry, keeps tabs in sync, signs out.
  * `onSeed` hands the resolved workspace (org, role, sectors) to the workspace store, which this slice does not know.
  */
-export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed?: (seed: AuthSeed) => void }) {
+export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed?: (seed: AuthSeed, raw?: unknown) => void }) {
   const [user, setUser] = useState<User | null>(null);
   const [orgId, setOrgId] = useState<string | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
@@ -37,6 +37,7 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const loaderRef = useRef<IdentityLoader | null>(null);
   const knownUserRef = useRef<User | null>(null);
+  const lastRawRef = useRef<unknown>(null);
 
   const seed = useCallback(
     (applied: AuthSeed) => {
@@ -51,7 +52,7 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
       setUser(applied.user as User | null);
       setOrgId(applied.orgId);
       setIsPlatformAdmin(applied.isPlatformAdmin);
-      onSeed?.(applied);
+      onSeed?.(applied, lastRawRef.current);
     },
     [onSeed],
   );
@@ -59,9 +60,12 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
   useEffect(() => {
     const loader = createIdentityLoader({
       fetchIdentity: async () => {
-        const r = await fetch("/api/auth/identity", { credentials: "same-origin", cache: "no-store" });
+        const chromeless = /^\/(login|signup|auth|onboarding|invitations|privacy|bot)(\/|$)/.test(window.location.pathname);
+        const r = await fetch("/api/auth/identity", { credentials: "same-origin", cache: "no-store", headers: chromeless ? {} : { "x-shell-bundle": "1" } });
         if (!r.ok) throw failureOf(r.status, r.headers.get("Retry-After"));
-        return r.json();
+        const json: unknown = await r.json();
+        lastRawRef.current = json;
+        return json;
       },
       onSeed: seed,
       onRetrying: setRetryingIdentity,
@@ -92,9 +96,7 @@ export function AuthProvider({ children, onSeed }: { children: ReactNode; onSeed
       pathname: () => window.location.pathname,
       navigate: (to) => void (window.location.href = to),
     });
-    const {
-      data: { subscription },
-    } = browserClient().auth.onAuthStateChange(handle);
+    const { data: { subscription } } = browserClient().auth.onAuthStateChange(handle);
     return () => subscription.unsubscribe();
   }, []);
 

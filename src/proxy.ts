@@ -13,7 +13,8 @@ import { log } from "@/core/shared/log";
  */
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  if (decideRoute({ pathname, authenticated: false }).action === "scanner-404") return new NextResponse(null, { status: 404 });
+  const unauthed = decideRoute({ pathname, search, authenticated: false });
+  if (unauthed.action === "scanner-404") return new NextResponse(null, { status: 404 });
 
   const csp = contentSecurityPolicy({ supabaseOrigin: supabaseOriginOf(process.env.NEXT_PUBLIC_SUPABASE_URL), production: process.env.NODE_ENV === "production" });
   const secured = <R extends NextResponse>(res: R): R => {
@@ -21,6 +22,8 @@ export async function proxy(request: NextRequest) {
     return res;
   };
   const next = () => secured(NextResponse.next({ request }));
+  // Static, API and public routes (except /login and /signup, which bounce a signed-in visitor home) never depend on session state in the proxy.
+  if (unauthed.action === "allow" && pathname !== "/login" && pathname !== "/signup") return next();
 
   let response = next();
   const client = requestClient(request.cookies, (cookiesToSet) => {

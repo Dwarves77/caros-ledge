@@ -32,7 +32,7 @@ export const SourceLink = ({ href, children }: { href: string; children: ReactNo
 );
 
 const FootLink = ({ href, children }: { href: string; children: ReactNode }) => (
-  <Link href={href} className="cl-foot-link">
+  <Link href={href} prefetch={false} className="cl-foot-link">
     {children}
   </Link>
 );
@@ -69,7 +69,7 @@ const railThemeOf = (title: string): string => {
 
 export function RailCard({ title, children, dataAudit, headLink, headRight, titleHref, titleCount, style }: RailCardProps) {
   const trailing = headLink ? (
-    <Link href={headLink.href} className="cl-rail-headlink">
+    <Link href={headLink.href} prefetch={false} className="cl-rail-headlink">
       {headLink.label}
     </Link>
   ) : (

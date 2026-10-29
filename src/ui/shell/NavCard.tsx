@@ -60,7 +60,7 @@ export function NavCard({ variant = "card", onNavigate }: { variant?: "card" | "
                 const active = isActivePath(pathname, href);
                 const n = countKey && counts ? counts[countKey] : null;
                 return (
-                  <Link key={href} href={href} {...nav} aria-current={active ? "page" : undefined} className={`cl-nav-row${active ? " cl-nav-row--active" : ""}`}>
+                  <Link key={href} href={href} prefetch={false} {...nav} aria-current={active ? "page" : undefined} className={`cl-nav-row${active ? " cl-nav-row--active" : ""}`}>
                     <span>{text}</span>
                     {n != null && <span className="cl-nav-count">{formatNumber(n)}</span>}
                   </Link>

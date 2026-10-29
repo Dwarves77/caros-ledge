@@ -29,7 +29,7 @@ function InferenceClaim({ v, titles, hrefs }: { v: InferenceClaimView; titles: R
           <span key={id}>
             {i > 0 ? ", " : ""}
             {hrefs[id] ? (
-              <Link href={hrefs[id]} className="cl-gfm-a" style={{ display: "inline-flex", alignItems: "center", minHeight: "var(--target)" }}>
+              <Link href={hrefs[id]} prefetch={false} className="cl-gfm-a" style={{ display: "inline-flex", alignItems: "center", minHeight: "var(--target)" }}>
                 {titles[id] ?? id}
               </Link>
             ) : (

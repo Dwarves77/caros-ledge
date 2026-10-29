@@ -97,7 +97,7 @@ export function HeadlineSeries({ board, ratings, nowIso }: { board: SeriesBoard;
         <h2 className={styles.hTitle}>Headline series</h2>
         <span className={styles.hCaption}>
           {headlineCaption(selection)} · dated, sourced observations ·{" "}
-          <Link href="/market/series" className={styles.hLink}>
+          <Link href="/market/series" prefetch={false} className={styles.hLink}>
             Series board →
           </Link>
         </span>

@@ -41,7 +41,7 @@ type Feed = { status: "loading" } | { status: "failed"; error: string } | { stat
 function EventCard({ ev }: { ev: UpcomingEvent }) {
   const jurisdiction = ev.item.jurisdiction_iso?.[0] ?? null;
   return (
-    <Link href={`/regulations/${encodeURIComponent(ev.item.legacy_id || ev.item.id)}`} data-guard-container="upcoming-event-card" className={styles.event}>
+    <Link href={`/regulations/${encodeURIComponent(ev.item.legacy_id || ev.item.id)}`} prefetch={false} data-guard-container="upcoming-event-card" className={styles.event}>
       <span className={styles.eventHead}>
         <span className={styles.eventKind}>{KIND_LABELS[ev.event_kind as keyof typeof KIND_LABELS] ?? ev.event_kind}</span>
         <span className={styles.eventDate}>{formatForwardEvent(ev.event_date, ev.date_precision)}</span>

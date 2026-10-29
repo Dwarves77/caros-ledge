@@ -63,7 +63,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
                 <span>
                   <b>No workspace yet.</b> Accept an invitation or create your own to start collaborating.
                 </span>
-                <Link href="/workspace/new" className="cl-shell-banner-link">
+                <Link href="/workspace/new" prefetch={false} className="cl-shell-banner-link">
                   Set up workspace
                 </Link>
               </div>

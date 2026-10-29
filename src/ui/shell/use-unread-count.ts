@@ -28,12 +28,18 @@ async function fetchUnread(fetchImpl: typeof authedFetch = authedFetch): Promise
 }
 
 let holders = 0;
+let seeded = false;
 let timer: ReturnType<typeof setInterval> | null = null;
 let onVisible: (() => void) | null = null;
 const refresh = async () => useUnreadStore.setState({ count: await fetchUnread() });
 
+export function seedUnreadCount(count: number | null): void {
+  seeded = count !== null;
+  useUnreadStore.setState({ count });
+}
+
 function start() {
-  void refresh();
+  if (!seeded) void refresh();
   timer = setInterval(() => document.visibilityState === "visible" && void refresh(), UNREAD_POLL_MS);
   onVisible = () => document.visibilityState === "visible" && void refresh();
   document.addEventListener("visibilitychange", onVisible);
@@ -43,6 +49,7 @@ function stop() {
   if (onVisible) document.removeEventListener("visibilitychange", onVisible);
   timer = null;
   onVisible = null;
+  seeded = false;
   useUnreadStore.setState({ count: null });
 }
 

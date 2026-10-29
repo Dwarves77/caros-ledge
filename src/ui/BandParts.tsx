@@ -82,7 +82,7 @@ export function BandTile({ band, count, loading, selected, onSelect, href }: Ban
   const cls = `cl-band-tile${selected ? " cl-band-tile--selected" : ""}${onSelect || href ? " cl-band-tile--live" : ""}`;
   if (href) {
     return (
-      <Link href={href} aria-label={label} className={cls}>
+      <Link href={href} prefetch={false} aria-label={label} className={cls}>
         {body}
       </Link>
     );
