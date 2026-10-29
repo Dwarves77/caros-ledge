@@ -35,13 +35,5 @@ export async function resolveIdentity(client: Db & ClaimsClient, opts: { heal?: 
     if (!profile.data) overrides = [];
   }
   const org = (membership.data?.organizations ?? null) as OrgEmbed;
-  return {
-    user: { id: claims.userId, email: claims.email },
-    orgId: org?.id || (membership.data?.org_id as string | undefined) || null,
-    orgName: org?.name || "",
-    role: (membership.data?.role as OrgRole | undefined) ?? null,
-    sectors: overrides ?? [],
-    workspaceSectors: org?.workspace_settings?.[0]?.sector_profile ?? [],
-    isPlatformAdmin: admin,
-  };
+  return { user: { id: claims.userId, email: claims.email }, orgId: org?.id || (membership.data?.org_id as string | undefined) || null, orgName: org?.name || "", role: (membership.data?.role as OrgRole | undefined) ?? null, sectors: overrides ?? [], workspaceSectors: org?.workspace_settings?.[0]?.sector_profile ?? [], isPlatformAdmin: admin };
 }

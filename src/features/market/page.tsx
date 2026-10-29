@@ -13,7 +13,10 @@ export default async function MarketPage() {
   const session = await pageSession("/market");
   if ("failed" in session) return <PageFailure what="Market Intelligence" />;
   const db = await userClient();
-  const [read, coverage] = await Promise.all([readMarket(db, { orgId: session.orgId, edgeDb: isServiceConfigured() ? serviceClient() : null }), loadSurfaceDenominator("market_intel", { db: () => db })]);
-  const chips = await section("themes", () => readThemeChips(db, { surface: "market", max: 6 }));
+  const [read, coverage, chips] = await Promise.all([
+    readMarket(db, { orgId: session.orgId, edgeDb: isServiceConfigured() ? serviceClient() : null }),
+    loadSurfaceDenominator("market_intel", { db: () => db }),
+    section("themes", () => readThemeChips(db, { surface: "market", max: 6 })),
+  ]);
   return <MarketView read={read} nowIso={session.nowIso} coverage={{ denominator: coverage.denominator, error: coverage.error }} chips={chips.ok ? chips.data : null} />;
 }

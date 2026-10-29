@@ -6,7 +6,10 @@ import { nameFromMetadata } from "./profile-name";
 
 /** The auth surface a caller needs: anything shaped like a Supabase client. */
 export interface ClaimsClient {
-  auth: { getClaims: (jwt?: string) => Promise<{ data: { claims: { sub?: string; email?: string; user_metadata?: unknown } } | null; error: unknown }> };
+  auth: {
+    getClaims: (jwt?: string) => Promise<{ data: { claims: { sub?: string; email?: string; user_metadata?: unknown } } | null; error: unknown }>;
+    getSession?: () => Promise<{ data: { session: { access_token?: string } | null } | null; error: unknown }>;
+  };
 }
 
 /** The auth service could not answer (network, saturation). A 503, never the same as "not signed in". */
@@ -23,29 +26,41 @@ const SIGNED_OUT = new Set(["AuthSessionMissingError", "AuthInvalidJwtError", "A
 function outage(error: unknown): boolean {
   if (!error || typeof error !== "object") return true;
   const { name, status } = error as { name?: unknown; status?: unknown };
-  if (typeof status === "number" && (status >= 500 || status === 429)) return true;
-  return typeof name !== "string" || !SIGNED_OUT.has(name);
+  return (typeof status === "number" && (status >= 500 || status === 429)) || typeof name !== "string" || !SIGNED_OUT.has(name);
 }
 
 type VerifiedClaims = { userId: string; email: string | null; name: string | null } | null;
 const claimsMemo = new WeakMap<ClaimsClient, Map<string, Promise<VerifiedClaims>>>();
+const tokenCache = new Map<string, { claims: VerifiedClaims; expiresAt: number }>();
 
 async function verifyClaims(client: ClaimsClient, jwt?: string): Promise<VerifiedClaims> {
-  const result = await client.auth.getClaims(jwt).catch((e) => { throw new ClaimsUnavailable(e); });
+  let token = jwt;
+  if (!token && typeof client.auth.getSession === "function") {
+    const s = await client.auth.getSession().catch((e) => { throw new ClaimsUnavailable(e); });
+    if (s.error && outage(s.error)) throw new ClaimsUnavailable(s.error);
+    if (!(token = s.data?.session?.access_token)) return null;
+    const hit = tokenCache.get(token);
+    if (hit && performance.now() < hit.expiresAt) return hit.claims;
+  }
+  const result = await client.auth.getClaims(token).catch((e) => { throw new ClaimsUnavailable(e); });
   if (result.error && outage(result.error)) throw new ClaimsUnavailable(result.error);
   const sub = result.data?.claims?.sub;
   if (result.error || !sub) return null;
-  return { userId: sub, email: result.data?.claims?.email ?? null, name: nameFromMetadata(result.data?.claims?.user_metadata) };
+  const verified: VerifiedClaims = { userId: sub, email: result.data?.claims?.email ?? null, name: nameFromMetadata(result.data?.claims?.user_metadata) };
+  if (token && typeof client.auth.getSession === "function") {
+    if (tokenCache.size >= 256) tokenCache.delete(tokenCache.keys().next().value as string);
+    tokenCache.set(token, { claims: verified, expiresAt: performance.now() + 60_000 });
+  }
+  return verified;
 }
 
-/** Verify a JWT locally (getClaims, never getUser per request), memoized per client instance within a request. */
+/** Verify a JWT locally (getClaims, never getUser per request), memoized per client and short-lived token cache. */
 export function getClaims(client: ClaimsClient, jwt?: string): Promise<VerifiedClaims> {
   const key = jwt ?? "";
   let byJwt = claimsMemo.get(client);
   if (!byJwt) claimsMemo.set(client, (byJwt = new Map()));
-  const existing = byJwt.get(key);
-  if (existing) return existing;
-  const pending = verifyClaims(client, jwt).catch((e) => { byJwt.delete(key); throw e; });
-  byJwt.set(key, pending);
-  return pending;
+  const hit = byJwt.get(key);
+  if (hit) return hit;
+  const p = verifyClaims(client, jwt).catch((e) => { byJwt.delete(key); throw e; });
+  return (byJwt.set(key, p), p);
 }

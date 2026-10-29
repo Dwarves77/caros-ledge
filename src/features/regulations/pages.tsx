@@ -40,15 +40,13 @@ export async function RegulationsIndex() {
   const db = await userClient();
   const today = session.nowIso.slice(0, 10);
   const data = await attempt("the list", async () => {
-    const [profileRead, chips, coverage] = await Promise.all([
-      readWorkspaceProfile(db, session.orgId).catch((e) => warn("profile", e)),
+    const profileP = readWorkspaceProfile(db, session.orgId).catch((e) => warn("profile", e));
+    const [profileRead, chips, coverage, first, upcoming] = await Promise.all([
+      profileP,
       readThemeChips(db, { surface: "regulations" }).catch((e) => warn("themes", e)),
       loadSurfaceDenominator("regulations", { db: () => db }).catch((e) => warn("coverage", e)),
-    ]);
-    const profile = profileRead?.profile;
-    const [first, upcoming] = await Promise.all([
-      readRegulationsFirstPage(db, session.orgId, profileRead && !profileRead.failed ? profile : null),
-      readUpcoming(db, { limit: 8, jurisdictionFilter: defaultJurisdictionFilter(profile?.jurisdictions) }, today).catch((e) => warn("upcoming obligations", e)),
+      profileP.then((p) => readRegulationsFirstPage(db, session.orgId, p && !p.failed ? p.profile : null)),
+      profileP.then((p) => readUpcoming(db, { limit: 8, jurisdictionFilter: defaultJurisdictionFilter(p?.profile?.jurisdictions) }, today).catch((e) => warn("upcoming obligations", e))),
     ]);
     return { first, chips, upcoming, coverage, profileFailed: profileRead === null || profileRead.failed };
   });

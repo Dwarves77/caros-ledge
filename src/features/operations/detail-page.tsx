@@ -18,20 +18,17 @@ import { OperationsDetail } from "./ui/OperationsDetail";
  * grid queue, and the figures the flywheel recomputed. Each reports its own failure; none is dropped.
  */
 const loadProfile = (orgId: string | null, today: string) => async ({ db, uuid }: ItemScopedCtx) => {
-  const [item, roster, events] = await Promise.all([
+  const [item, roster, events, derived] = await Promise.all([
     readItemRegionInputs(db, uuid),
     readRoster(db),
-    readUpcoming(db, { itemId: uuid, limit: 20 }, today).catch((e: unknown) => {
-      log.warn("[operations] obligation events read failed:", e instanceof Error ? e.message : String(e));
-      return null;
-    }),
+    readUpcoming(db, { itemId: uuid, limit: 20 }, today).catch((e: unknown) => (log.warn("[operations] obligation events read failed:", e instanceof Error ? e.message : String(e)), null)),
+    readDerivedFigures(db).catch((e) => (log.warn("[operations] recomputed figures did not load:", e instanceof Error ? e.message : String(e)), null)),
   ]);
   const regionCodes = regionsForItem(roster.map((r) => ({ code: r.code, isoCodes: r.isoCodes })), item);
-  const [eligibility, related, spec09, derived] = await Promise.all([
+  const [eligibility, related, spec09] = await Promise.all([
     readMatrixEligibility(db, item, roster),
     relatedItems(db, { id: uuid, sourceId: item.sourceId }, item.jurisdictions && item.jurisdictions.length > 0 ? (q) => q.contains("jurisdictions", [...item.jurisdictions as string[]]).eq("item_type", "regional_data") : null),
     readSpec09(db, orgId, regionCodes, roster),
-    readDerivedFigures(db).catch((e) => (log.warn("[operations] recomputed figures did not load:", e instanceof Error ? e.message : String(e)), null)),
   ]);
   return { eligibility, related, spec09, derived, events };
 };
@@ -39,8 +36,7 @@ const loadProfile = (orgId: string | null, today: string) => async ({ db, uuid }
 /** /operations/[slug]: a uuid URL lands on the page that renders it (or on not-found), the profile loads on the caller's client, a failed read throws to the route's error page with Retry. */
 export async function OperationsDetailRoute({ params }: { params: Promise<{ slug: string }> }) {
   const id = decodeURIComponent((await params).slug);
-  await applyIdRedirect("operations", id);
-  const session = await pageSession(`/operations/${encodeURIComponent(id)}`);
+  const [, session] = await Promise.all([applyIdRedirect("operations", id), pageSession(`/operations/${encodeURIComponent(id)}`)]);
   if ("failed" in session) return <PageFailure what="This profile" />;
   const d = await loadDetail("operations", id, loadProfile(session.orgId, session.nowIso.slice(0, 10)), undefined, session.orgId, session.nowIso);
   if (d.notFound) notFound();

@@ -141,7 +141,16 @@ export async function readDerivedFigures(db: Db, limit = 8): Promise<DerivedFigu
   type M = { id: string; label: string | null; reference_period: string | null; source_key: string | null };
   type F = { factor_id: string; mode: string | null; jurisdiction: string | null; quantity_basis: string | null; as_at_date: string | null; source_key: string | null };
   type R = { id: string; fact_label: string; reference_period: string | null; source_key: string | null; sources: SourceEmbed | SourceEmbed[] | null };
-  const [series, factors, facts] = await Promise.all([chunk<M>("market_series", "id", "id, label, reference_period, source_key"), chunk<F>("emission_factors", "factor_id", "factor_id, mode, jurisdiction, quantity_basis, as_at_date, source_key"), chunk<R>("regional_data_facts", "id", "id, fact_label, reference_period, source_key, sources(name, url, base_tier, effective_tier, tier_override)")]);
+  const supersededIds = rows.map((r) => r.supersedes).filter((x): x is string => !!x);
+  const [series, factors, facts, supersededRows] = await Promise.all([
+    chunk<M>("market_series", "id", "id, label, reference_period, source_key"), chunk<F>("emission_factors", "factor_id", "factor_id, mode, jurisdiction, quantity_basis, as_at_date, source_key"),
+    chunk<R>("regional_data_facts", "id", "id, fact_label, reference_period, source_key, sources(name, url, base_tier, effective_tier, tier_override)"),
+    fetchAllByIdChunks(supersededIds, async (slice) => {
+      const { data, error } = await db.from("derived_values").select("value_id, value").in("value_id", slice);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Array<{ value_id: string; value: number | string | null }>;
+    }),
+  ]);
   const keys = [...new Set([...series.values(), ...factors.values(), ...facts.values()].map((x) => x.source_key).filter((k): k is string => !!k))];
   const pub = new Map<string, { name: string; tier: number | null }>();
   for (const d of await fetchAllByIdChunks(keys, async (slice) => {
@@ -157,12 +166,7 @@ export async function readDerivedFigures(db: Db, limit = 8): Promise<DerivedFigu
     if (ref.table === "regional_data_facts" && r) return { label: r.fact_label, period: r.reference_period, sourceName: embed(r.sources)?.name ?? p(r.source_key)?.name ?? null, tier: customerTierOf(embed(r.sources)) ?? p(r.source_key)?.tier ?? null };
     return { label: "an input that is no longer held", period: null, sourceName: null, tier: null };
   };
-  const supersededIds = rows.map((r) => r.supersedes).filter((x): x is string => !!x);
-  const before = new Map((await fetchAllByIdChunks(supersededIds, async (slice) => {
-    const { data, error } = await db.from("derived_values").select("value_id, value").in("value_id", slice);
-    if (error) throw new Error(error.message);
-    return (data ?? []) as Array<{ value_id: string; value: number | string | null }>;
-  })).map((v) => [v.value_id, num(v.value)] as const));
+  const before = new Map(supersededRows.map((v) => [v.value_id, num(v.value)] as const));
   return rows.map((r) => toDerivedFigure(r, inputRefs(r.inputs).filter((i) => OPERATIONS_INPUT_TABLES.includes(i.table)).map(resolve), r.supersedes ? (before.get(r.supersedes) ?? null) : null));
 }
 
@@ -180,11 +184,11 @@ export interface OperationsPageData {
 
 /** Everything /operations draws, one pass: the public items, the corpus tallies, the roster with its coverage and facts, the state cost facts, the linked-regulation counts and the recomputed figures. */
 export async function readOperationsPage(db: Db, nowIso: string, orgId: string | null): Promise<OperationsPageData> {
-  const roster = await settle("the region roster", () => readRoster(db));
-  const [category, aggregates, coverage, facts, stateCosts, linkedRegulations, derived] = await Promise.all([
-    readCategory(db, orgId ? "get_operations_items" : "get_operations_items_public", orgId), readSurfaceCounts(db, orgId, "operations"),
-    roster ? settle("coverage", () => readCoverage(db, roster)) : null, roster ? settle("facts", () => readFacts(db, roster, nowIso)) : null,
-    settle("state cost facts", () => readStateCosts(db)), roster ? settle("linked regulations", () => readLinkedRegulations(db, roster)) : null, settle("recomputed figures", () => readDerivedFigures(db)),
+  const rosterP = settle("the region roster", () => readRoster(db));
+  const [roster, category, aggregates, coverage, facts, stateCosts, linkedRegulations, derived] = await Promise.all([
+    rosterP, readCategory(db, orgId ? "get_operations_items" : "get_operations_items_public", orgId), readSurfaceCounts(db, orgId, "operations"),
+    rosterP.then((r) => (r ? settle("coverage", () => readCoverage(db, r)) : null)), rosterP.then((r) => (r ? settle("facts", () => readFacts(db, r, nowIso)) : null)),
+    settle("state cost facts", () => readStateCosts(db)), rosterP.then((r) => (r ? settle("linked regulations", () => readLinkedRegulations(db, r)) : null)), settle("recomputed figures", () => readDerivedFigures(db)),
   ]);
   return { rows: category.resources, rowsFailed: category.failed, aggregates, roster, coverage, facts, stateCosts, linkedRegulations, derived };
 }
@@ -225,31 +229,31 @@ const GCO2_PER_KWH = /^\s*gCO2e?\s*\/\s*kWh\s*$/i;
 
 /** The profile's panels: the workspace's auxiliary loads, the grid connection queue gate rows and the sourced grid intensity of the region the profile is about (the conversion the old card only named). */
 export async function readSpec09(db: Db, orgId: string | null, regionCodes: readonly string[], known?: readonly OperationsRegion[]): Promise<Spec09Data> {
-  const aux = orgId ? await settle("auxiliary loads", async () => {
-    const { data, error } = await db.from("auxiliary_energy_profiles").select("profile_id, load_type, kw_draw, duty_cycle, hours_typical, setpoint_c, setpoint_rh_pct, grid_intensity_source").eq("org_id", orgId).order("created_at", { ascending: false }).order("profile_id", { ascending: true }).limit(SPEC09_LIMIT);
-    if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as AuxiliaryEnergyRow[];
-  }) : [];
-  const grid = await settle("grid queue", async () => {
-    const { data, error } = await db.from("grid_connection_queues").select("queue_id, dso_name, capacity_band_mw, queue_months_p50, queue_months_p90, as_of, substation_name, demand_firm_mw, demand_available_mw, demand_constraint, demand_constraint_limiting_factor").order("demand_available_mw", { ascending: true, nullsFirst: true }).order("as_of", { ascending: false }).order("queue_id", { ascending: true }).limit(SPEC09_LIMIT);
-    if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as GridQueueRow[];
-  });
   let intensity: GridIntensity | null = null;
   let intensityFailed = false;
-  try {
-    const roster = known ?? (await readRoster(db));
-    const ids = roster.filter((r) => regionCodes.includes(r.code)).map((r) => r.id);
-    if (ids.length > 0) {
-      const { data, error } = await db.from("regional_data_facts").select("id, value_numeric, unit, as_at_date, reference_period, sources(name, url, base_tier, effective_tier, tier_override)").eq("dimension", "grid_intensity").in("region_id", ids).not("value_numeric", "is", null).order("as_at_date", { ascending: false }).order("id", { ascending: true }).limit(20);
+  const [aux, grid] = await Promise.all([
+    orgId ? settle("auxiliary loads", async () => {
+      const { data, error } = await db.from("auxiliary_energy_profiles").select("profile_id, load_type, kw_draw, duty_cycle, hours_typical, setpoint_c, setpoint_rh_pct, grid_intensity_source").eq("org_id", orgId).order("created_at", { ascending: false }).order("profile_id", { ascending: true }).limit(SPEC09_LIMIT);
       if (error) throw new Error(error.message);
-      const hit = ((data ?? []) as unknown as Array<{ value_numeric: number | string; unit: string | null; as_at_date: string | null; reference_period: string | null; sources: SourceEmbed | SourceEmbed[] | null }>).find((f) => GCO2_PER_KWH.test(f.unit ?? "") && num(f.value_numeric) !== null);
-      if (hit) intensity = { gco2ePerKwh: num(hit.value_numeric) as number, sourceName: embed(hit.sources)?.name ?? null, period: hit.reference_period ?? hit.as_at_date };
-    }
-  } catch (e) {
-    warn("grid intensity", e);
-    intensityFailed = true;
-  }
+      return (data ?? []) as unknown as AuxiliaryEnergyRow[];
+    }) : Promise.resolve([]),
+    settle("grid queue", async () => {
+      const { data, error } = await db.from("grid_connection_queues").select("queue_id, dso_name, capacity_band_mw, queue_months_p50, queue_months_p90, as_of, substation_name, demand_firm_mw, demand_available_mw, demand_constraint, demand_constraint_limiting_factor").order("demand_available_mw", { ascending: true, nullsFirst: true }).order("as_of", { ascending: false }).order("queue_id", { ascending: true }).limit(SPEC09_LIMIT);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as GridQueueRow[];
+    }),
+    (async () => {
+      try {
+        const roster = known ?? (await readRoster(db));
+        const ids = roster.filter((r) => regionCodes.includes(r.code)).map((r) => r.id);
+        if (ids.length === 0) return;
+        const { data, error } = await db.from("regional_data_facts").select("id, value_numeric, unit, as_at_date, reference_period, sources(name, url, base_tier, effective_tier, tier_override)").eq("dimension", "grid_intensity").in("region_id", ids).not("value_numeric", "is", null).order("as_at_date", { ascending: false }).order("id", { ascending: true }).limit(20);
+        if (error) throw new Error(error.message);
+        const hit = ((data ?? []) as unknown as Array<{ value_numeric: number | string; unit: string | null; as_at_date: string | null; reference_period: string | null; sources: SourceEmbed | SourceEmbed[] | null }>).find((f) => GCO2_PER_KWH.test(f.unit ?? "") && num(f.value_numeric) !== null);
+        if (hit) intensity = { gco2ePerKwh: num(hit.value_numeric) as number, sourceName: embed(hit.sources)?.name ?? null, period: hit.reference_period ?? hit.as_at_date };
+      } catch (e) { warn("grid intensity", e); intensityFailed = true; }
+    })(),
+  ]);
   return { aux, grid, intensity, intensityFailed };
 }
 
