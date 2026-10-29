@@ -42,7 +42,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
     setDrawerPath(pathname);
     if (drawer) setDrawer(false);
   }
-  const bootstrap = useBootstrap(!chromeless && user ? user.id : null);
+  const bootstrap = useBootstrap(!chromeless && identityStatus !== "pending" && user ? user.id : null);
   const notes = shellNotes({ user, orgId, identityStatus, pathname });
   useEffect(() => {
     if (notes.redirect) router.replace(notes.redirect);

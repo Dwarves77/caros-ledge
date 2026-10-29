@@ -22,8 +22,8 @@ function focusCommandBar() {
 /** The phone bar: the band rule, a 44 px hamburger, the page title, a search glyph that focuses the page's command bar, and the account avatar (the unread dot is notifications only). Shown below 768 px (base.css). */
 export function TopBar({ onMenuClick }: { onMenuClick: () => void }) {
   const title = navTitleForPath(usePathname());
-  const { user } = useAuth();
-  const { unreadCount } = useUnreadCount(!!user);
+  const { user, identityStatus } = useAuth();
+  const { unreadCount } = useUnreadCount(identityStatus !== "pending" && !!user);
   const byPriority = useBootstrapStore((s) => s.data?.navCounts?.byPriority ?? null);
   const initial = (user?.email ?? "?").trim().charAt(0).toUpperCase() || "?";
   return (

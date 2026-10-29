@@ -20,7 +20,7 @@ export async function readCategory(db: Db, rpc: CategoryRpc, orgId?: string | nu
     const resources = rows.map(categoryResourceFields);
     await Promise.all([
       enrichSources(db, resources, { biasTags: true }),
-      attachImpact(db, resources, new Map(rows.map((r) => [r.legacy_id || r.id, r.id])), impactOrgId),
+      (async () => await attachImpact(db, resources, new Map(rows.map((r) => [r.legacy_id || r.id, r.id])), impactOrgId))(),
     ]);
     return { resources, total: rows.length, failed: false };
   } catch {

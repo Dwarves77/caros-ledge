@@ -37,7 +37,7 @@ export async function proxy(request: NextRequest) {
   let authenticated = false;
   let authUnavailable = false;
   try {
-    authenticated = (await getClaims(client)) !== null;
+    authenticated = (await getClaims(client, undefined, pathname !== "/login" && pathname !== "/signup")) !== null;
   } catch (e) {
     if (!(e instanceof ClaimsUnavailable)) throw e;
     authUnavailable = true;

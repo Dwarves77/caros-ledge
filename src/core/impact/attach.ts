@@ -17,17 +17,18 @@ async function clientScores(db: Db, ids: readonly string[], orgId: string, given
   // A caller that has read the profile already passes it (null: it failed, and the caller says so, so no client score is known); otherwise it is read here. A failed profile read gives the default profile, and a client score computed from the
   // default is not the workspace's: it fails the read instead.
   if (given === null) return new Map();
-  const read = given ? { profile: given, failed: false } : await readWorkspaceProfile(db, orgId);
-  if (read.failed) throw new Error("workspace_settings read failed");
-  const profile = read.profile;
   const missing = ids.filter((id) => !held.has(id));
-  const fetched = await fetchAllByIdChunks<Record<string, unknown> & { id: string }>(missing, async (slice) => {
-    const { data, error } = await admitItems(db.from("intelligence_items").select(TAG_COLUMNS)).in("id", slice);
-    if (error) throw new Error(`intelligence_items read failed: ${error.message}`);
-    return (data ?? []) as (Record<string, unknown> & { id: string })[];
-  }, { chunk: 150 });
+  const [read, fetched] = await Promise.all([
+    given ? Promise.resolve({ profile: given, failed: false }) : readWorkspaceProfile(db, orgId),
+    fetchAllByIdChunks<Record<string, unknown> & { id: string }>(missing, async (slice) => {
+      const { data, error } = await admitItems(db.from("intelligence_items").select(TAG_COLUMNS)).in("id", slice);
+      if (error) throw new Error(`intelligence_items read failed: ${error.message}`);
+      return (data ?? []) as (Record<string, unknown> & { id: string })[];
+    }, { chunk: 150 }),
+  ]);
+  if (read.failed) throw new Error("workspace_settings read failed");
   const rows = [...fetched, ...ids.filter((id) => held.has(id)).map((id) => ({ ...held.get(id), id }))];
-  return new Map(rows.map((r) => [r.id, clientScore(relevanceForItem(r, profile, relevanceDeps))]));
+  return new Map(rows.map((r) => [r.id, clientScore(relevanceForItem(r, read.profile, relevanceDeps))]));
 }
 
 /**

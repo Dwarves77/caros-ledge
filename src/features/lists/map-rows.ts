@@ -123,23 +123,28 @@ export async function mapRows(db: Db, items: WorkspaceItemRpcRow[], opts: { orgI
   const byItem = new Map<string, TimelineRow[]>();
   let timelineFailures = 0;
   const ids = items.map((i) => i.id);
-  for (let i = 0; i < ids.length; i += TIMELINE_CHUNK) {
-    try {
-      const { data, error } = await db.from("item_timelines").select("item_id, milestone_date, date_precision, label, is_completed, sort_order").in("item_id", ids.slice(i, i + TIMELINE_CHUNK));
-      if (error) throw new Error(error.message);
-      for (const t of (data ?? []) as TimelineRow[]) byItem.set(t.item_id, [...(byItem.get(t.item_id) ?? []), t]);
-    } catch {
-      timelineFailures += 1;
-    }
-  }
   const active: Resource[] = [];
   const archived: Resource[] = [];
-  for (const row of items) {
-    const timeline = (byItem.get(row.id) ?? []).filter((t) => isInstrumentMilestone(t.sort_order)).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((t) => ({ date: timelineDateOf(t.milestone_date ?? "", t.date_precision), label: t.label ?? "", ...(t.is_completed ? { status: "past" as const } : {}) }));
-    const resource: Resource = { ...baseResourceFields(row), timeline, ...(row.compliance_deadline ? { complianceDeadline: row.compliance_deadline } : {}) };
+  const pairs = items.map((row) => {
+    const resource: Resource = { ...baseResourceFields(row), timeline: [], ...(row.compliance_deadline ? { complianceDeadline: row.compliance_deadline } : {}) };
     (resource.isArchived ? archived : active).push(resource);
+    return [row.id, resource] as const;
+  });
+  const slices = Array.from({ length: Math.ceil(ids.length / TIMELINE_CHUNK) }, (_, i) => ids.slice(i * TIMELINE_CHUNK, (i + 1) * TIMELINE_CHUNK));
+  await Promise.all([
+    ...slices.map(async (slice) => {
+      try {
+        const { data, error } = await db.from("item_timelines").select("item_id, milestone_date, date_precision, label, is_completed, sort_order").in("item_id", slice);
+        if (error) throw new Error(error.message);
+        for (const t of (data ?? []) as TimelineRow[]) byItem.set(t.item_id, [...(byItem.get(t.item_id) ?? []), t]);
+      } catch {
+        timelineFailures += 1;
+      }
+    }),
+    (async () => await attachImpact(db, [...active, ...archived], new Map([...uuidToUiId].map(([uuid, uiId]) => [uiId, uuid])), opts.orgId ?? null, opts.profile))(),
+  ]);
+  for (const [id, resource] of pairs) {
+    resource.timeline = (byItem.get(id) ?? []).filter((t) => isInstrumentMilestone(t.sort_order)).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)).map((t) => ({ date: timelineDateOf(t.milestone_date ?? "", t.date_precision), label: t.label ?? "", ...(t.is_completed ? { status: "past" as const } : {}) }));
   }
-  await attachImpact(db, [...active, ...archived], new Map([...uuidToUiId].map(([uuid, uiId]) => [uiId, uuid])), opts.orgId ?? null, opts.profile);
   return { active, archived, uuidToUiId, timelineFailures };
 }
-

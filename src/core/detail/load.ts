@@ -65,7 +65,7 @@ export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface,
   const lookupPromise = buildResourceLookup(client, [...new Set([...connections.map((c) => c.id), ...supersessions.flatMap((s) => [s.old, s.new])])].filter(Boolean));
 
   const [, claimsRead, lookup, itemScoped, rawCrossPage] = await Promise.all([
-    attachImpact(client, [resource], new Map([[resource.id, uuid]]), orgId, undefined, new Map([[uuid, item.relevanceInput as unknown as Record<string, unknown>]])),
+    (async () => await attachImpact(client, [resource], new Map([[resource.id, uuid]]), orgId, undefined, new Map([[uuid, item.relevanceInput as unknown as Record<string, unknown>]])))(),
     readClaims(client, uuid).then((c) => ({ ok: true as const, ...c }), (e: unknown) => ({ ok: false as const, error: e })),
     lookupPromise,
     loadItemScoped ? loadItemScoped({ db: client, uuid, resource, connections, supersessions }) : Promise.resolve(undefined as ItemScoped),

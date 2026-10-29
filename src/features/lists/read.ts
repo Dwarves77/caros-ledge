@@ -40,16 +40,11 @@ export interface ListingRead {
 type OverrideDbRow = { item_id: string; priority_override: string | null; is_archived: boolean | null; archive_reason: string | null; archive_note: string | null; archived_at: string | null; dismissed_at: string | null; owner_user_id: string | null };
 
 async function readOverrides(db: Db, orgId: string, uiIds: Map<string, string>): Promise<WorkspaceOverride[] | null> {
-  const out: WorkspaceOverride[] = [];
   const ids = [...uiIds.keys()];
-  for (let i = 0; i < ids.length; i += OVERRIDE_CHUNK) {
-    const { data, error } = await db.from("workspace_item_overrides").select("item_id, priority_override, is_archived, archive_reason, archive_note, archived_at, dismissed_at, owner_user_id").eq("org_id", orgId).in("item_id", ids.slice(i, i + OVERRIDE_CHUNK));
-    if (error) return null;
-    for (const o of (data ?? []) as OverrideDbRow[]) {
-      out.push({ itemId: uiIds.get(o.item_id) ?? o.item_id, priorityOverride: o.priority_override ?? null, isArchived: !!o.is_archived, archiveReason: o.archive_reason ?? null, archiveNote: o.archive_note ?? null, archivedAt: o.archived_at ?? null, dismissedAt: o.dismissed_at ?? null, ownerUserId: o.owner_user_id ?? null });
-    }
-  }
-  return out;
+  const slices = Array.from({ length: Math.ceil(ids.length / OVERRIDE_CHUNK) }, (_, i) => ids.slice(i * OVERRIDE_CHUNK, (i + 1) * OVERRIDE_CHUNK));
+  const pages = await Promise.all(slices.map((s) => db.from("workspace_item_overrides").select("item_id, priority_override, is_archived, archive_reason, archive_note, archived_at, dismissed_at, owner_user_id").eq("org_id", orgId).in("item_id", s)));
+  if (pages.some((p) => p.error)) return null;
+  return pages.flatMap((p) => ((p.data ?? []) as OverrideDbRow[]).map((o) => ({ itemId: uiIds.get(o.item_id) ?? o.item_id, priorityOverride: o.priority_override ?? null, isArchived: !!o.is_archived, archiveReason: o.archive_reason ?? null, archiveNote: o.archive_note ?? null, archivedAt: o.archived_at ?? null, dismissedAt: o.dismissed_at ?? null, ownerUserId: o.owner_user_id ?? null })));
 }
 
 /** One page of a listing RPC, org-scoped (p_org_id) or public (keyset cursor), mapped with timelines. */
@@ -71,11 +66,12 @@ export async function readListing(db: Db, opts: { orgId?: string | null; rpc: Li
   if (error) return { rows: [], archived: [], overrides: [], failed: true, timelineFailures: 0, enrichFailed: false, message: error.message };
   const items = (data ?? []) as WorkspaceItemRpcRow[];
   if (items.length === 0) return { rows: [], archived: [], overrides: [], failed: false, timelineFailures: 0, enrichFailed: false, message: null };
-  const mapped = await mapRows(db, items, { orgId: orgId ?? null, profile: opts.profile });
-  const [enriched, overrides] = await Promise.all([
-    enrichSources(db, [...mapped.active, ...mapped.archived], { biasTags: true }),
-    orgId ? readOverrides(db, orgId, mapped.uuidToUiId) : Promise.resolve([]),
+  const uiIds = new Map(items.map((i) => [i.id, i.legacy_id || i.id]));
+  const [mapped, overrides] = await Promise.all([
+    mapRows(db, items, { orgId: orgId ?? null, profile: opts.profile }),
+    orgId ? readOverrides(db, orgId, uiIds) : Promise.resolve([]),
   ]);
+  const enriched = await enrichSources(db, [...mapped.active, ...mapped.archived], { biasTags: true });
   return { rows: mapped.active, archived: mapped.archived, overrides, failed: false, timelineFailures: mapped.timelineFailures, enrichFailed: !enriched, message: null };
 }
 

@@ -33,7 +33,7 @@ type VerifiedClaims = { userId: string; email: string | null; name: string | nul
 const claimsMemo = new WeakMap<ClaimsClient, Map<string, Promise<VerifiedClaims>>>();
 const tokenCache = new Map<string, { claims: VerifiedClaims; expiresAt: number }>();
 
-async function verifyClaims(client: ClaimsClient, jwt?: string): Promise<VerifiedClaims> {
+async function verifyClaims(client: ClaimsClient, jwt?: string, sessionOnly?: boolean): Promise<VerifiedClaims> {
   let token = jwt;
   if (!token && typeof client.auth.getSession === "function") {
     const s = await client.auth.getSession().catch((e) => { throw new ClaimsUnavailable(e); });
@@ -41,6 +41,7 @@ async function verifyClaims(client: ClaimsClient, jwt?: string): Promise<Verifie
     if (!(token = s.data?.session?.access_token)) return null;
     const hit = tokenCache.get(token);
     if (hit && performance.now() < hit.expiresAt) return hit.claims;
+    if (sessionOnly) return { userId: "session", email: null, name: null };
   }
   const result = await client.auth.getClaims(token).catch((e) => { throw new ClaimsUnavailable(e); });
   if (result.error && outage(result.error)) throw new ClaimsUnavailable(result.error);
@@ -55,12 +56,12 @@ async function verifyClaims(client: ClaimsClient, jwt?: string): Promise<Verifie
 }
 
 /** Verify a JWT locally (getClaims, never getUser per request), memoized per client and short-lived token cache. */
-export function getClaims(client: ClaimsClient, jwt?: string): Promise<VerifiedClaims> {
-  const key = jwt ?? "";
+export function getClaims(client: ClaimsClient, jwt?: string, sessionOnly?: boolean): Promise<VerifiedClaims> {
+  const key = `${jwt ?? ""}:${sessionOnly ? 1 : 0}`;
   let byJwt = claimsMemo.get(client);
   if (!byJwt) claimsMemo.set(client, (byJwt = new Map()));
   const hit = byJwt.get(key);
   if (hit) return hit;
-  const p = verifyClaims(client, jwt).catch((e) => { byJwt.delete(key); throw e; });
+  const p = verifyClaims(client, jwt, sessionOnly).catch((e) => { byJwt.delete(key); throw e; });
   return (byJwt.set(key, p), p);
 }

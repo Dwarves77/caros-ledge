@@ -13,8 +13,8 @@ import { useUnreadCount } from "../use-unread-count";
 import { NotificationsList } from "./NotificationsList";
 
 export function NotificationsBell() {
-  const { user } = useAuth();
-  const { unreadCount, setUnreadCount } = useUnreadCount(!!user);
+  const { user, identityStatus } = useAuth();
+  const { unreadCount, setUnreadCount } = useUnreadCount(identityStatus !== "pending" && !!user);
   const [open, setOpen] = useState(false);
   if (!user) return null;
   const n = unreadCount ?? 0;
