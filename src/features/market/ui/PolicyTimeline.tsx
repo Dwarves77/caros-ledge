@@ -16,6 +16,8 @@ import { KIND_LABELS } from "@/features/obligations/kinds";
 import { formatForwardEvent } from "@/features/obligations/read/rail-select";
 import { Button } from "@/ui/Button";
 import { parseListUrl } from "@/ui/list-surface/url-state";
+import { SectionCard } from "@/ui/SectionCard";
+import { SectionHead } from "@/ui/SectionHead";
 import { StateNote } from "@/ui/StateNote";
 
 import styles from "./market.module.css";
@@ -80,47 +82,31 @@ export function PolicyTimeline() {
   const data = feed.status === "ready" ? feed.data : null;
   const hidden = data?.hiddenByScope ?? 0;
   return (
-    <section className={styles.strip} data-audit="policy-timeline">
-      <p className={styles.kicker}>Policy timeline</p>
-      <p className={styles.muted}>Dated, forward-looking obligations for the modes and regions in scope: the filters you set above, otherwise your workspace&apos;s own modes and jurisdictions.</p>
-      <div className={styles.stripHead}>
-        <h2 className={styles.stripTitle}>Upcoming obligations</h2>
-        {data && data.events.length > 0 && <span className={styles.muted}>{formatNumber(data.events.length)} {data.events.length === 1 ? "event" : "events"}</span>}
-      </div>
-      {feed.status === "loading" && <p className={styles.muted}>Loading upcoming obligations…</p>}
-      {feed.status === "failed" && (
-        <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
-          Upcoming obligations did not load. {feed.error}
-        </StateNote>
-      )}
-      {data && (
-        <>
-          <div data-audit="policy-scope" className={styles.scopeLine}>
-            <span className={styles.muted}>
-              Scope: <b data-audit="policy-scope-label">{widened ? "All modes and regions" : data.scope?.label || "All modes and regions"}</b>
-            </span>
-            {!widened && hidden > 0 && (
-              <Button size="sm" data-audit="policy-scope-widen" onClick={() => setWidened(true)}>
-                {formatNumber(hidden)} hidden by your scope · Show all
-              </Button>
-            )}
-            {widened && (
-              <Button size="sm" data-audit="policy-scope-narrow" onClick={() => setWidened(false)}>
-                Back to your scope
-              </Button>
-            )}
-          </div>
-          {data.events.length === 0 ? (
-            <p className={styles.muted}>No upcoming obligations match {widened ? "any scope" : data.scope?.label || (data.hasJurisdictionFilter ? "your workspace's jurisdictions" : "this scope")} right now.</p>
-          ) : (
-            <div data-guard-strip className={`cl-scroll-shadow ${styles.eventStrip}`}>
-              {data.events.map((ev) => (
-                <EventCard key={ev.id} ev={ev} />
-              ))}
-            </div>
+    <div className={styles.band}>
+      <SectionCard as="section" dataAudit="policy-timeline" dataAttributes={{ "data-sec-theme": "obligations" }}>
+        <SectionHead title="Upcoming obligations" aside={data && data.events.length > 0 ? `${formatNumber(data.events.length)} ${data.events.length === 1 ? "event" : "events"}` : "Policy timeline"} />
+        <p className="cl-detail-section-explainer-bar">Dated, forward-looking obligations for the modes and regions in scope: the filters you set above, otherwise your workspace&apos;s own modes and jurisdictions.</p>
+        <div className={styles.cardBody}>
+          {feed.status === "loading" && <p className={styles.muted}>Loading upcoming obligations…</p>}
+          {feed.status === "failed" && <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>Upcoming obligations did not load. {feed.error}</StateNote>}
+          {data && (
+            <>
+              <div data-audit="policy-scope" className={styles.scopeLine}>
+                <span className={styles.muted}>Scope: <b data-audit="policy-scope-label">{widened ? "All modes and regions" : data.scope?.label || "All modes and regions"}</b></span>
+                {!widened && hidden > 0 && <Button size="sm" data-audit="policy-scope-widen" onClick={() => setWidened(true)}>{formatNumber(hidden)} hidden by your scope · Show all</Button>}
+                {widened && <Button size="sm" data-audit="policy-scope-narrow" onClick={() => setWidened(false)}>Back to your scope</Button>}
+              </div>
+              {data.events.length === 0 ? (
+                <p className={styles.muted}>No upcoming obligations match {widened ? "any scope" : data.scope?.label || (data.hasJurisdictionFilter ? "your workspace's jurisdictions" : "this scope")} right now.</p>
+              ) : (
+                <div data-guard-strip className={`cl-scroll-shadow ${styles.eventStrip}`}>
+                  {data.events.map((ev) => <EventCard key={ev.id} ev={ev} />)}
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
-    </section>
+        </div>
+      </SectionCard>
+    </div>
   );
 }

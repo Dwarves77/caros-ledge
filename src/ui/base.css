@@ -919,7 +919,7 @@ textarea.cl-input { padding: 10px; resize: vertical; }
 .cl-detail-section[data-sec-theme="connected"], .cl-card[data-sec-theme="connected"], .cl-section-index-link[data-sec-theme="connected"], .cl-brief-directory-card[data-sec-theme="connected"] { --sec-tint: var(--sec-connected-tint); --sec-border: var(--sec-connected-border); --sec-accent: var(--sec-connected-accent); }
 .cl-detail-section[data-sec-theme="sources"], .cl-card[data-sec-theme="sources"], .cl-section-index-link[data-sec-theme="sources"], .cl-brief-directory-card[data-sec-theme="sources"] { --sec-tint: var(--sec-sources-tint); --sec-border: var(--sec-sources-border); --sec-accent: var(--sec-sources-accent); }
 .cl-detail-section[data-sec-theme], .cl-card[data-sec-theme] { border-color: var(--sec-border); }
-.cl-detail-section[data-sec-theme] .cl-detail-section-head, .cl-card[data-sec-theme] > .cl-section-head2 { background: var(--sec-tint); border-bottom: 1px solid var(--sec-border); }
+.cl-detail-section[data-sec-theme] .cl-detail-section-head, .cl-card[data-sec-theme] > .cl-section-head2, .cl-card[data-sec-theme] > header, .cl-card[data-sec-theme] > .cl-sec-head { background: var(--sec-tint); border-bottom: 1px solid var(--sec-border); }
 .cl-detail-section[data-sec-theme] .cl-section-head2--detail { background: transparent; }
 .cl-section-index-link[data-sec-theme] { background: color-mix(in srgb, var(--sec-tint) 55%, var(--card)); border: 1px solid var(--sec-border); color: var(--ink); }
 .cl-section-index-link[data-sec-theme]:hover { background: var(--sec-tint); }

@@ -46,10 +46,11 @@ function CorridorCard({ card }: { card: CarbonCard }) {
 export function CarbonCostSection({ cards }: { cards: readonly CarbonCard[] }) {
   return (
     <div className={styles.band}>
-      <SectionCard as="section" dataAudit="carbon-cost-per-feu">
+      <SectionCard as="section" dataAudit="carbon-cost-per-feu" dataAttributes={{ "data-sec-theme": "operations" }}>
         <SectionHead title="Carbon cost per FEU" aside="per corridor, from the allowance price" />
+        <p className="cl-detail-section-explainer-bar">The carbon cost of a forty-foot container on each corridor: the emission intensity of the corridor&apos;s mode, through its great-circle distance and the container payload, at the EU allowance price. Corridors are UN/LOCODE port pairs and a mode.</p>
         <div className={styles.cardBody}>
-          <p className={styles.muted}>The carbon cost of a forty-foot container on each corridor: the emission intensity of the corridor&apos;s mode, through its great-circle distance and the container payload, at the EU allowance price. Corridors are UN/LOCODE port pairs and a mode.</p>
+
           {cards.length === 0 ? (
             <p className="cl-absence">No corridors are tracked</p>
           ) : (

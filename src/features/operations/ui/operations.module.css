@@ -22,7 +22,7 @@
 .score { font-family: var(--font-display); font-size: 16px; line-height: 1; color: var(--ink); }
 .panel { background: var(--page); border-top: 1px solid var(--line-1); padding: 12px 16px 8px; height: 300px; box-sizing: border-box; overflow-y: auto; overflow-x: hidden; }
 .panelHead { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
-.panelTitle { font-size: var(--fs-125); color: var(--ink-3); min-width: 0; }
+.panelTitle { font-family: var(--font-sans); font-size: var(--fs-125); text-transform: none; letter-spacing: normal; color: var(--ink-3); min-width: 0; }
 .panelTitle strong { color: var(--ink); font-weight: 700; }
 .panelLinks { display: flex; align-items: center; gap: 14px; flex-shrink: 0; flex-wrap: wrap; }
 .link { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; font-family: inherit; font-size: var(--fs-115); font-weight: 600; color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-4); cursor: pointer; white-space: nowrap; }

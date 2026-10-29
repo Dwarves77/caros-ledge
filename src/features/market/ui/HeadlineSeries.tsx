@@ -92,8 +92,8 @@ export function HeadlineSeries({ board, ratings, nowIso }: { board: SeriesBoard;
   // One row: the first five on the visible track, the rest reachable by scrolling it sideways. The cap is not applied again here.
   const views = selection.cards.map((c) => headlineCardView(c, { ratings, nowIso }));
   return (
-    <SectionCard dataAudit="headline-series">
-      <div className={styles.hHead}>
+    <SectionCard dataAudit="headline-series" dataAttributes={{ "data-sec-theme": "summary" }}>
+      <div className={`${styles.hHead} cl-sec-head`}>
         <h2 className={styles.hTitle}>Headline series</h2>
         <span className={styles.hCaption}>
           {headlineCaption(selection)} · dated, sourced observations ·{" "}
@@ -102,6 +102,7 @@ export function HeadlineSeries({ board, ratings, nowIso }: { board: SeriesBoard;
           </Link>
         </span>
       </div>
+      <p className="cl-detail-section-explainer-bar">Primary freight, bunker, carbon allowance, and energy benchmarks tracked with dated source provenance and rolling windows.</p>
       <div className={styles.hTrack} data-audit="headline-track" data-overflow-allowed="" data-guard-strip="">
         {views.map((v) => (
           <RibbonCard key={v.key} v={v} />

@@ -108,13 +108,14 @@ export function RegionMatrix({ regions, dimensions, facts, coverageRows = [], cr
   const countWords = (n: number) => (n === 0 ? "no sourced fact" : `${n} sourced ${n === 1 ? "fact" : "facts"}`);
 
   return (
-    <SectionCard as="section" dataAudit="ops-matrix-card" className={styles.card ?? ""} onKeyDown={(e) => e.key === "Escape" && (e.preventDefault(), setSelection(null))}>
+    <SectionCard as="section" dataAudit="ops-matrix-card" dataAttributes={{ "data-sec-theme": "operations" }} className={styles.card ?? ""} onKeyDown={(e) => e.key === "Escape" && (e.preventDefault(), setSelection(null))}>
       <header className={styles.head}>
         <h2 className={styles.title}>Regions side by side</h2>
         <span data-audit="ops-matrix-hint" className={styles.hint}>
           {grid.fillRate.filled} of {grid.fillRate.total} cells sourced · {grid.fillRate.pct}% · {totalRegions} regions{regions.length > COLUMNS_BEFORE_SCROLL ? " · scroll →" : ""}
         </span>
       </header>
+      <p className="cl-detail-section-explainer-bar">Cross-regional operational readiness matrix comparing sourced fact counts across 12 infrastructure, labour, grid, and customs dimensions. Select any cell to inspect its held figures below.</p>
       <div className={`${styles.scroller} cl-scroll-shadow`} data-guard-strip="true">
         <table role="grid" aria-label="Regions by dimension, sourced fact counts" className={styles.table}>
           <thead className={styles.thead}>

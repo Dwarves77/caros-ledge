@@ -15,10 +15,11 @@ export function LeadTimeChart({ rows, minSample = DEFAULT_MIN_SAMPLE }: { rows: 
   const max = position.forecastable ? Math.max(...position.rows.map((r) => r.months), 1) : 1;
   return (
     <div className={styles.band}>
-      <SectionCard as="section" dataAudit="lead-time-chart">
+      <SectionCard as="section" dataAudit="lead-time-chart" dataAttributes={{ "data-sec-theme": "obligations" }}>
         <SectionHead title="Lead-time position" aside="SBTi Target Dashboard" />
+        <p className="cl-detail-section-explainer-bar">Peer-cohort distribution of months to each company&apos;s SBTi target commitment.</p>
         <div className={styles.cardBody}>
-          <p className={styles.muted}>Peer-cohort distribution of months to each company&apos;s SBTi target commitment.</p>
+
           {!position.forecastable ? (
             <p data-part="not-forecastable" className="cl-absence">
               Not forecastable: {position.reason} (at least {position.minSample} to draw a position).

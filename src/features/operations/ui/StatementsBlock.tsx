@@ -55,9 +55,9 @@ export function StatementsBlock({ statements, droppedVerdicts, dimensionNames = 
     </li>
   );
   return (
-    <SectionCard as="section" dataAudit="ops-statements" aria-label="Statements">
+    <SectionCard as="section" dataAudit="ops-statements" dataAttributes={{ "data-sec-theme": "connected" }} aria-label="Statements">
       <SectionHead title="Statements" aside={`${statements.length} cross-regional ${statements.length === 1 ? "comparison" : "comparisons"}`} />
-      <p className={styles.intro}>What the held figures say across regions. Components shown; nothing estimated.</p>
+      <p className="cl-detail-section-explainer-bar">What the held figures say across regions. Components shown; nothing estimated.</p>
       <ol className={styles.statements}>{statements.slice(0, 3).map(drawStatement)}</ol>
       {statements.length > 3 && (
         <details data-audit="disclosure-row" className="cl-register-master">
