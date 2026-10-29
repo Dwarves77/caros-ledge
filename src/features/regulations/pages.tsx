@@ -15,7 +15,7 @@ import { pageSession } from "@/features/account/server/page-session";
 import { loadSurfaceDenominator } from "@/features/coverage/server";
 import { buildRegisterQuerySpec, defaultJurisdictionFilter, fetchObligationRegisterPage, fetchRegisterFacetOptions, KIND_LABELS, readUpcoming } from "@/features/obligations";
 import { readThemeChips } from "@/core/detail";
-import { Masthead, SectionCard } from "@/ui";
+import { Masthead, RailCard } from "@/ui";
 import { PageFailure } from "@/ui/shell/PageFailure";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { PageFrame } from "@/ui/shell/PageFrame";
@@ -40,13 +40,15 @@ export async function RegulationsIndex() {
   const db = await userClient();
   const today = session.nowIso.slice(0, 10);
   const data = await attempt("the list", async () => {
-    const profileRead = await readWorkspaceProfile(db, session.orgId).catch((e) => warn("profile", e));
-    const profile = profileRead?.profile;
-    const [first, chips, upcoming, coverage] = await Promise.all([
-      readRegulationsFirstPage(db, session.orgId, profileRead && !profileRead.failed ? profile : null),
+    const [profileRead, chips, coverage] = await Promise.all([
+      readWorkspaceProfile(db, session.orgId).catch((e) => warn("profile", e)),
       readThemeChips(db, { surface: "regulations" }).catch((e) => warn("themes", e)),
-      readUpcoming(db, { limit: 8, jurisdictionFilter: defaultJurisdictionFilter(profile?.jurisdictions) }, today).catch((e) => warn("upcoming obligations", e)),
       loadSurfaceDenominator("regulations", { db: () => db }).catch((e) => warn("coverage", e)),
+    ]);
+    const profile = profileRead?.profile;
+    const [first, upcoming] = await Promise.all([
+      readRegulationsFirstPage(db, session.orgId, profileRead && !profileRead.failed ? profile : null),
+      readUpcoming(db, { limit: 8, jurisdictionFilter: defaultJurisdictionFilter(profile?.jurisdictions) }, today).catch((e) => warn("upcoming obligations", e)),
     ]);
     return { first, chips, upcoming, coverage, profileFailed: profileRead === null || profileRead.failed };
   });
@@ -145,9 +147,9 @@ export async function ObligationRegisterRoute() {
       </div>
       <PageFrame
         rail={
-          <SectionCard as="aside" padding="14px 16px">
+          <RailCard title="Obligation positions">
             <p className="cl-detail-link-note">Positions: your duty, carrier pass-through, customer contract, monitor. Each obligation shows the position it has for a freight forwarder.</p>
-          </SectionCard>
+          </RailCard>
         }
       >
         <ObligationRegister variant="list" initial={page} failed={page === null} jurisdictions={facets?.jurisdictions ?? []} modes={facets?.modes ?? []} />

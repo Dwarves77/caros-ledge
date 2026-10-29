@@ -25,14 +25,15 @@ const Kv = ({ label, children }: { label: string; children: React.ReactNode }) =
     <span className={styles.kvValue}>{children}</span>
   </div>
 );
+const themeOf = (t: string) => (t === "Dissent" ? "risk" : t === "Horizon assessment" ? "connected" : "sources");
 const Card = ({ title, aside, children }: { title: string; aside?: React.ReactNode; children: React.ReactNode }) => (
-  <SectionCard padding="12px 16px 14px">
-    <div className={styles.stack}>
-      <div className={styles.railHead}>
-        <h2 data-guard-title className={styles.eyebrow}>{title}</h2>
+  <SectionCard dataAttributes={{ "data-part": "rail-card", "data-rail-theme": themeOf(title) }}>
+    <div className="cl-rail-card">
+      <div className={`cl-rail-head${aside ? " cl-rail-head--split" : ""}`}>
+        <h2 data-guard-title className="cl-rail-title">{title}</h2>
         {aside}
       </div>
-      {children}
+      <div className={styles.stack}>{children}</div>
     </div>
   </SectionCard>
 );

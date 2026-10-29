@@ -59,8 +59,9 @@ interface RailCardProps {
 /** The one rail-card shell with four head affordances: plain title, head link (a Link), head node, linked title with a count. */
 const railThemeOf = (title: string): string => {
   const t = title.toLowerCase();
+  if (t.includes("obligation") || t.includes("due") || t.includes("watchlist") || t.includes("notice")) return "obligations";
   if (t.includes("impact") || t.includes("dissent") || t.includes("gap")) return "risk";
-  if (t.includes("relevance") || t.includes("horizon") || t.includes("theme") || t.includes("related")) return "connected";
+  if (t.includes("relevance") || t.includes("horizon") || t.includes("theme") || t.includes("cluster") || t.includes("related")) return "connected";
   if (t.includes("figure") || t.includes("recalculated") || t.includes("owner")) return "operations";
   if (t.includes("source") || t.includes("signpost") || t.includes("history") || t.includes("legend")) return "sources";
   return "summary";

@@ -74,9 +74,9 @@ export function DashboardBrief(p: DashboardBriefProps) {
     <PageFrame
       rail={
         <div className={styles.rail}>
-          <SectionCard dataAudit="across-platform-card">
-            <div className={styles.pad}>
-              <p className={styles.eyebrow}>Across the platform</p>
+          <SectionCard dataAudit="across-platform-card" dataAttributes={{ "data-part": "rail-card", "data-rail-theme": "summary" }}>
+            <div className="cl-rail-card">
+              <p className="cl-rail-title cl-rail-head">Across the platform</p>
               {surfaceCounts === null ? (
                 <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
                   {refusalSentence("counts_unavailable")}
@@ -133,8 +133,9 @@ export function DashboardBrief(p: DashboardBriefProps) {
         <BandTileRow>{BAND_ORDER.map((band) => (by ? <BandTile key={band.key} band={band} count={by[band.priority]} href={bandHref(band.key)} /> : <SkeletonBandTile key={band.key} />))}</BandTileRow>
 
         <section>
-          <SectionCard dataAudit="due-next-card">
+          <SectionCard dataAudit="due-next-card" dataAttributes={{ "data-sec-theme": "obligations" }}>
             <SectionHead title={`Due next · ${p.dueRows.length} ${p.dueRows.length === 1 ? "item" : "items"}`} aside={p.dueWindow} />
+            <p className="cl-detail-section-explainer-bar">Binding regulatory deadlines and statutory milestones coming due across your monitored jurisdictions.</p>
             {dueState === "failed" ? (
               <div className="cl-pad-16">{failure}</div>
             ) : dueState === "empty" ? (
@@ -151,8 +152,9 @@ export function DashboardBrief(p: DashboardBriefProps) {
         </section>
 
         <section>
-          <SectionCard dataAudit="what-changed-card">
+          <SectionCard dataAudit="what-changed-card" dataAttributes={{ "data-sec-theme": "summary" }}>
             <SectionHead title="What changed" aside={p.auditDate ? `Latest change ${formatDate(p.auditDate)}` : "No change on record"} />
+            <p className="cl-detail-section-explainer-bar">Newly captured instruments, amended deadlines, and recalculated impact figures across your workspace corpus.</p>
             {p.ratingsFailed && p.changedRows.length + p.dueRows.length > 0 && (
               <div className="cl-pad-16">
                 <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>

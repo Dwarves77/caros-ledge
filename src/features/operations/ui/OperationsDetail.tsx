@@ -21,7 +21,7 @@ import { bandFromPriority } from "@/core/lists";
 import { formatDate, pluralize } from "@/core/shared";
 import type { Resource } from "@/core/types";
 import { regionGroupForLabel } from "@/core/workspace/vocabulary";
-import { ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionCard, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
+import { ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, RailCard, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
 import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { LegendRailCard } from "@/ui/list-surface";
@@ -63,8 +63,7 @@ function RelatedRegionCard({ related, region, onRetry }: { related: RelatedResul
   if (related.failed) return <StateNote tone="error" action={{ label: "Retry", onClick: onRetry }}>Related items did not load.</StateNote>;
   if (related.items.length === 0) return null;
   return (
-    <SectionCard padding="12px 16px 14px">
-      <p className={styles.kicker}>{related.reason === "source" ? "Related by source" : `Related in ${region || "region"}`}</p>
+    <RailCard title={related.reason === "source" ? "Related by source" : `Related in ${region || "region"}`}>
       <div className={styles.derived}>
         {related.items.map((it) => (
           <Link key={it.id} href={`/operations/${encodeURIComponent(it.id)}`} className={styles.relatedLink}>
@@ -73,7 +72,7 @@ function RelatedRegionCard({ related, region, onRetry }: { related: RelatedResul
           </Link>
         ))}
       </div>
-    </SectionCard>
+    </RailCard>
   );
 }
 
