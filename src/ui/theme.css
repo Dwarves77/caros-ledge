@@ -26,6 +26,12 @@
   --awareness: #16A34A;
   --awareness-tint: #F0FDF4;
   --awareness-border: #BBF7D0;
+  --sec-summary-tint: #F1F5F9; --sec-summary-border: #CBD5E1; --sec-summary-accent: #334155;
+  --sec-obligations-tint: #FEF3C7; --sec-obligations-border: #FDE68A; --sec-obligations-accent: #B45309;
+  --sec-operations-tint: #ECFDF5; --sec-operations-border: #A7F3D0; --sec-operations-accent: #047857;
+  --sec-risk-tint: #FFE4E6; --sec-risk-border: #FECDD3; --sec-risk-accent: #BE123C;
+  --sec-connected-tint: #E0E7FF; --sec-connected-border: #C7D2FE; --sec-connected-accent: #3730A3;
+  --sec-sources-tint: #CCFBF1; --sec-sources-border: #99F6E4; --sec-sources-accent: #0F766E;
   /* lines */
   --line-1: rgba(0, 0, 0, 0.12);
   --line-2: rgba(0, 0, 0, 0.08);
@@ -51,7 +57,7 @@
   --font-sans: var(--font-jakarta), var(--font-jakarta-ext), system-ui, sans-serif;
   --font-display: var(--font-anton), var(--font-anton-ext), system-ui, sans-serif;
   --fs-85: 8.5px; --fs-95: 9.5px; --fs-10: 10px; --fs-105: 10.5px; --fs-11: 11px; --fs-115: 11.5px;
-  --fs-12: 12px; --fs-125: 12.5px; --fs-13: 13px; --fs-14: 14px; --fs-15: 15px; --fs-22: 22px;
+  --fs-12: 12px; --fs-125: 12.5px; --fs-13: 13px; --fs-14: 14px; --fs-15: 15px; --fs-16: 16px; --fs-18: 18px; --fs-20: 20px; --fs-22: 22px;
   /* a list row's title wraps to this many lines on the phone and mid layouts; the detail page header keeps the full title */
   --row-title-lines: 2;
   /* interaction */

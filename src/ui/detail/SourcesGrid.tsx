@@ -5,38 +5,31 @@ import { hasBiasTags } from "@/core/sources/bias-tags";
 import { Absence } from "../Absence";
 import { BiasChips } from "../BiasChips";
 import { TierChip } from "../Chips";
+import { MoreBelowDisclosure } from "../ItemGroup";
 
 /** The Sources section's rows: the registry's rating on each (a dash with its reason when the registry has none), the source name as the link, its bias tags outside the link (a control never nests in an anchor). */
 export function SourcesGrid({ rows }: { rows: SourceRow[] }) {
+  const drawSource = (s: SourceRow, i: number) => {
+    const inner = (
+      <>
+        {typeof s.tier === "number" ? <TierChip tier={s.tier} /> : <span style={{ width: "var(--sp-24)", display: "inline-flex", justifyContent: "center" }}><Absence reason="not in primary source" variant="dash" /></span>}
+        <div style={{ minWidth: 0 }}>
+          <p className="cl-source-name">{s.name}</p>
+          {s.meta && <p className="cl-source-meta">{s.meta}</p>}
+        </div>
+      </>
+    );
+    return (
+      <div key={i} data-part="source-row" className="cl-source-row">
+        {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" className="cl-src-link">{inner}</a> : <div className="cl-src-link">{inner}</div>}
+        {hasBiasTags(s.biasTags) && <div className="cl-source-bias"><BiasChips tags={s.biasTags} variant="detail" /></div>}
+      </div>
+    );
+  };
   return (
     <div>
-      {rows.map((s, i) => {
-        const inner = (
-          <>
-            {typeof s.tier === "number" ? <TierChip tier={s.tier} /> : <span style={{ width: "var(--sp-24)", display: "inline-flex", justifyContent: "center" }}><Absence reason="not in primary source" variant="dash" /></span>}
-            <div style={{ minWidth: 0 }}>
-              <p className="cl-source-name">{s.name}</p>
-              {s.meta && <p className="cl-source-meta">{s.meta}</p>}
-            </div>
-          </>
-        );
-        return (
-          <div key={i} data-part="source-row" className="cl-source-row">
-            {s.url ? (
-              <a href={s.url} target="_blank" rel="noopener noreferrer" className="cl-src-link">
-                {inner}
-              </a>
-            ) : (
-              <div className="cl-src-link">{inner}</div>
-            )}
-            {hasBiasTags(s.biasTags) && (
-              <div className="cl-source-bias">
-                <BiasChips tags={s.biasTags} variant="detail" />
-              </div>
-            )}
-          </div>
-        );
-      })}
+      {rows.slice(0, 5).map((s, i) => drawSource(s, i))}
+      {rows.length > 5 && <MoreBelowDisclosure count={rows.length - 5} itemNoun="more sources">{rows.slice(5).map((s, i) => drawSource(s, i + 5))}</MoreBelowDisclosure>}
     </div>
   );
 }

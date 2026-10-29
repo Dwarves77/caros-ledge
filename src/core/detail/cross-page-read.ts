@@ -73,13 +73,13 @@ async function readTheme(db: Db, itemUuid: string, surface: string, asOfIso: str
 const readFreshInferences = (db: Db, itemUuid: string): Promise<InferenceView | null> => readCustomerInferences(db, itemUuid);
 
 /** The cross-page analysis of one item: each block read on its own, so one failing block does not take the others down. */
-export async function readCrossPage(db: Db, itemUuid: string, surface: string, intersectionSummary: string | null, connections: readonly ConnectionIn[], lookup: ResourceLookup, asOfIso: string): Promise<CrossPage> {
+export async function readCrossPage(db: Db, itemUuid: string, surface: string, intersectionSummary: string | null, connections: readonly ConnectionIn[], lookup: ResourceLookup | Promise<ResourceLookup>, asOfIso: string): Promise<CrossPage> {
   const degraded: string[] = [];
   const [theme, inferences] = await Promise.all([
     readTheme(db, itemUuid, surface, asOfIso).catch(() => (degraded.push("themes"), null)),
     readFreshInferences(db, itemUuid).catch(() => (degraded.push("inferences"), null)),
   ]);
-  return { intersections: buildIntersectionView(connections, lookup, { currentSurface: surface, summary: intersectionSummary }), intersectionSummary, theme, inferences, degraded };
+  return { intersections: buildIntersectionView(connections, await lookup, { currentSurface: surface, summary: intersectionSummary }), intersectionSummary, theme, inferences, degraded };
 }
 
 /** The theme chips of a list page (`surface` null is the cross-page view the dashboard reads). Throws on a failed read; the caller says the strip did not load. */

@@ -112,6 +112,17 @@ export function ResearchDetail(p: ResearchDetailProps) {
     />
   );
   const prose = (text: string) => <p className={styles.summaryProse}>{text}</p>;
+  const renderFinding = (s: SectionRow, i: number) => (
+    <DetailSubSection key={s.section_key} title={HEADINGS[s.section_key] as string} first={i === 0}>
+      <FactBlocks markdown={s.content_md} {...(depth === "summary" ? { maxGroups: 1 } : {})} />
+      {s.section_key === "5" && (
+        <>
+          {r.doesNotResolve && <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, marginTop: "var(--sp-8)", color: "var(--ink-2)" }}>{r.doesNotResolve}</p>}
+          <PendingTriggers events={pendingEvents} kindLabels={p.kindLabels ?? {}} />
+        </>
+      )}
+    </DetailSubSection>
+  );
   return (
     <ClaimTierProvider claimTiers={p.claimTiers}>
       <div style={{ paddingTop: 16 }}>
@@ -176,19 +187,23 @@ export function ResearchDetail(p: ResearchDetailProps) {
               <DetailSection id="findings" title="Substantive findings" index={2}>
                 {known.length > 0 || hasPendingOrUnresolved ? (
                   <>
-                    {known.map((s, i) => (
-                      <DetailSubSection key={s.section_key} title={HEADINGS[s.section_key] as string} first={i === 0}>
-                        <FactBlocks markdown={s.content_md} />
-                        {s.section_key === "5" && (
-                          <>
-                            {r.doesNotResolve && (
-                              <p style={{ fontSize: "var(--fs-13)", lineHeight: 1.6, marginTop: "var(--sp-8)", color: "var(--ink-2)" }}>{r.doesNotResolve}</p>
-                            )}
-                            <PendingTriggers events={pendingEvents} kindLabels={p.kindLabels ?? {}} />
-                          </>
-                        )}
-                      </DetailSubSection>
-                    ))}
+                    {depth === "summary" && known.length > 2 ? (
+                      <>
+                        {known.slice(0, 2).map(renderFinding)}
+                        <details data-audit="disclosure-row" className="cl-register-master">
+                          <summary className="cl-register-master-summary">
+                            <div className="cl-register-master-left">
+                              <span className="cl-register-master-title">Additional Research Breakdown ({known.length - 2} sections)</span>
+                              <span className="cl-register-master-sub">Showing top 2 research sub-sections in Summary view. Expand or switch to Full brief to inspect all {known.length} sub-sections.</span>
+                            </div>
+                            <span className="cl-register-master-pill">Expand {known.length - 2} more sections ▾</span>
+                          </summary>
+                          <div className="cl-pad-16">{known.slice(2).map(renderFinding)}</div>
+                        </details>
+                      </>
+                    ) : (
+                      known.map(renderFinding)
+                    )}
                     {!known.some((s) => s.section_key === "5") && hasPendingOrUnresolved && (
                       <DetailSubSection key="5" title={HEADINGS["5"] as string} first={known.length === 0}>
                         {r.doesNotResolve && (
@@ -226,4 +241,3 @@ export function ResearchDetail(p: ResearchDetailProps) {
     </ClaimTierProvider>
   );
 }
-

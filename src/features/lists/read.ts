@@ -72,8 +72,10 @@ export async function readListing(db: Db, opts: { orgId?: string | null; rpc: Li
   const items = (data ?? []) as WorkspaceItemRpcRow[];
   if (items.length === 0) return { rows: [], archived: [], overrides: [], failed: false, timelineFailures: 0, enrichFailed: false, message: null };
   const mapped = await mapRows(db, items, { orgId: orgId ?? null, profile: opts.profile });
-  const enriched = await enrichSources(db, [...mapped.active, ...mapped.archived], { biasTags: true });
-  const overrides = orgId ? await readOverrides(db, orgId, mapped.uuidToUiId) : [];
+  const [enriched, overrides] = await Promise.all([
+    enrichSources(db, [...mapped.active, ...mapped.archived], { biasTags: true }),
+    orgId ? readOverrides(db, orgId, mapped.uuidToUiId) : Promise.resolve([]),
+  ]);
   return { rows: mapped.active, archived: mapped.archived, overrides, failed: false, timelineFailures: mapped.timelineFailures, enrichFailed: !enriched, message: null };
 }
 

@@ -11,7 +11,7 @@ import type { ThemeAnalysisView } from "@/core/themes";
 import signalLabels from "@/core/themes/data/signal-labels.json";
 
 import { GfmSection } from "../GfmSection";
-import { DetailSubSection } from "../ItemGroup";
+import { DetailSubSection, MoreBelowDisclosure } from "../ItemGroup";
 import { StateNote } from "../StateNote";
 
 import { DetailSection } from "./DetailShell";
@@ -84,10 +84,19 @@ function GroupList({ groups }: { groups: Group[] }) {
             {g.samePage ? " (this page)" : ""} · {g.items.length}
           </Label>
           <div className="cl-conn-grid">
-            {g.items.map((it) => (
+            {g.items.slice(0, 4).map((it) => (
               <RowLink key={it.id} href={it.href} title={it.title} note={it.coupling} />
             ))}
           </div>
+          {g.items.length > 4 && (
+            <MoreBelowDisclosure count={g.items.length - 4} itemNoun="more connected items">
+              <div className="cl-conn-grid">
+                {g.items.slice(4).map((it) => (
+                  <RowLink key={it.id} href={it.href} title={it.title} note={it.coupling} />
+                ))}
+              </div>
+            </MoreBelowDisclosure>
+          )}
         </div>
       ))}
     </>
@@ -212,7 +221,6 @@ export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry 
   return (
     <>
       <DetailSection id={CONNECTED_SECTION_ID} title="Connected intelligence" aside="Intersections and theme analysis" index={crossPageOrd(surfaceKey, CONNECTED_SECTION_ID)}>
-        <p className="cl-section-explainer">How this item connects across the Caro’s Ledge repository — related regulations, market signals, and operations profiles sharing the same legal basis, corridor, or supply-chain scenario.</p>
         <div data-guard-container="cross-page">
           {view && (
             <DetailSubSection title="Intersections" subtitle="Items that share an operational scenario and a compliance object with this one" first>

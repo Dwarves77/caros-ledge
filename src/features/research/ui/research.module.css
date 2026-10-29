@@ -9,7 +9,7 @@
 
 .rail { padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
 .railHead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.eyebrow { font-size: var(--fs-105); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin: 0; }
+.eyebrow { font-family: var(--font-display); font-size: var(--fs-15); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); font-weight: 400; margin: 0; }
 .badge { font-size: 9px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line-4); color: var(--ink-3); }
 .badgeOn { color: var(--brand); border-color: var(--brand); }
 .kv { display: flex; gap: 8px; align-items: baseline; }

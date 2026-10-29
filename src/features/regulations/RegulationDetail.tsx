@@ -18,7 +18,7 @@ import type { ChangeLogEntry, Dispute, Resource } from "@/core/types";
 import type { RecommendedAction } from "@/core/brief";
 import type { PenaltyView } from "@/core/workspace";
 import { useWorkspaceStore } from "@/core/workspace/store";
-import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, type ClaimTierMap } from "@/ui";
+import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, sectionThemeOf, StateNote, type ClaimTierMap } from "@/ui";
 import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, PendingTriggers, pendingTriggers, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
 import { LegendRailCard } from "@/ui/list-surface";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
@@ -119,7 +119,6 @@ export function RegulationDetail(p: Props) {
             }
           >
             <DetailSection id="summary" title="Summary" aside={isRecord ? undefined : "Generated · 30-second read"} index={1}>
-              <p className="cl-section-explainer">Executive overview of what this regulation requires, how its deadlines phase in over time (Trajectory), and any pending regulatory triggers.</p>
               {isRecord ? (
                 <RecordFacts leadNote="This item was captured directly from its source document rather than synthesized into a brief. Every fact below is quoted verbatim from that source." dateFacts={split.dateFacts} otherFacts={split.otherFacts} gapsLine={parsed && parsed.slotFieldCount > 0 ? <>{`${parsed.gaps.length} of ${parsed.slotFieldCount} record fields not stated by the source`}{parsed.gaps.map((g) => <span key={g.slotKey} style={{ display: "block" }}>{g.label}: {g.text}</span>)}</> : undefined} tags={r.tags} />
               ) : (
@@ -131,7 +130,6 @@ export function RegulationDetail(p: Props) {
               const storedContent = stored.get(e.key as string)?.content_md;
               return (
                 <DetailSection key={e.id} id={e.id} title={HEADINGS[e.key as string] as string} aside={e.key === "3" && depth === "summary" ? "Top priority group · switch to Full brief for all sections" : undefined} index={e.ord ?? null}>
-                  {e.key === "3" && <p className="cl-section-explainer">Actionable compliance duties grouped by who is bound and what operational steps must be taken, backed by verbatim statutory citations and source provenance tiers.</p>}
                   {storedContent ? <FactBlocks markdown={storedContent} {...(depth === "summary" ? { maxGroups: 1 } : {})} /> : e.key === "6" ? <p className="cl-detail-link-note">Pending regulatory triggers and unresolved items are summarized in S1 Summary above.</p> : null}
                 </DetailSection>
               );
@@ -141,7 +139,7 @@ export function RegulationDetail(p: Props) {
                 <div className="cl-brief-directory-head"><div><p className="cl-brief-directory-title">Full Statutory Breakdown Directory</p><p className="cl-brief-directory-sub">Summary view shows S1 Summary and the top-priority S2 Obligations group. Click any section below to open the complete statutory dossier at that section.</p></div></div>
                 <div className="cl-brief-directory-grid">
                   {directoryItems.map((item) => (
-                    <button key={item.id} type="button" data-audit="disclosure-row" className="cl-brief-directory-card" onClick={() => { setDepth("full"); requestAnimationFrame(() => document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth", block: "start" })); }}>
+                    <button key={item.id} type="button" data-audit="disclosure-row" data-sec-theme={sectionThemeOf(item.id)} className="cl-brief-directory-card" onClick={() => { setDepth("full"); requestAnimationFrame(() => document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth", block: "start" })); }}>
                       <span className="cl-brief-directory-card-top"><span className="cl-brief-directory-card-ord">{`S${item.ord}`}</span><span className="cl-brief-directory-card-name">{item.name}</span></span>
                       <span className="cl-brief-directory-card-desc">{item.desc}</span>
                     </button>

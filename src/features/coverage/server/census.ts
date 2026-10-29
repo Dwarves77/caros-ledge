@@ -93,12 +93,14 @@ const COLUMNS = "id,document_url,instrument_identifier,title,source_id,shape_cla
  * including the verified-brief count: a failed count must not publish "0 verified briefs". Callers slice; the matrix build uses these same entries and counts (the census is not read twice).
  */
 export async function loadCoverage(db: Db, surface?: CoverageSurface): Promise<{ entries: CoverageIndexEntry[]; counts: CoverageCounts }> {
-  const rows = await fetchAllRows<Row>((from, to) => {
-    let q = qb<Row>(db.from("census_worklist").select(COLUMNS)).eq("dryrun_disposition", "would_mint");
-    if (surface) q = q.contains("surface_tags", [surface]);
-    return q.order("id", { ascending: true }).range(from, to);
-  }, { cap: 500_000 });
-  const verifiedBriefs = await exactCount(db.from("intelligence_items").select("id", { count: "exact", head: true }).eq("provenance_status", "verified").not("full_brief", "is", null) as never);
+  const [rows, verifiedBriefs] = await Promise.all([
+    fetchAllRows<Row>((from, to) => {
+      let q = qb<Row>(db.from("census_worklist").select(COLUMNS)).eq("dryrun_disposition", "would_mint");
+      if (surface) q = q.contains("surface_tags", [surface]);
+      return q.order("id", { ascending: true }).range(from, to);
+    }, { cap: 500_000 }),
+    exactCount(db.from("intelligence_items").select("id", { count: "exact", head: true }).eq("provenance_status", "verified").not("full_brief", "is", null) as never),
+  ]);
   const entries: CoverageIndexEntry[] = rows.map((r) => {
     const softPass = softPassOf(r.notes);
     const { instrumentType, descriptor } = parseNotes(r.notes);

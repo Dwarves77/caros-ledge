@@ -22,13 +22,12 @@ interface BiasRow {
 }
 
 async function inChunks<T>(ids: string[], read: (slice: string[]) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>): Promise<T[]> {
-  const out: T[] = [];
-  for (let i = 0; i < ids.length; i += CHUNK) {
-    const { data, error } = await read(ids.slice(i, i + CHUNK));
+  const slices = Array.from({ length: Math.ceil(ids.length / CHUNK) }, (_, i) => ids.slice(i * CHUNK, (i + 1) * CHUNK));
+  return (await Promise.all(slices.map(async (s) => {
+    const { data, error } = await read(s);
     if (error) throw new Error(error.message);
-    out.push(...(data ?? []));
-  }
-  return out;
+    return data ?? [];
+  }))).flat();
 }
 
 /** Attach each row's source name and customer tier (and, when asked, the source's bias tags). Returns false when a read failed; rows are then left as they were. */
@@ -36,9 +35,11 @@ export async function enrichSources(db: Db, resources: Resource[], opts: { biasT
   const ids = [...new Set(resources.map((r) => r.sourceId).filter((id): id is string => !!id))];
   if (ids.length === 0) return true;
   try {
-    const sources = await inChunks<SourceRow>(ids, (slice) => db.from("sources").select("id, name, base_tier, effective_tier, tier_override").in("id", slice));
+    const [sources, bias] = await Promise.all([
+      inChunks<SourceRow>(ids, (slice) => db.from("sources").select("id, name, base_tier, effective_tier, tier_override").in("id", slice)),
+      opts.biasTags ? inChunks<BiasRow>(ids, (slice) => db.from("source_bias_tags").select("source_id, dimension, tag, confidence").in("source_id", slice)) : Promise.resolve(null),
+    ]);
     const byId = new Map(sources.map((s) => [s.id, s]));
-    const bias = opts.biasTags ? await inChunks<BiasRow>(ids, (slice) => db.from("source_bias_tags").select("source_id, dimension, tag, confidence").in("source_id", slice)) : null;
     const tagsBySource = new Map<string, BiasTag[]>();
     for (const b of bias ?? []) tagsBySource.set(b.source_id, [...(tagsBySource.get(b.source_id) ?? []), { dimension: b.dimension, tag: b.tag, confidence: b.confidence }]);
     for (const r of resources) {

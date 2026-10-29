@@ -83,15 +83,24 @@ export async function RegulationDetailRoute({ params }: { params: Promise<{ slug
   const today = session.nowIso.slice(0, 10);
   const data = await attempt(id, async () => {
     await applyIdRedirect("regulations", id, db);
-    const detail = await loadDetail("regulations", id, undefined, db, session.orgId, session.nowIso);
+    const detail = await loadDetail(
+      "regulations",
+      id,
+      async ({ uuid, resource }) => {
+        const iso = resource.jurisdictionIso ?? [];
+        const [events, register, corridors] = await Promise.all([
+          readUpcoming(db, { itemId: uuid, limit: 20 }, today).catch((e) => warn("obligation events", e)),
+          fetchObligationRegisterPage(db, buildRegisterQuerySpec({ itemId: uuid, limit: 200 }, today)).catch((e) => warn("obligation register", e)),
+          iso.length > 0 ? corridorsTouching(db, iso).catch((e) => warn("corridors", e)) : Promise.resolve([]),
+        ]);
+        return { events, register, corridors };
+      },
+      db,
+      session.orgId,
+      session.nowIso,
+    );
     if (detail.notFound) return "missing" as const;
-    const iso = detail.resource.jurisdictionIso ?? [];
-    const [events, register, corridors] = await Promise.all([
-      readUpcoming(db, { itemId: detail.uuid, limit: 20 }, today).catch((e) => warn("obligation events", e)),
-      fetchObligationRegisterPage(db, buildRegisterQuerySpec({ itemId: detail.uuid, limit: 200 }, today)).catch((e) => warn("obligation register", e)),
-      iso.length > 0 ? corridorsTouching(db, iso).catch((e) => warn("corridors", e)) : Promise.resolve([]),
-    ]);
-    return { detail, events, register, corridors };
+    return { detail, ...detail.itemScoped };
   });
   if (data === null) return <PageFailure what="This regulation" />;
   if (data === "missing") notFound();

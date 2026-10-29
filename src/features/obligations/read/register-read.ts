@@ -154,20 +154,13 @@ export async function fetchObligationRegisterPage(sb: Db, spec: RegisterSpec, op
   let jurisdictionCodes: string[] | null = null;
   if (spec.jurisdiction) jurisdictionCodes = matchingJurisdictionCodes((opts.facets ?? (await fetchRegisterFacetOptions(sb, spec.todayIso))).jurisdictions, spec.jurisdiction);
   const suppressed = notInList(await suppressedEventIds(sb));
-  const sizes: number[] = [];
-  for (const seg of SEGMENTS) {
-    const q = qb(sb.from("obligations").select(`id, ${ITEM_EMBED}`, { count: "exact", head: true }));
-    sizes.push(countOf(`obligations ${seg.key}`, await seg.narrow(applyRegisterFilters(q, spec, jurisdictionCodes, suppressed), spec)));
-  }
+  const sizes = await Promise.all(SEGMENTS.map(async (seg) => countOf(`obligations ${seg.key}`, await seg.narrow(applyRegisterFilters(qb(sb.from("obligations").select(`id, ${ITEM_EMBED}`, { count: "exact", head: true })), spec, jurisdictionCodes, suppressed), spec))));
   const total = sizes.reduce((a, b) => a + b, 0);
   if (total === 0) return { rows: [], total: 0 };
-  const raw: Raw[] = [];
-  for (const slice of planRegisterPageSegments(sizes, spec.offset, spec.limit)) {
+  const raw = (await Promise.all(planRegisterPageSegments(sizes, spec.offset, spec.limit).map(async (slice) => {
     const seg = SEGMENTS[slice.index] as (typeof SEGMENTS)[number];
-    const q = qb(sb.from("obligations").select(REGISTER_SELECT));
-    const res = await seg.narrow(applyRegisterFilters(q, spec, jurisdictionCodes, suppressed), spec).order("due_date", { ascending: seg.ascending }).order("id", { ascending: true }).range(slice.from, slice.to);
-    raw.push(...rowsOf<Raw>(`obligations ${seg.key} page`, res));
-  }
+    return rowsOf<Raw>(`obligations ${seg.key} page`, await seg.narrow(applyRegisterFilters(qb(sb.from("obligations").select(REGISTER_SELECT)), spec, jurisdictionCodes, suppressed), spec).order("due_date", { ascending: seg.ascending }).order("id", { ascending: true }).range(slice.from, slice.to));
+  }))).flat();
   return { rows: raw.map(flatten), total };
 }
 

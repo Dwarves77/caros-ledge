@@ -36,30 +36,41 @@ function Component({ c }: { c: StatementComponent }) {
 
 export function StatementsBlock({ statements, droppedVerdicts, dimensionNames = {} }: { statements: Statement[]; droppedVerdicts: number; dimensionNames?: Record<string, string> }) {
   if (statements.length === 0 && droppedVerdicts === 0) return null;
+  const drawStatement = (s: Statement) => (
+    <li key={`${s.dimension}|${s.factLabel}`} data-audit="ops-statement" data-dimension={s.dimension} className={styles.statement}>
+      <p className={styles.kicker}>{dimensionNames[s.dimension] ?? s.dimension}</p>
+      {s.sentence !== null ? (
+        <p data-audit="ops-statement-sentence" className={styles.sentence}>{s.sentence}</p>
+      ) : (
+        <>
+          <p data-audit="ops-statement-label" className={styles.sentence}><b>{s.factLabel}</b></p>
+          <p data-audit="ops-statement-absence" className={styles.noteText}><span data-absence="needs" data-part="absence" className="cl-absence">{s.absence}</span></p>
+        </>
+      )}
+      <ul className={styles.components}>
+        {s.components.map((c) => (
+          <Component key={c.regionCode} c={c} />
+        ))}
+      </ul>
+    </li>
+  );
   return (
     <SectionCard as="section" dataAudit="ops-statements" aria-label="Statements">
-      <SectionHead title="Statements" />
+      <SectionHead title="Statements" aside={`${statements.length} cross-regional ${statements.length === 1 ? "comparison" : "comparisons"}`} />
       <p className={styles.intro}>What the held figures say across regions. Components shown; nothing estimated.</p>
-      <ol className={styles.statements}>
-        {statements.map((s) => (
-          <li key={`${s.dimension}|${s.factLabel}`} data-audit="ops-statement" data-dimension={s.dimension} className={styles.statement}>
-            <p className={styles.kicker}>{dimensionNames[s.dimension] ?? s.dimension}</p>
-            {s.sentence !== null ? (
-              <p data-audit="ops-statement-sentence" className={styles.sentence}>{s.sentence}</p>
-            ) : (
-              <>
-                <p data-audit="ops-statement-label" className={styles.sentence}><b>{s.factLabel}</b></p>
-                <p data-audit="ops-statement-absence" className={styles.noteText}><span data-absence="needs" data-part="absence" className="cl-absence">{s.absence}</span></p>
-              </>
-            )}
-            <ul className={styles.components}>
-              {s.components.map((c) => (
-                <Component key={c.regionCode} c={c} />
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ol>
+      <ol className={styles.statements}>{statements.slice(0, 3).map(drawStatement)}</ol>
+      {statements.length > 3 && (
+        <details data-audit="disclosure-row" className="cl-register-master">
+          <summary className="cl-register-master-summary">
+            <div className="cl-register-master-left">
+              <span className="cl-register-master-title">Additional Cross-Regional Statements ({statements.length - 3} more)</span>
+              <span className="cl-register-master-sub">Showing 3 of {statements.length} cross-regional comparisons above. Expand to inspect the remaining {statements.length - 3} statements and their regional source components.</span>
+            </div>
+            <span className="cl-register-master-pill">Expand {statements.length - 3} more statements ▾</span>
+          </summary>
+          <ol className={styles.statements}>{statements.slice(3).map(drawStatement)}</ol>
+        </details>
+      )}
       {droppedVerdicts > 0 && (
         <p className={styles.intro}>
           {droppedVerdicts} {droppedVerdicts === 1 ? "figure is" : "figures are"} not stated here because {droppedVerdicts === 1 ? "its label reads" : "their labels read"} as advice; the facts remain in the matrix.

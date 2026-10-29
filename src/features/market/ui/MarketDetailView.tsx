@@ -128,6 +128,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
   const meta = joinSegments([bandLabel, jurisLabel, r.sourceName, r.added ? formatDate(r.added) : null, citers !== null ? `${citers} independent source${citers === 1 ? "" : "s"} corroborate` : null]);
   const published = r.added ? formatDate(r.added) : null;
   const nextRelease = bundle.priceBoard.ok ? bundle.priceBoard.data.find((p) => p.nextReleaseAt)?.nextReleaseAt : null;
+  const fbOpts = depth === "summary" ? { maxGroups: 1 } : {};
 
   const actionCard = (
     <ActionCard
@@ -151,6 +152,31 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
       timeline={timeline}
       where={{ value: jurisLabel }}
     />
+  );
+
+  const extraFindings = (
+    <>
+      <DetailSubSection title="Cost impact by mode" subtitle="Air · Ocean · Road">
+        {map["4"] ? <FactBlocks markdown={map["4"]} {...fbOpts} /> : note("Operational and cost implications by mode")}
+      </DetailSubSection>
+      <DetailSubSection title="Do now" subtitle={actions.length > 0 ? `${actions.length} steps` : null}>
+        {actions.length > 0 ? (
+          <ul className={styles.gapList}>
+            {actions.map((a, i) => (
+              <li key={`${a.action_text}-${i}`}>
+                <b>{a.timeframe_days != null ? `${a.timeframe_days} days` : `Step ${i + 1}`}</b> · {a.action_text}
+                {a.owner ? <span className={styles.muted}> · {a.owner}</span> : null}
+              </li>
+            ))}
+          </ul>
+        ) : map["7"] ? (
+          <FactBlocks markdown={map["7"]} {...fbOpts} />
+        ) : (
+          note("The actions the workspace should take")
+        )}
+      </DetailSubSection>
+      <DetailSubSection title="Client talking points">{map["6"] ? <FactBlocks markdown={map["6"]} {...fbOpts} /> : note("What the workspace can credibly say")}</DetailSubSection>
+    </>
   );
 
   return (
@@ -201,7 +227,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
           >
             <DetailSection id="summary" title="Summary" aside="Generated · 30-second read" index={1}>
               <PriceBoardBlock bundle={bundle} nowIso={nowIso} />
-              {map["1"] ? <FactBlocks markdown={map["1"]} /> : note("The movement analysis")}
+              {map["1"] ? <FactBlocks markdown={map["1"]} {...fbOpts} /> : note("The movement analysis")}
               {depth === "full" && !isRecord && !claimsDegraded && Object.keys(map).length === 0 && r.fullBrief ? (
                 <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line-3)" }}>
                   <GfmSection markdown={stripSourcesSection(r.fullBrief)} />
@@ -215,8 +241,8 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
                 ) : (
                   <>
                     <DetailSubSection title="Drivers & trajectory" subtitle="4 forces · compounding" first>
-                      {map["2"] ? <FactBlocks markdown={map["2"]} /> : null}
-                      {map["3"] ? <FactBlocks markdown={map["3"]} /> : null}
+                      {map["2"] ? <FactBlocks markdown={map["2"]} {...fbOpts} /> : null}
+                      {map["3"] ? <FactBlocks markdown={map["3"]} {...fbOpts} /> : null}
                       {r.conversionTrigger ? (
                         <p>
                           <b>Conversion trigger:</b> {r.conversionTrigger}
@@ -224,29 +250,23 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
                       ) : null}
                       {trajectory ? <TrajectoryBars trajectoryPoints={trajectory} /> : null}
                       {hasCarbon ? <CarbonFindings bundle={bundle} item={carbonItem} nowIso={nowIso} /> : null}
-                      {map["5"] ? <FactBlocks markdown={map["5"]} /> : null}
+                      {map["5"] ? <FactBlocks markdown={map["5"]} {...fbOpts} /> : null}
                       {!map["2"] && !map["3"] && !map["5"] && !trajectory && !hasCarbon ? note("Drivers and trajectory") : null}
                     </DetailSubSection>
-                    <DetailSubSection title="Cost impact by mode" subtitle="Air · Ocean · Road">
-                      {map["4"] ? <FactBlocks markdown={map["4"]} /> : note("Operational and cost implications by mode")}
-                    </DetailSubSection>
-                    <DetailSubSection title="Do now" subtitle={actions.length > 0 ? `${actions.length} steps` : null}>
-                      {actions.length > 0 ? (
-                        <ul className={styles.gapList}>
-                          {actions.map((a, i) => (
-                            <li key={`${a.action_text}-${i}`}>
-                              <b>{a.timeframe_days != null ? `${a.timeframe_days} days` : `Step ${i + 1}`}</b> · {a.action_text}
-                              {a.owner ? <span className={styles.muted}> · {a.owner}</span> : null}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : map["7"] ? (
-                        <FactBlocks markdown={map["7"]} />
-                      ) : (
-                        note("The actions the workspace should take")
-                      )}
-                    </DetailSubSection>
-                    <DetailSubSection title="Client talking points">{map["6"] ? <FactBlocks markdown={map["6"]} /> : note("What the workspace can credibly say")}</DetailSubSection>
+                    {depth === "summary" ? (
+                      <details data-audit="disclosure-row" className="cl-register-master">
+                        <summary className="cl-register-master-summary">
+                          <div className="cl-register-master-left">
+                            <span className="cl-register-master-title">Mode Cost Impact, Action Steps & Talking Points</span>
+                            <span className="cl-register-master-sub">Showing primary drivers & trajectory above in Summary view. Expand or switch to Full brief to inspect mode cost impacts, recommended actions, and client talking points.</span>
+                          </div>
+                          <span className="cl-register-master-pill">Expand 3 more sections ▾</span>
+                        </summary>
+                        <div className="cl-pad-16">{extraFindings}</div>
+                      </details>
+                    ) : (
+                      extraFindings
+                    )}
                   </>
                 )}
               </DetailSection>

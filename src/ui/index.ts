@@ -30,7 +30,7 @@ export { RelativeTime } from "./RelativeTime";
 export { RowTable, RowTableAction } from "./RowTable";
 export { SectionCard } from "./SectionCard";
 export { SectionHead } from "./SectionHead";
-export { SectionIndex } from "./SectionIndex";
+export { SectionIndex, sectionThemeOf } from "./SectionIndex";
 export { SectionLabel } from "./SectionLabel";
 export { SkeletonBandTile, SkeletonListRow, SkeletonPage, skeletonBox } from "./Skeleton";
 export { CardFoot, FilePickRow, RailCard, SourceLink, tint } from "./SmallParts";

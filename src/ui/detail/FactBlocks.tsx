@@ -17,12 +17,16 @@ export function FactBlocks({ markdown, maxGroups }: { markdown: string | null | 
     run = [];
     if (models.length === 0 || (maxGroups && groups >= maxGroups)) return;
     groups += 1;
-    out.push(<ItemGroup key={`g${groups}`}>{models.map((m, j) => <FactCard key={j} model={m} />)}</ItemGroup>);
+    const shown = maxGroups ? models.slice(0, 3) : models;
+    out.push(<ItemGroup key={`g${groups}`}>{shown.map((m, j) => <FactCard key={j} model={m} />)}</ItemGroup>);
   };
   parseFactParagraphs(markdown).forEach((b, i) => {
     if (b.kind !== "prose") return void run.push(b);
     flush();
-    if (!maxGroups || groups < maxGroups) out.push(<GfmSection key={`p${i}`} markdown={b.text} />);
+    if (!maxGroups || groups < maxGroups) {
+      out.push(<GfmSection key={`p${i}`} markdown={b.text} />);
+      if (!b.text.startsWith("#")) groups += 1;
+    }
   });
   flush();
   return out.length > 0 ? <>{out}</> : null;

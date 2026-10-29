@@ -61,17 +61,20 @@ export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface,
   if (!item || item.canonicalSurface !== surface) return { notFound: true };
   const { uuid, resource, connections, supersessions } = item;
   // The rail draws the stored impact scores with the reading workspace's client score, or the sentence of the input it waits for (the same function as every list row).
-  await attachImpact(client, [resource], new Map([[resource.id, uuid]]), orgId);
-  const relatedIds = [...new Set([...connections.map((c) => c.id), ...supersessions.flatMap((s) => [s.old, s.new])])].filter(Boolean);
-  const [claimsRead, lookup, itemScoped] = await Promise.all([
+
+  const lookupPromise = buildResourceLookup(client, [...new Set([...connections.map((c) => c.id), ...supersessions.flatMap((s) => [s.old, s.new])])].filter(Boolean));
+
+  const [, claimsRead, lookup, itemScoped, rawCrossPage] = await Promise.all([
+    attachImpact(client, [resource], new Map([[resource.id, uuid]]), orgId, undefined, new Map([[uuid, item.relevanceInput as unknown as Record<string, unknown>]])),
     readClaims(client, uuid).then((c) => ({ ok: true as const, ...c }), (e: unknown) => ({ ok: false as const, error: e })),
-    buildResourceLookup(client, relatedIds),
+    lookupPromise,
     loadItemScoped ? loadItemScoped({ db: client, uuid, resource, connections, supersessions }) : Promise.resolve(undefined as ItemScoped),
+    readCrossPage(client, uuid, surface, item.intersectionSummary, connections, lookupPromise, asOfIso),
   ]);
   // INV-270 fails closed: without the suppressions the text is withheld (a named degraded block), never rendered unredacted and never read as 'nothing suppressed'.
   const claims = claimsRead.ok ? claimsRead : { tiers: {} as ClaimTierMap, suppressed: [] };
   // Every text column of the page, not the sections and the brief alone: the claim was copied to the summary, the key data, the stated intersection summary and the theme brief (F:27).
-  const crossPage = redactDeep(await readCrossPage(client, uuid, surface, redactDeep(item.intersectionSummary, claims.suppressed), connections, lookup, asOfIso), claims.suppressed);
+  const crossPage = redactDeep(rawCrossPage, claims.suppressed);
   const redacted = claimsRead.ok ? redactSuppressedClaims({ sections: item.sections, fullBrief: resource.fullBrief ?? null, claims: claims.suppressed }) : { sections: [] as SectionRow[], fullBrief: "" };
   return {
     notFound: false,

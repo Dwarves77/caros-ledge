@@ -19,6 +19,7 @@ import { ImpactMeter } from "../ImpactMeter";
 import { Masthead } from "../Masthead";
 import { SectionCard } from "../SectionCard";
 import { SectionHead } from "../SectionHead";
+import { SECTION_DESCRIPTIONS, sectionThemeOf } from "../SectionIndex";
 import { ShellCommandBar } from "../shell/CommandBar";
 import { useBootstrapStore } from "../shell/use-bootstrap";
 import { RailCard } from "../SmallParts";
@@ -58,11 +59,13 @@ export function DetailSection({ id, title, aside, index, children }: { id: strin
   ) : (
     aside
   );
+  const desc = SECTION_DESCRIPTIONS[id];
   return (
-    <SectionCard as="section" id={id} padding="0" className="cl-detail-section">
+    <SectionCard as="section" id={id} padding="0" className="cl-detail-section" dataAttributes={{ "data-sec-theme": sectionThemeOf(id) }}>
       <div className="cl-detail-section-head" data-audit="detail-section-head" style={band ? ({ ["--cl-detail-head-tint" as string]: band.tintCssVar } as React.CSSProperties) : undefined}>
-        <SectionHead index={index != null ? `S${index}` : null} title={title} aside={headerAside} padding="section" size="detail" rule={!collapsed} />
+        <SectionHead index={index != null ? `S${index}` : null} title={title} aside={headerAside} padding="section" size="detail" rule={!collapsed && !desc} />
       </div>
+      {desc && <p className="cl-detail-section-explainer-bar">{desc}</p>}
       {!collapsed && <div className="cl-detail-section-body">{children}</div>}
     </SectionCard>
   );

@@ -2,7 +2,7 @@
    matrix cells are 44 px tall where artboard 08 draws 40 (DESIGN CHANGES OWED, artboard 08). */
 .card { display: flex; flex-direction: column; min-width: 0; }
 .head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 14px 16px 10px; border-bottom: 1px solid var(--line-2); flex-wrap: wrap; }
-.title { font-family: var(--font-sans); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; font-size: var(--fs-15); line-height: 1.2; margin: 0; color: var(--ink); }
+.title { font-family: var(--font-display); font-weight: 400; text-transform: uppercase; letter-spacing: 0.04em; font-size: var(--fs-20); line-height: 1.2; margin: 0; color: var(--ink); }
 .hint { font-size: var(--fs-105); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; text-align: right; }
 .scroller { min-width: 0; }
 .table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: var(--fs-125); }
@@ -80,3 +80,8 @@
 .relatedTitle { font-weight: 600; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; font-size: var(--fs-12); align-self: center; }
 .summaryProse { font-size: 15px; line-height: 1.7; margin: 0; max-width: 72ch; color: var(--ink); }
 .fullBrief { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line-3); }
+.specSummary { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-12); flex-wrap: wrap; padding: var(--sp-8) var(--sp-12); margin-bottom: var(--sp-10); background: var(--page); border: 1px solid var(--line-2); border-radius: var(--radius-control); font-size: var(--fs-115); font-weight: 600; color: var(--ink-2); }
+.specGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--sp-10); }
+.specCard { display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-10) var(--sp-12); background: var(--page); border: 1px solid var(--line-2); border-radius: var(--radius-control); min-width: 0; }
+.specCardHead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-8); flex-wrap: wrap; }
+.specCardTitle { font-size: var(--fs-13); font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }

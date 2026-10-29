@@ -133,7 +133,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
       if (!open) return <DetailSubSection key={s.section_key} title={heading} first={i === 0}><StateNote>{omitNote(s.section_key as "3" | "4", p.eligibility)}</StateNote></DetailSubSection>;
     }
     if (!(s.content_md || "").trim()) return s.is_conditional ? null : <DetailSubSection key={s.section_key} title={heading} first={i === 0}><StateNote>No content is recorded for this section.</StateNote></DetailSubSection>;
-    return <DetailSubSection key={s.section_key} title={heading} first={i === 0}><FactBlocks markdown={s.content_md} /></DetailSubSection>;
+    return <DetailSubSection key={s.section_key} title={heading} first={i === 0}><FactBlocks markdown={s.content_md} {...(depth === "summary" ? { maxGroups: 1 } : {})} /></DetailSubSection>;
   };
   return (
     <ClaimTierProvider claimTiers={p.claimTiers}>
@@ -180,7 +180,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
               {depth === "full" && unparsedBrief && <div className={styles.fullBrief}><GfmSection markdown={unparsedBrief} /></div>}
             </DetailSection>
             <DetailSection id="findings" title="Substantive findings" index={2}>
-              {known.length > 0 ? known.map(finding) : <StateNote>{p.claimsDegraded ? "Detailed sections for this regional profile are withheld until the facts load." : "Detailed sections for this regional profile are not written yet; they need the profile's brief."}</StateNote>}
+              {known.length > 0 ? (depth === "summary" && known.length > 2 ? <>{known.slice(0, 2).map(finding)}<details data-audit="disclosure-row" className="cl-register-master"><summary className="cl-register-master-summary"><div className="cl-register-master-left"><span className="cl-register-master-title">Additional Operational Breakdown ({known.length - 2} sections)</span><span className="cl-register-master-sub">Showing top 2 operational sub-sections in Summary view. Expand or switch to Full brief to inspect all {known.length} sub-sections.</span></div><span className="cl-register-master-pill">Expand {known.length - 2} more sections ▾</span></summary><div className="cl-pad-16">{known.slice(2).map((s, idx) => finding(s, idx))}</div></details></> : known.map(finding)) : <StateNote>{p.claimsDegraded ? "Detailed sections for this regional profile are withheld until the facts load." : "Detailed sections for this regional profile are not written yet; they need the profile's brief."}</StateNote>}
             </DetailSection>
             <DetailSection id="auxiliary-energy" title="Auxiliary energy load" aside={AUXILIARY_ENERGY_ASIDE} index={3}>
               {p.spec09.intensityFailed && <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>The grid intensity for this region did not load, so loads show kWh only.</StateNote>}

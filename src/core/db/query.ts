@@ -86,8 +86,8 @@ export async function exactCount(countQuery: PromiseLike<{ count: number | null;
 /** An id-list read in URL-safe chunks (a long `.in()` list answers 400 past about 2,000 uuids). */
 export async function fetchAllByIdChunks<T>(ids: Iterable<string>, readChunk: (slice: string[]) => Promise<T[]>, { chunk = 50, manyPerId = false } = {}): Promise<T[]> {
   const list = [...new Set(ids)];
-  const out: T[] = [];
-  for (let i = 0; i < list.length; i += chunk) out.push(...(await readChunk(list.slice(i, i + chunk))));
+  const out = (await Promise.all(Array.from({ length: Math.ceil(list.length / chunk) }, (_, i) => readChunk(list.slice(i * chunk, (i + 1) * chunk))))).flat();
+
   if (!manyPerId && out.length > list.length) throw new Error(`fetchAllByIdChunks: ${out.length} rows for ${list.length} ids; a primary-key filter cannot return more`);
   return out;
 }
