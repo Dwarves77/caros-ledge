@@ -9,8 +9,8 @@ name: CI
 # Each step carries ruled_plan "<plan file>#<step>" in its stage input; the ledger (harness_runs) says which steps already have a success apply row, and those are skipped, so a changed plan is safe to re-run. Nothing is committed back to main: the results are the `ruled-run-results` artifact and the job summary.
 # Job `windows`: the test step alone on Windows (a dispatch with only=windows; never a pull request or a push).
 # Job `parity`: the built app on the runner, the UX smoke, and the capture compared with tests/parity/baseline (a pull request that touches anything the build reads, or a dispatch; never a push to main).
-# Jobs `target`, `live` and `preview-parity` (P2-15): on the successful `Vercel` commit status posted by the Vercel app (sender vercel[bot], target_url on vercel.com; Vercel posts a commit status and creates no GitHub Deployment, so a deployment event never fires) or a dispatch with only=live. `live` runs the live checks
-# (scripts/ci/live-checks.mjs) with the service key, and the admin account on production or a dispatch only, so it checks out MAIN, never the deployed commit: a branch cannot change the script that holds the secrets. `preview-parity` runs MAIN's capture and compare against the deployed URL and holds the member test account only.
+# Jobs `target` and `live` (P2-15; CI-TRIM-2 / ruling 42: browser checks on a deployment status run against production only, a preview deployment skips `live` with a one-line summary because previews sit behind Vercel SSO; the former `preview-parity` job is removed, it was the `parity` job's capture and compare against a preview URL): on the successful `Vercel` commit status posted by the Vercel app (sender vercel[bot], target_url on vercel.com; Vercel posts a commit status and creates no GitHub Deployment, so a deployment event never fires) or a dispatch with only=live. `live` runs the live checks
+# (scripts/ci/live-checks.mjs) with the service key, and the admin account on production or a dispatch only, so it checks out MAIN, never the deployed commit: a branch cannot change the script that holds the secrets.
 # Jobs `migrate`, `turn` and `ruled-runs` run in the `production` environment (required reviewers, if the repository sets any). No job runs a package install script (npm ci --ignore-scripts); the Supabase CLI of `edge-deploy` is a devDependency at an exact version.
 # Job `report`: after the others (needs, if always), downloads the parity and test artifacts and writes the one job summary and the one PR comment with the default branch's scripts; it polls nothing and never fails the run.
 # Artifacts live 3 days (retention-days on every upload; 1 day for ci-results, apply-plan, ruled-run-results and the two failure-only parity captures; every upload is continue-on-error: artifact storage is a quota, never a verdict): the report job reads them in the same run and a person looks within hours; admin-console screenshots and next-start.log are not kept for the 90-day default.
@@ -99,7 +99,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit --ignore-scripts
-      - name: Gates (npm run gates -- --profile full; the pre-push hook runs the fast subset of this list)
+      - name: Gates (npm run gates -- --profile full; the pre-push hook runs this same full list for a push touching code, tests, scripts, supabase or package files, and the fast subset for docs-only pushes)
         shell: bash -eo pipefail {0}
         run: npm run gates -- --profile full
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -392,13 +392,13 @@ jobs:
             next-start.log
 
   # P2-15: what runs on a deployed URL. The successful `Vercel` commit status (a status event runs the workflow from the default branch) and a dispatch with only=live both run the live checks (scripts/ci/live-checks.mjs: one live-smoke row per
-  # check through recordRun) and the parity capture of the deployed preview. The live checks hold the service key, the admin account and the mail key, so this job checks out MAIN (the default branch): the deployed commit is only
+  # check through recordRun). The live checks hold the service key, the admin account and the mail key, so this job checks out MAIN (the default branch): the deployed commit is only
   # the thing being looked at, the URL, and its sha is passed as data (LIVE_CODE_SHA) to be written on the ledger row.
   # The URL under test, derived once: the preview of the status's branch (https://caros-ledge-git-<branch>-dwarves77s-projects.vercel.app, the branch lower-cased with every character outside [a-z0-9] replaced by "-"), or production (https://carosledge.com)
   # when the status is the default branch's. A dispatch uses its live_url. A status that names no branch cannot be located and fails the run.
   target:
     name: target
-    # A commit status can be written by anyone with statuses:write, and its context is free text. The real one is posted by the Vercel app (sender vercel[bot]) and points at the Vercel dashboard; `live` and `preview-parity` need this job, so a spoofed status starts none of them.
+    # A commit status can be written by anyone with statuses:write, and its context is free text. The real one is posted by the Vercel app (sender vercel[bot]) and points at the Vercel dashboard; `live` needs this job, so a spoofed status starts none of them.
     if: (github.event_name == 'status' && github.event.sender.login == 'vercel[bot]' && startsWith(github.event.target_url, 'https://vercel.com/') && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -406,6 +406,7 @@ jobs:
       url: ${{ steps.url.outputs.url }}
       production: ${{ steps.url.outputs.production }}
       group: ${{ steps.url.outputs.group }}
+      preview: ${{ steps.url.outputs.preview }}
     steps:
       - name: Derive the deployed URL
         id: url
@@ -434,12 +435,15 @@ jobs:
             echo "url=https://caros-ledge-git-${slug}-dwarves77s-projects.vercel.app" >> "$GITHUB_OUTPUT"
             echo "production=false" >> "$GITHUB_OUTPUT"
             echo "group=signed-in-browser-preview-${slug}" >> "$GITHUB_OUTPUT"
+            echo "preview=true" >> "$GITHUB_OUTPUT"
+            echo '### preview deployment: browser checks run on production only (ruling 42)' >> "$GITHUB_STEP_SUMMARY"
           fi
 
   live:
     name: live
     needs: target
-    if: (github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')
+    # Ruling 42: a status event for a preview deployment (needs.target.outputs.preview) skips this job; a preview sits behind Vercel SSO protection, so the browser can only reach the sign-in page. Production and a dispatch run it.
+    if: ((github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')) && needs.target.outputs.preview != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # CI-BROWSER-1 (replaces the one LIVE-RL-1 group): the shared Postgres rate budget is per user AND deployment host (hostScopedKey in src/core/http/rate-limit.ts), so a group is per target, never one for every deployment. Production serialises in signed-in-browser-main; a preview has a group of its own branch, so no other PR or main run can cancel it.
@@ -480,58 +484,6 @@ jobs:
           LIVE_PHASE: ${{ github.event.inputs.live_phase }}
           LIVE_ONLY: ${{ github.event.inputs.live_checks }}
         run: node scripts/ci/live-checks.mjs --base "$LIVE_BASE_URL" --phase "${LIVE_PHASE:-after}" ${LIVE_ONLY:+--only "$LIVE_ONLY"}
-
-  preview-parity:
-    name: preview-parity
-    needs: target
-    if: ((github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success') || (github.event_name == 'workflow_dispatch' && github.event.inputs.only == 'live')) && needs.target.outputs.production != 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # CI-BROWSER-1 (replaces the one LIVE-RL-1 group): the shared Postgres rate budget is per user AND deployment host (hostScopedKey in src/core/http/rate-limit.ts), so a group is per target, never one for every deployment. Production serialises in signed-in-browser-main; a preview has a group of its own branch, so no other PR or main run can cancel it.
-    # GitHub keeps one running and one pending job per group; a newer queued job replaces the pending one, which the report job labels SUPERSEDED (never a pass, never a fail).
-    concurrency:
-      group: ${{ needs.target.outputs.group }}
-      cancel-in-progress: false
-    container:
-      image: mcr.microsoft.com/playwright:v1.61.1-noble
-    # The member test account only, no admin account and no service key: admin routes are captured by a dispatch of `screens` on the default branch. The capture and compare are the DEFAULT BRANCH's scripts (like `live`): the deployed commit is only the URL being photographed, and
-    # its sha is data. A branch's own scripts would run here with the member account and the bypass secret.
-    env:
-      LIVE_SMOKE_EMAIL: ${{ secrets.LIVE_SMOKE_EMAIL }}
-      LIVE_SMOKE_PASSWORD: ${{ secrets.LIVE_SMOKE_PASSWORD }}
-      PARITY_BASE: ${{ needs.target.outputs.url }}
-      # A preview sits behind Vercel deployment protection; the capture sends this as x-vercel-protection-bypass (the same designed mechanism as scripts/ci/live-checks.mjs), or it only ever sees the sign-in page.
-      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: '24'
-          cache: npm
-      - run: npm ci --no-audit --ignore-scripts
-      - name: Playwright package matching the image (browsers come from the image)
-        run: npm install --no-save playwright@1.61.1 --no-audit --no-fund --ignore-scripts
-      - name: Capture the deployed preview
-        run: node tests/parity/capture.mjs --base "$PARITY_BASE" --out parity-capture
-      - name: Compare with the baseline
-        shell: bash -eo pipefail {0}
-        run: node tests/parity/compare.mjs --captured parity-capture | tee parity-report.txt
-      - name: Parity report in the job summary
-        if: always()
-        run: |
-          { echo '### Parity of the deployed preview'; echo '```'; cat parity-report.txt 2>/dev/null || echo 'no report'; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: ${{ failure() }}
-        continue-on-error: true
-        with:
-          retention-days: 1
-          name: preview-parity-capture
-          path: |
-            parity-capture
-            parity-diff
-            parity-report.txt
 
   # Recapture of the parity baseline from the old site (tests/parity/baseline/README.md says how to use the artifact). Dispatch only: never on push or pull_request.
   baseline:
