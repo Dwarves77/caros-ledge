@@ -1,0 +1,21 @@
+{
+  "ruling": "coordinator 2026-10-30 (DRAIN-2E): repair, not reject, for ff95b385 (AFIR, label syntax, four stale mint holds, stale Gate A), applied with allowBriefOverwrite, proven in rollback with validate_item_provenance before any apply. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "drain-2e-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-10-30-drain-2e.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "drain-2e-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-30-drain-2e.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
