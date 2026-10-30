@@ -9,7 +9,7 @@ import { isDerivedConsistent } from "@/core/brief/timeline";
 import { isVerbatim } from "@/core/contracts";
 import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
 import { LookupError } from "@/core/http/errors";
-import { containsNumeral, figuresEqual, findFigures, findIdentifiers, isFigure, mentionsIdentifier, resolveLocale } from "@/core/parse";
+import { containsNumeral, figuresEqual, findFigures, foldHtmlSpace, findIdentifiers, isFigure, mentionsIdentifier, resolveLocale } from "@/core/parse";
 
 import { norm, scanGateA, type FactClaim } from "./gate-a-scan";
 
@@ -56,7 +56,7 @@ const OBLIGATION_YEAR = /\b(?:from|by|before|until|effective|deadline|starting)\
  * boundary. A figure the parser refuses is a miss (unreadable is not absent): the claim and its span are one document, read under one locale.
  */
 function detectNumeric(fact: FactLike): DefectHit | null {
-  const [claim, span] = [String(fact.claim_text || ""), String(fact.source_span || "")];
+  const [claim, span] = [foldHtmlSpace(String(fact.claim_text || "")), foldHtmlSpace(String(fact.source_span || ""))];
   const verdict = resolveLocale(`${claim}\n${span}`);
   const stated = findFigures(span, { verdict }).flatMap((h) => (isFigure(h.result) ? [h.result] : []));
   const hit = (rationale: string): DefectHit => ({ idx: fact.idx, id: fact.id, signature: "S-NUMERIC", rationale });
