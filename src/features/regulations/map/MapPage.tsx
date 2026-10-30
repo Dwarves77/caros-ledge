@@ -19,7 +19,7 @@ import type { RegionCoverageRead } from "./region-coverage";
 import { chipOfKey, jurisdictionKeyOf, REGION_CHIPS, rollup, type MapItem, type RegionChip } from "./rollup";
 import { RegisterHeader, RegisterRow } from "./RegisterRow";
 
-const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), { ssr: false, loading: () => <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--ink-3)", fontSize: 13 }}>Loading map…</div> });
+const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), { ssr: false, loading: () => <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--ink-3)", fontSize: "var(--fs-13)" }}>Loading map…</div> });
 
 type Mode = "all" | "air" | "road" | "ocean" | "rail";
 const MODES: Array<{ key: Mode; label: string }> = [{ key: "all", label: "All" }, { key: "air", label: "Air" }, { key: "road", label: "Road" }, { key: "ocean", label: "Ocean" }, { key: "rail", label: "Rail" }];
@@ -53,15 +53,15 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
   return (
     <PageFrame
       rail={
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-14)" }}>
           <RailCard dataAudit="map-immediate-rail" title={`Immediate · ${plural(immediate.length, "jurisdiction", "jurisdictions")}`}>
             {immediate.length === 0 ? (
               <p style={{ fontSize: "var(--fs-12)", color: "var(--ink-2)", margin: 0 }}>No jurisdiction is in the Immediate band for the current filter.</p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "var(--fs-12)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-8)", fontSize: "var(--fs-12)" }}>
                 {immediate.slice(0, 6).map((r) => (
-                  <div key={r.key} style={{ display: "grid", gridTemplateColumns: "3px 1fr auto", gap: 10, alignItems: "center" }}>
-                    <span aria-hidden="true" style={{ background: "var(--immediate)", borderRadius: 2, height: "100%" }} />
+                  <div key={r.key} style={{ display: "grid", gridTemplateColumns: "0.1875rem 1fr auto", gap: "var(--sp-10)", alignItems: "center" }}>
+                    <span aria-hidden="true" style={{ background: "var(--immediate)", borderRadius: "var(--r-xs)", height: "100%" }} />
                     <span style={{ fontWeight: 600, color: "var(--ink)", minWidth: 0, overflowWrap: "anywhere" }}>{r.label}</span>
                     <span style={{ color: "var(--ink)", fontWeight: 700 }}>{plural(r.count, "immediate item", "immediate items")}</span>
                   </div>
@@ -76,9 +76,9 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
                 Counts cover collected sources only: {plural(coverage.notCollected, "source is", "sources are")} not yet collected{coverage.untyped > 0 ? ` and ${plural(coverage.untyped, "collected source has", "collected sources have")} no type` : ""}, so {coverage.untyped + coverage.notCollected === 1 ? "it is" : "they are"} not counted.
               </p>
             )}
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: "var(--fs-12)" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-6)", fontSize: "var(--fs-12)" }}>
                 {(coverage === null ? TIER1_REGIONS.map((region) => ({ region, covered: null as number | null, partial: 0, gap: 0, total: region.jurisdictions.length })) : gaps).map((g) => (
-                  <Link key={g.region.id} href={`/map?region=${encodeURIComponent(g.region.id)}`} prefetch={false} aria-label={g.covered === null ? `Filter map to ${g.region.name}` : `Filter map to ${g.region.name} (${g.covered} of ${g.total} jurisdictions covered, ${g.gap} ${g.gap === 1 ? "gap" : "gaps"})`} className="cl-rail-link cl-rail-link--quiet" style={{ display: "flex", justifyContent: "space-between", gap: 10, width: "100%" }}>
+                  <Link key={g.region.id} href={`/map?region=${encodeURIComponent(g.region.id)}`} prefetch={false} aria-label={g.covered === null ? `Filter map to ${g.region.name}` : `Filter map to ${g.region.name} (${g.covered} of ${g.total} jurisdictions covered, ${g.gap} ${g.gap === 1 ? "gap" : "gaps"})`} className="cl-rail-link cl-rail-link--quiet" style={{ display: "flex", justifyContent: "space-between", gap: "var(--sp-10)", width: "100%" }}>
                     <span style={{ fontWeight: 600, color: "var(--ink)" }}>{g.region.name}</span>
                     <span style={{ color: "var(--ink-3)", whiteSpace: "nowrap" }}>
                       {g.covered === null ? "—" : `${g.covered} of ${g.total} covered`}
@@ -91,7 +91,7 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
         </div>
       }
     >
-      <div data-audit="map-filter-row" style={{ gridColumn: "1 / -1", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", padding: "0 4px" }}>
+      <div data-audit="map-filter-row" style={{ gridColumn: "1 / -1", display: "flex", gap: "var(--sp-10)", alignItems: "center", flexWrap: "wrap", padding: "0 var(--sp-4)" }}>
         <FilterChipGroup label="Mode">
           {MODES.map((m) => (
             <FilterChip key={m.key} active={mode === m.key} onClick={() => setMode(m.key)}>
@@ -120,7 +120,7 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
           ))}
         </FilterChipGroup>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }} data-testid="map-register-column">
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-18)", minWidth: 0 }} data-testid="map-register-column">
         {mode !== "all" && (
           <StateNote action={{ label: "Back to all modes", onClick: () => setMode("all") }}>
             Filtering to {MODES.find((m) => m.key === mode)?.label}. Items without a transport-mode tag are hidden while a mode is selected: <strong>{modeTags.tagged}</strong> of {modeTags.total} item{modeTags.total === 1 ? "" : "s"} in the current view {modeTags.tagged === 1 ? "carries" : "carry"} a mode tag.
@@ -128,7 +128,7 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
         )}
         <SectionCard>
           <SectionHead title="Regulatory map" aside={`${charted.length} charted of ${rows.length} live · ${formatNumber(charted.reduce((t, r) => t + r.count, 0))} of ${formatNumber(shown.length)} items`} />
-          <div style={{ position: "relative", height: 420, overflow: "hidden" }} data-testid="map-canvas" data-guard-clip>
+          <div style={{ position: "relative", height: "26.25rem", overflow: "hidden" }} data-testid="map-canvas" data-guard-clip>
             <div style={{ position: "absolute", inset: 0 }}>
               <MapView markers={markers} selectedKey={selected.key} selectNonce={selected.nonce} onMarkerClick={focus} />
             </div>
@@ -158,7 +158,7 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
             </p>
           )}
           {immediateItems > 0 && (
-            <div style={{ padding: "0 16px 14px" }}>
+            <div style={{ padding: "0 var(--sp-16) var(--sp-14)" }}>
               <StateNote band={BAND_ORDER[0] ?? null} action={{ label: "Open the register →", href: "/regulations" }}>
                 Immediate · {plural(immediateItems, "item", "items")} bind within 90 days across {plural(immediate.length, "jurisdiction", "jurisdictions")}
               </StateNote>

@@ -5,13 +5,13 @@ import type { RunResult } from "@/core/types/run-result";
 
 import { runOps } from "./ops";
 import { runBriefs } from "./stages/briefs";
-import { runCapture } from "./stages/capture";
-import { runChange } from "./stages/change";
-import { runConnect } from "./stages/connect";
-import { runIntake } from "./stages/intake";
-import { runPropagate } from "./stages/propagate";
-import { runResearch } from "./stages/sweep-research";
-import { runSweep } from "./stages/sweep";
+import { runCapture, shapeCapture } from "./stages/capture";
+import { runChange, shapeChange } from "./stages/change";
+import { runConnect, shapeConnect } from "./stages/connect";
+import { runIntake, shapeIntake } from "./stages/intake";
+import { runPropagate, shapePropagate } from "./stages/propagate";
+import { runResearch, shapeResearch } from "./stages/sweep-research";
+import { runSweep, shapeSweep } from "./stages/sweep";
 import type { BuiltDeps } from "./wiring";
 
 /** The ordered plan (runtimes-b section 8): each stage is the previous one's downstream. */
@@ -31,5 +31,6 @@ export const familyOfStage = (stage: Stage): string => {
 
 /** The registry the run frame dispatches through: family name to its bound function. */
 export function familyFns(d: BuiltDeps): Record<string, FamilyFn> {
+  void [shapeSweep, shapeResearch, shapeChange, shapeCapture, shapeIntake, shapeConnect, shapePropagate];
   return { ...Object.fromEntries(STAGES.map((stage) => [familyOfStage(stage), (call: FamilyCall) => STAGE_RUNNERS[stage](call, d)])), ops: (call: FamilyCall) => runOps(call, d) };
 }

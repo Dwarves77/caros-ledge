@@ -30,10 +30,10 @@ export function ObligationsRailCard({ events, failed, nowIso }: { events: readon
       ) : rows.length === 0 ? (
         <StateNote>Nothing is due in the next 30 days.</StateNote>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 9, fontSize: "var(--fs-12)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-8)", fontSize: "var(--fs-12)" }}>
           {rows.map((ev) => (
-            <div key={ev.id} data-audit="obligation-row" style={{ display: "grid", gridTemplateColumns: "3px 56px 1fr", gap: 10, alignItems: "start" }}>
-              <span aria-hidden="true" style={{ background: classifyByDays(daysFrom(ev.event_date, now)).cssVar, borderRadius: 2, alignSelf: "stretch" }} />
+            <div key={ev.id} data-audit="obligation-row" style={{ display: "grid", gridTemplateColumns: "0.1875rem 3.5rem 1fr", gap: "var(--sp-10)", alignItems: "start" }}>
+              <span aria-hidden="true" style={{ background: classifyByDays(daysFrom(ev.event_date, now)).cssVar, borderRadius: "var(--r-xs)", alignSelf: "stretch" }} />
               <span style={{ fontWeight: 700, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{formatForwardEventCompact(ev.event_date, ev.date_precision)}</span>
               <span style={{ lineHeight: 1.4, color: "var(--ink)" }}>
                 {ev.item.title ? `${ev.item.title} — ` : ""}{ev.obligation_text}
@@ -54,11 +54,11 @@ export function CoverageLine({ denominator, failed, surface }: { denominator: De
   const { href, state } = coverageLineModel(denominator, failed, surface);
   const unavailable = state === "unavailable";
   return (
-    <div data-guard-container="coverage-denominator" style={{ padding: "14px 0 0" }}>
+    <div data-guard-container="coverage-denominator" style={{ padding: "var(--sp-14) 0 0" }}>
       {state === "empty-catalogue" && denominator ? (
         <CoverageState state="not_covered" variant="inline" subject={`The ${denominator.label} catalogue`} reason="No instrument has been catalogued for this surface yet." requestRef={denominator.href} />
       ) : null}
-      <p data-part="coverage-denominator" style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0 12px", fontSize: "var(--fs-11)", color: "var(--ink-2)" }}>
+      <p data-part="coverage-denominator" style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0 var(--sp-12)", fontSize: "var(--fs-11)", color: "var(--ink-2)" }}>
         {unavailable ? (
           <span role="alert" data-part="state-note" style={{ overflowWrap: "anywhere" }}>
             Coverage count: <Absence reason="connect data" variant="dash" /> It did not load; the coverage page has the full count.

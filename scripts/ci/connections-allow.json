@@ -1,17 +1,7 @@
 {
   "_exports": "Exported values with no caller in src, scripts or the Edge Function: only the paths a live lane still owns remain (R2e: src/features/{auth,community,admin,account}); that lane deletes its own entries, and a new offender or an entry that gained a caller is a red run, so the list only shrinks.",
   "exports": {},
-  "runtimeEntries": {
-    "src/core/turn/stages/capture.ts#shapeCapture": "kept for R3a (the queue-driven turn): the stage runner calls it in its own file and tests/turn/stages.test.ts asserts its shape; R3a settles the stage entry points",
-    "src/core/turn/stages/change.ts#shapeChange": "kept for R3a (the queue-driven turn): the stage runner calls it in its own file and tests/turn/stages.test.ts asserts its shape; R3a settles the stage entry points",
-    "src/core/turn/stages/connect.ts#shapeConnect": "kept for R3a (the queue-driven turn): the stage runner calls it in its own file and tests/turn/stages.test.ts asserts its shape; R3a settles the stage entry points",
-    "src/core/turn/stages/intake.ts#shapeIntake": "kept for R3a (the queue-driven turn): the stage runner calls it in its own file and tests/turn/stages.test.ts asserts its shape; R3a settles the stage entry points",
-    "src/core/turn/stages/propagate.ts#shapePropagate": "kept for R3a (the queue-driven turn): the stage runner calls it in its own file and tests/turn/stages.test.ts asserts its shape; R3a settles the stage entry points",
-    "src/core/turn/stages/sweep-research.ts#shapeResearch": "kept for R3a (the queue-driven turn): the stage runner calls it in its own file and tests/turn/stages.test.ts asserts its shape; R3a settles the stage entry points",
-    "src/core/turn/stages/sweep.ts#shapeSweep": "kept for R3a (the queue-driven turn): the stage runner calls it in its own file and tests/turn/stages.test.ts asserts its shape; R3a settles the stage entry points",
-    "src/features/intake/pipeline.ts#writeSynthesizedBrief": "kept for R3b (the flywheel steps): no runtime calls it yet; R3b wires it into the intake downstream",
-    "src/features/intake/pipeline.ts#harvestItemTimeline": "kept for R3b (the flywheel steps): no runtime calls it yet; R3b wires it into the intake downstream"
-  },
+  "runtimeEntries": {},
   "tables": {},
   "settings": {},
   "routes": {},

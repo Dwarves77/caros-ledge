@@ -181,7 +181,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
 
   return (
     <ClaimTierProvider claimTiers={claimTiers}>
-      <div style={{ paddingTop: 16 }}>
+      <div style={{ paddingTop: "var(--sp-16)" }}>
         <DetailPageWrapper
           itemId={r.itemUuid ?? r.id}
           band={band}
@@ -229,7 +229,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
               <PriceBoardBlock bundle={bundle} nowIso={nowIso} />
               {map["1"] ? <FactBlocks markdown={map["1"]} {...fbOpts} /> : note("The movement analysis")}
               {depth === "full" && !isRecord && !claimsDegraded && Object.keys(map).length === 0 && r.fullBrief ? (
-                <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line-3)" }}>
+                <div style={{ marginTop: "var(--sp-16)", paddingTop: "var(--sp-14)", borderTop: "1px solid var(--line-3)" }}>
                   <GfmSection markdown={stripSourcesSection(r.fullBrief)} />
                 </div>
               ) : null}

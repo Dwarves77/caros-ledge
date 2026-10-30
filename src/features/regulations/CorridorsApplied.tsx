@@ -19,7 +19,7 @@ export function CorridorsApplied({ corridors, failed }: { corridors: ReadonlyArr
   const router = useRouter();
   if (!failed && corridors.length === 0) return null;
   return (
-    <div className="cl-detail-wrap" style={{ paddingTop: 16 }} data-guard-container>
+    <div className="cl-detail-wrap" style={{ paddingTop: "var(--sp-16)" }} data-guard-container>
       <SectionCard padding="14px 16px">
         <p data-guard-title className="cl-detail-label">
           Corridors this applies on
@@ -29,12 +29,12 @@ export function CorridorsApplied({ corridors, failed }: { corridors: ReadonlyArr
             The corridors did not load.
           </StateNote>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-8)" }}>
             {corridors.map((c) => (
-              <Link key={c.entityId} href={`/market#corridor-${encodeURIComponent(c.entityId)}`} className="cl-detail-link" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, border: "1px solid var(--line-2)", borderRadius: 6, padding: "6px 8px" }}>
+              <Link key={c.entityId} href={`/market#corridor-${encodeURIComponent(c.entityId)}`} className="cl-detail-link" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "var(--sp-8)", border: "1px solid var(--line-2)", borderRadius: "var(--r-sm)", padding: "var(--sp-6) var(--sp-8)" }}>
                 <span style={{ fontSize: "var(--fs-13)", fontWeight: 700, overflowWrap: "anywhere", minWidth: 0 }}>{c.label}</span>
                 {c.jurisdictions.map((j) => (
-                  <span key={j.code} style={{ fontSize: 10, padding: "2px 7px", border: "1px solid var(--line-2)", borderRadius: 999, background: "var(--page)", color: "var(--ink-2)", fontWeight: 700 }}>
+                  <span key={j.code} style={{ fontSize: "var(--fs-10)", padding: "var(--sp-2) var(--sp-6)", border: "1px solid var(--line-2)", borderRadius: "var(--r-pill)", background: "var(--page)", color: "var(--ink-2)", fontWeight: 700 }}>
                     {j.name ? `${j.name} (${j.code})` : j.code}
                   </span>
                 ))}

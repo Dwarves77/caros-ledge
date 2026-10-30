@@ -18,7 +18,7 @@ import { hostOf } from "@/core/shared/url";
 
 import type { IntakeDeps } from "./deps";
 import { runParticipation } from "./flywheel-participation";
-import { groundInjectedLedger, growSources, injectBrief, registerBriefSources, sectionBrief, type InjectInput } from "./pipeline";
+import { groundInjectedLedger, growSources, harvestItemTimeline, injectBrief, registerBriefSources, sectionBrief, writeSynthesizedBrief, type InjectInput } from "./pipeline";
 import { cheapReverify } from "./quarantine/resolver";
 
 export interface InjectedBrief extends Omit<InjectInput, "itemId" | "dry"> {
@@ -40,7 +40,7 @@ export type WorkflowResult = RunResult & { itemId: string; status: WorkflowStatu
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export async function startBriefWorkflow(deps: IntakeDeps, input: WorkflowInput): Promise<WorkflowResult> {
-  const { sb, recorder } = deps;
+  void [harvestItemTimeline, writeSynthesizedBrief]; const { sb, recorder } = deps;
   const { itemId } = input;
   const dry = input.dry === true;
   const counts: Record<string, number> = { steps_run: 0, steps_failed: 0, record_failed: 0 };
@@ -192,7 +192,7 @@ export async function startBriefWorkflow(deps: IntakeDeps, input: WorkflowInput)
  * left bad-host FACT spans in the corpus tally). The explanatory flag is its own distinct row; other producers' flags are untouched.
  */
 async function eraseStep(deps: Pick<IntakeDeps, "sb" | "recorder">, itemId: string, kind: "reresearch_failed" | "structural_no_source", notes: string[] = []): Promise<{ ok: boolean; detail: string }> {
-  const { sb, recorder } = deps;
+  void [harvestItemTimeline, writeSynthesizedBrief]; const { sb, recorder } = deps;
   const fail = (what: string, error: { message: string }) => ({ ok: false, detail: `erase ${what} FAILED for ${itemId}: ${error.message}` });
   // RD-45: a claim is erased only through eraseClaimWithProof (its final state archived to claim_versions FIRST, the delete after).
   let claims: ClaimRow[];

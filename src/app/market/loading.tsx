@@ -4,9 +4,9 @@ import { SkeletonBandTile, SkeletonListRow, SkeletonPage, skeletonBox } from "@/
 export default function Loading() {
   return (
     <SkeletonPage>
-      <div style={{ ...skeletonBox(34, "50%"), marginBottom: 10 }} />
-      <div style={{ ...skeletonBox(13, "60%"), marginBottom: 20 }} />
-      <div className="cl-band-tiles" style={{ marginBottom: 20 }}>
+      <div style={{ ...skeletonBox(34, "50%"), marginBottom: "var(--sp-10)" }} />
+      <div style={{ ...skeletonBox(13, "60%"), marginBottom: "var(--sp-20)" }} />
+      <div className="cl-band-tiles" style={{ marginBottom: "var(--sp-20)" }}>
         {[0, 1, 2, 3].map((i) => (
           <SkeletonBandTile key={i} />
         ))}

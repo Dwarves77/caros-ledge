@@ -136,7 +136,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
   };
   return (
     <ClaimTierProvider claimTiers={p.claimTiers}>
-      <div style={{ paddingTop: 16 }}>
+      <div style={{ paddingTop: "var(--sp-16)" }}>
         <DetailPageWrapper
           itemId={r.itemUuid ?? r.id}
           band={band}

@@ -53,13 +53,13 @@ export function SavedViews({ surface }: { surface: "regulations" | "market" | "r
     setViews((v) => (v ?? []).filter((x) => x.id !== id));
   }
   return (
-    <div style={{ margin: "0 0 12px" }}>
+    <div style={{ margin: "0 0 var(--sp-12)" }}>
       <details className="cl-detail-disclosure">
         <summary>Saved views{views && views.length > 0 ? ` · ${views.length}` : ""}</summary>
-        <div style={{ padding: "8px 0 12px" }}>
+        <div style={{ padding: "var(--sp-8) 0 var(--sp-12)" }}>
           {views !== null && views.length === 0 && <p className="cl-detail-link-note">Choose filters, then name this view to keep it.</p>}
           {(views ?? []).map((v) => (
-            <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div key={v.id} style={{ display: "flex", alignItems: "center", gap: "var(--sp-8)" }}>
               <button type="button" className="cl-detail-link" style={{ flex: 1, textAlign: "left", background: "none", border: "none", font: "inherit", cursor: "pointer" }} onClick={() => router.replace(`${pathname}?${v.query}`, { scroll: false })}>
                 <span className="cl-detail-link-title">{v.name}</span>
               </button>
@@ -69,7 +69,7 @@ export function SavedViews({ surface }: { surface: "regulations" | "market" | "r
             </div>
           ))}
           <form
-            style={{ display: "flex", alignItems: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" }}
+            style={{ display: "flex", alignItems: "flex-end", gap: "var(--sp-8)", marginTop: "var(--sp-10)", flexWrap: "wrap" }}
             onSubmit={(e) => {
               e.preventDefault();
               void save();

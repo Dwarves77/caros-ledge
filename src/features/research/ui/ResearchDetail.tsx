@@ -125,7 +125,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
   );
   return (
     <ClaimTierProvider claimTiers={p.claimTiers}>
-      <div style={{ paddingTop: 16 }}>
+      <div style={{ paddingTop: "var(--sp-16)" }}>
         <DetailPageWrapper
           itemId={r.itemUuid ?? r.id}
           band={band}
@@ -173,13 +173,13 @@ export function ResearchDetail(p: ResearchDetailProps) {
               ) : (
                 <StateNote>The summary for this finding is not written yet; it needs the finding’s brief.</StateNote>
               )}
-              {trajectory && <div style={{ marginTop: 12 }}>{prose(trajectory)}</div>}
+              {trajectory && <div style={{ marginTop: "var(--sp-12)" }}>{prose(trajectory)}</div>}
               {depth === "full" && unparsedBrief && (
                 <div className={styles.fullBrief}>
                   <GfmSection markdown={unparsedBrief} />
                 </div>
               )}
-              <div className={styles.credRow} style={{ marginTop: 12 }}>
+              <div className={styles.credRow} style={{ marginTop: "var(--sp-12)" }}>
                 <CredibilityChips assessment={p.assessment.assessment} biasTags={r.biasTags ?? []} />
               </div>
             </DetailSection>

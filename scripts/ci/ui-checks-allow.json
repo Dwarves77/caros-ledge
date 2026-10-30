@@ -8,25 +8,6 @@
         "src/ui/impact.ts": 2
       }
     },
-    "style-px": {
-      "owner": "R4b",
-      "reason": "an inline style with a literal pixel size where the scale (var(--sp-*), var(--target)) exists (K:53).",
-      "files": {
-        "src/app/market/[slug]/loading.tsx": 6,
-        "src/app/market/loading.tsx": 3,
-        "src/app/market/series/loading.tsx": 3,
-        "src/app/regulations/loading.tsx": 1,
-        "src/features/admin/ui/CoverageMatrixView.tsx": 1,
-        "src/features/market/ui/MarketDetailView.tsx": 3,
-        "src/features/operations/ui/OperationsDetail.tsx": 1,
-        "src/features/regulations/CorridorsApplied.tsx": 8,
-        "src/features/regulations/map/MapPage.tsx": 13,
-        "src/features/regulations/rail.tsx": 6,
-        "src/features/research/loading.tsx": 1,
-        "src/features/research/ui/ResearchDetail.tsx": 3,
-        "src/features/saved-views/SavedViews.tsx": 5
-      }
-    },
     "class-undefined": {
       "owner": "R4b",
       "reason": "a string that starts with cl- and is not a class: a localStorage key, an element id, or a test-mount wrapper class that carries no style. The rule reads every cl- string; these stay and say so.",

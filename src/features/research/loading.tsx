@@ -8,7 +8,7 @@ export function ListLoading({ matrix = false }: { matrix?: boolean }) {
     <SkeletonPage>
       <div className="cl-skel-stack">
         <div style={skeletonBox(34, "40%")} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--sp-12)" }}>
           {[0, 1, 2, 3].map((i) => (
             <SkeletonBandTile key={i} />
           ))}
