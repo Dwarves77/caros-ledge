@@ -1,35 +1,35 @@
 /* The workspace parts' layout: the archive dialog and list, and the tag popover. Tokens only; the kit carries every control. */
-.dialogForm { display: flex; flex-direction: column; gap: 14px; }
+.dialogForm { display: flex; flex-direction: column; gap: var(--sp-14); }
 .itemTitle { margin: 0; font-size: var(--fs-12); color: var(--ink-3); overflow-wrap: anywhere; }
-.scopes { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; border: none; min-width: 0; }
-.scope { display: flex; align-items: flex-start; gap: 12px; min-height: var(--target); padding: 10px 12px; border: 1px solid var(--line-4); border-radius: var(--radius-control); font-size: var(--fs-125); cursor: pointer; }
+.scopes { display: flex; flex-direction: column; gap: var(--sp-8); margin: 0; padding: 0; border: none; min-width: 0; }
+.scope { display: flex; align-items: flex-start; gap: var(--sp-12); min-height: var(--target); padding: var(--sp-10) var(--sp-12); border: 1px solid var(--line-4); border-radius: var(--radius-control); font-size: var(--fs-125); cursor: pointer; }
 .scope:has(input:checked) { border-color: var(--brand); background: var(--tag); }
-.scope input { margin: 3px 0 0; width: 18px; height: 18px; flex-shrink: 0; }
-.scopeNote { display: block; margin-top: 2px; font-size: var(--fs-115); color: var(--ink-3); line-height: 1.5; }
+.scope input { margin: 0.1875rem 0 0; width: 18px; height: 18px; flex-shrink: 0; }
+.scopeNote { display: block; margin-top: var(--sp-2); font-size: var(--fs-115); color: var(--ink-3); line-height: 1.5; }
 .muted { margin: 0; font-size: var(--fs-12); color: var(--ink-3); }
-.impact { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line-1); border-radius: var(--radius-control); background: var(--tag); font-size: var(--fs-12); }
+.impact { display: flex; flex-direction: column; gap: var(--sp-6); padding: var(--sp-10) var(--sp-12); border: 1px solid var(--line-1); border-radius: var(--radius-control); background: var(--tag); font-size: var(--fs-12); }
 .impact p { margin: 0; color: var(--ink-2); line-height: 1.5; }
-.actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.actions { display: flex; justify-content: flex-end; gap: var(--sp-8); flex-wrap: wrap; }
 
-.archive { display: flex; flex-direction: column; gap: 14px; }
-.archiveFilters { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; }
-.archiveList { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.archiveRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: var(--radius-control); }
+.archive { display: flex; flex-direction: column; gap: var(--sp-14); }
+.archiveFilters { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--sp-12); }
+.archiveList { display: flex; flex-direction: column; gap: var(--sp-8); margin: 0; padding: 0; list-style: none; }
+.archiveRow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-12); padding: var(--sp-10) var(--sp-12); border: 1px solid var(--line-2); border-radius: var(--radius-control); }
 .archiveMain { min-width: 0; flex: 1; }
 .archiveTitle { display: inline-flex; align-items: center; min-height: var(--target); font-size: var(--fs-13); font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
-.archiveMeta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; font-size: var(--fs-115); color: var(--ink-3); }
+.archiveMeta { display: flex; flex-wrap: wrap; gap: var(--sp-4) var(--sp-12); margin: 0; font-size: var(--fs-115); color: var(--ink-3); }
 .inlineLink { display: inline-flex; align-items: center; min-height: var(--target); color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-color: var(--link-line); }
-.rowError { margin: 4px 0 0; font-size: var(--fs-115); color: var(--immediate); }
-.inlineButton { min-height: var(--target); padding: 0 4px; border: none; background: none; color: var(--ink); font-weight: 600; text-decoration: underline; cursor: pointer; }
+.rowError { margin: var(--sp-4) 0 0; font-size: var(--fs-115); color: var(--immediate); }
+.inlineButton { min-height: var(--target); padding: 0 var(--sp-4); border: none; background: none; color: var(--ink); font-weight: 600; text-decoration: underline; cursor: pointer; }
 
 .tagAnchor { position: relative; display: block; }
 .tagPanel { position: absolute; top: 6px; z-index: 50; width: 280px; max-width: calc(100vw - 16px); overflow: hidden; background: var(--card); border: 1px solid var(--line-1); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
-.tagSearch { width: 100%; min-height: var(--target); padding: 0 12px; border: none; border-bottom: 1px solid var(--line-2); outline: none; font-size: var(--fs-13); background: transparent; color: var(--ink); }
-.tagProblem { margin: 0; padding: 8px 12px; font-size: var(--fs-115); color: var(--immediate); }
+.tagSearch { width: 100%; min-height: var(--target); padding: 0 var(--sp-12); border: none; border-bottom: 1px solid var(--line-2); outline: none; font-size: var(--fs-13); background: transparent; color: var(--ink); }
+.tagProblem { margin: 0; padding: var(--sp-8) var(--sp-12); font-size: var(--fs-115); color: var(--immediate); }
 .tagRows { max-height: 320px; overflow-y: auto; }
-.tagRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: var(--target); padding: 6px 12px; cursor: pointer; }
+.tagRow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); min-height: var(--target); padding: var(--sp-6) var(--sp-12); cursor: pointer; }
 .tagRow[data-highlight="true"] { background: var(--page); }
-.tagName { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.tagName { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); min-width: 0; }
 .tagNote { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-11); color: var(--ink-3); }
 .tagCount { font-size: var(--fs-11); color: var(--ink-3); }
 .tagCreate { justify-content: flex-start; border-top: 1px solid var(--line-2); font-size: var(--fs-125); font-weight: 600; }

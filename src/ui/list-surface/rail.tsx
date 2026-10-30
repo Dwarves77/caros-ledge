@@ -8,6 +8,7 @@ import { formatNumber } from "@/core/shared";
 import { tierScaleSpan } from "@/core/sources/tier-contract";
 
 import { ImpactMeter } from "../ImpactMeter";
+import { Input } from "../FormField";
 import { RailCard } from "../SmallParts";
 
 import type { FacetOption } from "./facets";
@@ -34,7 +35,7 @@ function FacetSection({ group }: { group: FacetGroup }) {
           return (
             <label key={opt.value} className="cl-facet-row">
               <span className="cl-facet-row-main">
-                <input type="checkbox" className="cl-facet-check" checked={checked} onChange={() => group.onSelect(checked ? null : opt.value)} />
+                <Input bare type="checkbox" className="cl-facet-check" checked={checked} onChange={() => group.onSelect(checked ? null : opt.value)} />
                 <span className="cl-facet-label">{opt.label}</span>
               </span>
               <span className="cl-facet-count">{opt.countLabel ?? formatNumber(opt.count)}</span>

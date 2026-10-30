@@ -7,6 +7,7 @@ import { formatDate, pluralize } from "@/core/shared";
 
 import { Absence } from "../../Absence";
 import { Button } from "../../Button";
+import { Input } from "../../FormField";
 
 import { collabPath, collabRequest, isIdLabel } from "./collab-client";
 
@@ -46,7 +47,7 @@ function Who({ name }: { name: string }) {
   );
 }
 
-export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso: string }) {
+export function ItemAssignBlock({ itemId, todayIso, request = collabRequest }: { itemId: string; todayIso: string; request?: typeof collabRequest }) {
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<ItemAssignment[]>([]);
@@ -60,7 +61,7 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let cancelled = false;
-    void collabRequest<ListPayload>(collabPath(itemId, "assignments")).then((res) => {
+    void request<ListPayload>(collabPath(itemId, "assignments")).then((res) => {
       if (cancelled) return;
       if (!res.ok || !res.data) {
         setLoadError(res.error);
@@ -75,7 +76,7 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
     return () => {
       cancelled = true;
     };
-  }, [itemId, attempt]);
+  }, [itemId, attempt, request]);
 
   const assigned = new Set(assignments.map((a) => a.assignee_user_id));
   const available = members.filter((m) => !assigned.has(m.user_id));
@@ -86,7 +87,7 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
     setBusy("new");
     setError(null);
     setFlash(null);
-    const res = await collabRequest<AssignPayload>(collabPath(itemId, "assignments"), { method: "POST", body: { assignees: picked, dueOn: dueOn || null } });
+    const res = await request<AssignPayload>(collabPath(itemId, "assignments"), { method: "POST", body: { assignees: picked, dueOn: dueOn || null } });
     setBusy(null);
     if (!res.ok || !res.data) return setError({ id: "new", message: res.error ?? "That did not save." });
     const made = res.data.assignments;
@@ -107,9 +108,9 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
     setFlash(said);
   }
   const setState = (a: ItemAssignment, state: "open" | "done") =>
-    change(a, () => collabRequest<{ assignment: ItemAssignment }>(collabPath(itemId, "assignments"), { method: "PATCH", body: { assignee: a.assignee_user_id, state } }).then((r) => (r.ok && r.data ? (setAssignments((p) => p.map((x) => (x.id === a.id ? r.data!.assignment : x))), r) : r)), state === "done" ? "Marked done." : "Reopened.");
+    change(a, () => request<{ assignment: ItemAssignment }>(collabPath(itemId, "assignments"), { method: "PATCH", body: { assignee: a.assignee_user_id, state } }).then((r) => (r.ok && r.data ? (setAssignments((p) => p.map((x) => (x.id === a.id ? r.data!.assignment : x))), r) : r)), state === "done" ? "Marked done." : "Reopened.");
   const remove = (a: ItemAssignment) =>
-    change(a, () => collabRequest<{ success: boolean }>(`${collabPath(itemId, "assignments")}?assignee=${encodeURIComponent(a.assignee_user_id)}`, { method: "DELETE" }).then((r) => (r.ok ? (setAssignments((p) => p.filter((x) => x.id !== a.id)), r) : r)), `Removed ${a.assignee_name ?? "the assignee"}.`);
+    change(a, () => request<{ success: boolean }>(`${collabPath(itemId, "assignments")}?assignee=${encodeURIComponent(a.assignee_user_id)}`, { method: "DELETE" }).then((r) => (r.ok ? (setAssignments((p) => p.filter((x) => x.id !== a.id)), r) : r)), `Removed ${a.assignee_name ?? "the assignee"}.`);
 
   if (phase === "loading") return <p className="cl-collab-meta">Loading assignments…</p>;
   if (phase === "error") {
@@ -175,7 +176,7 @@ export function ItemAssignBlock({ itemId, todayIso }: { itemId: string; todayIso
           </fieldset>
           <label className="cl-detail-label" style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)", maxWidth: "16.25rem", marginTop: "var(--sp-10)" }}>
             Due date (optional)
-            <input type="date" value={dueOn} onChange={(e) => (setDueOn(e.target.value), setError(null))} className="cl-collab-field" />
+            <Input bare type="date" value={dueOn} onChange={(e) => (setDueOn(e.target.value), setError(null))} className="cl-collab-field" />
           </label>
           <div className="cl-collab-row">
             <Button onClick={() => void assign()} disabled={busy !== null || picked.length === 0}>

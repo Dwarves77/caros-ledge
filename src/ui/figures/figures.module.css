@@ -1,11 +1,11 @@
 /* The figure cards and the recalculation notices. Tokens only; every target is at least 44 px on its short axis. */
 .head { display: flex; align-items: center; gap: var(--sp-8); margin-bottom: var(--sp-6); flex-wrap: wrap; }
-.badge { display: inline-flex; align-items: center; padding: 2px 7px; border: 1px solid var(--line-4); border-radius: var(--radius-control); font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; background: var(--tag); color: var(--ink-2); }
+.badge { display: inline-flex; align-items: center; padding: var(--sp-2) 0.4375rem; border: 1px solid var(--line-4); border-radius: var(--radius-control); font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; background: var(--tag); color: var(--ink-2); }
 .badgeStatutory { background: var(--brand); border-color: var(--brand); color: var(--invert-text); }
 .badgeEstimate { background: var(--ink); border-color: var(--ink); color: var(--invert-text); }
 .title { font-size: var(--fs-13); font-weight: 700; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
-.stat { font-family: var(--font-display); font-size: 22px; line-height: 1.1; color: var(--ink); margin: 0 0 var(--sp-4); overflow-wrap: anywhere; }
-.statLarge { font-size: 26px; }
+.stat { font-family: var(--font-display); font-size: var(--fs-22); line-height: 1.1; color: var(--ink); margin: 0 0 var(--sp-4); overflow-wrap: anywhere; }
+.statLarge { font-size: 1.625rem; }
 .unit { font-family: var(--font-sans); font-size: var(--fs-12); font-weight: 400; color: var(--ink-3); margin-left: var(--sp-6); }
 .meta { font-size: var(--fs-105); color: var(--ink-3); line-height: 1.5; margin: var(--sp-4) 0 0; }
 .refused { font-size: var(--fs-125); font-weight: 600; color: var(--immediate); margin: 0 0 var(--sp-4); }

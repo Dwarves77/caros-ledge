@@ -16,7 +16,7 @@ export function isUuid(value: unknown): value is string {
 /** Validate a value or answer 400 with the first issue. */
 export function parseWith<S extends z.ZodType>(schema: S, value: unknown, what = "request"): z.infer<S> {
   const parsed = schema.safeParse(value);
-  if (!parsed.success) throw new HttpError(400, `Invalid ${what}: ${parsed.error.issues[0]?.message ?? "invalid"}`);
+  if (!parsed.success) throw new HttpError(400, ((issue = "invalid") => `Invalid ${what}: ${issue}`)(parsed.error.issues[0]?.message));
   return parsed.data;
 }
 

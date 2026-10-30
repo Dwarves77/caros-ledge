@@ -3,7 +3,7 @@
 // Ported from old_repo/src/components/ui/TagPopover.tsx (lines 44-392)
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
-import { WorkspaceTagPill } from "@/ui";
+import { Input, WorkspaceTagPill } from "@/ui";
 
 import { attributionText, type TagApplication } from "../attribution-text";
 
@@ -138,7 +138,7 @@ export function TagPopover({ itemId, open, onOpenChange, onChange }: { itemId: s
     <div ref={root} className={styles.tagAnchor}>
       {open ? (
         <div role="listbox" aria-label="Workspace tags" aria-busy={loading} onKeyDown={onKeyDown} className={styles.tagPanel} style={{ left: shiftX }}>
-          <input ref={input} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find or create a tag" aria-label="Find or create a tag" aria-autocomplete="list" className={styles.tagSearch} />
+          <Input bare ref={input} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find or create a tag" aria-label="Find or create a tag" aria-autocomplete="list" className={styles.tagSearch} />
           {problem ? (
             <p role="alert" className={styles.tagProblem}>
               {problem}{" "}

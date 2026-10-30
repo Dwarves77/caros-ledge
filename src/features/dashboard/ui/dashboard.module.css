@@ -1,20 +1,20 @@
 /* The dashboard's own layout; colour, type and radius are the shared tokens. */
 .column { display: flex; flex-direction: column; gap: var(--sp-28); min-width: 0; }
 .rail { display: flex; flex-direction: column; gap: var(--sp-16); min-width: 0; }
-.pad { padding: 14px 16px; }
-.eyebrow { font-family: var(--font-display); font-size: var(--fs-15); font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); margin: 0 0 10px; }
+.pad { padding: var(--sp-14) var(--sp-16); }
+.eyebrow { font-family: var(--font-display); font-size: var(--fs-15); font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); margin: 0 0 var(--sp-10); }
 .stats { display: flex; flex-direction: column; gap: var(--sp-12); }
 .stat { display: block; min-height: var(--target); color: inherit; text-decoration: none; }
-.themes { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-3); }
-.theme { display: block; min-height: var(--target); padding: 8px 0; color: inherit; text-decoration: none; }
+.themes { margin-top: var(--sp-14); padding-top: var(--sp-12); border-top: 1px solid var(--line-3); }
+.theme { display: block; min-height: var(--target); padding: var(--sp-8) 0; color: inherit; text-decoration: none; }
 .themeLabel { display: block; font-size: var(--fs-12); font-weight: 700; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; }
-.themePages { display: block; font-size: var(--fs-11); color: var(--ink-3); margin-top: 2px; }
+.themePages { display: block; font-size: var(--fs-11); color: var(--ink-3); margin-top: var(--sp-2); }
 .ledger { display: flex; flex-direction: column; gap: var(--sp-4); }
 .note { font-size: var(--fs-12); color: var(--ink-2); margin: 0; line-height: 1.5; }
 .watchList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
-.watchItem { display: block; min-height: var(--target); padding: 6px 0; color: inherit; text-decoration: none; }
+.watchItem { display: block; min-height: var(--target); padding: var(--sp-6) 0; color: inherit; text-decoration: none; }
 .watchKicker { font-size: var(--fs-105); font-weight: 700; color: var(--ink-3); margin: 0; }
-.watchTitle { font-size: var(--fs-125); font-weight: 700; color: var(--ink); margin: 2px 0 0; line-height: 1.35; overflow-wrap: anywhere; }
-.watchMeta { font-size: var(--fs-11); color: var(--ink-3); margin: 3px 0 0; }
-.team { display: inline-block; margin-left: 6px; padding: 1px 5px; border-radius: 3px; font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--brand); background: var(--tag); border: 1px solid var(--line-2); vertical-align: middle; }
-.count { margin: 0 0 10px; }
+.watchTitle { font-size: var(--fs-125); font-weight: 700; color: var(--ink); margin: var(--sp-2) 0 0; line-height: 1.35; overflow-wrap: anywhere; }
+.watchMeta { font-size: var(--fs-11); color: var(--ink-3); margin: 0.1875rem 0 0; }
+.team { display: inline-block; margin-left: var(--sp-6); padding: 1px 0.3125rem; border-radius: 3px; font-size: var(--fs-95); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--brand); background: var(--tag); border: 1px solid var(--line-2); vertical-align: middle; }
+.count { margin: 0 0 var(--sp-10); }

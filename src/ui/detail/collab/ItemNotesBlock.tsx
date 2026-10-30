@@ -7,6 +7,7 @@ import { NOTE_MAX_LENGTH } from "@/core/workspace/limits";
 import { formatNumber } from "@/core/shared";
 
 import { Button } from "../../Button";
+import { Textarea } from "../../FormField";
 import { RelativeTime } from "../../RelativeTime";
 
 import { collabPath, collabRequest } from "./collab-client";
@@ -26,7 +27,7 @@ interface ListPayload {
 }
 
 /** Workspace notes on one item: add, edit your own, two-step delete. Every write reports its refusal in words and keeps what was typed. A failed load says so with Retry. */
-export function ItemNotesBlock({ itemId }: { itemId: string }) {
+export function ItemNotesBlock({ itemId, request = collabRequest }: { itemId: string; request?: typeof collabRequest }) {
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notes, setNotes] = useState<ItemNote[]>([]);
@@ -40,7 +41,7 @@ export function ItemNotesBlock({ itemId }: { itemId: string }) {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let cancelled = false;
-    void collabRequest<ListPayload>(collabPath(itemId, "notes")).then((res) => {
+    void request<ListPayload>(collabPath(itemId, "notes")).then((res) => {
       if (cancelled) return;
       if (!res.ok || !res.data) {
         setLoadError(res.error);
@@ -54,7 +55,7 @@ export function ItemNotesBlock({ itemId }: { itemId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [itemId, attempt]);
+  }, [itemId, attempt, request]);
 
   async function run(id: string, call: () => Promise<{ ok: boolean; error: string | null }>, done: () => void, said: string) {
     if (busy) return;
@@ -68,11 +69,11 @@ export function ItemNotesBlock({ itemId }: { itemId: string }) {
     setFlash(said);
   }
   const add = () =>
-    run("new", () => collabRequest<{ note: ItemNote }>(collabPath(itemId, "notes"), { method: "POST", body: { body: draft.trim() } }).then((r) => (r.ok && r.data ? (setNotes((p) => [r.data!.note, ...p]), r) : r)), () => setDraft(""), "Note added.");
+    run("new", () => request<{ note: ItemNote }>(collabPath(itemId, "notes"), { method: "POST", body: { body: draft.trim() } }).then((r) => (r.ok && r.data ? (setNotes((p) => [r.data!.note, ...p]), r) : r)), () => setDraft(""), "Note added.");
   const save = (id: string, text: string) =>
-    run(id, () => collabRequest<{ note: ItemNote }>(collabPath(itemId, "notes"), { method: "PATCH", body: { noteId: id, body: text.trim() } }).then((r) => (r.ok && r.data ? (setNotes((p) => p.map((n) => (n.id === id ? r.data!.note : n))), r) : r)), () => setEditing(null), "Note saved.");
+    run(id, () => request<{ note: ItemNote }>(collabPath(itemId, "notes"), { method: "PATCH", body: { noteId: id, body: text.trim() } }).then((r) => (r.ok && r.data ? (setNotes((p) => p.map((n) => (n.id === id ? r.data!.note : n))), r) : r)), () => setEditing(null), "Note saved.");
   const remove = (id: string) =>
-    run(id, () => collabRequest<{ success: boolean }>(`${collabPath(itemId, "notes")}?noteId=${encodeURIComponent(id)}`, { method: "DELETE" }).then((r) => (r.ok ? (setNotes((p) => p.filter((n) => n.id !== id)), r) : r)), () => setConfirmId(null), "Note deleted.");
+    run(id, () => request<{ success: boolean }>(`${collabPath(itemId, "notes")}?noteId=${encodeURIComponent(id)}`, { method: "DELETE" }).then((r) => (r.ok ? (setNotes((p) => p.filter((n) => n.id !== id)), r) : r)), () => setConfirmId(null), "Note deleted.");
 
   if (phase === "loading") return <p className="cl-collab-meta">Loading notes…</p>;
   if (phase === "error") {
@@ -91,7 +92,7 @@ export function ItemNotesBlock({ itemId }: { itemId: string }) {
           <label htmlFor={`note-draft-${itemId}`} className="cl-detail-label">
             Add a note for your workspace
           </label>
-          <textarea id={`note-draft-${itemId}`} value={draft} onChange={(e) => (setDraft(e.target.value), setError(null))} rows={3} className="cl-collab-field" placeholder="Which lanes or clients this touches, who is on it, what was decided" />
+          <Textarea bare id={`note-draft-${itemId}`} value={draft} onChange={(e) => (setDraft(e.target.value), setError(null))} rows={3} className="cl-collab-field" placeholder="Which lanes or clients this touches, who is on it, what was decided" />
           <div className="cl-collab-row">
             <Button onClick={() => void add()} disabled={busy !== null || !draft.trim() || over}>
               {busy === "new" ? "Adding…" : "Add note"}
@@ -127,7 +128,7 @@ export function ItemNotesBlock({ itemId }: { itemId: string }) {
                   <label htmlFor={`note-edit-${n.id}`} className="cl-detail-label">
                     Edit your note
                   </label>
-                  <textarea id={`note-edit-${n.id}`} value={editing.text} onChange={(e) => setEditing({ id: n.id, text: e.target.value })} rows={3} className="cl-collab-field" />
+                  <Textarea bare id={`note-edit-${n.id}`} value={editing.text} onChange={(e) => setEditing({ id: n.id, text: e.target.value })} rows={3} className="cl-collab-field" />
                   <div className="cl-collab-row">
                     <Button onClick={() => void save(n.id, editing.text)} disabled={busy !== null || !editing.text.trim() || editing.text.length > NOTE_MAX_LENGTH}>
                       {busy === n.id ? "Saving…" : "Save"}

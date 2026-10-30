@@ -22,12 +22,12 @@ export interface RecalculationNoticeItem extends SupersededNotice {
 export type NoticesState = { status: "loading" } | { status: "failed"; error: string } | { status: "ready"; notices: RecalculationNoticeItem[]; since: string | null };
 
 /** The feed behind every notices surface (this rail, the watchlist): one call, a distinct failed state, a Retry. */
-function useRecalculationNotices(): NoticesState & { retry: () => void } {
+function useRecalculationNotices(request = requestJson): NoticesState & { retry: () => void } {
   const [state, setState] = useState<NoticesState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let cancelled = false;
-    requestJson<{ notices?: RecalculationNoticeItem[]; since?: string }>("/api/notices").then((r) => {
+    request<{ notices?: RecalculationNoticeItem[]; since?: string }>("/api/notices").then((r) => {
       if (cancelled) return;
       if (!r.ok || !Array.isArray(r.data?.notices)) setState({ status: "failed", error: r.error ?? "The notices came back in a form this page cannot read." });
       else setState({ status: "ready", notices: r.data.notices, since: typeof r.data.since === "string" ? r.data.since : null });
@@ -35,7 +35,7 @@ function useRecalculationNotices(): NoticesState & { retry: () => void } {
     return () => {
       cancelled = true;
     };
-  }, [attempt]);
+  }, [attempt, request]);
   const retry = useCallback(() => {
     setState({ status: "loading" });
     setAttempt((n) => n + 1);

@@ -7,6 +7,7 @@ import Link from "next/link";
 import type { ChangeEvent, CSSProperties, ReactNode, RefObject } from "react";
 
 import { buttonClass } from "./Button";
+import { Input } from "./FormField";
 import { SectionCard } from "./SectionCard";
 
 /** A color-mix builder; kept for the admin callers that tint a token. */
@@ -18,7 +19,7 @@ export function FilePickRow({ label, hint, accept, onFile, icon, inputRef }: { l
       <label className={buttonClass()}>
         {icon}
         {label}
-        <input ref={inputRef} type="file" accept={accept} onChange={onFile} className="cl-sr-only" />
+        <Input bare ref={inputRef} type="file" accept={accept} onChange={onFile} className="cl-sr-only" />
       </label>
       <span className="cl-filepick-hint">{hint}</span>
     </div>

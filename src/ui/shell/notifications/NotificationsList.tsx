@@ -18,7 +18,7 @@ const PATH = "/api/community/notifications";
 const PAGE = 20;
 type Page = { notifications: InboxItem[]; unread_count: number; next_cursor: string | null };
 
-export function NotificationsList({ onUnreadChange, onClose }: { onUnreadChange: (n: number) => void; onClose: () => void }) {
+export function NotificationsList({ onUnreadChange, onClose, request = requestJson }: { onUnreadChange: (n: number) => void; onClose: () => void; request?: typeof requestJson }) {
   const router = useRouter();
   const [state, setState] = useState<InboxState>(emptyInbox);
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
@@ -31,12 +31,12 @@ export function NotificationsList({ onUnreadChange, onClose }: { onUnreadChange:
 
   const load = useCallback(async () => {
     setStatus("loading");
-    const r = await requestJson<Page>(`${PATH}?limit=${PAGE}`);
+    const r = await request<Page>(`${PATH}?limit=${PAGE}`);
     if (!r.ok || !r.data) return setStatus("failed");
     setState({ items: r.data.notifications, unread: r.data.unread_count, next: r.data.next_cursor });
     onUnreadChange(r.data.unread_count);
     setStatus("ready");
-  }, [onUnreadChange]);
+  }, [onUnreadChange, request]);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the load is the synchronisation with the server
     void load();
@@ -52,7 +52,7 @@ export function NotificationsList({ onUnreadChange, onClose }: { onUnreadChange:
     const at = new Date().toISOString();
     if (!n.read_at) {
       apply(markRead(before, n.id, at));
-      const r = await requestJson(`${PATH}/${n.id}`, { method: "POST", body: { action: "mark_read" } });
+      const r = await request(`${PATH}/${n.id}`, { method: "POST", body: { action: "mark_read" } });
       if (!r.ok) {
         apply(before);
         setNote("That notification could not be marked read. Nothing was changed.");
@@ -70,7 +70,7 @@ export function NotificationsList({ onUnreadChange, onClose }: { onUnreadChange:
     const before = live.current;
     setBusy("all");
     apply(markAllRead(before, new Date().toISOString()));
-    const r = await requestJson(PATH, { method: "POST", body: { action: "mark_all_read" } });
+    const r = await request(PATH, { method: "POST", body: { action: "mark_all_read" } });
     setBusy(null);
     if (!r.ok) {
       apply(before);
@@ -82,7 +82,7 @@ export function NotificationsList({ onUnreadChange, onClose }: { onUnreadChange:
     if (!state.next) return;
     setBusy("older");
     setNote(null);
-    const r = await requestJson<Page>(`${PATH}?limit=${PAGE}&before=${encodeURIComponent(state.next)}`);
+    const r = await request<Page>(`${PATH}?limit=${PAGE}&before=${encodeURIComponent(state.next)}`);
     setBusy(null);
     if (!r.ok || !r.data) return setNote("Older notifications could not be loaded.");
     apply(appendOlder(live.current, { notifications: r.data.notifications, next_cursor: r.data.next_cursor }));

@@ -1,27 +1,27 @@
 /* The settings page's layout. Tokens only; the kit carries every control and card. */
-.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.toggles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; }
-.toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: var(--target); border-bottom: 1px solid var(--line-3); font-size: var(--fs-125); color: var(--ink); }
+.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-16); }
+.toggles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 var(--sp-24); }
+.toggle { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-10); min-height: var(--target); border-bottom: 1px solid var(--line-3); font-size: var(--fs-125); color: var(--ink); }
 .toggleLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sectors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.briefing { display: flex; flex-direction: column; gap: 14px; }
+.sectors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-8); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--sp-8); }
+.briefing { display: flex; flex-direction: column; gap: var(--sp-14); }
 .disclosure summary { display: flex; align-items: center; min-height: var(--target); font-size: var(--fs-11); font-weight: 600; color: var(--ink-2); cursor: pointer; }
 .railLinks { display: flex; flex-direction: column; }
 .railLink { display: inline-flex; align-items: center; min-height: var(--target); font-size: var(--fs-125); font-weight: 600; color: var(--ink); }
 .text { margin: 0; font-size: var(--fs-12); line-height: 1.5; color: var(--ink-2); }
-.history { display: flex; flex-direction: column; gap: 10px; }
-.historyList { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.historyRow { padding: 10px 12px; border: 1px solid var(--line-2); border-radius: var(--radius-control); }
-.historyHead { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: var(--fs-12); color: var(--ink-2); }
-.historyLine { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--fs-12); color: var(--ink-2); }
+.history { display: flex; flex-direction: column; gap: var(--sp-10); }
+.historyList { display: flex; flex-direction: column; gap: var(--sp-8); margin: 0; padding: 0; list-style: none; }
+.historyRow { padding: var(--sp-10) var(--sp-12); border: 1px solid var(--line-2); border-radius: var(--radius-control); }
+.historyHead { display: flex; align-items: center; gap: var(--sp-8); margin: 0 0 var(--sp-4); font-size: var(--fs-12); color: var(--ink-2); }
+.historyLine { display: flex; align-items: center; gap: var(--sp-8); margin: 0; font-size: var(--fs-12); color: var(--ink-2); }
 .historyLine > span { width: 36px; flex-shrink: 0; color: var(--ink-3); }
 .historyLink { display: inline-flex; align-items: center; min-height: var(--target); min-width: 0; color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
-.severity { padding: 2px 6px; border: 1px solid var(--line-4); border-radius: var(--radius-control); font-size: var(--fs-11); font-weight: 600; text-transform: uppercase; color: var(--ink-2); }
+.severity { padding: var(--sp-2) var(--sp-6); border: 1px solid var(--line-4); border-radius: var(--radius-control); font-size: var(--fs-11); font-weight: 600; text-transform: uppercase; color: var(--ink-2); }
 .major { color: var(--immediate); border-color: var(--immediate-border); }
 .minor { color: var(--action); border-color: var(--action-border); }
 .replacement { color: var(--monitor); border-color: var(--monitor-border); }
-.sections { display: grid; gap: 24px; padding: 18px 40px 40px; }
+.sections { display: grid; gap: var(--sp-24); padding: var(--sp-18) var(--sp-40) var(--sp-40); }
 .section { scroll-margin-top: 56px; }
 
 @media (max-width: 900px) {
@@ -29,5 +29,5 @@
 }
 @media (max-width: 767px) {
   .controls, .toggles { grid-template-columns: minmax(0, 1fr); }
-  .sections { padding: 14px 16px 16px; }
+  .sections { padding: var(--sp-14) var(--sp-16) var(--sp-16); }
 }

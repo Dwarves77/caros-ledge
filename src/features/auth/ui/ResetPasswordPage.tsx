@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 
 import { browserClient } from "@/core/db/browser";
 import { log } from "@/core/shared/log";
-import { Button } from "@/ui";
+import { Button, Input } from "@/ui";
 
 import styles from "./auth.module.css";
 import { AuthErrorBanner, AuthField } from "./AuthPanel";
@@ -44,7 +44,7 @@ export default function ResetPasswordPage() {
             {error && <AuthErrorBanner message={error} />}
             <form onSubmit={handleSubmit} className={styles.form}>
               <AuthField label="Work email">
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className={styles.input} placeholder="name@company.com" />
+                <Input bare type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className={styles.input} placeholder="name@company.com" />
               </AuthField>
               <Button type="submit" variant="primary" loading={loading} className={styles.full}>
                 {loading ? "Sending…" : "Send reset link"}

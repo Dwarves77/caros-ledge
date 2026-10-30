@@ -61,7 +61,7 @@ export function MapPage({ items, coverage, activeCodes }: { items: MapItem[]; co
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-8)", fontSize: "var(--fs-12)" }}>
                 {immediate.slice(0, 6).map((r) => (
                   <div key={r.key} style={{ display: "grid", gridTemplateColumns: "0.1875rem 1fr auto", gap: "var(--sp-10)", alignItems: "center" }}>
-                    <span aria-hidden="true" style={{ background: "var(--immediate)", borderRadius: "var(--r-xs)", height: "100%" }} />
+                    <span aria-hidden="true" style={{ background: "var(--immediate)", borderRadius: "0.125rem", height: "100%" }} />
                     <span style={{ fontWeight: 600, color: "var(--ink)", minWidth: 0, overflowWrap: "anywhere" }}>{r.label}</span>
                     <span style={{ color: "var(--ink)", fontWeight: 700 }}>{plural(r.count, "immediate item", "immediate items")}</span>
                   </div>

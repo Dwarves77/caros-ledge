@@ -56,9 +56,9 @@ export function FormField({ label, hint, error, required, group, children }: For
   );
 }
 
-export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className, ...rest }, ref) => <input ref={ref} className={`cl-input${className ? ` ${className}` : ""}`} {...rest} />);
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { bare?: boolean }>(({ className, bare, ...rest }, ref) => <input ref={ref} className={bare ? className : `cl-input${className ? ` ${className}` : ""}`} {...rest} />);
 Input.displayName = "Input";
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(({ className, rows = 4, ...rest }, ref) => <textarea ref={ref} rows={rows} className={`cl-input${className ? ` ${className}` : ""}`} {...rest} />);
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement> & { bare?: boolean }>(({ className, bare, rows = 4, ...rest }, ref) => <textarea ref={ref} rows={rows} className={bare ? className : `cl-input${className ? ` ${className}` : ""}`} {...rest} />);
 Textarea.displayName = "Textarea";
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(({ className, ...rest }, ref) => <select ref={ref} className={`cl-input${className ? ` ${className}` : ""}`} {...rest} />);
 Select.displayName = "Select";

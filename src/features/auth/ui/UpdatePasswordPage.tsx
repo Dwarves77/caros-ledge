@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { browserClient } from "@/core/db/browser";
-import { Button } from "@/ui";
+import { Button, Input } from "@/ui";
 
 import styles from "./auth.module.css";
 import { AuthErrorBanner, AuthField } from "./AuthPanel";
@@ -47,10 +47,10 @@ export default function UpdatePasswordPage() {
             {error && <AuthErrorBanner message={error} />}
             <form onSubmit={handleSubmit} className={styles.form}>
               <AuthField label="New password">
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" minLength={8} className={styles.input} placeholder="At least 8 characters" />
+                <Input bare type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" minLength={8} className={styles.input} placeholder="At least 8 characters" />
               </AuthField>
               <AuthField label="Confirm new password">
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" minLength={8} className={styles.input} placeholder="Re-enter password" />
+                <Input bare type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" minLength={8} className={styles.input} placeholder="Re-enter password" />
               </AuthField>
               <Button type="submit" variant="primary" loading={loading} className={styles.full}>
                 {loading ? "Saving…" : "Update password"}

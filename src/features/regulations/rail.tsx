@@ -33,7 +33,7 @@ export function ObligationsRailCard({ events, failed, nowIso }: { events: readon
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-8)", fontSize: "var(--fs-12)" }}>
           {rows.map((ev) => (
             <div key={ev.id} data-audit="obligation-row" style={{ display: "grid", gridTemplateColumns: "0.1875rem 3.5rem 1fr", gap: "var(--sp-10)", alignItems: "start" }}>
-              <span aria-hidden="true" style={{ background: classifyByDays(daysFrom(ev.event_date, now)).cssVar, borderRadius: "var(--r-xs)", alignSelf: "stretch" }} />
+              <span aria-hidden="true" style={{ background: classifyByDays(daysFrom(ev.event_date, now)).cssVar, borderRadius: "0.125rem", alignSelf: "stretch" }} />
               <span style={{ fontWeight: 700, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{formatForwardEventCompact(ev.event_date, ev.date_precision)}</span>
               <span style={{ lineHeight: 1.4, color: "var(--ink)" }}>
                 {ev.item.title ? `${ev.item.title} — ` : ""}{ev.obligation_text}

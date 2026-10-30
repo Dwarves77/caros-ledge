@@ -4,7 +4,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { requestJson } from "@/core/http/request-json";
-import { Button, Dialog, FormField, Select, StateNote, Textarea } from "@/ui";
+import { Button, Dialog, FormField, Input, Select, StateNote, Textarea } from "@/ui";
 
 import { useItemStateStore } from "../state";
 
@@ -93,14 +93,14 @@ export function ArchiveDialog({ itemId, title, onClose, onArchived }: { itemId: 
         <fieldset className={styles.scopes}>
           <legend className="cl-field-label">Who should this be archived for?</legend>
           <label className={styles.scope}>
-            <input type="radio" name="archive-scope" checked={!teamSelected} onChange={() => setScope("personal")} disabled={submitting} />
+            <Input bare type="radio" name="archive-scope" checked={!teamSelected} onChange={() => setScope("personal")} disabled={submitting} />
             <span>
               <b>Just me</b>
               <span className={styles.scopeNote}>Hides it from your views only. Your teammates are not affected and are not notified. You can undo this at any time.</span>
             </span>
           </label>
           <label className={styles.scope}>
-            <input type="radio" name="archive-scope" checked={teamSelected} onChange={() => setScope("workspace")} disabled={submitting || !canTeam} />
+            <Input bare type="radio" name="archive-scope" checked={teamSelected} onChange={() => setScope("workspace")} disabled={submitting || !canTeam} />
             <span>
               <b>My whole team</b>
               <span className={styles.scopeNote}>{canTeam ? "Hides it for everyone in your workspace. Watchers and the assigned owner are notified, and an owner or admin can restore it." : "Only an admin or owner can archive for the whole team. You can still archive it just for yourself."}</span>

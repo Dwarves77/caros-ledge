@@ -31,10 +31,10 @@ export function CorridorsApplied({ corridors, failed }: { corridors: ReadonlyArr
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-8)" }}>
             {corridors.map((c) => (
-              <Link key={c.entityId} href={`/market#corridor-${encodeURIComponent(c.entityId)}`} className="cl-detail-link" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "var(--sp-8)", border: "1px solid var(--line-2)", borderRadius: "var(--r-sm)", padding: "var(--sp-6) var(--sp-8)" }}>
+              <Link key={c.entityId} href={`/market#corridor-${encodeURIComponent(c.entityId)}`} className="cl-detail-link" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "var(--sp-8)", border: "1px solid var(--line-2)", borderRadius: "var(--radius-control)", padding: "var(--sp-6) var(--sp-8)" }}>
                 <span style={{ fontSize: "var(--fs-13)", fontWeight: 700, overflowWrap: "anywhere", minWidth: 0 }}>{c.label}</span>
                 {c.jurisdictions.map((j) => (
-                  <span key={j.code} style={{ fontSize: "var(--fs-10)", padding: "var(--sp-2) var(--sp-6)", border: "1px solid var(--line-2)", borderRadius: "var(--r-pill)", background: "var(--page)", color: "var(--ink-2)", fontWeight: 700 }}>
+                  <span key={j.code} style={{ fontSize: "var(--fs-10)", padding: "var(--sp-2) var(--sp-6)", border: "1px solid var(--line-2)", borderRadius: "var(--radius-pill)", background: "var(--page)", color: "var(--ink-2)", fontWeight: 700 }}>
                     {j.name ? `${j.name} (${j.code})` : j.code}
                   </span>
                 ))}

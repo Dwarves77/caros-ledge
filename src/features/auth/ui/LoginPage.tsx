@@ -7,7 +7,7 @@ import { useState, type FormEvent } from "react";
 import { sanitizeReturnPath } from "@/core/auth/route-policy";
 import { browserClient } from "@/core/db/browser";
 import { log } from "@/core/shared/log";
-import { Button } from "@/ui";
+import { Button, Input } from "@/ui";
 
 import styles from "./auth.module.css";
 import { AuthDivider, AuthErrorBanner, AuthField, AuthTabs, CheckEmailPanel } from "./AuthPanel";
@@ -64,10 +64,10 @@ export default function LoginPage() {
             {error && <AuthErrorBanner message={error} />}
             <form onSubmit={handleLogin} className={styles.form}>
               <AuthField label="Work email">
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className={styles.input} placeholder="name@company.com" />
+                <Input bare type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" className={styles.input} placeholder="name@company.com" />
               </AuthField>
               <AuthField label="Password">
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" className={styles.input} placeholder="••••••••" />
+                <Input bare type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" className={styles.input} placeholder="••••••••" />
               </AuthField>
               <div className={styles.forgot}>
                 <a href="/auth/reset-password">Forgot password?</a>

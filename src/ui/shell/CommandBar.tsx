@@ -10,6 +10,7 @@ import { bandFromPriority, detailHref, jurisdictionCode } from "@/core/lists";
 import { formatNumber } from "@/core/shared";
 
 import { Button } from "../Button";
+import { Input } from "../FormField";
 import { SkeletonListRow } from "../Skeleton";
 import { StateNote } from "../StateNote";
 import { ListRow } from "../ListRow";
@@ -131,7 +132,7 @@ function CommandBar({ itemCount, placeholder, onAsk, onSearch }: CommandBarProps
       <span aria-hidden="true" className="cl-search-glyph">
         ⌕
       </span>
-      <input
+      <Input bare
         id="cl-command-bar-input"
         ref={input}
         value={value}
