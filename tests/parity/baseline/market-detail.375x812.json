@@ -6,13 +6,14 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-20T11:17:09.812Z",
+  "captured_at": "2026-10-30T20:59:28.253Z",
   "http_status": 200,
   "final_path": "/market/9d18608f-269e-405a-9ad8-afa638dda928",
-  "network_idle": true,
+  "settled": true,
+  "settle_reason": null,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Market Intel\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Market Intel / United States\n  - 'heading \"SPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability Standards\" [level=1]'\n  - text: B2 · Corporate & capital · United States · Sustainable Packaging Coalition (a project of GreenBlue) · May 10, 2026 · 2 independent sources corroborate\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - text: Action · ≤ 6 months Signal Monitoring packaging B2 · Corporate & capital T4 1 source · 2 corroborating\n  - group \"Source bias tags\":\n    - text: Primary source Foundation funded Standards defining Environmental advocate\n    - button \"+3 more\"\n  - button \"Export brief\"\n  - button \"Share\"\n  - button \"Watch\" [disabled]\n  - button \"+ Tag\"\n  - paragraph: Exposure\n  - paragraph: Where\n  - text: United States\n  - paragraph: Who pays\n  - text: needs primary-source figure\n  - paragraph: Your lanes\n  - text: needs primary-source figure\n  - paragraph: Next milestone\n  - text: needs more data\n  - paragraph: Timeline\n  - text: 1 milestone · 1 passed\n  - 'img \"Milestone timeline: 1 milestones, 1 passed\"': 2026-06-05 Captured (source page retrieved on this date; not the instrument's own date)\n  - text: Last milestone passed · 5 Jun 2026 · no further step is scheduled on this timeline\n  - navigation \"Section index\":\n    - link \"S1 Summary\":\n      - /url: \"#summary\"\n    - link \"S2 Findings\":\n      - /url: \"#findings\"\n    - link \"S5 Sources\":\n      - /url: \"#sources\"\n    - link \"S6 Related\":\n      - /url: \"#related\"\n    - link \"S7 Connected\":\n      - /url: \"#across-pages\"\n    - group \"Summary depth\":\n      - button \"Summary\" [pressed]\n      - button \"Full brief\"\n  - text: S1\n  - heading \"Summary\" [level=2]\n  - text: Generated · 30-second read\n  - paragraph: MONITORING\n  - paragraph: SCOPE\n  - paragraph: SPC Impact 2026 — the Sustainable Packaging Coalition's flagship annual conference — convened in Nashville, Tennessee on April 21–23, 2026, drawing more than 800 attendees across brands, converters, recyclers, consultants, and policymakers.\n  - paragraph: The event functioned as the industry's primary forward-signaling mechanism for packaging sustainability, with 40+ sessions and 80+ speakers covering Extended Producer Responsibility (EPR) implementation, recyclability definitions, flexible film recovery, paperization of packaging, and healthcare packaging sustainability.\n  - paragraph: — SPC Press Release\n  - paragraph: Sustainable Packaging Coalition, April 23\n  - link \"sustainablepackaging.org\":\n    - /url: http://sustainablepackaging.org/2026/04/23/spc-impact-2026-initiatives/\n  - paragraph: \"2026\"\n  - paragraph: — GreenBlue Events – SPC Impact 2026 Event Page\n  - link \"greenblueevents.org\":\n    - /url: https://greenblueevents.org/event/spc-impact-2026/\n  - paragraph: \"2026\"\n  - paragraph: \"Three specific triggers drove the 2026 agenda:\"\n  - paragraph: SCOPE\n  - paragraph:\n    - strong: California SB 343\n    - text: \": EPR legislation is reclassifying what counts as recyclable — shifting the definition away from technical recyclability toward demonstrated performance in collection, sortation, and end-market data. Molded fiber products, polycoated paper, and other formerly presumed-recyclable formats are now in regulatory limbo.\"\n  - paragraph:\n    - strong: EPR programs moving from legislation into implementation\n    - text: \": Oregon and Colorado have published approved program plans, establishing a visible range of fees for difficult-to-recycle materials. The Circular Action Alliance (CAA) is the operative Producer Responsibility Organization (PRO).\"\n  - paragraph:\n    - strong: Data-sharing gap as a compliance bottleneck\n    - text: \": Brands including Mondelēz International are working from disconnected internal systems, with senior EPR managers stating directly: \\\"We need better data.\\\"\"\n  - paragraph: \"— SPC Impact 2026: EPR Moves from Theory to Operational Reality\"\n  - link \"packworld.com\":\n    - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n  - paragraph: \"2026\"\n  - paragraph: — 2026 Sustainable Packaging Trends Report\n  - link \"sustainablepackaging.org\":\n    - /url: https://sustainablepackaging.org/2026-sustainable-packaging-trends-report/\n  - paragraph: \"2026\"\n  - paragraph: \"— SPC Impact 2026: EPR Moves from Theory to Operational Reality\"\n  - link \"packworld.com\":\n    - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n  - paragraph: \"2026\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: For workspaces that move packaged goods — particularly consumer goods, healthcare products, or retail private-label merchandise — across US trade lanes by air or road, these triggers collectively mark the point at which packaging sustainability has shifted from a voluntary differentiator into an operationally embedded compliance function.\n  - paragraph: not citable\n  - separator\n  - text: S2\n  - heading \"Substantive findings\" [level=2]\n  - paragraph: Drivers & trajectory\n  - paragraph: 4 forces · compounding\n  - paragraph: SCOPE\n  - paragraph:\n    - text: The initiative is convened by the\n    - strong: Sustainable Packaging Coalition (SPC)\n    - text: \", a membership-based project of GreenBlue launched in 2004, which the Sustainable Packaging Coalition's own website describes as \\\"the leading authority on sustainable packaging.\\\" As of 2023, SPC surpassed 550 members.\"\n  - paragraph: — About Us\n  - paragraph: Sustainable Packaging Coalition\n  - link \"sustainablepackaging.org\":\n    - /url: https://sustainablepackaging.org/about-us\n  - paragraph: Sustainable Packaging Coalition\n  - paragraph: \"Named participants at SPC Impact 2026 with direct relevance to packaging decision-making include:\"\n  - paragraph: SCOPE\n  - paragraph:\n    - strong: Amanda Humes\n    - text: \", Director of Packaging Stewardship, Conagra Brands — articulated the shift from voluntary commitments to demonstrated accountability across the value chain. Source: Packaging World, May 6, 2026.\"\n    - link \"packworld.com\":\n      - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n    - strong: Brie Seferian\n    - text: \", Senior Manager, EPR North America, Mondelēz International — cited the data integration challenge directly. Source: Packaging World, May 6, 2026.\"\n    - link \"packworld.com\":\n      - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n    - strong: Scott Byrne\n    - text: \", VP Global Sustainability and Industry Affairs, Sonoco — addressing polycoated paper classification uncertainty. Source: Packaging World, May 6, 2026.\"\n    - link \"packworld.com\":\n      - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n    - strong: Teo Medellin\n    - text: \", Procter & Gamble. Source: Packaging World, May 6, 2026.\"\n    - link \"packworld.com\":\n      - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n    - strong: Rhodes Yepsen\n    - text: \", Executive Director, Biodegradable Products Institute (BPI) — warning that misaligned California laws risk eliminating compostables as a viable pathway.\"\n  - paragraph:\n    - text: The\n    - strong: SPC Retailer Forum\n    - text: — comprising Amazon, Walmart, and Target among others — launched its second project brief at the conference, seeking supplier submissions for a new bottle or container format that supports source reduction while remaining recyclable and/or reusable or using minimal or no virgin plastic.\n  - paragraph: — Packaging World\n  - paragraph: May 6\n  - link \"packworld.com\":\n    - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n  - paragraph: \"2026\"\n  - paragraph: — SPC Press Release\n  - paragraph: Sustainable Packaging Coalition, April 23\n  - link \"sustainablepackaging.org\":\n    - /url: http://sustainablepackaging.org/2026/04/23/spc-impact-2026-initiatives/\n  - paragraph: \"2026\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: The presence of major US retailers (Amazon, Walmart, Target) as active members of the SPC Retailer Forum — not simply observers — signals that packaging recyclability requirements will increasingly flow upstream via commercial relationships, not only from regulation. For workspaces whose clients include large US retailers or CPG brands, this is a client-demand pressure point that is arriving ahead of any federal mandate.\n  - paragraph: not citable\n  - separator\n  - paragraph: \"Four trends published in the SPC's 2026 Sustainable Packaging Trends Report define the expected forward trajectory:\"\n  - paragraph: SCOPE\n  - paragraph:\n    - strong: \"Trend 1 — Packaging Design: Regions are formalizing definitions of recyclability.\"\n    - text: \"The report identifies that guidance on recyclability and sustainability is increasingly being defined by Producer Responsibility Organizations (PROs) in the context of EPR. The report states: \\\"Around the world, regions are beginning to formalize definitions for 'recyclable' and 'sustainable.'\\\"\"\n  - paragraph:\n    - strong: \"Trend 2 — Innovation: Healthcare and OTC packaging are catching up to sustainability demands.\"\n    - text: A 2025 Systemiq and Eunomia report, cited in the Trends Report, found that in a business-as-usual scenario, \"plastic waste, GHG emissions and costs could grow by 35–40% by 2040.\" Applying circular economy levers can, the Trends Report states, \"cut plastic use by up to 53%, GHG emissions by up to 55%, and system costs by up to 24% by 2040.\"\n  - paragraph:\n    - strong: \"Trend 3 — Policy: EPR is maturing toward industry-regulatory equilibrium.\"\n    - text: The Trends Report describes the industry as being \"five years into EPR laws being proposed, passed, and entering early implementation.\" It states that companies \"know enough to plan and act\" and should plan for packaging fees to \"increase significantly, particularly for difficult-to-recycle materials.\"\n  - paragraph:\n    - strong: \"Trend 4 — Recovery: Data-sharing is creating recyclability clarity under EPR.\"\n    - text: The Trends Report identifies that \"success stories of beverage cups and the promising pipeline of new recyclability for PE tubes, PET thermoforms, and small-format plastics prove that when industry players share data, recyclability isn't just a label — it's a trackable, reachable reality.\"\n  - paragraph:\n    - strong: \"How2Recycle film label evolution:\"\n    - text: \"SPC released research at the conference exploring how the How2Recycle label suite can evolve to reflect film collection pathways beyond retailer drop-off bins, including municipal drop-off sites and mail-back or subscription services. The SPC press release states: \\\"The updated label will continue to be refined and developed in the coming months.\\\"\"\n  - paragraph: — 2026 Sustainable Packaging Trends Report\n  - link \"sustainablepackaging.org\":\n    - /url: https://sustainablepackaging.org/2026-sustainable-packaging-trends-report/\n  - paragraph: \"2026\"\n  - paragraph: — 2026 Sustainable Packaging Trends Report\n  - link \"sustainablepackaging.org\":\n    - /url: https://sustainablepackaging.org/2026-sustainable-packaging-trends-report/\n  - paragraph: \"2026\"\n  - paragraph: — 2026 Sustainable Packaging Trends Report\n  - link \"sustainablepackaging.org\":\n    - /url: https://sustainablepackaging.org/2026-sustainable-packaging-trends-report/\n  - paragraph: \"2026\"\n  - paragraph: — 2026 Sustainable Packaging Trends Report\n  - link \"sustainablepackaging.org\":\n    - /url: https://sustainablepackaging.org/2026-sustainable-packaging-trends-report/\n  - paragraph: \"2026\"\n  - paragraph: — SPC Press Release\n  - paragraph: Sustainable Packaging Coalition, April 23\n  - link \"sustainablepackaging.org\":\n    - /url: http://sustainablepackaging.org/2026/04/23/spc-impact-2026-initiatives/\n  - paragraph: \"2026\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: The How2Recycle label research is pre-publication — the label design is still being developed. The conversion trigger is finalization of a new label standard that reflects expanded film collection infrastructure, which the SPC has signaled for \"coming months\" following April 2026.\n  - paragraph: not citable\n  - paragraph:\n    - strong: \"Key conversion triggers — MONITORING:\"\n  - list:\n    - listitem: California SB 343 implementation decisions on material-by-material recyclability classification\n    - listitem: CAA-approved EPR program plans in additional US states beyond Oregon and Colorado\n    - listitem: SPC How2Recycle film label design finalization (stated as \"coming months\" post-April 2026)\n    - listitem: SPC Retailer Forum supplier submission outcomes for the new bottle/container brief\n  - paragraph:\n    - emphasis: \"Re-check window: Q3–Q4 2026 for How2Recycle label progress; ongoing for state-level EPR implementation decisions.\"\n  - separator\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: \"No named competitors in the freight forwarding or logistics sector appear in the SPC Impact 2026 source materials. The competitive pressure at this stage operates at the cargo-principal level (brands, retailers, CPG companies) rather than at the forwarder level. However, the commercial implication is directional: workspaces whose clients include the brands named at SPC Impact 2026 (Conagra, Mondelēz, Sonoco, P&G, Amazon, Walmart, Target) will face increasing requests for packaging sustainability data, EPR compliance documentation, and recyclability verification as those clients build internal compliance infrastructure.\"\n  - paragraph: The SPC Retailer Forum's active role — Amazon, Walmart, and Target collectively seeking supplier-side sustainable packaging solutions — signals that packaging sustainability will increasingly appear as a vendor qualification or supplier scorecard criterion. Workspaces that can document sustainable packaging use, EPR compliance status, or How2Recycle label adoption for their own transit packaging may gain a differentiation point in commercial conversations with retail-sector clients.\n  - paragraph: not citable\n  - paragraph: not citable\n  - paragraph:\n    - text: The SPC's How2Recycle label suite, and its planned film label evolution, is the dominant industry-recognized recyclability communication standard in the US market.\n    - emphasis: \"Analytical inference:\"\n    - text: Workspaces using film-based protective packaging (flexible films, wraps, poly bags) for any US-destined cargo vertical should track the How2Recycle film label redesign, as the updated standard will determine what label claim is defensible on those materials.\n  - separator\n  - paragraph: Cost impact by mode\n  - paragraph: Air · Ocean · Road\n  - paragraph:\n    - strong: \"EPR fee exposure — directional range:\"\n  - paragraph: The Trends Report states companies should \"plan for packaging fees to increase significantly, particularly for difficult-to-recycle materials, with real consequences for falling short.\" The Oregon and Colorado approved program plans establish a visible fee range for difficult-to-recycle materials; however, specific fee figures from those plans are not reproduced in the source blocks provided here.\n  - paragraph:\n    - emphasis: Specific EPR fee rate figures from Oregon and Colorado program plans not available from primary sources as provided in source blocks at the time of this authoring pass.\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: For workspaces that commission, design, or specify packaging — whether for live events, humanitarian goods, or high-value product transit — the materialization of EPR fee structures means that packaging format choices made today will carry forward-looking cost consequences once fee schedules are applied. Difficult-to-recycle formats (multi-layer flexible films, blister packs, polycoated paper) face the highest fee exposure.\n  - paragraph: not citable\n  - paragraph:\n    - strong: \"State-by-state compliance complexity:\"\n  - paragraph: SCOPE\n  - paragraph: Conference panelists, including the Conagra Brands director of packaging stewardship, flagged that managing a \"state-by-state patchwork long term\" is a growing concern, with each state potentially carrying different reporting rules, fee structures, and material definitions.\n  - paragraph: — Packaging World\n  - paragraph: May 6\n  - link \"packworld.com\":\n    - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n  - paragraph: \"2026\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Operational implication\n  - paragraph: For workspaces operating across multiple US states — moving goods by air into major hub markets — the patchwork compliance structure means packaging specifications that satisfy one state's EPR program may not satisfy another's. This affects operations leads commissioning outbound packaging for any US-destined cargo vertical.\n  - paragraph: not citable\n  - paragraph:\n    - strong: \"Healthcare and OTC packaging — cost and timing:\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: For workspaces moving pharmaceutical, medical device, or OTC consumer health products by air — a high-frequency cargo vertical for time-sensitive healthcare goods — the healthcare packaging sustainability trend reported at SPC Impact 2026 signals an approaching design and compliance change cycle. The Trends Report references healthcare packaging as a specific innovation frontier, not yet at the regulatory mandate stage in the US, but with cost and recyclability pressure building.\n  - paragraph: not citable\n  - paragraph:\n    - strong: \"Compostable packaging — California-specific disruption:\"\n  - paragraph: SCOPE\n  - paragraph: California's AB 1201 and related legislation, as described at SPC Impact 2026, creates uncertainty by tying compostability claims to National Organic Program rules that do not currently recognize packaging materials as allowable agricultural inputs, \"effectively blocking compostable packaging from being labeled as such in California.\"\n  - paragraph: — Packaging World\n  - paragraph: May 6\n  - link \"packworld.com\":\n    - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n  - paragraph: \"2026\"\n  - paragraph: LEGAL CONFIRMATION REQUIRED\n  - paragraph: Whether compostable packaging used by clients in California-destined shipments — particularly in food service or agricultural contexts — is currently exposed to a California labeling prohibition requires counsel review against the specific packaging format and labeling claim in question.\n  - paragraph: —\n  - separator\n  - paragraph: Do now\n  - paragraph:\n    - strong: 1. Audit transit and secondary packaging formats against emerging EPR classification criteria.\n    - text: \"Action: Map all flexible film, polycoated paper, molded fiber, and multi-layer packaging formats used in outbound shipments against California SB 343 and the Oregon/Colorado EPR program plan material definitions. This is a data-gathering step, not a compliance filing. Scope: any cargo vertical where the workspace commissions, specifies, or sources packaging for US-destined goods. Why now: reclassification is already in progress for formerly presumed-recyclable formats, and EPR fee exposure flows from material classifications that are being set now.\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: For workspaces operating across the Americas trade lane — particularly air freight into US gateway airports — this audit is the foundational step before any EPR-related client conversation can be had credibly.\n  - paragraph: not citable\n  - paragraph:\n    - strong: 2. Track the SPC Retailer Forum's second project brief outcomes.\n    - text: \"Action: Monitor SPC's publication of supplier submissions and Forum outcomes for the new bottle/container brief. This brief was launched at SPC Impact 2026 by the Forum comprising Amazon, Walmart, and Target. If the workspace's clients include these retailers or their suppliers, the Forum's preferred specifications will likely flow into procurement requirements. Re-check window: Q3–Q4 2026.\"\n  - paragraph: SCOPE\n  - paragraph:\n    - strong: 3. Monitor How2Recycle film label redesign.\n    - text: \"Action: Register for SPC updates on the How2Recycle film label evolution. The research released at SPC Impact 2026 points toward a new label design communicating both material type and recovery pathway. Any workspace-issued film packaging bearing a current How2Recycle film label may require label update once the new design is finalized.\"\n  - paragraph:\n    - strong: 4. Add a packaging-sustainability data request to supplier onboarding.\n    - text: \"Action: Begin collecting packaging format, material type, and recyclability documentation from packaging suppliers. The internal data fragmentation described by Mondelēz International's EPR manager at SPC Impact 2026 — assembling packaging information from disconnected systems — is the primary operational risk as EPR reporting becomes mandatory. Building the data infrastructure now, before reporting deadlines arrive, is lower-cost than reconstructing it reactively.\"\n  - paragraph: — SPC Press Release\n  - paragraph: April 23\n  - link \"sustainablepackaging.org\":\n    - /url: http://sustainablepackaging.org/2026/04/23/spc-impact-2026-initiatives/\n  - paragraph: \"2026\"\n  - paragraph: — Packaging World\n  - paragraph: May 6\n  - link \"packworld.com\":\n    - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n  - paragraph: \"2026\"\n  - paragraph:\n    - strong: 5. Brief legal and commercial teams on California AB 1201 compostability-claim risk.\n    - text: \"Action: Flag that compostable packaging claims for California-destined goods are in active regulatory uncertainty.\"\n    - emphasis: \"Legal Confirmation Required:\"\n    - text: the scope of the California labeling restriction for compostable packaging under AB 1201 and NOP rules, as applied to specific packaging formats used by the workspace, requires counsel review before any client-facing compostability claim is made.\n  - separator\n  - heading \"New Sources Identified\" [level=4]\n  - table:\n    - rowgroup:\n      - row \"Source Name New Analysis and Initiatives from SPC Impact 2026 – Sustainable Packaging Coalition URL http://sustainablepackaging.org/2026/04/23/spc-impact-2026-initiatives/ Tier estimate (1-7) 2 Why this source matters SPC's own press release (regulator/issuing-body equivalent for industry standards); primary source for the three initiatives unveiled at SPC Impact 2026 including How2Recycle film label research and Retailer Forum brief.\":\n        - cell \"Source Name New Analysis and Initiatives from SPC Impact 2026 – Sustainable Packaging Coalition\"\n        - cell \"URL http://sustainablepackaging.org/2026/04/23/spc-impact-2026-initiatives/\":\n          - text: URL\n          - link \"http://sustainablepackaging.org/2026/04/23/spc-impact-2026-initiatives/\":\n            - /url: http://sustainablepackaging.org/2026/04/23/spc-impact-2026-initiatives/\n        - cell \"Tier estimate (1-7) 2\"\n        - cell \"Why this source matters SPC's own press release (regulator/issuing-body equivalent for industry standards); primary source for the three initiatives unveiled at SPC Impact 2026 including How2Recycle film label research and Retailer Forum brief.\"\n      - row \"Source Name GreenBlue Events – SPC Impact 2026 Event Page URL https://greenblueevents.org/event/spc-impact-2026/ Tier estimate (1-7) 2 Why this source matters Official GreenBlue event page confirming venue, attendee count (800), session count (40+), speaker count (80+), and named participating organisations; the authoritative record of conference scope.\":\n        - cell \"Source Name GreenBlue Events – SPC Impact 2026 Event Page\"\n        - cell \"URL https://greenblueevents.org/event/spc-impact-2026/\":\n          - text: URL\n          - link \"https://greenblueevents.org/event/spc-impact-2026/\":\n            - /url: https://greenblueevents.org/event/spc-impact-2026/\n        - cell \"Tier estimate (1-7) 2\"\n        - cell \"Why this source matters Official GreenBlue event page confirming venue, attendee count (800), session count (40+), speaker count (80+), and named participating organisations; the authoritative record of conference scope.\"\n      - 'row \"Source Name SPC Impact 2026: EPR Moves from Theory to Operational Reality – Packaging World URL https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality Tier estimate (1-7) 4 Why this source matters In-depth trade press coverage with named participants (Conagra, Mondelēz, Sonoco, P&G, BPI, IMFA); provides verbatim quotes and specific regulatory claims (SB 343, AB 1201, NOP) not available in SPC''s own press release.\"':\n        - 'cell \"Source Name SPC Impact 2026: EPR Moves from Theory to Operational Reality – Packaging World\"'\n        - cell \"URL https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\":\n          - text: URL\n          - link \"https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\":\n            - /url: https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality\n        - cell \"Tier estimate (1-7) 4\"\n        - cell \"Why this source matters In-depth trade press coverage with named participants (Conagra, Mondelēz, Sonoco, P&G, BPI, IMFA); provides verbatim quotes and specific regulatory claims (SB 343, AB 1201, NOP) not available in SPC's own press release.\"\n      - row \"Source Name 2026 Sustainable Packaging Trends Report – Sustainable Packaging Coalition URL https://sustainablepackaging.org/2026-sustainable-packaging-trends-report/ Tier estimate (1-7) 2 Why this source matters SPC's primary research report launched at Impact 2026; the authoritative source for the four headline trends, the healthcare plastic waste/cost projections (citing Systemiq/Eunomia 2025), and the EPR fee and data-sharing frameworks.\":\n        - cell \"Source Name 2026 Sustainable Packaging Trends Report – Sustainable Packaging Coalition\"\n        - cell \"URL https://sustainablepackaging.org/2026-sustainable-packaging-trends-report/\":\n          - text: URL\n          - link \"https://sustainablepackaging.org/2026-sustainable-packaging-trends-report/\":\n            - /url: https://sustainablepackaging.org/2026-sustainable-packaging-trends-report/\n        - cell \"Tier estimate (1-7) 2\"\n        - cell \"Why this source matters SPC's primary research report launched at Impact 2026; the authoritative source for the four headline trends, the healthcare plastic waste/cost projections (citing Systemiq/Eunomia 2025), and the EPR fee and data-sharing frameworks.\"\n  - separator\n  - paragraph: Client talking points\n  - paragraph:\n    - strong: \"What the workspace can credibly say:\"\n  - list:\n    - listitem: The SPC's 2026 Trends Report and SPC Impact 2026 conference confirm that EPR implementation in the US is moving from policy design into operational reality, with Oregon and Colorado having published approved program plans. This is a FACT, sourced from SPC primary research published April 2026.\n  - list:\n    - listitem: Recyclability definitions are being formalized by PROs under EPR — meaning that a packaging format's \"recyclable\" claim is increasingly assessed against actual collection, sortation, and end-market performance data, not just technical recyclability. This is a material shift from prior industry practice.\n  - list:\n    - listitem: California SB 343 is creating reclassification risk for previously assumed-recyclable formats, including molded fiber and polycoated paper.\n  - list:\n    - listitem: The How2Recycle film label is under active redesign to reflect expanded film recovery pathways; the existing label infrastructure is evolving.\n  - paragraph:\n    - strong: \"Pitfalls to avoid:\"\n  - list:\n    - listitem: Do not assert specific EPR fee figures for any US state without obtaining them directly from the relevant PRO or program plan document. The SPC Trends Report references fee ranges in Oregon and Colorado but specific figures are not reproduced in the source materials available for this brief.\n  - list:\n    - listitem: Do not characterize compostable packaging as a compliant California alternative without confirming the current status of AB 1201 and NOP rules with counsel. The BPI executive director's description at SPC Impact 2026 — that the framework has \"the right ingredients, but the wrong recipe\" — signals active legal uncertainty, not resolution.\n  - paragraph: SCOPE\n  - paragraph: Do not represent the How2Recycle film label redesign as finalized or available. SPC stated it \"will continue to be refined and developed in the coming months\" as of April 23, 2026.\n  - paragraph: — SPC Press Release\n  - paragraph: April 23\n  - link \"sustainablepackaging.org\":\n    - /url: http://sustainablepackaging.org/2026/04/23/spc-impact-2026-initiatives/\n  - paragraph: \"2026\"\n  - paragraph:\n    - strong: \"Questions to pose to clients:\"\n  - list:\n    - listitem: Which US states are your products subject to EPR obligations in, and have you mapped your packaging formats against those states' material definitions?\n  - list:\n    - listitem: Are your internal data systems capable of producing the packaging-format-level recyclability and tonnage data that EPR reporting will require?\n  - list:\n    - listitem: Do any of your packaging formats rely on a compostability claim for California-destined product?\n  - separator\n  - text: S5\n  - heading \"Sources\" [level=2]\n  - text: 1 · tier = provenance, never urgency\n  - link \"T4 Sustainable Packaging Coalition (a project of GreenBlue)\":\n    - /url: https://sustainablepackaging.org/about-us\n    - text: T4\n    - paragraph: Sustainable Packaging Coalition (a project of GreenBlue)\n  - group \"Source bias tags\":\n    - text: Foundation funded Standards defining Environmental advocate\n    - button \"+3 more\"\n  - text: S6\n  - heading \"Related\" [level=2]\n  - text: Corporate & capital\n  - paragraph: Connections\n  - link \"References· regulations EU PPWR 2025/40 shared scenario · 0.30\":\n    - /url: /regulations/g2\n    - paragraph: References· regulations\n    - paragraph: EU PPWR 2025/40\n    - paragraph: shared scenario · 0.30\n  - link \"U.S. Energy Information Administration Short-Term Energy Outlook Monitoring\":\n    - /url: /market/ed63f522-96bd-4aac-b828-a216f34b90a9\n  - link \"EU Weekly Oil Bulletin — Heating gas oil (EU average, before taxes) Window closing\":\n    - /url: /market/32783a47-0073-4cff-a2ae-369508bcdfe9\n  - link \"EU Weekly Oil Bulletin — Euro-Super 95 (EU average, before taxes) Window closing\":\n    - /url: /market/4fae403a-ced5-4c8f-82b7-af0fd6127061\n  - link \"ADB Celebrates European Partnership and Highlights Private Sector Opportunities in Sustainable Transport Monitoring\":\n    - /url: /market/b94cd283-33f7-4ae8-bab1-f4b309a0db8a\n  - text: S7\n  - heading \"Connected intelligence\" [level=2]\n  - text: Intersections and theme analysis\n  - paragraph: Theme analysis\n  - paragraph: 44 items across Regulations, Market Intel, Research, Operations\n  - paragraph: \"Climate-risk disclosure convergence: CSRD's Scope 3 core, California's SB 261/253 axis, and the CBAM/due-diligence periphery\"\n  - text: \"Stale: this theme's membership has changed since the synthesis was written.\"\n  - 'heading \"Climate-risk disclosure convergence: CSRD''s Scope 3 core, California''s SB 261/253 axis, and the CBAM/due-diligence periphery\" [level=4]'\n  - heading \"What binds this theme\" [level=4]\n  - paragraph:\n    - text: \"This is the platform's corporate-disclosure engine room: 24 regulations, 9 research findings, 7 market signals, 5 guidance items, plus standards, initiatives, regional data, directives, and frameworks, spanning market, operations, regulations, and research surfaces. The connection engine binds it on shared reporting and emissions scenarios:\"\n    - strong: emissions-reporting-Scope3\n    - text: (35 of 57),\n    - strong: sustainability-report-CSRD\n    - text: (27),\n    - strong: emissions-reporting-Scope1\n    - text: (17),\n    - strong: supplier-data-request\n    - text: (14), and\n    - strong: customs-declaration-import\n    - text: \"(14). Obligated parties skew toward the forwarder's own compliance desk: freight-forwarder (45 of 57), shipper (26), importer (19), manufacturer-producer (11), warehouse-operator (8).\"\n  - heading \"The structure inside it\" [level=4]\n  - list:\n    - listitem:\n      - strong: The corporate disclosure core.\n      - text: CSRD, EU Taxonomy, Directive (EU) 2025/794 (which pushes back CSRD/CSDDD application dates), GRI Standards, USGBC LEED, and research/market items from Carbon Trust, Cranfield, Fraunhofer IML, and OECD sit together on sustainability-report-CSRD + emissions-reporting-Scope3 + supplier-data-request. This is the theme's densest reporting spine.\n    - listitem:\n      - strong: The California ISSB-aligned climate-risk axis.\n      - text: \"Two of the three pivots are California instruments:\"\n      - strong: SB 261 — Climate-Related Financial Risk Act\n      - text: (centrality 13.1) and\n      - strong: SB 253 — Climate Corporate Data Accountability Act\n      - text: (centrality 12.6), joined by AB 1305. The edge basis scores this pair at 1.0, \"grounded in the same source,\" both touching disclosure-ISSB, supplier-data-request, and emissions-reporting-Scope1 — the tightest same-source cluster in the data.\n    - listitem:\n      - strong: The CBAM/carbon-border cluster.\n      - text: EU CBAM and its 2025/2083 amendment score 1.0 on shared carbon-border-adjustment, CBAM-declaration, and ETS-allowance-surrender tags. Mexico SEMARNAT and Carbon Trust's global overview (which carries a CBAM-declaration tag) sit adjacent, with Regulation (EU) 2024/1157 on waste shipments contributing the ETS-allowance-surrender overlap.\n    - listitem:\n      - strong: The supply-chain due-diligence periphery.\n      - text: The conflict-minerals lineage (Regulation (EU) 2017/821 and its two delegated regulations, 2019/429 and 2020/1588) and the forced-labour Regulation (EU) 2024/3015 connect to the CSRD core only through Directive (EU) 2025/794's CSDDD linkage — obligated mostly on importer/manufacturer-producer, freight-forwarder appearing on just one of the four.\n    - listitem:\n      - strong: The US state/regional environmental-agency patchwork.\n      - text: Missouri DNR, Clark County,\n      - strong: Iowa DNR\n      - text: \"(the third pivot, centrality 8.6), Colorado DOT, Alaska DOT, West Virginia, Wyoming DEQ, LA Dept. of Building, EPA Michigan, and California Energy Commission bind on emissions-reporting-Scope1 plus drayage/urban-truck-zone and warehouse-operator — a real sub-cluster: Clark County–Missouri DNR, Clark County–Iowa DNR, Iowa DNR–LA Dept. of Building.\"\n    - listitem:\n      - strong: The packaging EPR side-strand.\n      - text: EU PPWR 2025/40, EcoEnclose Blog, Packaging Material Input Costs, SPC Impact 2026, the Polish GIOŚ framework, and the England & Wales 2015 energy-efficiency regs bind on packaging-EPR-registration and packaging-recyclability-design (EcoEnclose–PPWR, Polish GIOŚ–PPWR).\n    - listitem:\n      - strong: A thin legacy EU vessel/dangerous-goods cluster.\n      - text: 96/127/EC, 96/513/EC, 90/170/EEC, Commission Regulation (EC) No 1800/2001, and Regulation (EU) 2016/1928 bind on dangerous-goods-classification, vessel-port-call, and customs-declaration-export, obligated on vessel-operator/exporter rather than freight-forwarder — a scenario-thin outlier inside a disclosure theme.\n  - heading \"Coverage shape, honestly\" [level=4]\n  - paragraph:\n    - text: \"Jurisdictionally this theme runs EU (20 members) and US (15) with a long single-country tail — Mexico, UAE, Australia, China, Germany, France, Poland — plus five members with no jurisdiction recorded. Two gaps, from the data:\"\n    - strong: carbon-pricing-pass-through does not appear as a scenario tag anywhere in this theme's 57 members\n    - text: \", despite a live CBAM/carbon-border cluster — the compliance-cost-to-freight-rate consequence is present in the regulation but not yet surfaced as its own connective scenario, a discovery target. And\"\n    - strong: the CSDDD's primary instrument is absent\n    - text: \"— only its amending/timing directive (2025/794) is a member, so due-diligence coverage is thin relative to the disclosure core's density. The vessel/dangerous-goods strand (item 7) is also a genuine coverage seam: it entered through shared EU jurisdiction and topic rather than shared scenario tags, and reads as adjacent-but-distinct from the Scope 3/CSRD spine rather than as evidence for it.\"\n  - heading \"Grounding\" [level=4]\n  - paragraph: \"Every connection behind this brief carries an explicit basis in the graph (shared scenario tags, shared source, shared compliance objects, jurisdiction+topic); no link is asserted that the graph does not hold. Membership snapshot: 57 items, hash f98ab694, from the 2026-08-21 cluster pass.\"\n  - paragraph: Other items in this theme\n  - paragraph: Regulations · 24\n  - link \"California SB 261 — Climate-Related Financial Risk Act\":\n    - /url: /regulations/w4_ca_sb261\n    - paragraph: California SB 261 — Climate-Related Financial Risk Act\n  - link \"California SB 253 — Climate Corporate Data Accountability Act\":\n    - /url: /regulations/w4_ca_sb253\n    - paragraph: California SB 253 — Climate Corporate Data Accountability Act\n  - link \"Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)\":\n    - /url: /regulations/6cdc920f-6110-412a-b4f8-7b6c7fabdda5\n    - paragraph: Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)\n  - link \"California AB 1305 — Voluntary Carbon Market Disclosures Act\":\n    - /url: /regulations/w4_ca_ab1305\n    - paragraph: California AB 1305 — Voluntary Carbon Market Disclosures Act\n  - link \"Commission Delegated Regulation (EU) 2019/429 of 11 January 2019 supplementing Regulation (EU) 2017/821 of the European Parliament and of the Council as regards the methodology and criteria for the assessment and recognition of supply chain due diligence schemes concerning tin, tantalum, tungsten and gold\":\n    - /url: /regulations/c4bde9c4-f89a-41a8-bbe9-c7670f43b5fa\n    - paragraph: Commission Delegated Regulation (EU) 2019/429 of 11 January 2019 supplementing Regulation (EU) 2017/821 of the European Parliament and of the Council as regards the methodology and criteria for the assessment and recognition of supply chain due diligence schemes concerning tin, tantalum, tungsten and gold\n  - link \"Commission Delegated Regulation (EU) 2020/1588 of 25 June 2020 amending Annex I to Regulation (EU) 2017/821 of the European Parliament and of the Council by establishing volume thresholds for tantalum or niobium ores and concentrates, gold ores and concentrates, tin oxides and hydroxides, tantalates and carbides of tantalum\":\n    - /url: /regulations/ef82ad12-bb11-45f2-99b7-8c9d312f569b\n    - paragraph: Commission Delegated Regulation (EU) 2020/1588 of 25 June 2020 amending Annex I to Regulation (EU) 2017/821 of the European Parliament and of the Council by establishing volume thresholds for tantalum or niobium ores and concentrates, gold ores and concentrates, tin oxides and hydroxides, tantalates and carbides of tantalum\n  - link \"and 18 more on Regulations\":\n    - /url: /regulations\n    - paragraph: and 18 more on Regulations\n  - paragraph: Research · 10\n  - link \"Carbon Trust\":\n    - /url: /research/r16\n    - paragraph: Carbon Trust\n  - link \"Cranfield Centre for Logistics, Procurement and Supply Chain Management - Research Resource\":\n    - /url: /research/97d22488-5ee8-4795-8df6-6c47eb01a869\n    - paragraph: Cranfield Centre for Logistics, Procurement and Supply Chain Management - Research Resource\n  - link \"Cranfield Sustainable Logistics\":\n    - /url: /research/r8\n    - paragraph: Cranfield Sustainable Logistics\n  - 'link \"Critical Materials for EV Batteries: IRENA 2024 Report — Research Summary\"':\n    - /url: /research/3373d06e-22a6-4287-8aac-173169159177\n    - paragraph: \"Critical Materials for EV Batteries: IRENA 2024 Report — Research Summary\"\n  - 'link \"Fragmented US Corporate Climate Disclosure Landscape: SEC Retreat and State-Level Response\"':\n    - /url: /research/r13\n    - paragraph: \"Fragmented US Corporate Climate Disclosure Landscape: SEC Retreat and State-Level Response\"\n  - link \"Fraunhofer IML\":\n    - /url: /research/r3\n    - paragraph: Fraunhofer IML\n  - link \"and 4 more on Research\":\n    - /url: /research\n    - paragraph: and 4 more on Research\n  - paragraph: Operations · 3\n  - link \"Australia Regional Operations Profile\":\n    - /url: /operations/australia-regional-operations-profile\n    - paragraph: Australia Regional Operations Profile\n  - link \"Colorado DOT Environmental Programs and Construction Updates - May 2026\":\n    - /url: /operations/67434312-05ce-4e90-b8ca-5aec18ea2ed9\n    - paragraph: Colorado DOT Environmental Programs and Construction Updates - May 2026\n  - link \"Los Angeles Department of Building and Safety - Green Building Services for Existing Buildings\":\n    - /url: /operations/e5c17fac-a188-41da-be29-8278da6539e7\n    - paragraph: Los Angeles Department of Building and Safety - Green Building Services for Existing Buildings\n  - paragraph: Market Intel (this page) · 3\n  - link \"California Energy Commission Business Meeting Materials and RPS Compliance Period 4 Summary\":\n    - /url: /market/7aa19423-f99d-4c2b-b634-f4f234b41068\n    - paragraph: California Energy Commission Business Meeting Materials and RPS Compliance Period 4 Summary\n  - 'link \"Carbon Trust: Global Organization Overview and Net Zero Transition Services\"':\n    - /url: /market/538c2774-e271-4e8f-b03d-2385b705b862\n    - paragraph: \"Carbon Trust: Global Organization Overview and Net Zero Transition Services\"\n  - link \"USGBC LEED Framework and 2026 Initiatives\":\n    - /url: /market/b3b32236-047c-4011-a79b-25913a70a662\n    - paragraph: USGBC LEED Framework and 2026 Initiatives\n  - region \"Recalculation notices\":\n    - text: Recalculation notices\n    - paragraph: No recalculations on your team's watchlist in this window.\n  - paragraph: At a glance\n  - text: Corporate band B2 · Corporate & capital Topic packaging Status Signal · corroborated\n  - paragraph: Impact assessment\n  - text: —\n  - paragraph: Relevance to you\n  - text: Medium relevance\n  - paragraph: \"Relevance to your operation: affects your operations across modes in US, US-CA.\"\n  - paragraph: Applies to your organisation\n  - paragraph: In this list\n  - paragraph: needs primary-source figure\n  - link \"Back to list\":\n    - /url: /market\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n  - heading \"Notes\" [level=2]\n  - text: Visible to your workspace only Add a note for your workspace\n  - textbox \"Add a note for your workspace\":\n    - /placeholder: Which lanes or clients this touches, who is on it, what was decided\n  - button \"Add note\" [disabled]\n  - text: 0 / 4,000\n  - status\n  - paragraph: No notes on this item yet. Notes are visible to your workspace only, never to other organisations.\n  - heading \"Assignments\" [level=2]\n  - text: Assign teammates, with a notification\n  - paragraph: Nobody is assigned to this item yet.\n  - status\n  - group \"Assign to\":\n    - text: Assign to\n    - button \"Jason\"\n    - button \"connect ↗ Name not set\": — Name not set\n  - text: Due date (optional)\n  - textbox \"Due date (optional)\"\n  - button \"Assign\" [disabled]\n  - text: Pick at least one person.\n- button \"Back to top\"\n- alert"
+    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Market Intel\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 44 · Market Intel / United States\n  - 'heading \"SPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability Standards\" [level=1]'\n  - text: United States · Sustainable Packaging Coalition (a project of GreenBlue) · May 10, 2026 · 2 independent sources corroborate\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - text: Action · ≤ 6 months Signal Monitoring packaging T4 1 source · 2 corroborating\n  - group \"Source bias tags\":\n    - text: Source Foundation funded Standards defining Environmental advocate\n    - button \"+3 more\"\n  - button \"Export brief\"\n  - button \"Share\"\n  - button \"Watch\"\n  - button \"+ Tag\"\n  - paragraph: Where\n  - text: United States\n  - paragraph: Who pays\n  - text: \"Obligated: manufacturer producer\"\n  - paragraph: Your lanes\n  - text: \"US · Scenarios: packaging recyclability design\"\n  - paragraph: Next milestone\n  - text: needs more data\n  - paragraph: Timeline\n  - navigation \"Section index\":\n    - link \"S1 Summary\":\n      - /url: \"#summary\"\n    - link \"S2 Findings\":\n      - /url: \"#findings\"\n    - link \"S5 Sources\":\n      - /url: \"#sources\"\n    - link \"S6 Related\":\n      - /url: \"#related\"\n    - link \"S7 Connected\":\n      - /url: \"#across-pages\"\n    - group \"Summary depth\":\n      - button \"Summary\" [pressed]\n      - button \"Full brief\"\n  - text: S1\n  - heading \"Summary\" [level=2]\n  - text: Generated · 30-second read\n  - paragraph: Executive overview of what this item covers, key takeaways, and how its timeline and scope affect freight operations.\n  - paragraph: MONITORING\n  - text: S2\n  - heading \"Substantive findings\" [level=2]\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Detailed analytical breakdown of operational drivers, cost baselines, mode impacts, and strategic talking points.\n  - paragraph: Drivers & trajectory\n  - paragraph: 4 forces · compounding\n  - paragraph: SCOPE\n  - paragraph:\n    - text: The initiative is convened by the\n    - strong: Sustainable Packaging Coalition (SPC)\n    - text: \", a membership-based project of GreenBlue launched in 2004, which the Sustainable Packaging Coalition's own website describes as \\\"the leading authority on sustainable packaging.\\\" As of 2023, SPC surpassed 550 members.\"\n  - paragraph: — About Us\n  - paragraph: Sustainable Packaging Coalition\n  - link \"sustainablepackaging.org\":\n    - /url: https://sustainablepackaging.org/about-us\n  - paragraph: Sustainable Packaging Coalition\n  - paragraph: \"Four trends published in the SPC's 2026 Sustainable Packaging Trends Report define the expected forward trajectory:\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: \"No named competitors in the freight forwarding or logistics sector appear in the SPC Impact 2026 source materials. The competitive pressure at this stage operates at the cargo-principal level (brands, retailers, CPG companies) rather than at the forwarder level. However, the commercial implication is directional: workspaces whose clients include the brands named at SPC Impact 2026 (Conagra, Mondelēz, Sonoco, P&G, Amazon, Walmart, Target) will face increasing requests for packaging sustainability data, EPR compliance documentation, and recyclability verification as those clients build internal compliance infrastructure.\"\n  - paragraph: The SPC Retailer Forum's active role — Amazon, Walmart, and Target collectively seeking supplier-side sustainable packaging solutions — signals that packaging sustainability will increasingly appear as a vendor qualification or supplier scorecard criterion. Workspaces that can document sustainable packaging use, EPR compliance status, or How2Recycle label adoption for their own transit packaging may gain a differentiation point in commercial conversations with retail-sector clients.\n  - paragraph: not citable\n  - paragraph: not citable\n  - group: Mode Cost Impact, Action Steps & Talking Points Showing primary drivers & trajectory above in Summary view. Expand or switch to Full brief to inspect mode cost impacts, recommended actions, and client talking points. Expand 3 more sections ▾\n  - text: S5\n  - heading \"Sources\" [level=2]\n  - text: 1 · tier = provenance, never urgency\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Primary statutory, regulatory, and institutional sources backing this brief, rated by provenance tier and bias profile.\n  - link \"T4 Sustainable Packaging Coalition (a project of GreenBlue)\":\n    - /url: https://sustainablepackaging.org/about-us\n    - text: T4\n    - paragraph: Sustainable Packaging Coalition (a project of GreenBlue)\n  - group \"Source bias tags\":\n    - text: Foundation funded Standards defining Environmental advocate\n    - button \"+3 more\"\n  - text: S6\n  - heading \"Related\" [level=2]\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Directly related intelligence items sharing the same regulatory instrument, regional scope, or market signal band.\n  - paragraph: Connections\n  - link \"References· regulations EU PPWR 2025/40 shared scenario · 0.30\":\n    - /url: /regulations/g2\n    - paragraph: References· regulations\n    - paragraph: EU PPWR 2025/40\n    - paragraph: shared scenario · 0.30\n  - paragraph: At a glance\n  - text: Topic packaging Status Signal · corroborated\n  - paragraph: Impact assessment\n  - text: 3/12\n  - paragraph: Relevance to you\n  - text: Medium relevance\n  - paragraph: \"Relevance to your operation: affects your operations across modes in US, US-CA.\"\n  - paragraph: Applies to your organisation\n  - paragraph: Applies, no role or size restriction on this obligation.\n  - paragraph: In this list\n  - paragraph: Opened directly\n  - link \"Back to list\":\n    - /url: /market\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n  - heading \"Notes\" [level=2]\n  - text: Visible to your workspace only\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Private workspace notes shared only with members of your organisation.\n  - text: Add a note for your workspace\n  - textbox \"Add a note for your workspace\":\n    - /placeholder: Which lanes or clients this touches, who is on it, what was decided\n  - button \"Add note\" [disabled]\n  - text: 0 / 4,000\n  - status\n  - paragraph: No notes on this item yet. Notes are visible to your workspace only, never to other organisations.\n  - heading \"Assignments\" [level=2]\n  - text: Assign teammates, with a notification\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Workspace task assignments and ownership tracking for your team.\n  - paragraph: Nobody is assigned to this item yet.\n  - status\n  - group \"Assign to\":\n    - text: Assign to\n    - button \"Jason\"\n    - button \"Jason\"\n  - text: Due date (optional)\n  - textbox \"Due date (optional)\"\n  - button \"Assign\" [disabled]\n  - text: Pick at least one person. S7\n  - heading \"Connected intelligence\" [level=2]\n  - text: Intersections and theme analysis\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: How this item connects across the Caro’s Ledge repository — related regulations, market signals, research findings, and operations profiles.\n  - paragraph: Theme analysis\n  - paragraph: 830 items across Regulations, Market Intel, Operations\n  - text: Narrative synthesis pending for this cluster. Items below are linked by shared source, shared regulation, shared jurisdiction and topic.\n  - paragraph: Members by horizon\n  - text: Within 6 months 48 items 630 dated obligations · Regulations 6 to 18 months 25 items 119 dated obligations · Regulations 18 to 36 months 7 items 21 dated obligations · Regulations 3 to 5 years 7 items 12 dated obligations · Regulations 5 to 10 years 1 item 2 dated obligations · Regulations Beyond 10 years 3 items 7 dated obligations · Regulations Ongoing / no fixed date 739 items Regulations, Market Intel, Operations\n  - paragraph: Other items in this theme\n  - paragraph: Regulations · 824 items\n  - link \"Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance) Regulations\":\n    - /url: /regulations/0053d552-1856-4796-8873-968894400956\n    - paragraph: Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)\n    - paragraph: Regulations\n  - link \"Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste Regulations\":\n    - /url: /regulations/00a2452a-677e-4556-9ef2-c5749ab5f005\n    - paragraph: Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste\n    - paragraph: Regulations\n  - 'link \"Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty Regulations\"':\n    - /url: /regulations/01936f81-7f2f-419a-af3c-681c1d577b6a\n    - paragraph: \"Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty\"\n    - paragraph: Regulations\n  - 'link \"2000/532/EC: Commission Decision of 3 May 2000 replacing Decision 94/3/EC establishing a list of wastes pursuant to Article 1(a) of Council Directive 75/442/EEC on waste and Council Decision 94/904/EC establishing a list of hazardous waste pursuant to Article 1(4) of Council Directive 91/689/EEC on hazardous waste (notified under document number C(2000) 1147) Regulations\"':\n    - /url: /regulations/7af4c993-223b-49ce-af26-019edf16be58\n    - paragraph: \"2000/532/EC: Commission Decision of 3 May 2000 replacing Decision 94/3/EC establishing a list of wastes pursuant to Article 1(a) of Council Directive 75/442/EEC on waste and Council Decision 94/904/EC establishing a list of hazardous waste pursuant to Article 1(4) of Council Directive 91/689/EEC on hazardous waste (notified under document number C(2000) 1147)\"\n    - paragraph: Regulations\n  - 'link \"2000/728/EC: Commission Decision of 10 November 2000 establishing the application and annual fees of the Community Eco-label (notified under document number C(2000) 3279) Regulations\"':\n    - /url: /regulations/321b425e-1979-4e63-b977-f9f39d45f2e3\n    - paragraph: \"2000/728/EC: Commission Decision of 10 November 2000 establishing the application and annual fees of the Community Eco-label (notified under document number C(2000) 3279)\"\n    - paragraph: Regulations\n  - 'link \"2000/729/EC: Commission Decision of 10 November 2000 on a standard contract covering the terms of use of the Community Eco-label (notified under document number C(2000) 3278) Regulations\"':\n    - /url: /regulations/97c37bb0-a017-4312-a3f0-98a174e2062d\n    - paragraph: \"2000/729/EC: Commission Decision of 10 November 2000 on a standard contract covering the terms of use of the Community Eco-label (notified under document number C(2000) 3278)\"\n    - paragraph: Regulations\n  - link \"and 818 more on Regulations\":\n    - /url: /regulations\n    - paragraph: and 818 more on Regulations\n  - paragraph: Operations · 3 items\n  - link \"IEA Electricity Price Data for Large Industrial Customers (2019-2024) Operations\":\n    - /url: /operations/3f11f1fc-5b1f-422a-93bc-a34f6b3c9f3b\n    - paragraph: IEA Electricity Price Data for Large Industrial Customers (2019-2024)\n    - paragraph: Operations\n  - link \"Industrial Electricity Tariff Benchmarks by Jurisdiction Operations\":\n    - /url: /operations/industrial-electricity-tariff-benchmarks-by-jurisdiction\n    - paragraph: Industrial Electricity Tariff Benchmarks by Jurisdiction\n    - paragraph: Operations\n  - link \"Japan Regional Operations Profile Operations\":\n    - /url: /operations/japan-regional-operations-profile\n    - paragraph: Japan Regional Operations Profile\n    - paragraph: Operations\n  - paragraph: Market Intel (this page) · 2 items\n  - link \"Carbon Allowance Price Intelligence Market Intel\":\n    - /url: /market/carbon-allowance-price-intelligence\n    - paragraph: Carbon Allowance Price Intelligence\n    - paragraph: Market Intel\n  - link \"Maritime Carbon Intelligence Market Intel\":\n    - /url: /market/r36\n    - paragraph: Maritime Carbon Intelligence\n    - paragraph: Market Intel\n  - region \"Recalculation notices\":\n    - text: Recalculation notices\n    - paragraph: No recalculations on your team's watchlist in this window.\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -53,7 +54,8 @@
     },
     {
       "level": 1,
-      "text": "SPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability Standards"
+      "text": "SPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability Standards",
+      "item": true
     },
     {
       "level": 2,
@@ -62,10 +64,6 @@
     {
       "level": 2,
       "text": "Substantive findings"
-    },
-    {
-      "level": 4,
-      "text": "New Sources Identified"
     },
     {
       "level": 2,
@@ -77,35 +75,15 @@
     },
     {
       "level": 2,
-      "text": "Connected intelligence"
-    },
-    {
-      "level": 4,
-      "text": "Climate-risk disclosure convergence: CSRD's Scope 3 core, California's SB 261/253 axis, and the CBAM/due-diligence periphery"
-    },
-    {
-      "level": 4,
-      "text": "What binds this theme"
-    },
-    {
-      "level": 4,
-      "text": "The structure inside it"
-    },
-    {
-      "level": 4,
-      "text": "Coverage shape, honestly"
-    },
-    {
-      "level": 4,
-      "text": "Grounding"
-    },
-    {
-      "level": 2,
       "text": "Notes"
     },
     {
       "level": 2,
       "text": "Assignments"
+    },
+    {
+      "level": 2,
+      "text": "Connected intelligence"
     }
   ],
   "controls": [
@@ -155,23 +133,28 @@
     },
     {
       "role": "link",
-      "name": "S1 Summary"
+      "name": "S1 Summary",
+      "item": true
     },
     {
       "role": "link",
-      "name": "S2 Findings"
+      "name": "S2 Findings",
+      "item": true
     },
     {
       "role": "link",
-      "name": "S5 Sources"
+      "name": "S5 Sources",
+      "item": true
     },
     {
       "role": "link",
-      "name": "S6 Related"
+      "name": "S6 Related",
+      "item": true
     },
     {
       "role": "link",
-      "name": "S7 Connected"
+      "name": "S7 Connected",
+      "item": true
     },
     {
       "role": "button",
@@ -182,220 +165,44 @@
       "name": "Full brief"
     },
     {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
+      "role": "button",
+      "name": "Collapse ▴"
     },
     {
       "role": "link",
-      "name": "greenblueevents.org ↗"
+      "name": "sustainablepackaging.org ↗",
+      "item": true
+    },
+    {
+      "role": "button",
+      "name": "Collapse ▴"
     },
     {
       "role": "link",
-      "name": "packworld.com ↗"
-    },
-    {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
-    },
-    {
-      "role": "link",
-      "name": "packworld.com ↗"
-    },
-    {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
-    },
-    {
-      "role": "link",
-      "name": "packworld.com"
-    },
-    {
-      "role": "link",
-      "name": "packworld.com"
-    },
-    {
-      "role": "link",
-      "name": "packworld.com"
-    },
-    {
-      "role": "link",
-      "name": "packworld.com"
-    },
-    {
-      "role": "link",
-      "name": "packworld.com ↗"
-    },
-    {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
-    },
-    {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
-    },
-    {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
-    },
-    {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
-    },
-    {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
-    },
-    {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
-    },
-    {
-      "role": "link",
-      "name": "packworld.com ↗"
-    },
-    {
-      "role": "link",
-      "name": "packworld.com ↗"
-    },
-    {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
-    },
-    {
-      "role": "link",
-      "name": "packworld.com ↗"
-    },
-    {
-      "role": "link",
-      "name": "http://sustainablepackaging.org/2026/04/23/spc-impact-2026-initiatives/"
-    },
-    {
-      "role": "link",
-      "name": "https://greenblueevents.org/event/spc-impact-2026/"
-    },
-    {
-      "role": "link",
-      "name": "https://www.packworld.com/sustainable-packaging/recycling/article/22966054/spc-impact-2026-epr-moves-from-theory-to-operational-reality"
-    },
-    {
-      "role": "link",
-      "name": "https://sustainablepackaging.org/2026-sustainable-packaging-trends-report/"
-    },
-    {
-      "role": "link",
-      "name": "sustainablepackaging.org ↗"
-    },
-    {
-      "role": "link",
-      "name": "T4Sustainable Packaging Coalition (a project of GreenBlue)"
+      "name": "T4Sustainable Packaging Coalition (a project of GreenBlue)",
+      "item": true
     },
     {
       "role": "button",
       "name": "+3 more"
     },
     {
-      "role": "link",
-      "name": "References· regulationsEU PPWR 2025/40shared scenario · 0.30"
+      "role": "button",
+      "name": "Collapse ▴",
+      "item": true
     },
     {
       "role": "link",
-      "name": "U.S. Energy Information Administration Short-Term Energy OutlookMonitoring"
-    },
-    {
-      "role": "link",
-      "name": "EU Weekly Oil Bulletin — Heating gas oil (EU average, before taxes)Window closing"
-    },
-    {
-      "role": "link",
-      "name": "EU Weekly Oil Bulletin — Euro-Super 95 (EU average, before taxes)Window closing"
-    },
-    {
-      "role": "link",
-      "name": "ADB Celebrates European Partnership and Highlights Private Sector Opportunities in Sustainable TransportMonitoring"
-    },
-    {
-      "role": "link",
-      "name": "California SB 261 — Climate-Related Financial Risk Act"
-    },
-    {
-      "role": "link",
-      "name": "California SB 253 — Climate Corporate Data Accountability Act"
-    },
-    {
-      "role": "link",
-      "name": "Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)"
-    },
-    {
-      "role": "link",
-      "name": "California AB 1305 — Voluntary Carbon Market Disclosures Act"
-    },
-    {
-      "role": "link",
-      "name": "Commission Delegated Regulation (EU) 2019/429 of 11 January 2019 supplementing Regulation (EU) 2017/821 of the European Parliament and of the Council as regards the methodology and criteria for the assessment and recognition of supply chain due diligence schemes concerning tin, tantalum, tungsten and gold"
-    },
-    {
-      "role": "link",
-      "name": "Commission Delegated Regulation (EU) 2020/1588 of 25 June 2020 amending Annex I to Regulation (EU) 2017/821 of the European Parliament and of the Council by establishing volume thresholds for tantalum or niobium ores and concentrates, gold ores and concentrates, tin oxides and hydroxides, tantalates and carbides of tantalum"
-    },
-    {
-      "role": "link",
-      "name": "and 18 more on Regulations"
-    },
-    {
-      "role": "link",
-      "name": "Carbon Trust"
-    },
-    {
-      "role": "link",
-      "name": "Cranfield Centre for Logistics, Procurement and Supply Chain Management - Research Resource"
-    },
-    {
-      "role": "link",
-      "name": "Cranfield Sustainable Logistics"
-    },
-    {
-      "role": "link",
-      "name": "Critical Materials for EV Batteries: IRENA 2024 Report — Research Summary"
-    },
-    {
-      "role": "link",
-      "name": "Fragmented US Corporate Climate Disclosure Landscape: SEC Retreat and State-Level Response"
-    },
-    {
-      "role": "link",
-      "name": "Fraunhofer IML"
-    },
-    {
-      "role": "link",
-      "name": "and 4 more on Research"
-    },
-    {
-      "role": "link",
-      "name": "Australia Regional Operations Profile"
-    },
-    {
-      "role": "link",
-      "name": "Colorado DOT Environmental Programs and Construction Updates - May 2026"
-    },
-    {
-      "role": "link",
-      "name": "Los Angeles Department of Building and Safety - Green Building Services for Existing Buildings"
-    },
-    {
-      "role": "link",
-      "name": "California Energy Commission Business Meeting Materials and RPS Compliance Period 4 Summary"
-    },
-    {
-      "role": "link",
-      "name": "Carbon Trust: Global Organization Overview and Net Zero Transition Services"
-    },
-    {
-      "role": "link",
-      "name": "USGBC LEED Framework and 2026 Initiatives"
+      "name": "References· regulationsEU PPWR 2025/40shared scenario · 0.30",
+      "item": true
     },
     {
       "role": "link",
       "name": "Back to list"
+    },
+    {
+      "role": "button",
+      "name": "Collapse ▴"
     },
     {
       "role": "textbox",
@@ -407,11 +214,15 @@
     },
     {
       "role": "button",
+      "name": "Collapse ▴"
+    },
+    {
+      "role": "button",
       "name": "Jason"
     },
     {
       "role": "button",
-      "name": "— Name not set"
+      "name": "Jason"
     },
     {
       "role": "textbox",
@@ -423,6 +234,71 @@
     },
     {
       "role": "button",
+      "name": "Collapse ▴",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)Regulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of wasteRegulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter TreatyRegulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "2000/532/EC: Commission Decision of 3 May 2000 replacing Decision 94/3/EC establishing a list of wastes pursuant to Article 1(a) of Council Directive 75/442/EEC on waste and Council Decision 94/904/EC establishing a list of hazardous waste pursuant to Article 1(4) of Council Directive 91/689/EEC on hazardous waste (notified under document number C(2000) 1147)Regulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "2000/728/EC: Commission Decision of 10 November 2000 establishing the application and annual fees of the Community Eco-label (notified under document number C(2000) 3279)Regulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "2000/729/EC: Commission Decision of 10 November 2000 on a standard contract covering the terms of use of the Community Eco-label (notified under document number C(2000) 3278)Regulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "and 818 more on Regulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "IEA Electricity Price Data for Large Industrial Customers (2019-2024)Operations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Industrial Electricity Tariff Benchmarks by JurisdictionOperations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Japan Regional Operations ProfileOperations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Carbon Allowance Price IntelligenceMarket Intel",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Maritime Carbon IntelligenceMarket Intel",
+      "item": true
+    },
+    {
+      "role": "button",
       "name": "Back to top"
     }
   ],
@@ -431,8 +307,8 @@
     "items": [],
     "containers": []
   },
-  "document_height": 24573,
-  "tiles": 2,
+  "document_height": 7457,
+  "tiles": 1,
   "truncated": false,
   "offences": []
 }

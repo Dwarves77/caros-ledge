@@ -1,7 +1,8 @@
 #!/bin/sh
-# The gate: every push runs `npm run gates -- --profile fast` (scripts/ci/gates.mjs), the fast subset of the list the ci job runs in full (`--profile full`). Bypassing it is a rule violation, never a step.
+# The gate (HOOK-FULL-1, ruling 43): every push runs scripts/ci/gates.mjs. A push whose range touches anything the fast profile does not cover (src/, tests/, scripts/, supabase/, package and config files; the set is FULL_PREFIXES/FULL_FILES in gates.mjs) runs `--profile full`, the list the ci job runs; a docs-only push runs `--profile fast`. A gate that cannot run locally exits 2 and is reported skipped. Bypassing the hook is a rule violation, never a step.
 # A [skip ci] commit at the head of a pushed ref is refused: a PR never ends on an unproven SHA.
 zero=0000000000000000000000000000000000000000
+ranges=""
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ "$local_sha" = "$zero" ] && continue
   # The gates run on the working tree, so the working tree must BE the commit being pushed: a different checkout, or an uncommitted change, would prove a tree that is not the one that goes out.
@@ -13,6 +14,10 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     echo "pre-push: refused, the head of $local_ref carries [skip ci]; the last commit of a branch must be one CI proves" >&2
     exit 1
   fi
+  # the pushed range: new commits only; a new branch is measured from its merge-base with origin/main
+  if [ "$remote_sha" = "$zero" ]; then base="$(git merge-base "$local_sha" origin/main 2>/dev/null || git rev-parse origin/main)"; else base="$remote_sha"; fi
+  ranges="$ranges --range $base..$local_sha"
 done
-echo "pre-push: running the fast gates profile (npm run gates -- --profile fast, fail-fast); the full suite (build, all tests, schema:local) runs in CI on this PR"
-exec node scripts/ci/gates.mjs --profile fast
+[ -z "$ranges" ] && exit 0
+# shellcheck disable=SC2086
+exec node scripts/ci/gates.mjs $ranges

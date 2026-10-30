@@ -57,6 +57,9 @@ function subsequence(baseline, captured, key, excuse = null) {
   let at = 0;
   want.forEach((w, i) => {
     const found = have.indexOf(w, at);
+    // A baseline key that an item slot of the capture draws in place, before the next real match, is satisfied by that slot: taking the later same-named control would leap `at` past the controls between.
+    const slot = excuse ? captured.findIndex((x, j) => j >= at && x.item === true && key(x) === w) : -1;
+    if (slot >= 0 && (found < 0 || slot < found)) return;
     if (found >= 0) at = found + 1;
     else if (have.includes(w)) { reordered.push(w); reorderedAt.push(i); }
     else { missing.push(w); missingAt.push(i); }
