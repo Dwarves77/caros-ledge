@@ -228,9 +228,19 @@ test('--profile is read from argv in both spellings, defaults to full, and refus
   assert.throws(() => profileFrom(['--profile=quick']), /unknown gates profile/);
 });
 
-test('the pre-push hook names the fast profile and ci.yml runs the full one explicitly', () => {
+test('the pre-push hook hands the pushed ranges to gates (which picks the profile) and ci.yml runs the full one explicitly', () => {
   const read = (rel) => readFileSync(rel, 'utf8');
-  assert.match(read('.githooks/pre-push'), /node scripts\/ci\/gates\.mjs --profile fast/);
-  assert.match(read('.githooks/pre-push'), /runs in CI/);
+  assert.match(read('.githooks/pre-push'), /node scripts\/ci\/gates\.mjs \$ranges/);
+  assert.match(read('.githooks/pre-push'), /--profile full/);
   assert.match(read('.github/workflows/ci.yml'), /run: npm run gates -- --profile full\s*$/m);
+});
+
+test('HOOK-FULL-1: code, test, CI, schema and package paths pick the full profile; docs and root notes pick fast', async () => {
+  const { pickProfile, fullTrigger } = await import('../../scripts/ci/gates.mjs');
+  for (const f of ['src/core/x.ts', 'tests/ci/a.test.mjs', 'tests/parity/capture.mjs', 'scripts/ci/gates.mjs', 'scripts/runs/plans/p.json', 'supabase/migrations/0001.sql', 'package.json', 'package-lock.json', 'next.config.ts']) {
+    assert.equal(pickProfile(['docs/a.md', f]).profile, 'full', f);
+  }
+  for (const f of ['docs/PROGRAM-BOARD.md', 'README.md', '.claude/commands/drain.md']) assert.equal(pickProfile([f]).profile, 'fast', f);
+  assert.equal(fullTrigger([]), null);
+  assert.match(pickProfile(['src/a.ts']).line, /^pre-push: profile full, src\/a\.ts /);
 });
