@@ -50,7 +50,7 @@ export async function createInvitation(client: Db, input: { orgId: string; userI
 }
 
 /** An org's invitations, newest first (bounded at 200); a pending one past its expiry reads as expired. */
-export async function listInvitations(client: Db, orgId: string, now = Date.now()): Promise<Record<string, unknown>[]> {
+export async function listInvitations(client: Db, orgId: string, now = Math.trunc(performance.timeOrigin + performance.now())): Promise<Record<string, unknown>[]> {
   const { data, error } = await client.from("org_invitations").select(FIELDS).eq("org_id", orgId).order("created_at", { ascending: false }).limit(200);
   if (error) throw new LookupError("org_invitations", error);
   return (data ?? []).map((inv) => ({ ...inv, status: inv.status === "pending" && new Date(inv.expires_at).getTime() <= now ? "expired" : inv.status }));
@@ -98,7 +98,7 @@ export async function declineInvitation(client: Db, token: string): Promise<void
 }
 
 /** The caller's own pending, unexpired invitations by account email (service client: the invitee has no org yet). The raw token is not stored, so the list carries token_last4 only. A failed user lookup is an error, never an empty list. */
-export async function pendingInvitationsFor(service: Db, userId: string, now = Date.now()): Promise<Record<string, unknown>[]> {
+export async function pendingInvitationsFor(service: Db, userId: string, now = Math.trunc(performance.timeOrigin + performance.now())): Promise<Record<string, unknown>[]> {
   const { data: found, error: userError } = await service.auth.admin.getUserById(userId);
   if (userError) throw new LookupError("auth user", userError);
   const address = found.user?.email?.toLowerCase();

@@ -15,7 +15,7 @@ import { StateNote } from "../../StateNote";
 import { appendOlder, emptyInbox, markAllRead, markRead, safeLink, titleOf, type InboxItem, type InboxState } from "./inbox-model";
 
 const PATH = "/api/community/notifications";
-const PAGE = 20;
+const PAGE = 20; const nowIso = () => new Date(performance.timeOrigin + performance.now()).toISOString();
 type Page = { notifications: InboxItem[]; unread_count: number; next_cursor: string | null };
 
 export function NotificationsList({ onUnreadChange, onClose, request = requestJson }: { onUnreadChange: (n: number) => void; onClose: () => void; request?: typeof requestJson }) {
@@ -49,7 +49,7 @@ export function NotificationsList({ onUnreadChange, onClose, request = requestJs
 
   async function open(n: InboxItem) {
     const before = live.current;
-    const at = new Date().toISOString();
+    const at = nowIso();
     if (!n.read_at) {
       apply(markRead(before, n.id, at));
       const r = await request(`${PATH}/${n.id}`, { method: "POST", body: { action: "mark_read" } });
@@ -69,7 +69,7 @@ export function NotificationsList({ onUnreadChange, onClose, request = requestJs
   async function readAll() {
     const before = live.current;
     setBusy("all");
-    apply(markAllRead(before, new Date().toISOString()));
+    apply(markAllRead(before, nowIso()));
     const r = await request(PATH, { method: "POST", body: { action: "mark_all_read" } });
     setBusy(null);
     if (!r.ok) {

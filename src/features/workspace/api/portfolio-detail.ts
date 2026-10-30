@@ -22,7 +22,7 @@ export const GET = route<Ctx>(NAME, async (request, { params }) => {
   if (isRefusal(auth)) return auth;
   const deps = workspaceDeps().portfolio;
   if (!deps) throw new LookupError("portfolio read layer", "not wired");
-  const view = await readPortfolioDetail(auth.client, auth.membership.orgId, (await params).id, new Date(), deps);
+  const view = await readPortfolioDetail(auth.client, auth.membership.orgId, (await params).id, new Date(performance.timeOrigin + performance.now()), deps);
   if (!view) throw new HttpError(404, "Portfolio not found in your workspace");
   return ok(auth.headers, view);
 });

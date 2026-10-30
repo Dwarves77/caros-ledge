@@ -110,7 +110,7 @@ const PRODUCER_CATALOG: Catalog = Object.freeze(Object.fromEntries([carrierEtsSu
 const captureFamily = (url: string) => (parseOjReference(url) ? ("oj_issue" as const) : ("generic" as const));
 
 export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}): BuiltDeps {
-  const now = opts.now ?? (() => new Date());
+  const now = opts.now ?? (() => new Date(performance.timeOrigin + performance.now()));
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const doFetch: typeof fetch = opts.fetchImpl ?? ((...a) => fetch(...a));
   const context: BuiltDeps["context"] = { get current() { return currentRunContext(); } };

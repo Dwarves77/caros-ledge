@@ -18,7 +18,7 @@ import { ItemCorrectionsPage } from "./ui/ItemCorrectionsPage";
 import { PartsGallery } from "./ui/parts/PartsGallery";
 import { WorkspaceParts } from "./ui/parts/WorkspaceParts";
 
-const reason = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+const reason = (e: unknown): string => (e instanceof Error ? e.message : String(e)); const clockIso = () => new Date(performance.timeOrigin + performance.now()).toISOString();
 /** The service client behind the admin gate, or the one stated reason there is none (a deployment without the service key answers it, never a crash). */
 function service(): { db: Db } | { unavailable: string } {
   try {
@@ -31,7 +31,7 @@ function service(): { db: Db } | { unavailable: string } {
 /** /admin: the platform-admin gate FIRST (no session goes to /login, a signed-in non-admin to /), then the console's reads on the service client, each failing on its own. */
 export async function AdminRoute() {
   const { userId, email } = await requirePlatformAdmin("/admin");
-  const nowIso = new Date().toISOString();
+  const nowIso = clockIso();
   const s = service();
   return <AdminPage userId={userId} userEmail={email} nowIso={nowIso} initial={"db" in s ? await readDashboard(s.db, nowIso) : null} {...("unavailable" in s ? { unavailable: s.unavailable } : {})} />;
 }
@@ -42,7 +42,7 @@ export async function ItemCorrectionsRoute({ params }: { params: Promise<{ id: s
   await requirePlatformAdmin(`/admin/items/${id}`);
   if (!isUuid(id)) notFound();
   const s = service();
-  if (!("db" in s)) return <AdminPage userId="" userEmail="" nowIso={new Date().toISOString()} initial={null} unavailable={s.unavailable} />;
+  if (!("db" in s)) return <AdminPage userId="" userEmail="" nowIso={clockIso()} initial={null} unavailable={s.unavailable} />;
   const targets = await loadItemTargets(s.db, id);
   if (!targets) notFound();
   return <ItemCorrectionsPage targets={targets} />;
@@ -59,7 +59,7 @@ async function attempt<T>(read: () => Promise<T>): Promise<{ data: T; error: nul
 
 export async function FactorsRoute() {
   await requirePlatformAdmin("/admin/factors");
-  const nowIso = new Date().toISOString();
+  const nowIso = clockIso();
   const s = service();
   if (!("db" in s)) return <FactorsPage rows={null} error={s.unavailable} nowIso={nowIso} />;
   const r = await attempt(() => readFactors(s.db));
@@ -68,7 +68,7 @@ export async function FactorsRoute() {
 
 export async function InferencesRoute() {
   await requirePlatformAdmin("/admin/inferences");
-  const nowIso = new Date().toISOString();
+  const nowIso = clockIso();
   const s = service();
   if (!("db" in s)) return <InferencesPage data={null} error={s.unavailable} nowIso={nowIso} />;
   const r = await attempt(() => readInferences(s.db));

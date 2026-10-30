@@ -49,7 +49,7 @@ export async function createOrgForSelf(client: Db, user: { id: string; email: st
   const profilePatch: Record<string, unknown> = {};
   if (input.job_title) profilePatch.job_title = input.job_title;
   if (input.regions.length) profilePatch.region = input.regions;
-  if (Object.keys(profilePatch).length && (await client.from("profiles").update({ ...profilePatch, updated_at: new Date().toISOString() }).eq("id", user.id)).error) profileSaved = false;
+  if (Object.keys(profilePatch).length && (await client.from("profiles").update({ ...profilePatch, updated_at: new Date(performance.timeOrigin + performance.now()).toISOString() }).eq("id", user.id)).error) profileSaved = false;
 
   const { data: org, error: orgError } = await client.from("organizations").select("id, name, slug").eq("id", orgId).maybeSingle();
   return { orgId: String(orgId), slug: orgError ? null : (org?.slug ?? null), name: org?.name ?? input.name, settingsSaved, profileSaved };

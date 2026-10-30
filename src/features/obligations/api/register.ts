@@ -9,7 +9,7 @@ import { resolveItemUuid } from "@/core/shared/ids";
 import { buildRegisterQuerySpec, DUE_WINDOWS, fetchObligationRegisterPage } from "../read/register-read";
 import { fetchForwardEventCount, fetchRegisterFacetOptions } from "../read/register-facets";
 
-export const obligationsClock = { now: (): Date => new Date() };
+export const obligationsClock = { now: (): Date => new Date(performance.timeOrigin + performance.now()) };
 
 function intParam(raw: string | null, fallback: number, min: number, max: number): number {
   const n = raw === null ? NaN : Number.parseInt(raw, 10);

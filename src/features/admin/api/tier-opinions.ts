@@ -56,7 +56,7 @@ export const GET = adminRoute("/api/admin/sources/tier-opinions", async (admin) 
 });
 
 async function dismiss(db: Db, actorId: string, sourceId: string, reason: string | null): Promise<number> {
-  const { data, error } = await db.from("source_tier_opinions").update({ dismissed_at: new Date().toISOString(), dismissed_by: actorId, dismissed_reason: reason }).eq("target_source_id", sourceId).is("dismissed_at", null).select("id");
+  const { data, error } = await db.from("source_tier_opinions").update({ dismissed_at: new Date(performance.timeOrigin + performance.now()).toISOString(), dismissed_by: actorId, dismissed_reason: reason }).eq("target_source_id", sourceId).is("dismissed_at", null).select("id");
   if (error) throw dbError(error);
   return data?.length ?? 0;
 }

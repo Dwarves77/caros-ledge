@@ -83,7 +83,7 @@ async function editNote(client: Db, ctx: CollabCtx, input: Record<string, unknow
   const found = await findNote(client, ctx, noteId);
   if (!found) return collabFail(404, GONE);
   if (!isMine(found, ctx)) return collabFail(403, "Only the author can edit a note.");
-  const { data, error } = await client.from("item_notes").update({ body: parsed.body, edited_at: new Date().toISOString() }).eq("id", noteId).eq("org_id", ctx.orgId).eq("author_user_id", ctx.userId).select(NOTE_COLUMNS).single();
+  const { data, error } = await client.from("item_notes").update({ body: parsed.body, edited_at: new Date(performance.timeOrigin + performance.now()).toISOString() }).eq("id", noteId).eq("org_id", ctx.orgId).eq("author_user_id", ctx.userId).select(NOTE_COLUMNS).single();
   if (error) return collabDbFail(error);
   return collabOk(200, { note: view(data as NoteRow, ctx, await namesAfterWrite(client, ctx.orgId)) });
 }
@@ -94,7 +94,7 @@ async function deleteNote(client: Db, ctx: CollabCtx, input: { noteId?: string |
   const found = await findNote(client, ctx, noteId);
   if (!found) return collabFail(404, GONE);
   if (!mayDelete(found, ctx)) return collabFail(403, "Only the author, or a workspace owner or admin, can delete a note.");
-  const { error } = await client.from("item_notes").update({ deleted_at: new Date().toISOString() }).eq("id", noteId).eq("org_id", ctx.orgId);
+  const { error } = await client.from("item_notes").update({ deleted_at: new Date(performance.timeOrigin + performance.now()).toISOString() }).eq("id", noteId).eq("org_id", ctx.orgId);
   if (error) return collabDbFail(error);
   return collabOk(200, { success: true });
 }

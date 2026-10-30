@@ -35,7 +35,7 @@ export const POST = route("/api/worker/check-sources", async (request) => {
   const limit = validateCheckLimit(raw);
   if (!limit.ok) return Response.json({ error: limit.error }, { status: 400 });
   const db = serviceClient();
-  const now = () => new Date();
+  const now = () => new Date(performance.timeOrigin + performance.now());
   if (await isGloballyPaused(db)) return Response.json({ message: "Scraping is off (cadence 'off' or emergency stop); worker exiting", ...OFF });
   const deps: ChangeDetectionDeps = {
     db,

@@ -27,7 +27,7 @@ const noSubscription = () => () => {};
 
 /** Today, from the visitor's clock after hydration (null on the server and during hydration): the server's date can differ, and a wall-clock read during render mismatches. */
 function useToday(): Date | null {
-  return useSyncExternalStore(noSubscription, () => (clientToday ??= new Date()), () => null);
+  return useSyncExternalStore(noSubscription, () => (clientToday ??= new Date(performance.timeOrigin + performance.now())), () => null);
 }
 
 const DATE_LABEL = { weekday: "long", year: "numeric", month: "long", day: "numeric" } as const;

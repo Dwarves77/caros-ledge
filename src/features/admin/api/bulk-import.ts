@@ -139,7 +139,7 @@ export const POST = adminRoute("/api/admin/sources/bulk-import", async (admin, r
   const dry = b.options?.dryRun !== false;
   const db = admin.service();
   const hold = await fetchAllowed("https://hold.invalid/", null, { db, env: process.env });
-  const deps = { db, env: process.env, now: () => new Date(), resolveHost: null };
+  const deps = { db, env: process.env, now: () => new Date(performance.timeOrigin + performance.now()), resolveHost: null };
   const seen = new Set<string>();
   const preview: PreviewRow[] = [];
   const applied: Applied = { sources_inserted: 0, provisional_inserted: 0, rejected: 0 };
@@ -178,7 +178,7 @@ export const POST = adminRoute("/api/admin/sources/bulk-import", async (admin, r
       if (e instanceof FetchHoldError) preview.push({ ...base, head_status: "held", head_reason: "not checked: the hold is on", proposed_action: "queue-provisional" });
       else failures.push(`row ${i}: ${e instanceof Error ? e.message : String(e)}`);
     }
-  }, { concurrency: 4, now: () => Date.now() });
+  }, { concurrency: 4, now: () => Math.trunc(performance.timeOrigin + performance.now()) });
 
   preview.sort((x, y) => x.row_index - y.row_index);
   const duplicates = preview.filter((p) => p.proposed_action === "duplicate").length;

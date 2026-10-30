@@ -5,8 +5,7 @@
 // the shell for a signed-in user on every page, not only inside Community.
 import { useState } from "react";
 
-import { useAuth } from "@/features/auth/ui/AuthProvider";
-
+import { useAuth } from "../Providers";
 import { Dialog } from "../../Dialog";
 import { useUnreadCount } from "../use-unread-count";
 

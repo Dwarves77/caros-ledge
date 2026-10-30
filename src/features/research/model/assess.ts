@@ -90,7 +90,7 @@ function assessSignposts(input: AssessInput, horizon: Horizon | null, now: Date)
 }
 /** The whole assessment of one item. CONFIRMED only for R1/R3 (a dated instrument or roadmap); every prior is a HYPOTHESIS. Pure: the clock is `opts.now`. */
 export function assessItem(input: AssessInput, opts: { now?: Date } = {}) {
-  const now = opts.now ?? new Date();
+  const now = opts.now ?? new Date(performance.timeOrigin + performance.now());
   const technicalMaturity = assessTechnicalMaturity(input);
   const horizon = assessHorizon(input, technicalMaturity, now);
   return {

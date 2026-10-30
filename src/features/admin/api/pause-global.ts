@@ -30,7 +30,7 @@ async function readHold(db: Db, now: Date) {
   return holdState(data as StateRow | null, now);
 }
 
-export const GET = adminRoute("/api/admin/sources/pause-global", async (admin) => reply(admin, await readHold(admin.service(), new Date())));
+export const GET = adminRoute("/api/admin/sources/pause-global", async (admin) => reply(admin, await readHold(admin.service(), new Date(performance.timeOrigin + performance.now()))));
 
 const body = z.object({ paused: z.boolean().optional(), cadence: z.enum(["off", "weekly", "monthly"]).optional(), start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}/).nullable().optional(), judgement_drain: z.enum(["off", "on"]).optional(), reason: reasonOf });
 
@@ -42,7 +42,7 @@ const body = z.object({ paused: z.boolean().optional(), cadence: z.enum(["off", 
 export const POST = adminRoute("/api/admin/sources/pause-global", async (admin, request) => {
   const b = await parseJson(request, body);
   if (b.paused === undefined && b.cadence === undefined && b.judgement_drain === undefined) throw new HttpError(400, "provide `cadence` (off|weekly|monthly), `paused` (boolean) and/or `judgement_drain` (off|on)");
-  const now = new Date();
+  const now = new Date(performance.timeOrigin + performance.now());
   const anchored = b.cadence !== undefined && b.cadence !== "off";
   adminDone(await admin.client.rpc("admin_set_hold", { p_paused: b.paused ?? null, p_cadence: b.cadence ?? null, p_start_date: anchored ? (b.start_date ?? now.toISOString()).slice(0, 10) : null, p_clear_start: b.cadence === "off" && b.start_date === null, p_judgement_drain: b.judgement_drain ?? null, p_reason: b.reason }));
   return reply(admin, { success: true, ...(await readHold(admin.service(), now)) });

@@ -51,7 +51,7 @@ export const POST_WITHDRAW = route("/api/community/signoff/[id]/withdraw", async
   const auth = await requireUser(request);
   if (isRefusal(auth)) return auth;
   const requestId = await idParam(ctx, "id", "sign-off request id");
-  const { data, error } = await auth.client.from("community_post_signoff_requests").update({ status: "withdrawn", decided_at: new Date().toISOString() }).eq("id", requestId).eq("requested_by", auth.userId).eq("status", "pending").select(COLUMNS).maybeSingle();
+  const { data, error } = await auth.client.from("community_post_signoff_requests").update({ status: "withdrawn", decided_at: new Date(performance.timeOrigin + performance.now()).toISOString() }).eq("id", requestId).eq("requested_by", auth.userId).eq("status", "pending").select(COLUMNS).maybeSingle();
   if (error) throw dbError(error, { forbidden: "You can't withdraw this request" });
   if (!data) throw new HttpError(404, "No open request of yours was found to withdraw");
   return ok(auth.headers, { request: data });

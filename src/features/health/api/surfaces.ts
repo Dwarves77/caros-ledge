@@ -82,7 +82,7 @@ export const GET = route("/api/health/surfaces", async (request) => {
       rpcs["market_intel"] = { ok: false, error: e instanceof Error ? e.message : "rpc threw" };
     }
   }
-  const gate_a = await readGateAHealth(db, new Date());
+  const gate_a = await readGateAHealth(db, new Date(performance.timeOrigin + performance.now()));
   // Forward events a customer can see: an inner join to a LIVE parent item, the same predicate the table's read policy applies. A drop to 0 while the table holds rows means the strip has gone dark.
   const forward_events_visible_on_regulations: { count: number | null; error: string | null } = { count: null, error: null };
   try {
@@ -93,5 +93,5 @@ export const GET = route("/api/health/surfaces", async (request) => {
     forward_events_visible_on_regulations.error = e instanceof Error ? e.message : "forward_events_visible_on_regulations count threw";
   }
   const ok = overallOk(surfaces, rpcs);
-  return Response.json({ ok, seed_leak: seedLeak(surfaces["dashboard"]?.backing_rows ?? null), surfaces, rpcs, gate_a, forward_events_visible_on_regulations, checked_at: new Date().toISOString() }, { status: ok ? 200 : 503 });
+  return Response.json({ ok, seed_leak: seedLeak(surfaces["dashboard"]?.backing_rows ?? null), surfaces, rpcs, gate_a, forward_events_visible_on_regulations, checked_at: new Date(performance.timeOrigin + performance.now()).toISOString() }, { status: ok ? 200 : 503 });
 });

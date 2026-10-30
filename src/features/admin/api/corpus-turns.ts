@@ -44,7 +44,7 @@ export const POST = adminRoute("/api/admin/corpus-turn-requests", async (admin, 
   const db = admin.service();
   if ("sweep" in b) {
     const query = [b.sweep.topic, b.sweep.jurisdiction].filter(Boolean).join(" ");
-    const result = await runTurn({ stage: "sweep-research", mode: "apply", trigger: "dispatch", chain: false, input: { "sweep-research": { walk: { query } } } }, { d: adminDeps(db), env: process.env, now: () => new Date() });
+    const result = await runTurn({ stage: "sweep-research", mode: "apply", trigger: "dispatch", chain: false, input: { "sweep-research": { walk: { query } } } }, { d: adminDeps(db), env: process.env, now: () => new Date(performance.timeOrigin + performance.now()) });
     const run = result.runs[0];
     return reply(admin, { ok: result.exit === 0, dispatched: "sweep-research", query, mode: result.resolved.mode, reason: result.resolved.reason, outcome: run?.row?.outcome ?? null, counts: run?.result?.counts ?? {}, notes: run?.result?.notes ?? [], rootRunId: result.rootRunId });
   }

@@ -73,7 +73,7 @@ export const GET = adminRoute("/api/admin/coverage", async (admin, request) => {
   const country = q.get("country")?.trim().toUpperCase() || null;
   const { data, error } = await admin.service().rpc("coverage_matrix");
   if (error) throw new LookupError("coverage_matrix", error);
-  const nowMs = Date.now();
+  const nowMs = Math.trunc(performance.timeOrigin + performance.now());
   // The sources beside the matrix come from the source_coverage view (R2d addendum A): how many are collected and how many are not yet. A failed read is `null`, which the card states.
   const sources = await readSourceCoverage(admin.service()).then(
     (c) => ({ total: c.total, collected: c.byState.collected, not_collected: notCollected(c), refused: c.byState.refused, access_requested: c.byState.access_requested, last_capture_at: c.lastCaptureAt }),

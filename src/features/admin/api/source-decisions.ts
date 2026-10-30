@@ -179,13 +179,13 @@ function respond(admin: Parameters<typeof reply>[0], r: DecisionResult): Respons
 export const decideCanonical = adminRoute("/api/admin/canonical-sources/decide", async (admin, request) => {
   const b = await parseJson(request, canonicalBody);
   const { candidateId, ...rest } = b;
-  return respond(admin, await decideSourceCandidate(admin.service(), admin.userId, { kind: "canonical", id: candidateId, ...rest }, new Date().toISOString()));
+  return respond(admin, await decideSourceCandidate(admin.service(), admin.userId, { kind: "canonical", id: candidateId, ...rest }, new Date(performance.timeOrigin + performance.now()).toISOString()));
 });
 
 export const decideProvisional = adminRoute("/api/admin/sources/promote", async (admin, request) => {
   const b = await parseJson(request, provisionalBody);
   const { provisionalSourceId, ...rest } = b;
-  return respond(admin, await decideSourceCandidate(admin.service(), admin.userId, { kind: "provisional", id: provisionalSourceId, ...rest }, new Date().toISOString()));
+  return respond(admin, await decideSourceCandidate(admin.service(), admin.userId, { kind: "provisional", id: provisionalSourceId, ...rest }, new Date(performance.timeOrigin + performance.now()).toISOString()));
 });
 
 /** Approve many canonical candidates at their class tier. Each row runs the one decision; a row that needs a person (an unplaced host, a gated host, an unreadable registry for that row) is listed for review and the batch goes on. */
@@ -194,7 +194,7 @@ export const bulkApprove = adminRoute("/api/admin/canonical-sources/bulk-approve
   const db = admin.service();
   const rows = await rowsByIds<{ id: string; decision: string }>(db, "canonical_source_candidates", "id, decision", b.candidateIds);
   if (!rows.length) throw new HttpError(404, "No matching candidates found");
-  const nowIso = new Date().toISOString();
+  const nowIso = new Date(performance.timeOrigin + performance.now()).toISOString();
   const results: Record<string, unknown>[] = [];
   const review: { candidateId: string; itemId: string | null; candidateUrl: string; reason: string }[] = [];
   let approved = 0;

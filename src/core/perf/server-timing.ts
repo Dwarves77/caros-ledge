@@ -59,8 +59,8 @@ const uptime = (): number => {
     return Number.POSITIVE_INFINITY;
   }
 };
-const getStore = scoped((): PerfTimingStore => createTimingStore(Date.now(), uptime()));
+const getStore = scoped((): PerfTimingStore => createTimingStore(Math.trunc(performance.timeOrigin + performance.now()), uptime()));
 
 export const timePhase = <T,>(name: string, fn: () => Promise<T> | T): Promise<T> => timePhaseOnStore(getStore(), name, fn);
 /** Attach the current request's Server-Timing header to a route handler's Response. */
-export const withServerTiming = (response: Response): Response => applyServerTimingHeader(response, getStore(), Date.now());
+export const withServerTiming = (response: Response): Response => applyServerTimingHeader(response, getStore(), Math.trunc(performance.timeOrigin + performance.now()));

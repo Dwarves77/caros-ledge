@@ -32,5 +32,5 @@ export async function pageSession(returnTo: string): Promise<PageSession | { fai
     return { failed: true };
   }
   if (!identity.user) redirect(`/login?redirect=${encodeURIComponent(returnTo)}`);
-  return { userId: identity.user.id, email: identity.user.email ?? "", orgId: identity.orgId, orgName: identity.orgName, role: identity.role, nowIso: new Date().toISOString() };
+  return { userId: identity.user.id, email: identity.user.email ?? "", orgId: identity.orgId, orgName: identity.orgName, role: identity.role, nowIso: new Date(performance.timeOrigin + performance.now()).toISOString() };
 }

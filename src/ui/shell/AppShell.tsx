@@ -7,10 +7,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { bandOf } from "@/core/lists";
-import { useAuth } from "@/features/auth/ui/AuthProvider";
 
 import { StateNote } from "../StateNote";
 
+import { useAuth } from "./Providers";
 import { BackToTop } from "./BackToTop";
 import { AssistantProvider } from "./CommandBar";
 import { Hydrated } from "./Hydrated";

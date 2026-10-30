@@ -8,7 +8,7 @@ import { create } from "zustand";
 
 import { authHeaders } from "@/core/http/authed-fetch";
 import { failureOf, RetryableError, retryDelayMs } from "@/core/http/backoff";
-import { useItemStateStore, type WorkspaceOverride } from "@/features/workspace/state";
+interface BootstrapOverride { itemId: string; priorityOverride: string | null; isArchived: boolean; archiveReason: string | null; archiveNote: string | null; archivedAt?: string | null; dismissedAt?: string | null; ownerUserId?: string | null; ownerName?: string | null; }
 
 import type { NavCounts } from "./nav-counts.server";
 
@@ -35,7 +35,7 @@ export interface WorkspaceBootstrapData {
   personalState: BootstrapPersonalItem[] | null;
   members: BootstrapMember[] | null;
   adminAttention: AdminAttentionCounts | null;
-  overrides: WorkspaceOverride[] | null;
+  overrides: BootstrapOverride[] | null;
   navCounts: NavCounts | null;
   assistantEnabled: boolean;
   degraded: string[];
@@ -124,8 +124,8 @@ export function refreshBootstrap(): void {
 }
 
 /** Overrides and personal state into the item-state store, once per bundle. A degraded (null) field is left alone: it never overwrites state with an empty list. */
+let itemStateHydrator: ((data: WorkspaceBootstrapData) => void) | null = null;
+export const registerItemStateHydrator = (fn: (data: WorkspaceBootstrapData) => void): void => { itemStateHydrator = fn; };
 export function hydrateItemState(data: WorkspaceBootstrapData): void {
-  const store = useItemStateStore.getState();
-  if (data.overrides) store.setOverrides(data.overrides);
-  if (data.personalState) store.setPersonalState(data.personalState.map((r) => ({ itemId: r.legacyId || r.itemId, isArchived: r.isArchived, archiveNote: r.archiveNote, archivedAt: r.archivedAt })));
+  itemStateHydrator?.(data);
 }

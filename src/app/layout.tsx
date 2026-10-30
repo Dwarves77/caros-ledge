@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import "@/ui/theme.css";
 import "@/ui/base.css";
 import { AskAssistant } from "@/features/assistant/ui/AskAssistant";
+import { AuthProvider } from "@/features/auth/ui/AuthProvider";
 import { fontClassNames } from "@/ui/fonts";
 import { Providers } from "@/ui/shell/Providers";
 
@@ -20,7 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en" data-theme="light" className={fontClassNames}>
       <body>
-        <Providers assistant={<AskAssistant />}>{children}</Providers>
+        <Providers Auth={AuthProvider} assistant={<AskAssistant />}>{children}</Providers>
       </body>
     </html>
   );

@@ -47,6 +47,6 @@ export async function readNotificationPrefs(client: Db, userId: string): Promise
 
 /** Write the preferences. `seed` leaves an existing row alone (the onboarding default). Returns the failure message, or null when it landed: a caller rolls its switch back on a message. */
 export async function saveNotificationPrefs(client: Db, userId: string, prefs: NotificationPrefs, opts: { seed?: boolean; now?: () => string } = {}): Promise<string | null> {
-  const { error } = await client.from("notification_preferences").upsert({ user_id: userId, ...prefs, updated_at: (opts.now ?? (() => new Date().toISOString()))() }, { onConflict: "user_id", ignoreDuplicates: opts.seed === true });
+  const { error } = await client.from("notification_preferences").upsert({ user_id: userId, ...prefs, updated_at: (opts.now ?? (() => new Date(performance.timeOrigin + performance.now()).toISOString()))() }, { onConflict: "user_id", ignoreDuplicates: opts.seed === true });
   return error ? readFailure(error) : null;
 }

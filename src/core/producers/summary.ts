@@ -22,7 +22,7 @@ export function writeProducerSummary(a: SummaryArgs, o: { dir?: string | null | 
   if (a.status !== "ok" && a.status !== "failed") throw new Error(`writeProducerSummary: status must be ok or failed (got ${JSON.stringify(a.status)})`);
   if (!Number.isFinite(a.rows_changed)) throw new Error(`writeProducerSummary: rows_changed must be a finite number (got ${JSON.stringify(a.rows_changed)})`);
   if (a.edges_authored !== null && !Number.isFinite(a.edges_authored)) throw new Error(`writeProducerSummary: edges_authored must be a finite number or null (got ${JSON.stringify(a.edges_authored)})`);
-  const summary: ProducerSummary = { producer: a.producer, status: a.status, rows_changed: a.rows_changed, edges_authored: a.edges_authored, reason: a.status === "failed" ? (a.reason ?? "no reason recorded") : null, counts: a.counts ?? {}, written_at: (o.now ?? new Date()).toISOString() };
+  const summary: ProducerSummary = { producer: a.producer, status: a.status, rows_changed: a.rows_changed, edges_authored: a.edges_authored, reason: a.status === "failed" ? (a.reason ?? "no reason recorded") : null, counts: a.counts ?? {}, written_at: (o.now ?? new Date(performance.timeOrigin + performance.now())).toISOString() };
   const dir = resolve(o.dir);
   mkdirSync(dir, { recursive: true });
   const out = join(dir, `${a.producer}.json`);

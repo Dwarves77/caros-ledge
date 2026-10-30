@@ -13,7 +13,7 @@ export const GET = adminRoute("/api/admin/forward-events", async (admin, request
   const kinds = pick(q.get("kind"), EVENT_KINDS);
   const precisions = pick(q.get("precision"), PRECISIONS);
   const limit = boundedInt(q.get("limit"), 100, 500);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date(performance.timeOrigin + performance.now()).toISOString().slice(0, 10);
   const from = /^\d{4}-\d{2}-\d{2}$/.test(q.get("from") ?? "") ? (q.get("from") as string) : today;
   const read = await readUpcoming(admin.service(), { kinds: kinds.length ? kinds : [...EVENT_KINDS], from, limit: precisions.length ? 500 : limit }, today);
   const events = (precisions.length ? read.events.filter((e) => (precisions as string[]).includes(e.date_precision)) : read.events).slice(0, limit);

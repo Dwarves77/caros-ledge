@@ -7,6 +7,7 @@ import { authedFetch, type AuthedFetchDeps } from "@/core/http/authed-fetch";
 import type { Resource } from "@/core/types";
 import { log } from "@/core/shared/log";
 import { parseJsonOrNull } from "@/core/shared/text";
+import { registerItemStateHydrator } from "@/ui/shell/bootstrap-store";
 
 import type { PersonalItemState, WorkspaceOverride } from "./types";
 
@@ -124,15 +125,16 @@ export const useItemStateStore = create<ItemStateStore>((set, get) => {
     setOwner: (id, ownerUserId, ownerName) => write(id, { ownerUserId, ownerName: ownerUserId === null ? null : ownerName }, { ownerUserId }),
     // Dismiss hides the item from the active view into the stash. It leaves the priority alone: a priority is an owner's or admin's act with a reason, and a member's dismissal does not erase it (migration 0121).
     dismissResource: (id) => {
-      const now = new Date().toISOString();
+      const now = new Date(performance.timeOrigin + performance.now()).toISOString();
       return write(id, { dismissedAt: now }, { dismissedAt: now });
     },
     restoreDismissed: (id) => write(id, { dismissedAt: null }, { dismissedAt: null }),
     // WORKSPACE archive through the override layer: the platform item stays untouched.
-    archiveResource: (id, reason, note) => write(id, { isArchived: true, archiveReason: reason, archiveNote: note, archivedAt: new Date().toISOString() }, { isArchived: true, archiveReason: reason, archiveNote: note }),
+    archiveResource: (id, reason, note) => write(id, { isArchived: true, archiveReason: reason, archiveNote: note, archivedAt: new Date(performance.timeOrigin + performance.now()).toISOString() }, { isArchived: true, archiveReason: reason, archiveNote: note }),
     restoreResource: (id, reason) => write(id, { isArchived: false, archiveReason: null, archiveNote: null, archivedAt: null }, { isArchived: false, reason }),
     // PERSONAL archive: this user only, no role gate, no required reason, no notification fan-out.
-    archivePersonal: (id, note) => optimistic("personalState", id, { itemId: id, isArchived: true, archiveNote: note || null, archivedAt: new Date().toISOString() }, { path: PERSONAL_PATH, payload: { itemId: id, isArchived: true, archiveNote: note || null } }),
+    archivePersonal: (id, note) => optimistic("personalState", id, { itemId: id, isArchived: true, archiveNote: note || null, archivedAt: new Date(performance.timeOrigin + performance.now()).toISOString() }, { path: PERSONAL_PATH, payload: { itemId: id, isArchived: true, archiveNote: note || null } }),
     restorePersonal: (id) => optimistic("personalState", id, null, { path: PERSONAL_PATH, payload: { itemId: id, isArchived: false, archiveNote: null } }),
   };
 });
+registerItemStateHydrator((data) => { const s = useItemStateStore.getState(); if (data.overrides) s.setOverrides(data.overrides); if (data.personalState) s.setPersonalState(data.personalState.map((r) => ({ itemId: r.legacyId || r.itemId, isArchived: r.isArchived, archiveNote: r.archiveNote, archivedAt: r.archivedAt }))); });

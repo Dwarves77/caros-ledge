@@ -5,11 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { formatNumber } from "@/core/shared";
-import { useAuth } from "@/features/auth/ui/AuthProvider";
 import { useWorkspaceStore } from "@/core/workspace/store";
 
 import { BandGradientRule } from "../BandParts";
 
+import { useAuth } from "./Providers";
 import { shouldShowAdminNav, workspaceLabel } from "./identity-seed";
 import { APP_NAME, APP_TAGLINE, gradientCountsFrom, isActivePath, SECTIONS } from "./nav-model";
 import { useAdminAttention } from "./use-admin-attention";

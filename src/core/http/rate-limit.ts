@@ -70,7 +70,7 @@ function localHit(key: string, now: number, limit: number, windowMs: number): { 
  * Null when allowed, or the 429 response. `now` is injectable so the boundary can be tested; `db` is the shared counter's client (default: the
  * service client when configured; pass null to force the in-memory window). Every caller awaits it.
  */
-export async function checkRateLimit(key: string, now = Date.now(), db?: Db | null, budget: RateBudget = {}): Promise<Response | null> {
+export async function checkRateLimit(key: string, now = Math.trunc(performance.timeOrigin + performance.now()), db?: Db | null, budget: RateBudget = {}): Promise<Response | null> {
   sweep(now);
   const limit = budget.limit ?? MAX_REQUESTS;
   const windowMs = budget.windowMs ?? WINDOW_MS;

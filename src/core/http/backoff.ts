@@ -5,7 +5,7 @@ const RETRY_BASE_MS = 1000;
 const RETRY_AFTER_CAP_MS = 60_000;
 
 /** Retry-After as milliseconds (delta-seconds or an HTTP date), or null when absent or unreadable. */
-function parseRetryAfter(header: string | null | undefined, nowMs: number = Date.now()): number | null {
+function parseRetryAfter(header: string | null | undefined, nowMs: number = Math.trunc(performance.timeOrigin + performance.now())): number | null {
   const text = (header ?? "").trim();
   if (!text) return null;
   if (/^\d+$/.test(text)) return Number(text) * 1000;

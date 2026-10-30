@@ -13,9 +13,9 @@ let minute = 0;
 function subscribe(onChange: () => void): () => void {
   subscribers.add(onChange);
   if (timer === null) {
-    minute = Date.now();
+    minute = Math.trunc(performance.timeOrigin + performance.now());
     timer = setInterval(() => {
-      minute = Date.now();
+      minute = Math.trunc(performance.timeOrigin + performance.now());
       subscribers.forEach((fn) => fn());
     }, 60_000);
   }

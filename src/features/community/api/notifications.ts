@@ -44,7 +44,7 @@ export const POST = route("/api/community/notifications", async (request) => {
   const auth = await requireUser(request);
   if (isRefusal(auth)) return auth;
   await parseJson(request, z.object({ action: z.literal("mark_all_read") }));
-  const { data, error } = await auth.client.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", auth.userId).is("read_at", null).select("id");
+  const { data, error } = await auth.client.from("notifications").update({ read_at: new Date(performance.timeOrigin + performance.now()).toISOString() }).eq("user_id", auth.userId).is("read_at", null).select("id");
   if (error) throw dbError(error);
   return ok(auth.headers, { ok: true, updated: data?.length ?? 0 });
 });
@@ -54,7 +54,7 @@ export const POST_ONE = route("/api/community/notifications/[id]", async (reques
   if (isRefusal(auth)) return auth;
   const id = await idParam(ctx, "id", "notification id");
   await parseJson(request, z.object({ action: z.literal("mark_read") }));
-  const { data, error } = await auth.client.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id).eq("user_id", auth.userId).select(COLUMNS).maybeSingle();
+  const { data, error } = await auth.client.from("notifications").update({ read_at: new Date(performance.timeOrigin + performance.now()).toISOString() }).eq("id", id).eq("user_id", auth.userId).select(COLUMNS).maybeSingle();
   if (error) throw dbError(error);
   if (!data) throw new HttpError(404, "Notification not found");
   return ok(auth.headers, { ok: true, notification: data });

@@ -12,7 +12,7 @@ import { isRefusal, requireUser } from "@/core/http/guard";
 import { fetchSupersededNotices, type SupersededNotice } from "@/core/propagation";
 
 const DEFAULT_WINDOW_DAYS = 30;
-const noticesClock = { now: (): Date => new Date() };
+const noticesClock = { now: (): Date => new Date(performance.timeOrigin + performance.now()) };
 
 /** `?since=` as an ISO instant; absent or unparseable is the default window before `now` (a malformed value degrades, it does not 400). */
 function resolveSince(raw: string | null, now: Date): string {

@@ -4,10 +4,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { useAuth } from "@/features/auth/ui/AuthProvider";
-
 import { BandGradientRule } from "../BandParts";
 
+import { useAuth } from "./Providers";
 import { gradientCountsFrom, navTitleForPath } from "./nav-model";
 import { useBootstrapStore } from "./use-bootstrap";
 import { useUnreadCount } from "./use-unread-count";

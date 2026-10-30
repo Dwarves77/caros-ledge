@@ -21,7 +21,7 @@ export const POST = adminRoute("/api/admin/statutory-rows", async (admin, reques
   const db = admin.service();
   const d = adminDeps(db);
   if (!d.statutory) throw new HttpError(503, "the statutory formula is owed by the regulations slice and is not wired yet");
-  const run = await statutoryRun({ sb: db, now: () => new Date(), statutory: d.statutory }, { dry: !apply, file });
+  const run = await statutoryRun({ sb: db, now: () => new Date(performance.timeOrigin + performance.now()), statutory: d.statutory }, { dry: !apply, file });
   if (run.counts.violations) return reply(admin, { error: "rows-file failed validation - nothing written", violations: run.notes }, 422);
   return reply(admin, { mode: apply ? "apply" : "dry", total: run.counts.rows ?? 0, counts: run.counts, outcome: run.outcome, outcomes: run.data?.perItem ?? [], notes: run.notes });
 });

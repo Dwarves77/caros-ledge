@@ -18,55 +18,6 @@
         "src/ui/shell/GlobalErrorReporter.tsx": 2
       }
     },
-    "wall-clock": {
-      "owner": "R4a",
-      "reason": "a wall-clock read (Date.now() or new Date() with no argument) outside the injected clock (C:48, S:95): each moves to deps.now, and a duration uses performance.now.",
-      "files": {
-        "src/core/auth/invitations.ts": 2,
-        "src/core/auth/orgs.ts": 1,
-        "src/core/http/backoff.ts": 1,
-        "src/core/http/rate-limit.ts": 1,
-        "src/core/perf/server-timing.ts": 2,
-        "src/core/producers/summary.ts": 1,
-        "src/core/shared/telemetry.ts": 1,
-        "src/core/turn/wiring.ts": 1,
-        "src/features/account/lib/notification-prefs.ts": 1,
-        "src/features/account/lib/profile-patch.ts": 1,
-        "src/features/account/server/page-session.ts": 1,
-        "src/features/admin/api/bulk-import.ts": 2,
-        "src/features/admin/api/corpus-turns.ts": 1,
-        "src/features/admin/api/coverage.ts": 1,
-        "src/features/admin/api/forward-events.ts": 1,
-        "src/features/admin/api/overview.ts": 1,
-        "src/features/admin/api/pause-global.ts": 2,
-        "src/features/admin/api/run-intake.ts": 1,
-        "src/features/admin/api/source-controls.ts": 4,
-        "src/features/admin/api/source-decisions.ts": 3,
-        "src/features/admin/api/statutory-rows.ts": 1,
-        "src/features/admin/api/tier-opinions.ts": 1,
-        "src/features/admin/pages.tsx": 4,
-        "src/features/auth/ui/AuthFrame.tsx": 1,
-        "src/features/community/api/notifications.ts": 2,
-        "src/features/community/api/profile.ts": 1,
-        "src/features/community/api/signoff.ts": 1,
-        "src/features/community/lib/roster.ts": 1,
-        "src/features/coverage/server/data.ts": 1,
-        "src/features/dashboard/api/coverage-matrix.ts": 1,
-        "src/features/health/api/surfaces.ts": 2,
-        "src/features/market/api/notices.ts": 1,
-        "src/features/obligations/api/register.ts": 1,
-        "src/features/research/authority-score.ts": 2,
-        "src/features/research/model/assess.ts": 1,
-        "src/features/sources/api/check-sources.ts": 1,
-        "src/features/workspace/api/notes.ts": 2,
-        "src/features/workspace/api/personal-state.ts": 1,
-        "src/features/workspace/api/portfolio-detail.ts": 1,
-        "src/features/workspace/state/item-state-store.ts": 3,
-        "src/ui/RelativeTime.tsx": 2,
-        "src/ui/shell/GlobalErrorReporter.tsx": 2,
-        "src/ui/shell/notifications/NotificationsList.tsx": 2
-      }
-    },
     "bare-fetch": {
       "owner": "R4b",
       "reason": "a fetch( call outside the one request caller (C:55, K:93).",
@@ -91,18 +42,6 @@
           "count": 1,
           "reason": "the error reporter must not depend on the request caller whose failure it may be reporting; it posts with keepalive."
         }
-      }
-    },
-    "kit-imports-feature": {
-      "owner": "R4b",
-      "reason": "the shell imports the auth provider, the identity types and the workspace state from features (K:93); the shell receives them as props or moves to a feature.",
-      "files": {
-        "src/ui/shell/AppShell.tsx": 1,
-        "src/ui/shell/NavCard.tsx": 1,
-        "src/ui/shell/Providers.tsx": 1,
-        "src/ui/shell/TopBar.tsx": 1,
-        "src/ui/shell/notifications/NotificationsBell.tsx": 1,
-        "src/ui/shell/bootstrap-store.ts": 1
       }
     },
     "entity-in-string": {

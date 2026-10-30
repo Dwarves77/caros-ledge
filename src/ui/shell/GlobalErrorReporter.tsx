@@ -14,7 +14,7 @@ const LAST_KEY = "cl-err-report-last";
 
 function underLimits(): boolean {
   try {
-    return Number(sessionStorage.getItem(COUNT_KEY) || "0") < SESSION_CAP && Date.now() - Number(sessionStorage.getItem(LAST_KEY) || "0") >= MIN_INTERVAL_MS;
+    return Number(sessionStorage.getItem(COUNT_KEY) || "0") < SESSION_CAP && Math.trunc(performance.timeOrigin + performance.now()) - Number(sessionStorage.getItem(LAST_KEY) || "0") >= MIN_INTERVAL_MS;
   } catch {
     return false;
   }
@@ -23,7 +23,7 @@ function underLimits(): boolean {
 function bump(): boolean {
   try {
     sessionStorage.setItem(COUNT_KEY, String(Number(sessionStorage.getItem(COUNT_KEY) || "0") + 1));
-    sessionStorage.setItem(LAST_KEY, String(Date.now()));
+    sessionStorage.setItem(LAST_KEY, String(Math.trunc(performance.timeOrigin + performance.now())));
     return true;
   } catch {
     return false;

@@ -79,7 +79,7 @@ export const POST = route("/api/workspace/personal-state", async (request) => {
   } catch (e) {
     log.warn("[personal-state] org not resolved, writing without it:", e instanceof Error ? e.message : String(e));
   }
-  const now = new Date().toISOString();
+  const now = new Date(performance.timeOrigin + performance.now()).toISOString();
   const update: Record<string, unknown> = { user_id: auth.userId, org_id: orgId, item_id: itemUuid, is_archived: input.isArchived, archived_at: input.isArchived ? now : null, updated_at: now };
   // A note is optional on a personal archive and cleared on restore.
   if (input.archiveNote !== undefined || !input.isArchived) update.archive_note = input.isArchived && typeof input.archiveNote === "string" ? input.archiveNote : null;

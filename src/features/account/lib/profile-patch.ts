@@ -28,6 +28,6 @@ export type ProfilePatch = z.infer<typeof profilePatchSchema>;
 export async function saveProfilePatch(client: Db, userId: string, patch: unknown): Promise<string | null> {
   const parsed = profilePatchSchema.safeParse(patch);
   if (!parsed.success) return `Invalid profile change: ${parsed.error.issues[0]?.message ?? "invalid"}`;
-  const { error } = await client.from("profiles").update({ ...parsed.data, updated_at: new Date().toISOString() }).eq("id", userId);
+  const { error } = await client.from("profiles").update({ ...parsed.data, updated_at: new Date(performance.timeOrigin + performance.now()).toISOString() }).eq("id", userId);
   return error ? readFailure(error) : null;
 }

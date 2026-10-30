@@ -81,7 +81,7 @@ export async function applyTierOverride(db: Db, actorId: string, id: string, inp
   const revert = input.tier === null;
   const before = prior.tier_override ?? prior.base_tier;
   const after = revert ? prior.base_tier : input.tier;
-  const date = new Date().toISOString();
+  const date = new Date(performance.timeOrigin + performance.now()).toISOString();
   await updateSource(db, id, { tier_override: revert ? null : input.tier, override_reason: revert ? null : input.reason, override_date: date });
   try {
     await writeTrustEvent(db, { sourceId: id, type: revert ? "tier_override_revert" : "tier_override", details: revert ? { previous_override: prior.tier_override, reason: input.reason } : { before_tier: before, after_tier: after, reason: input.reason }, actorId });
@@ -145,7 +145,7 @@ export const fetchNow = adminRoute<Ctx>("/api/admin/sources/[id]/fetch-now", asy
   if (error) throw new LookupError("sources", error);
   if (!data) throw new HttpError(404, "Source not found");
   const source = data as { id: string; name: string; url: string };
-  const started = Date.now();
+  const started = Math.trunc(performance.timeOrigin + performance.now());
   let content: string | null = null;
   let failure: { status?: number; message: string } | null = null;
   try {
@@ -157,11 +157,11 @@ export const fetchNow = adminRoute<Ctx>("/api/admin/sources/[id]/fetch-now", asy
     failure = { message: e instanceof Error ? e.message : String(e) };
   }
   const decision = decideFetchOutcome({ content, error: failure });
-  const now = new Date().toISOString();
+  const now = new Date(performance.timeOrigin + performance.now()).toISOString();
   const stamp = { last_checked: now, ...(decision.kind === "dead" ? { last_inaccessible: now } : {}), ...(decision.kind === "ok" ? { last_accessible: now } : {}) };
   await updateSource(db, id, stamp);
   if (decision.kind === "dead") return reply(admin, { success: false, dead: true, error: failure?.message, source: source.name }, decision.httpStatus);
   if (decision.kind === "inconclusive") return reply(admin, { success: false, inconclusive: true, reason: "reason" in decision ? decision.reason : "no-answer", error: failure?.message, source: source.name }, decision.httpStatus);
   const body = content ?? "";
-  return reply(admin, { success: true, source: source.name, url: source.url, contentLength: body.length, contentPreview: body.slice(0, 800), durationMs: Date.now() - started });
+  return reply(admin, { success: true, source: source.name, url: source.url, contentLength: body.length, contentPreview: body.slice(0, 800), durationMs: Math.trunc(performance.timeOrigin + performance.now()) - started });
 });

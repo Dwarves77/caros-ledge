@@ -61,7 +61,7 @@ export async function captureError(input: CaptureErrorInput, client?: Db): Promi
     if (error.code !== "23505") return log.error("[capture-error] insert failed:", error.message);
     const { data: existing, error: readError } = await db.from("error_events").select("id, count").eq("stack_hash", hash).eq("release", release).eq("side", input.side).eq("route", route).maybeSingle();
     if (readError || !existing) return log.error("[capture-error] dedup select failed:", readError?.message);
-    const { error: updateError } = await db.from("error_events").update({ count: (existing.count ?? 1) + 1, last_seen_at: new Date().toISOString() }).eq("id", existing.id);
+    const { error: updateError } = await db.from("error_events").update({ count: (existing.count ?? 1) + 1, last_seen_at: new Date(performance.timeOrigin + performance.now()).toISOString() }).eq("id", existing.id);
     if (updateError) log.error("[capture-error] dedup increment failed:", updateError.message);
   } catch (e) {
     log.error("[capture-error] capture threw:", e);

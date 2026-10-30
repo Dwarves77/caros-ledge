@@ -40,7 +40,7 @@ function computeInstitutionalStanding(s: Rec | null | undefined): Rec | null {
   if (!s || (typeof s.inTopicFwci !== "number" && typeof s.inTopicWorksCount !== "number")) return null;
   return { inTopicFwci: typeof s.inTopicFwci === "number" ? s.inTopicFwci : null, inTopicWorksCount: typeof s.inTopicWorksCount === "number" ? s.inTopicWorksCount : 0, topicShare: typeof s.topicShare === "number" ? s.topicShare : null };
 }
-function computeAuthorStanding(author: Rec | null | undefined, now: Date = new Date()): Rec | null {
+function computeAuthorStanding(author: Rec | null | undefined, now: Date = new Date(performance.timeOrigin + performance.now())): Rec | null {
   if (!author) return null;
   const summary = (author.summary_stats ?? {}) as Rec;
   const byYear = Array.isArray(author.counts_by_year) ? (author.counts_by_year as Rec[]) : [];
@@ -79,7 +79,7 @@ function bucketForSource(p: { roleClass: string; fundingIndependence: string; in
 }
 
 function scoreOpenAlexSource(record: Rec, opts: { now?: Date } = {}): ScoredSource {
-  const now = opts.now ?? new Date();
+  const now = opts.now ?? new Date(performance.timeOrigin + performance.now());
   const roleClass = classifyRoleClass((record.institution ?? {}) as Rec);
   const fundingIndependence = computeFundingIndependence((record.funding ?? null) as Rec | null);
   const integrity = computeIntegrity((record.work ?? null) as Rec | null);
