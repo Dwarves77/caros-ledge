@@ -15,7 +15,7 @@ export interface AuthEventDeps {
   identityUserId: () => string | null;
   pathname: () => string;
   navigate: (to: string) => void;
-  requiresAuth?: (pathname: string) => boolean;
+
 }
 
 /**
@@ -25,11 +25,11 @@ export interface AuthEventDeps {
  * resolved (another tab signed in as someone else) replaces the identity and sends the tab home: its org, role and admin nav belong to the old user.
  */
 export function createAuthEventHandler(deps: AuthEventDeps) {
-  const needsAuth = deps.requiresAuth ?? requiresAuth;
+
   return (event: string, session: SessionLike | null): void => {
     deps.setUser(session?.user ?? null);
     if (event === "SIGNED_OUT") {
-      if (needsAuth(deps.pathname())) deps.navigate("/login");
+      if (requiresAuth(deps.pathname())) deps.navigate("/login");
       return;
     }
     const signedIn = event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED";

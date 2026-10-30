@@ -6,7 +6,7 @@ import { LookupError } from "@/core/http/errors";
 import type { Db } from "@/core/db/clients";
 
 
-import { loadIdentities } from "./identity";
+import { authorIdForRow, effectiveAnonymous, idWithheld, loadIdentities } from "./identity";
 
 export interface RosterEntry {
   role: string;
@@ -28,7 +28,7 @@ export async function readRoster(db: Db, groupId: string, userId: string, limit:
   const members = rows
     .map((m) => {
       const identity = byId.get(m.user_id) ?? null;
-      const hidden = !identity || identity.anonymous;
+      const hidden = !identity || idWithheld({ identity }) || effectiveAnonymous({ identity }) || authorIdForRow({ authorUserId: m.user_id, identity, viewer: null }) === null;
       return { role: m.role, joined_at: m.joined_at, muted_until: m.muted_until && Date.parse(m.muted_until) > Date.now() ? m.muted_until : null, name: hidden ? null : identity.display_name, headshot_url: hidden ? null : identity.avatar_url, anonymous: hidden, is_self: m.user_id === userId };
     })
     .sort((a, b) => (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9) || (a.name ?? "").localeCompare(b.name ?? ""));

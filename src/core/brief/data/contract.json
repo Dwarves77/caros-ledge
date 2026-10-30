@@ -32,16 +32,6 @@
    "meaning": "no action yet but this is moving"
   }
  ],
- "dbSeverityExtra": [
-  "critical",
-  "high",
-  "moderate",
-  "low",
-  "immediate",
-  "watch",
-  "reference",
-  "background"
- ],
  "priorities": [
   "CRITICAL",
   "HIGH",

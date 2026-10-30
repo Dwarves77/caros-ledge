@@ -137,7 +137,7 @@ export async function decideSourceCandidate(db: Db, actorId: string, input: Deci
     const base = (classTier ?? chosen) as number;
     const built = buildPromotedSourceRow({ name: subject.name, url: canon, description: subject.description, discovered_via: subject.discoveredVia }, base, { promotedBy: `reviewer ${actorId.slice(0, 8)}`, ...(note ? { note: `${subject.context} ${note}`.trim() } : subject.context ? { note: subject.context } : {}), nowIso });
     const ins = await db.from("sources").insert({ ...built, domains: input.domains ?? [], jurisdictions: input.jurisdictions ?? [], transport_modes: input.transport_modes ?? [], topic_tags: input.topic_tags ?? [] }).select("id").single();
-    if (ins.error || !ins.data) throw new HttpError(500, `Failed to insert source: ${ins.error?.message ?? "no row returned"}`);
+    if (ins.error || !ins.data) throw ins.error ? dbError(ins.error) : new HttpError(500, "Failed to insert source: no row returned");
     sourceId = (ins.data as { id: string }).id;
     created = true;
     durable.push(`source ${sourceId} created`);

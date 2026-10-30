@@ -21,7 +21,7 @@ const format = z.object({ formatType: z.string(), itemTypes: z.array(z.string())
 const contract = z.object({
   version: z.string(),
   severity: z.array(z.object({ label: z.string(), db: z.string(), priority: z.string(), meaning: z.string() })),
-  dbSeverityExtra: z.array(z.string()),
+
   priorities: z.array(z.string()),
   urgencyTiers: z.array(z.object({ value: z.string(), meaning: z.string() })),
   topicTags: z.array(z.object({ tag: z.string(), meaning: z.string() })),
@@ -54,7 +54,7 @@ export const THEMES: readonly string[] = C.themes;
 export const SEVERITIES = C.severity;
 export const PRIORITIES: readonly string[] = C.priorities;
 export const URGENCY_TIERS: readonly string[] = C.urgencyTiers.map((u) => u.value);
-export const DB_SEVERITY_EXTRA: readonly string[] = C.dbSeverityExtra;
+
 export const CAPS = C.caps;
 export const MENTIONED_TERMS_CONTRACT = C.mentionedTerms;
 export const CLAIM_KINDS: readonly string[] = C.claimKinds;

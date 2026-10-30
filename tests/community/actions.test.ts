@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import type { Result } from "@/features/community/lib/api";
-import { actOnReport, citeItem, sentence, setGroupPref, setMembership } from "@/features/community/lib/actions";
+import { actOnReport, citeItem, setGroupPref, setMembership } from "@/features/community/lib/actions";
 
 const ok = <T>(data: T): Result<T> => ({ ok: true, status: 200, data, error: null });
 const refused = (error: string | null = "You can't change this setting"): Result<never> => ({ ok: false, status: 403, data: null, error: error as string });
@@ -59,5 +59,5 @@ test("joining, leaving and citing go through the routes and say a refusal (they 
   assert.equal(await citeItem({ cite: async () => ok({ ok: true as const, cited: ["i"] }) }, cite.notify, "p", null), null, "an item with no id cannot be cited, and says so");
   assert.deepEqual(await citeItem({ cite: async () => ok({ ok: true as const, cited: ["i"] }) }, cite.notify, "p", "i"), ["i"]);
   assert.deepEqual(cite.said.map((s) => s[0]), ["That item is not available to cite", "That item can't be cited yet."]);
-  assert.equal(sentence(refused("x"), "fallback"), "x");
+
 });

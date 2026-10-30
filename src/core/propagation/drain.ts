@@ -18,7 +18,7 @@ export interface DrainDeps {
   now: () => Date;
   registry?: MethodRegistry;
   /** The learning slice: re-open the question an inference answered, after the inference was recomputed (ADR-044). */
-  reopenQuestion?: (subjectRef: string) => Promise<{ reopened: boolean; reason: string }>;
+  reopenQuestion?: ((subjectRef: string) => Promise<{ reopened: boolean; reason: string }>) | null;
 }
 export interface DrainInput {
   dry: boolean;

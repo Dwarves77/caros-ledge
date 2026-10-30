@@ -11,7 +11,7 @@ import type { Db } from "@/core/db/clients";
  * request goes through the request_verification rpc) and every privilege column is column-grant protected: the schema is STRICT, so a
  * patch that names any other column is refused here before a request is made, not only by the database and the type.
  */
-export const profilePatchSchema = z
+const profilePatchSchema = z
   .object({
     full_name: z.string().max(200).nullable(),
     bio: z.string().max(4000).nullable(),

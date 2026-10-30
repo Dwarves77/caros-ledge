@@ -36,7 +36,7 @@ export async function ratifySeriesItems(deps: RatifyDeps, input: { artifact: unk
   const unknown = keys.filter((k) => !stored.has(k));
   const seen = new Set<string>();
   if (unknown.length) {
-    const probes = await Promise.all(unknown.map(async (k) => ({ k, r: await deps.sb.from("market_series").select("series_key").eq("series_key", k).limit(1) })));
+    const probes = await Promise.all(unknown.map(async (k) => { const { data, error } = await deps.sb.from("market_series").select("series_key").eq("series_key", k).limit(1); return { k, r: { data, error } }; }));
     const bad = probes.find((p) => p.r.error);
     if (bad?.r.error) return runResult("failed", { read_failed: 1 }, [`ratify-series-items: market_series could not be read: ${bad.r.error.message}`]);
     for (const p of probes) if ((p.r.data ?? []).length) seen.add(p.k);

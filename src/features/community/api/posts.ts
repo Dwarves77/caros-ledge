@@ -53,7 +53,7 @@ export const POST = route("/api/community/posts", async (request) => {
   if (error) {
     const muted = mutedSentence(error);
     if (muted) throw new HttpError(403, muted);
-    if (error.code === "22023") throw new HttpError(400, error.message);
+    if (error.code === "22023") throw new HttpError(400, "A chosen entity does not exist.");
     if (error.code === "23503") throw new HttpError(404, "Group not found");
     throw dbError(error, { forbidden: "Only group members may post" });
   }

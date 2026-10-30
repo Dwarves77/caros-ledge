@@ -1,42 +1,12 @@
 // Ported from old_repo/src/components/auth/identity-loader.ts (lines 1-110)
 // Ported from old_repo/src/components/shell/bootstrap-seed.ts (lines 1-129)
-import { RetryableError, retryDelayMs } from "@/core/http/backoff";
-import type { IdentityBootstrap, OrgRole } from "@/core/types";
+import { RetryableError } from "@/core/http/backoff";
+import type { IdentityBootstrap } from "@/core/types";
+import { IDENTITY_ERROR_SEED, nextIdentityRetryDelay, resolveAuthSeed, shouldApplySeed, type AuthSeed, type IdentityStatus } from "@/ui/shell/identity-seed";
 
-export type IdentityStatus = "pending" | "resolved" | "error";
+export { IDENTITY_ERROR_SEED, nextIdentityRetryDelay, resolveAuthSeed, shouldApplySeed, shouldShowAdminNav } from "@/ui/shell/identity-seed";
+export type { AuthSeed, IdentityStatus };
 
-/** What the client applies once identity has resolved (or failed for good). `orgId` is three-valued: undefined = not yet known, null = known to have no workspace. */
-export interface AuthSeed {
-  status: Exclude<IdentityStatus, "pending">;
-  user: IdentityBootstrap["user"];
-  orgId: string | null | undefined;
-  orgName: string;
-  role: OrgRole | null;
-  sectors: string[];
-  isPlatformAdmin: boolean;
-}
-
-export const IDENTITY_ERROR_SEED: AuthSeed = Object.freeze({ status: "error", user: null, orgId: undefined, orgName: "", role: null, sectors: [], isPlatformAdmin: false });
-
-export function resolveAuthSeed(bootstrap: IdentityBootstrap | null): AuthSeed {
-  if (!bootstrap) return IDENTITY_ERROR_SEED;
-  return {
-    status: "resolved",
-    user: bootstrap.user,
-    orgId: bootstrap.user ? bootstrap.orgId : undefined,
-    orgName: bootstrap.orgName,
-    role: bootstrap.role,
-    sectors: bootstrap.sectors.length > 0 ? bootstrap.sectors : bootstrap.workspaceSectors,
-    isPlatformAdmin: !!bootstrap.user && bootstrap.isPlatformAdmin === true,
-  };
-}
-
-/** A later seed never overwrites a resolved one. */
-export const shouldApplySeed = (current: IdentityStatus): boolean => current !== "resolved";
-export const shouldShowAdminNav = (p: { status: IdentityStatus; isPlatformAdmin: boolean }): boolean => p.status === "resolved" && p.isPlatformAdmin === true;
-
-/** Three retries after the first attempt (1 s, 2 s, 4 s; a Retry-After wins when longer), then the round ends in the error seed. */
-export const nextIdentityRetryDelay = retryDelayMs;
 /** A focus or visibility event re-arms an errored loader at most this often; the Retry control is never throttled. */
 const IDENTITY_REARM_COOLDOWN_MS = 30_000;
 
@@ -44,7 +14,7 @@ export interface IdentityLoaderDeps {
   /** Resolves the parsed JSON body; a failed response throws a RetryableError (core/http/backoff) so its Retry-After is honoured. */
   fetchIdentity: () => Promise<unknown>;
   onSeed: (seed: AuthSeed) => void;
-  onRetrying?: (retrying: boolean) => void;
+  onRetrying?: ((retrying: boolean) => void) | null;
   schedule: (fn: () => void, ms: number) => unknown;
   cancel: (handle: unknown) => void;
   now?: () => number;
@@ -108,7 +78,7 @@ export function createIdentityLoader(deps: IdentityLoaderDeps): IdentityLoader {
       apply(resolveAuthSeed(bootstrap));
       return setRetrying(false);
     }
-    const delay = final ? null : retryDelayMs(attempts, retryAfterMs);
+    const delay = final ? null : nextIdentityRetryDelay(attempts, retryAfterMs);
     if (delay === null) {
       failedAt = now();
       apply(IDENTITY_ERROR_SEED);

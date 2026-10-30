@@ -8,7 +8,7 @@ import { z } from "zod";
 import { splitCsvText } from "@/core/csv";
 import type { Db } from "@/core/db";
 import { fetchAllowed } from "@/core/fetch";
-import { HttpError } from "@/core/http/errors";
+import { dbError, HttpError } from "@/core/http/errors";
 import { parseJson } from "@/core/http/parse";
 import { canonicalUrl } from "@/core/shared";
 import { classTierForHost } from "@/core/sources";
@@ -117,7 +117,7 @@ async function annotate(db: Db, v: VerificationResult, row: ImportRow, jurisdict
 async function queueHeld(db: Db, row: ImportRow, jurisdiction: readonly string[]): Promise<boolean> {
   const url = canonicalUrl(row.url) ?? row.url;
   const { error } = await db.from("provisional_sources").insert({ name: row.name, url, description: row.notes ?? "", discovered_via: "manual_add", provisional_tier: 7, recommended_tier: classTierForHost(hostOf(url), row.name), status: "pending_review", discovered_for_jurisdiction: jurisdiction.join(",") || null });
-  if (error && (error as { code?: string }).code !== "23505") throw new HttpError(500, `queue insert failed: ${error.message}`);
+  if (error && (error as { code?: string }).code !== "23505") throw dbError(error);
   return !error;
 }
 

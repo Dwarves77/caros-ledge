@@ -48,11 +48,11 @@ export interface CheckSourceRow {
 }
 export interface ChangeDetectionDeps extends RunDeps, Omit<FetchDeps, "now"> {
   /** Extract and persist portal deep links from a root portal's markup; returns the number recorded. Wired by the caller (the intake ledger is another slice). */
-  harvestPortal?: (sourceId: string, html: string, url: string) => Promise<number>;
+  harvestPortal?: ((sourceId: string, html: string, url: string) => Promise<number>) | null;
   /** Store the checked body as a snapshot when the content seeds or changes, so a later change has two captures to diff. */
-  writeSnapshot?: (sourceId: string, snap: { html: string; status: number; isoDay: string }) => Promise<unknown>;
+  writeSnapshot?: ((sourceId: string, snap: { html: string; status: number; isoDay: string }) => Promise<unknown>) | null;
   /** The reconcile pass, run in process after the batch (rule 17): the queue rows this pass just wrote are consumed in the same run. */
-  reconcile?: (input: { dry?: boolean }) => Promise<RunResult>;
+  reconcile?: ((input: { dry?: boolean }) => Promise<RunResult>) | null;
 }
 export interface SourceAssessment {
   source: string;

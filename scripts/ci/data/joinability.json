@@ -326,6 +326,7 @@
         "duty_holder_class": "duty-holder class tokens (vocabularies.json duty_holder_class); a vocabulary token checked by J3",
         "evidence_required": "prose describing the evidence a duty requires",
         "frequency": "how often the duty recurs, as stated; a prose label",
+        "jurisdiction": "the jurisdiction tokens of the obligation; geographic filter tokens for the register, while the instrument entity is joined through instrument_entity_id",
         "mandated_unit": "the unit of the mandated quantity; a unit token normalised by statutoryUnit (J3), not an entity",
         "method_version": "version string of the writer of the row (derived or reader@kinds); provenance housekeeping",
         "obligation_id": "the obligation's own text key (primary key); an identifier, filed in entity_refs by its uuid",
@@ -353,7 +354,11 @@
       ],
       "arrayColumns": [],
       "unmapped": {
+        "formula_id": "the identifier of the statutory formula that produced the computation; provenance housekeeping",
         "formula_version": "version string of the statutory formula; housekeeping",
+        "obligation_id": "the obligation_objects primary key the computation was evaluated for; a table key, while the entity is joined through entity_id",
+        "scenario_key": "the vessel or consignment scenario key the formula was evaluated on; a scenario parameter token",
+        "statute_citation": "the article or annex citation of the statutory formula; a citation label of the instrument joined through entity_id",
         "result_unit": "unit of the computed result; a unit token normalised by statutoryUnit (J3)",
         "unit_price_unit": "unit of the unit price; a unit token normalised by statutoryUnit (J3)"
       }
@@ -486,6 +491,7 @@
         "date_precision": "precision of the event date (day, month, year); a qualifier token",
         "event_kind": "trigger-kind token (phase_step, implementing_act_due and the rest) read by the lead-lag detector through facts.json kind; a vocabulary of patterns.json",
         "extractor_version": "version string of the extractor that wrote the event; housekeeping",
+        "obligation_text": "the prose summary of the dated forward event; the event inherits its refs from source_claim_id and intelligence_item_id, and no word of this prose is matched",
         "resolved_span": "verbatim span of the capture that resolved the event; provenance text",
         "source_kind": "what kind of source span the event came from; a provenance token",
         "source_span": "verbatim span the event was extracted from; provenance text"
@@ -539,7 +545,8 @@
       ],
       "arrayColumns": [],
       "unmapped": {
-        "cause": "the prose label of the row; the flywheel matches no free-text words, so the entity comes from the row's entity_id or a formal-code map, never from this label (operator 2026-10-25)"
+        "cause": "the prose label of the row; the flywheel matches no free-text words, so the entity comes from the row's entity_id or a formal-code map, never from this label (operator 2026-10-25)",
+        "route_via": "the waypoint or cape label of the reroute; a route qualifier, while the baseline and reroute corridors are joined through baseline_corridor_id and reroute_corridor_id"
       }
     },
     "derived_values": {
@@ -559,6 +566,7 @@
       "unmapped": {
         "admissibility": "admissibility token (analysis_ok, display_only, stale); a grade of the value",
         "computed_by": "name of the job or method that wrote the row; provenance housekeeping",
+        "entity_id": "the entity the propagation method filed the derived value under (entityColumns derived_values); read directly by the pattern detectors",
         "currency": "ISO 4217 currency code of the value; a unit token (J3 reads units), not an entity",
         "derivation": "provenance token (vocabularies.json derivation) saying how the value was derived; a vocabulary token checked by J3, not an entity",
         "lifecycle": "lifecycle token of the value (current, superseded, falsified); housekeeping",
@@ -593,6 +601,10 @@
       "unmapped": {
         "derivation": "provenance token (vocabularies.json derivation) saying how the value was derived; a vocabulary token checked by J3, not an entity",
         "donor": "the donor dataset a factor was borrowed from; provenance text",
+        "energy_carrier": "the energy carrier label of the factor; it maps to no entity in the engine (NO-ENTITY-LISTS-1: no word-to-entity table), so the factor is filed by its mode and corridor_id columns",
+        "grid_region": "the grid region code or label of an electricity factor; a regional qualifier of the factor, not an entity in couplings.json",
+        "jurisdiction": "the ISO or publisher jurisdiction code of the factor; a geographic qualifier read by the carbon computation, not an entity in couplings.json",
+        "operator_key": "the operator identifier of a carrier-specific factor; an upstream identifier, not an entity in couplings.json",
         "gwp_basis": "global-warming-potential basis token (AR5, AR6); a qualifier of the factor",
         "method_version": "version string of the method that computed the row; provenance housekeeping",
         "movement_ref": "reference of the movement a measured factor describes; an identifier",
@@ -620,6 +632,9 @@
       "arrayColumns": [],
       "unmapped": {
         "dimension": "cost dimension token (labor_markets, operational_cost); a classification label",
+        "state_code": "the two-letter state or subdivision code of the cost fact; a subdivision code inside the region joined through region_id",
+        "state_label": "the display name of the state or subdivision; a display label for state_code, never matched as prose",
+        "statute_citation": "the state statute or code citation of the cost fact; a citation string displayed on the operations surface",
         "fact_label": "the prose label of the row; the flywheel matches no free-text words, so the entity comes from the row's entity_id or a formal-code map, never from this label (operator 2026-10-25)",
         "origin_class": "provenance token (vocabularies.json origin_class) saying how the row was obtained; a vocabulary token checked by J3, not a thing to join on",
         "trend": "direction word of the published value (up, down, flat); a display token",
@@ -638,6 +653,7 @@
       "arrayColumns": [],
       "unmapped": {
         "contract_ref": "the customer's contract reference; an identifier of customer data, never joined",
+        "index_id": "the market series or index identifier the clause tracks; an index key of the clause, while the corridor entity is joined through corridor_id",
         "review_cadence": "how often the clause is reviewed, as written; prose",
         "rounding_rule": "how the indexed amount is rounded, as written; prose"
       }

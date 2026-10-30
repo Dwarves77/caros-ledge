@@ -3,12 +3,12 @@
 // Ported from old_repo/src/lib/agent/timeline-harvest.mjs (lines 1-5)
 // The live DB value sets (derived from the contract table, never typed twice), the write-boundary gates, the closed analysis
 // labels and the month table.
-import { CAPS, DB_SEVERITY_EXTRA, PRIORITIES, SEVERITIES, SIGNAL_BANDS, THEMES, URGENCY_TIERS, FORMAT_TYPES, type AdoptedTerms } from "./contract";
+import { CAPS, PRIORITIES, SEVERITIES, SIGNAL_BANDS, THEMES, URGENCY_TIERS, FORMAT_TYPES, type AdoptedTerms } from "./contract";
 
 const SEVERITY_DISPLAY_TO_DB: Readonly<Record<string, string>> = Object.fromEntries(SEVERITIES.map((s) => [s.label, s.db]));
 export const SEVERITY_TO_PRIORITY: Readonly<Record<string, string>> = Object.fromEntries(SEVERITIES.map((s) => [s.label, s.priority]));
 
-export const DB_SEVERITY_VALUES: ReadonlySet<string> = new Set([...SEVERITIES.map((s) => s.db), ...DB_SEVERITY_EXTRA]);
+export const DB_SEVERITY_VALUES: ReadonlySet<string> = new Set(SEVERITIES.map((s) => s.db));
 export const DB_PRIORITY_VALUES: ReadonlySet<string> = new Set(PRIORITIES);
 export const DB_URGENCY_TIER_VALUES: ReadonlySet<string> = new Set(URGENCY_TIERS);
 export const DB_FORMAT_TYPE_VALUES: ReadonlySet<string> = new Set(FORMAT_TYPES);

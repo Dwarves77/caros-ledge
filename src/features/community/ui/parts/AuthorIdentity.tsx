@@ -3,7 +3,7 @@
 // Ported from old_repo/src/components/community/Post.tsx (lines 194-221)
 // The author line of a post, reply or search hit (INV-224): name and company shown by default, then org type, role, sector and region; an anonymous author reads "Anonymous member" with a neutral avatar and the
 // verified mark KEPT; nothing in it is derived from the id. One verified mark for both the account check and the line (the old tree drew it twice).
-import { authorIdentityLabel } from "../../lib/identity-format";
+import { ANONYMOUS_LABEL, authorIdentityLabel } from "../../lib/identity-format";
 import type { AuthorBlock } from "../../lib/types";
 import styles from "../community.module.css";
 
@@ -41,7 +41,7 @@ export function AuthorIdentity({ author, size = 36, withAvatar = true }: { autho
     <span className={styles.authorLine}>
       {withAvatar && <Avatar name={author.name} url={author.headshotUrl} size={size} neutral={author.anonymous} />}
       <span className={styles.authorText}>
-        <span className={styles.authorName}>{line ?? "Member"}</span>
+        <span className={styles.authorName}>{line ?? (author.anonymous ? ANONYMOUS_LABEL : "Member")}</span>
         {author.verified && <VerifiedMark />}
       </span>
     </span>

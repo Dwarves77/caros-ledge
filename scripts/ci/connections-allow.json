@@ -1,33 +1,6 @@
 {
   "_exports": "Exported values with no caller in src, scripts or the Edge Function: only the paths a live lane still owns remain (R2e: src/features/{auth,community,admin,account}); that lane deletes its own entries, and a new offender or an entry that gained a caller is a red run, so the list only shrinks.",
-  "exports": {
-    "src/features/account/lib/profile-patch.ts": [
-      "profilePatchSchema"
-    ],
-    "src/features/admin/api/source-decisions.ts": [
-      "decideSourceCandidate"
-    ],
-    "src/features/auth/ui/identity-loader.ts": [
-      "IDENTITY_ERROR_SEED",
-      "nextIdentityRetryDelay",
-      "resolveAuthSeed",
-      "shouldApplySeed"
-    ],
-    "src/features/community/lib/actions.ts": [
-      "sentence"
-    ],
-    "src/features/community/lib/antitrust.ts": [
-      "kAnonymity"
-    ],
-    "src/features/community/lib/identity-format.ts": [
-      "ANONYMOUS_LABEL"
-    ],
-    "src/features/community/lib/identity.ts": [
-      "authorIdForRow",
-      "effectiveAnonymous",
-      "idWithheld"
-    ]
-  },
+  "exports": {},
   "runtimeEntries": {
     "src/core/turn/stages/capture.ts#shapeCapture": "kept for R3a (the queue-driven turn): the stage runner calls it in its own file and tests/turn/stages.test.ts asserts its shape; R3a settles the stage entry points",
     "src/core/turn/stages/change.ts#shapeChange": "kept for R3a (the queue-driven turn): the stage runner calls it in its own file and tests/turn/stages.test.ts asserts its shape; R3a settles the stage entry points",
@@ -42,12 +15,5 @@
   "tables": {},
   "settings": {},
   "routes": {},
-  "deps": {
-    "src/core/capture/change-detection.ts#ChangeDetectionDeps.harvestPortal": "D:31: the portal-candidate downstream can be omitted by a caller (features/sources/api/check-sources.ts omits it); R3b makes it required in the type",
-    "src/core/capture/change-detection.ts#ChangeDetectionDeps.writeSnapshot": "recorded at R1b: the snapshot write is a downstream of the pass; R3b makes it required or states the null case",
-    "src/core/capture/change-detection.ts#ChangeDetectionDeps.reconcile": "recorded at R1b: the reconcile step is a downstream of the pass; R3b makes it required or states the null case",
-    "src/core/propagation/drain.ts#DrainDeps.reopenQuestion": "recorded at R1b: the learning downstream of the drain; R3b makes it required or states the null case",
-    "src/features/auth/ui/auth-events.ts#AuthEventDeps.requiresAuth": "recorded at R1b: a UI seam with a default; R4b",
-    "src/features/auth/ui/identity-loader.ts#IdentityLoaderDeps.onRetrying": "recorded at R1b: a UI notification hook with a default; R4b"
-  }
+  "deps": {}
 }

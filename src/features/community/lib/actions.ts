@@ -9,7 +9,7 @@ export type Api = typeof communityApi;
 export type Notify = (message: string, variant?: "success" | "error") => void;
 
 /** The refusal's sentence, else the fallback. */
-export const sentence = (r: Result<unknown>, fallback: string): string => r.error || fallback;
+const sentence = (r: Result<unknown>, fallback: string): string => r.error || fallback;
 
 /** Star or mute a group: the change is shown at once, put back on a refusal, and the outcome is toasted either way. */
 export async function setGroupPref(api: Pick<Api, "setStarred" | "setMuted">, notify: Notify, kind: "starred" | "muted", groupId: string, next: boolean, apply: (value: boolean) => void): Promise<boolean> {

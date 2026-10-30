@@ -41,14 +41,7 @@
    "why": "A stored code with an underscore printed as a word."
   }
  ],
- "owed": [
-  {
-   "where": "src/features/community/api/posts.ts",
-   "shape": "driver-message-into-an-error",
-   "owner": "R2e",
-   "finding": "A 22023 from the post rpc is answered with its own message; R2e owns Community: map to a sentence."
-  }
- ],
+ "owed": [],
  "exempt": [
   {
    "where": "src/core/parse/date-grammar.ts",

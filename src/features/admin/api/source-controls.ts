@@ -87,7 +87,7 @@ export async function applyTierOverride(db: Db, actorId: string, id: string, inp
     await writeTrustEvent(db, { sourceId: id, type: revert ? "tier_override_revert" : "tier_override", details: revert ? { previous_override: prior.tier_override, reason: input.reason } : { before_tier: before, after_tier: after, reason: input.reason }, actorId });
   } catch (e) {
     const undo = await db.from("sources").update({ tier_override: prior.tier_override, override_reason: prior.override_reason, override_date: prior.override_date }).eq("id", id);
-    throw new HttpError(500, `${e instanceof Error ? e.message : String(e)}; ${undo.error ? `the override could not be put back (${undo.error.message}); check source ${id}` : "the override was put back as it was"}`);
+    throw new HttpError(500, `${String(e)}; ${undo.error ? `the override could not be put back; check source ${id}` : "the override was put back as it was"}`);
   }
   return { action: revert ? "revert" : "set", before_tier: before, after_tier: after, override_date: date };
 }

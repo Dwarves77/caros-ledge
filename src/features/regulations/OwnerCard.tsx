@@ -22,30 +22,31 @@ export function OwnerCard({ itemId, assigneeName, lastVerifiedDate, hasWorkspace
     <RailCard title="Owner & team" dataAudit="owner-rail">
       <SectionLabel>Assignee</SectionLabel>
       {members === null ? (
-        <p style={{ fontSize: "var(--fs-13)", fontWeight: 700, margin: "6px 0 10px", color: ownerName ? "var(--ink)" : "var(--ink-3)" }}>
+        <p style={{ fontSize: "var(--fs-13)", fontWeight: 700, margin: "var(--sp-1) 0 var(--sp-2)", color: ownerName ? "var(--ink)" : "var(--ink-3)" }}>
           {ownerName || "Unassigned"}
-          {rosterFailed && <span role="alert" data-part="state-note" style={{ display: "block", fontSize: "var(--fs-105)", fontWeight: 600, color: "var(--ink-3)", marginTop: 2 }}>The roster did not load, so assignment is off for now. Reload the page to try again.</span>}
+          {rosterFailed && <span role="alert" data-part="state-note" style={{ display: "block", fontSize: "var(--fs-105)", fontWeight: 600, color: "var(--ink-3)", marginTop: "var(--sp-1)" }}>The roster did not load, so assignment is off for now. Reload the page to try again.</span>}
         </p>
       ) : (
-        <Select
-          aria-label="Assign owner"
-          value={value}
-          onChange={(e) => {
-            const m = members.find((x) => x.user_id === e.target.value);
-            void setOwner(itemId, m ? m.user_id : null, m ? m.display_name : null);
-          }}
-          style={{ margin: "6px 0 10px" }}
-        >
-          <option value="">Unassigned</option>
-          {members.map((m) => (
-            <option key={m.user_id} value={m.user_id}>
-              {m.display_name}
-            </option>
-          ))}
-        </Select>
+        <div style={{ margin: "var(--sp-1) 0 var(--sp-2)" }}>
+          <Select
+            aria-label="Assign owner"
+            value={value}
+            onChange={(e) => {
+              const m = members.find((x) => x.user_id === e.target.value);
+              void setOwner(itemId, m ? m.user_id : null, m ? m.display_name : null);
+            }}
+          >
+            <option value="">Unassigned</option>
+            {members.map((m) => (
+              <option key={m.user_id} value={m.user_id}>
+                {m.display_name}
+              </option>
+            ))}
+          </Select>
+        </div>
       )}
       <SectionLabel>Last verified</SectionLabel>
-      <p style={{ fontSize: "var(--fs-125)", fontWeight: 600, margin: "6px 0 0", color: last ? "var(--ink)" : "var(--ink-3)" }}>{last ?? "Not recorded"}</p>
+      <p style={{ fontSize: "var(--fs-125)", fontWeight: 600, margin: "var(--sp-1) 0 0", color: last ? "var(--ink)" : "var(--ink-3)" }}>{last ?? "Not recorded"}</p>
     </RailCard>
   );
 }

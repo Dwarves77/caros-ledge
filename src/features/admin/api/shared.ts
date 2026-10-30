@@ -31,7 +31,7 @@ export const text = (v: unknown): string | null => (typeof v === "string" && v.t
 /** One checked source_trust_events row naming the actor (INV-288): a failed write throws, it is never skipped. `human` is the check-constrained actor class of an operator. */
 export async function writeTrustEvent(db: Db, e: { sourceId: string; type: "tier_override" | "tier_override_revert" | "manual_review"; details: Record<string, unknown>; actorId: string }): Promise<void> {
   const { error } = await db.from("source_trust_events").insert({ source_id: e.sourceId, event_type: e.type, details: e.details, created_by: "human", reviewer_id: e.actorId });
-  if (error) throw new HttpError(500, `the audit row was not written: ${error.message}`);
+  if (error) throw dbError(error);
 }
 
 /** The stated block for a function a pending migration adds: a 503 that names the function and the migration, not a thrown page and not a zero. */

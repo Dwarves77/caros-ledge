@@ -20,7 +20,6 @@
         "src/features/market/ui/MarketDetailView.tsx": 3,
         "src/features/operations/ui/OperationsDetail.tsx": 1,
         "src/features/regulations/CorridorsApplied.tsx": 8,
-        "src/features/regulations/OwnerCard.tsx": 4,
         "src/features/regulations/map/MapPage.tsx": 13,
         "src/features/regulations/rail.tsx": 6,
         "src/features/research/loading.tsx": 1,
@@ -149,7 +148,6 @@
         "src/ui/shell/NavCard.tsx": 1,
         "src/ui/shell/Providers.tsx": 1,
         "src/ui/shell/TopBar.tsx": 1,
-        "src/ui/shell/identity-seed.ts": 3,
         "src/ui/shell/notifications/NotificationsBell.tsx": 1,
         "src/ui/shell/bootstrap-store.ts": 1
       }
@@ -171,33 +169,7 @@
         "src/core/http/parse.ts": {
           "count": 1,
           "reason": "the sentence is the validation issue for the caller's own input, written for the caller; the typed parsers (R2a) replace it."
-        },
-        "src/features/admin/api/bulk-import.ts": 1,
-        "src/features/admin/api/shared.ts": 1,
-        "src/features/admin/api/source-controls.ts": 1,
-        "src/features/admin/api/source-decisions.ts": 1,
-        "src/features/community/api/posts.ts": {
-          "count": 1,
-          "reason": "the sentence comes from the project's own rpc (SQLSTATE 22023) and is written for the caller; R4a gives it a typed code."
         }
-      }
-    },
-    "supabase-error-unhandled": {
-      "owner": "R3a",
-      "reason": "a database read whose error is never looked at, so a failed read is treated as no row.",
-      "files": {
-        "src/core/grounding/ground.ts": {
-          "count": 1,
-          "reason": "the provenance status read after validation ignores its error: a failed read reports provenance null (C: grounding)."
-        },
-        "src/features/market/producers/ratify-series.ts": 1
-      }
-    },
-    "style-on-kit-part": {
-      "owner": "R4b",
-      "reason": "a feature restyles a kit part with `style` (K:48); the part gets a variant or the style moves to the stylesheet.",
-      "files": {
-        "src/features/regulations/OwnerCard.tsx": 1
       }
     },
     "css-px-scale": {

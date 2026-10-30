@@ -2,113 +2,11 @@
  "_doc": "Known joinability findings (scripts/ci/joinability.mjs --write-allow). A new offender is a red run; an entry that no longer offends is a red run (delete it); a share above its entry is a regression. Each entry is owed a data-file batch or a slice (its owner).",
  "entries": [
   {
-   "key": "J1:derived_values.entity_id",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "derived_values.entity_id: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:emission_factors.energy_carrier",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-26",
-   "reason": "emission_factors.energy_carrier: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:emission_factors.grid_region",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "emission_factors.grid_region: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:emission_factors.jurisdiction",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "emission_factors.jurisdiction: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:emission_factors.operator_key",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "emission_factors.operator_key: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:indexation_clauses.index_id",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-26",
-   "reason": "indexation_clauses.index_id: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:item_forward_events.obligation_text",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "item_forward_events.obligation_text: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:obligation_objects.jurisdiction",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "obligation_objects.jurisdiction: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:reroute_events.route_via",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "reroute_events.route_via: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:state_cost_facts.state_code",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "state_cost_facts.state_code: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:state_cost_facts.state_label",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "state_cost_facts.state_label: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:state_cost_facts.statute_citation",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "state_cost_facts.statute_citation: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:statutory_computations.formula_id",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-26",
-   "reason": "statutory_computations.formula_id: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:statutory_computations.obligation_id",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "statutory_computations.obligation_id: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:statutory_computations.scenario_key",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-26",
-   "reason": "statutory_computations.scenario_key: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
-   "key": "J1:statutory_computations.statute_citation",
-   "owner": "couplings.json maps or the table's unmapped reasons",
-   "date": "2026-10-25",
-   "reason": "statutory_computations.statute_citation: a text column the engine can join on, neither mapped nor listed unmapped with a reason"
-  },
-  {
    "key": "J3sev:intelligence_items.severity",
    "owner": "slice SEV-1 (migration 0137)",
    "date": "2026-10-25",
    "reason": "intelligence_items.severity: 140 of 535 values are not codes of src/core/brief/data/contract.json (60 outside, 80 null); forms \"reference\" x53, \"background\" x5, \"high\" x2",
    "share": 0.2617
-  },
-  {
-   "key": "J3sevw:accepts",
-   "owner": "slice SEV-1 and the brief vocabulary (ADR-052 point 4)",
-   "date": "2026-10-25",
-   "reason": "the severity writer gate (toDbSeverity, DB_SEVERITY_VALUES) accepts 8 values outside the five tokens: critical, high, moderate, low, immediate, watch, reference, background"
   },
   {
    "key": "J3tok:oem_tech_roadmaps.tech_category",

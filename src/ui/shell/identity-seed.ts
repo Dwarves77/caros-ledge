@@ -1,13 +1,42 @@
 // Ported from old_repo/src/components/shell/bootstrap-seed.ts (lines 76-129)
 // Ported from old_repo/src/components/app-shell-banner.ts (lines 1-46)
-// What the shell does with the identity states. The seed type, the error seed, the apply guard, the admin-nav gate and the retry schedule are P2-01's
-// identity-loader (re-exported here, not copied); this file adds the workspace label and the banner and redirect table.
-import type { IdentityStatus } from "@/features/auth/ui/identity-loader";
+// What the shell does with the identity states. The seed type, the error seed, the apply guard, the admin-nav gate and the retry schedule live here
+// alongside the workspace label and the banner and redirect table.
+import { retryDelayMs } from "@/core/http/backoff";
+import type { IdentityBootstrap, OrgRole } from "@/core/types";
 
 import { suppressesWorkspaceNote } from "./nav-model";
 
-export { IDENTITY_ERROR_SEED, nextIdentityRetryDelay, resolveAuthSeed, shouldApplySeed, shouldShowAdminNav } from "@/features/auth/ui/identity-loader";
-export type { AuthSeed, IdentityStatus } from "@/features/auth/ui/identity-loader";
+export type IdentityStatus = "pending" | "resolved" | "error";
+
+export interface AuthSeed {
+  status: Exclude<IdentityStatus, "pending">;
+  user: IdentityBootstrap["user"];
+  orgId: string | null | undefined;
+  orgName: string;
+  role: OrgRole | null;
+  sectors: string[];
+  isPlatformAdmin: boolean;
+}
+
+export const IDENTITY_ERROR_SEED: AuthSeed = Object.freeze({ status: "error", user: null, orgId: undefined, orgName: "", role: null, sectors: [], isPlatformAdmin: false });
+
+export function resolveAuthSeed(bootstrap: IdentityBootstrap | null): AuthSeed {
+  if (!bootstrap) return IDENTITY_ERROR_SEED;
+  return {
+    status: "resolved",
+    user: bootstrap.user,
+    orgId: bootstrap.user ? bootstrap.orgId : undefined,
+    orgName: bootstrap.orgName,
+    role: bootstrap.role,
+    sectors: bootstrap.sectors.length > 0 ? bootstrap.sectors : bootstrap.workspaceSectors,
+    isPlatformAdmin: !!bootstrap.user && bootstrap.isPlatformAdmin === true,
+  };
+}
+
+export const shouldApplySeed = (current: IdentityStatus): boolean => current !== "resolved";
+export const shouldShowAdminNav = (p: { status: IdentityStatus; isPlatformAdmin: boolean }): boolean => p.status === "resolved" && p.isPlatformAdmin === true;
+export const nextIdentityRetryDelay = retryDelayMs;
 
 const NO_WORKSPACE_ONBOARDING_ROUTE = "/workspace/new";
 

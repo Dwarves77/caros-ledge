@@ -309,7 +309,7 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
   const rpc = await sb.rpc("validate_item_provenance", { p_item_id: itemId });
   const vr = (Array.isArray(rpc.data) ? rpc.data[0] : rpc.data) as { valid?: boolean; recommended_status?: string; failures?: { reason?: string }[] } | null | undefined;
   const status = await sb.from("intelligence_items").select("provenance_status").eq("id", itemId).maybeSingle();
-  const provenance = (status.data as { provenance_status?: string } | null)?.provenance_status ?? null;
+  const provenance = status.error ? null : ((status.data as { provenance_status?: string } | null)?.provenance_status ?? null);
   const reasons = [...new Set((Array.isArray(vr?.failures) ? vr.failures : []).map((f) => f?.reason).filter((r): r is string => !!r))];
   const valid = !rpc.error && vr?.valid === true;
   const detail = rpc.error ? `rpc error: ${rpc.error.message}` : valid ? `grounded kept=${kept.length} -> ${vr?.recommended_status ?? "verified"}` : `validation failed [${reasons.join(",")}]`;
