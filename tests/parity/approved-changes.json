@@ -145,48 +145,6 @@
   ],
   "approved": [
     {
-      "id": "r2d-related-links-market-detail",
-      "route": "market-detail",
-      "kind": "control",
-      "match": "^link:.+(Action required|Cost alert|Window closing|Competitive edge|Monitoring|Critical|High|Moderate|Low|Immediate|Watch|Reference|Background)$",
-      "ruling": "Rule 20, register surfaces:28 and I13: the market detail's Related section no longer scans the whole market corpus for signals of the same band; the Connected intelligence section (the flywheel's connections) is the only cross-page link set. Covers only a baseline link whose name ends in a severity word (the removed Related links). Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
-    },
-    {
-      "id": "r2d-related-heading-market-detail",
-      "route": "market-detail",
-      "kind": "heading",
-      "match": "^2:Related$",
-      "ruling": "Same ruling as r2d-related-links-market-detail: a signal with no flywheel connection has no Related section. Retire this entry when the baseline is recaptured from production after the R2d merge (as the r2e-privacy-generated waiver was)."
-    },
-    {
-      "id": "r2d-period-start-2025-2621-control",
-      "route": "regulations",
-      "kind": "control",
-      "match": "^link:COMMISSION IMPLEMENTING REGULATION \\(EU\\) #/# of # December",
-      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 (HIGH): its only upcoming entry is the year '2027 - scheduled revision deadline' (date_precision year, stored 2027-01-01). A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item 7dabbe8a-2ba9-4242-8a51-57495e56993f: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
-    },
-    {
-      "id": "r2d-period-start-eu-aviation-ets-control",
-      "route": "regulations",
-      "kind": "control",
-      "match": "^link:EU Aviation ETS$",
-      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): EU Aviation ETS (HIGH): its only upcoming entry is the month 'Jan 2027 - Non-CO2 MRV mandatory' (date_precision month, stored 2027-01-01). A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item 56031fd3-d7ae-45e5-a1d0-bde3e3c30383: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
-    },
-    {
-      "id": "r2d-period-start-oregon-deq-control",
-      "route": "regulations",
-      "kind": "control",
-      "match": "^link:Oregon Department of Environmental Quality",
-      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): Oregon Department of Environmental Quality (LOW): its upcoming entries are years (2027, 2030, 2035...); the one stated day is compliance_deadline 2035-01-01. A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item fabda0e7-dfb4-43c2-bef9-1821bb148d5d: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
-    },
-    {
-      "id": "r2d-period-start-china-ets-control",
-      "route": "regulations",
-      "kind": "control",
-      "match": "^link:China's National Carbon Market",
-      "ruling": "Register F:12 and migration 0094 (item_timelines.date_precision): China's National Carbon Market (LOW): every upcoming entry is a year (2027, 2030, 2060). A year or a month is a period start, not a due date, so it is no longer counted down to (\"Jan 1, 2027, 74 days\" was a day nobody wrote) and the row sorts by its stated days, which moves it out of the first 20 rows (item 3e756291-f79e-487e-84d5-efc535cfef27: verified, current, unarchived, not suppressed or replaced; it is still on the list). Retire when the baseline is recaptured from production after the R2d merge."
-    },
-    {
       "id": "r2d-period-start-order-regulations",
       "route": "regulations",
       "kind": "order",
@@ -213,27 +171,6 @@
       "kind": "control",
       "match": "^button:Source authority: needs role-class data$",
       "ruling": "I16: the control is now named \"Source authority\" (the baseline named it \"Source authority: needs role-class data\"). Retire when the baseline is recaptured from production after the R2d merge."
-    },
-    {
-      "id": "r2d-roadmap-copy-evidence-research-detail",
-      "route": "research-detail",
-      "kind": "control",
-      "match": "^button:Evidence × agreement: needs evidence-synthesis data",
-      "ruling": "I16 (no design note or roadmap sentence reaches the customer): the control is now named \"Evidence × agreement\" (the baseline named it \"Evidence × agreement: needs evidence-synthesis data\", with the count in the detail view). Retire when the baseline is recaptured from production after the R2d merge."
-    },
-    {
-      "id": "r2d-roadmap-copy-authority-research-detail",
-      "route": "research-detail",
-      "kind": "control",
-      "match": "^button:Source authority: needs role-class data$",
-      "ruling": "I16: the control is now named \"Source authority\" (the baseline named it \"Source authority: needs role-class data\"). Retire when the baseline is recaptured from production after the R2d merge."
-    },
-    {
-      "id": "r2d-map-gap-link-name",
-      "route": "map",
-      "kind": "control",
-      "match": "^link:Filter map to .+ \\(# gaps of #\\)$",
-      "ruling": "Register surfaces:11 (tests/derived/coverage.test.ts): the accessible name of a region link states the same quantity as its visible text, \"Filter map to EU member states (0 of 27 jurisdictions covered, 27 gaps)\"; the baseline named it \"(27 gaps of 27)\" while the text read \"0 of 27 covered\". The five links are on the page (capture of run 39406949832: United States sub-national, EU member states, Canada, Australia, Latin America priority). Retire when the baseline is recaptured from production after the R2d merge."
     },
     {
       "id": "ui1-list-reads-cleanly-regulations",
@@ -324,69 +261,12 @@
       "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the Create account button (primary). Same-machine old-versus-new capture of this route at 375x812 differs by 3.14% from the button look alone (baseline diff before this change under the 2% threshold); the ceiling is that sum with margin, so any other change to the route still fails."
     },
     {
-      "id": "btn1-look-privacy-1280",
-      "route": "privacy",
-      "kind": "pixel",
-      "viewport": "1280x900",
-      "maxDiff": 0.03,
-      "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the masthead Ask button (secondary) and the command bar, 46 px tall for law 2. Same-machine old-versus-new capture of this route at 1280x900 differs by 0.14% from the button look alone (baseline diff before this change under the 2% threshold); the ceiling is that sum with margin, so any other change to the route still fails."
-    },
-    {
       "id": "btn1-look-privacy-375",
       "route": "privacy",
       "kind": "pixel",
       "viewport": "375x812",
       "maxDiff": 0.03,
       "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the masthead Ask button (secondary) and the command bar, 46 px tall for law 2. Same-machine old-versus-new capture of this route at 375x812 differs by 0.33% from the button look alone (baseline diff before this change under the 2% threshold); the ceiling is that sum with margin, so any other change to the route still fails."
-    },
-    {
-      "id": "rows-1-clean-rows-dashboard",
-      "route": "dashboard",
-      "kind": "row",
-      "match": "^div:",
-      "ruling": "Operator look ruling 2026-10-26 (ROWS-1): clean simple rows everywhere. Every list row is three lines (the short name of at most two lines, one stored line, one meta line of jurisdiction, type, date with days and tier; the dashboard's What changed rows add the change kind as a chip), drawn from src/ui/list-surface/data/row-fields.json by the one ListRow; the impact meter, timeline, bias chips, grade chip, workspace tags and the secondary labels moved to the detail page. A row's text, and so its height, differs from the baseline's for every row of the route; no control is lost (the row link keeps the full official title as its name, the overflow control is unchanged). Supersedes the r2d-* and title-1-* row waivers of this route. Retire this entry when the baseline is recaptured from production after the ROWS-1 merge."
-    },
-    {
-      "id": "rows-1-clean-rows-regulations",
-      "route": "regulations",
-      "kind": "row",
-      "match": "^div:",
-      "ruling": "Operator look ruling 2026-10-26 (ROWS-1): clean simple rows everywhere. Every list row is three lines (the short name of at most two lines, one stored line, one meta line of jurisdiction, type, date with days and tier; the dashboard's What changed rows add the change kind as a chip), drawn from src/ui/list-surface/data/row-fields.json by the one ListRow; the impact meter, timeline, bias chips, grade chip, workspace tags and the secondary labels moved to the detail page. A row's text, and so its height, differs from the baseline's for every row of the route; no control is lost (the row link keeps the full official title as its name, the overflow control is unchanged). Supersedes the r2d-* and title-1-* row waivers of this route. Retire this entry when the baseline is recaptured from production after the ROWS-1 merge."
-    },
-    {
-      "id": "rows-1-clean-rows-market",
-      "route": "market",
-      "kind": "row",
-      "match": "^div:",
-      "ruling": "Operator look ruling 2026-10-26 (ROWS-1): clean simple rows everywhere. Every list row is three lines (the short name of at most two lines, one stored line, one meta line of jurisdiction, type, date with days and tier; the dashboard's What changed rows add the change kind as a chip), drawn from src/ui/list-surface/data/row-fields.json by the one ListRow; the impact meter, timeline, bias chips, grade chip, workspace tags and the secondary labels moved to the detail page. A row's text, and so its height, differs from the baseline's for every row of the route; no control is lost (the row link keeps the full official title as its name, the overflow control is unchanged). Supersedes the r2d-* and title-1-* row waivers of this route. Retire this entry when the baseline is recaptured from production after the ROWS-1 merge."
-    },
-    {
-      "id": "rows-1-clean-rows-research",
-      "route": "research",
-      "kind": "row",
-      "match": "^div:",
-      "ruling": "Operator look ruling 2026-10-26 (ROWS-1): clean simple rows everywhere. Every list row is three lines (the short name of at most two lines, one stored line, one meta line of jurisdiction, type, date with days and tier; the dashboard's What changed rows add the change kind as a chip), drawn from src/ui/list-surface/data/row-fields.json by the one ListRow; the impact meter, timeline, bias chips, grade chip, workspace tags and the secondary labels moved to the detail page. A row's text, and so its height, differs from the baseline's for every row of the route; no control is lost (the row link keeps the full official title as its name, the overflow control is unchanged). Supersedes the r2d-* and title-1-* row waivers of this route. Retire this entry when the baseline is recaptured from production after the ROWS-1 merge."
-    },
-    {
-      "id": "rows-1-clean-rows-operations",
-      "route": "operations",
-      "kind": "row",
-      "match": "^div:",
-      "ruling": "Operator look ruling 2026-10-26 (ROWS-1): clean simple rows everywhere. Every list row is three lines (the short name of at most two lines, one stored line, one meta line of jurisdiction, type, date with days and tier; the dashboard's What changed rows add the change kind as a chip), drawn from src/ui/list-surface/data/row-fields.json by the one ListRow; the impact meter, timeline, bias chips, grade chip, workspace tags and the secondary labels moved to the detail page. A row's text, and so its height, differs from the baseline's for every row of the route; no control is lost (the row link keeps the full official title as its name, the overflow control is unchanged). Supersedes the r2d-* and title-1-* row waivers of this route. Retire this entry when the baseline is recaptured from production after the ROWS-1 merge."
-    },
-    {
-      "id": "rows-1-clean-rows-search-emissions",
-      "route": "search-emissions",
-      "kind": "row",
-      "match": "^div:",
-      "ruling": "Operator look ruling 2026-10-26 (ROWS-1): clean simple rows everywhere. Every list row is three lines (the short name of at most two lines, one stored line, one meta line of jurisdiction, type, date with days and tier; the dashboard's What changed rows add the change kind as a chip), drawn from src/ui/list-surface/data/row-fields.json by the one ListRow; the impact meter, timeline, bias chips, grade chip, workspace tags and the secondary labels moved to the detail page. A row's text, and so its height, differs from the baseline's for every row of the route; no control is lost (the row link keeps the full official title as its name, the overflow control is unchanged). Supersedes the r2d-* and title-1-* row waivers of this route. Retire this entry when the baseline is recaptured from production after the ROWS-1 merge."
-    },
-    {
-      "id": "rows-1-detail-short-name-regulation-detail",
-      "route": "regulation-detail",
-      "kind": "heading",
-      "match": "^1:",
-      "ruling": "Operator look ruling 2026-10-26 (ROWS-1): clean simple rows everywhere. An EU act's detail page title is the short name the list row draws (act head, number and subject clause, src/core/lists/display-title.ts); the full official title is shown once under it in the header. The page's first heading text therefore differs from the baseline's for an EU act. Retire this entry when the baseline is recaptured from production after the ROWS-1 merge."
     }
   ]
 }
