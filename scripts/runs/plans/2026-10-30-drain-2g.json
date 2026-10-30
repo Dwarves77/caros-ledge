@@ -1,0 +1,21 @@
+{
+  "ruling": "operator 2026-10-30 (DRAIN-2G): item 947e08f3 (IEA Electricity Mid-Year Update 2025) repaired not rejected: only the sentences carrying the 15 Gate A orphan figures are rewritten (proven figure kept, unprovable figure dropped, gap stated in label form); every other byte of the stored brief is unchanged. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "drain-2g-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-10-30-drain-2g.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "drain-2g-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-30-drain-2g.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
