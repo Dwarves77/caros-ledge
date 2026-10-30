@@ -117,3 +117,20 @@ test("a CAPTCHA page is an interactive challenge, named for what it is and not f
   assert.match(page, INTERACTIVE_CHALLENGE_RE);
   assert.equal(classifyBody(toText(page)).class, BODY_CLASS.INTERACTIVE_CHALLENGE);
 });
+
+// CLASSIFY-FIX-1: a EUR-Lex act under the portal chrome is an instrument, not an interface shell. Excerpts are from the stored captures of Reg (EU) 2023/1804 (8ec43203, ae85d1c6), which are stored with literal "&nbsp;" and read "HAVE ADOPTED".
+const EURLEX_OPTS = { host: "eur-lex.europa.eu", path: "/legal-content/EN/TXT/" };
+const EURLEX_CHROME = "Regulation - 2023/1804 - EN - EUR-Lex An official website of the European Union An official EU website How do you know? All official European Union website addresses are in the europa.eu domain. See all EU institutions and bodies My EUR-Lex Select your language ";
+const RECITAL = "Therefore, those Delegated Regulations should also be repealed, and the measures provided for in this act are in accordance with the opinion of the Committee. ";
+test("CLASSIFY-FIX-1 (a): co-decision 'HAVE ADOPTED THIS REGULATION' under EUR-Lex chrome is content", () => {
+  assert.equal(classifyBody(`${EURLEX_CHROME}${RECITAL}THE EUROPEAN PARLIAMENT AND THE COUNCIL OF THE EUROPEAN UNION, HAVE ADOPTED THIS REGULATION: Subject matter, mandatory national targets.`, EURLEX_OPTS).class, BODY_CLASS.OK);
+});
+test("CLASSIFY-FIX-1 (b): 'Article&nbsp;1' with a literal entity under EUR-Lex chrome is content", () => {
+  assert.equal(classifyBody(`${EURLEX_CHROME}${RECITAL}Article&nbsp;1 Subject matter 1.&nbsp;&nbsp;&nbsp;This Regulation establishes mandatory national targets leading to the deployment of sufficient alternative fuels infrastructure.`, EURLEX_OPTS).class, BODY_CLASS.OK);
+});
+test("CLASSIFY-FIX-1 (c): a Council-only 'HAS ADOPTED THIS DECISION' stays content", () => {
+  assert.equal(classifyBody(`${EURLEX_CHROME}${RECITAL}THE COUNCIL OF THE EUROPEAN UNION HAS ADOPTED THIS DECISION, having regard to the Treaty on the Functioning of the European Union.`, EURLEX_OPTS).class, BODY_CLASS.OK);
+});
+test("CLASSIFY-FIX-1 (negative): EUR-Lex chrome with no instrument body is still an interface shell", () => {
+  assert.equal(classifyBody(`${EURLEX_CHROME}Browse by EU institutions Official EU languages Quick links Help and contact Legal notice Accessibility Cookies policy Site map ${RECITAL.replace("Therefore", "Navigation")}`, EURLEX_OPTS).class, BODY_CLASS.INTERFACE_SHELL);
+});
