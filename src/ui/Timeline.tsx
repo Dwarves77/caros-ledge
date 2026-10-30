@@ -11,7 +11,7 @@ import type { TimelineEntry } from "@/core/types";
 import { SectionLabel } from "./SectionLabel";
 import { StateNote } from "./StateNote";
 import { TimelineDot } from "./MilestoneTimeline";
-import { classifyMilestones, collapseTimeline, formatDayMonthYear, greenPercent, nextMilestoneClause, timelineHeaderCounts } from "./timeline-math";
+import { classifyMilestones, collapseTimeline, formatDayMonthYear, greenPercent, milestoneStageOf, nextMilestoneClause, timelineHeaderCounts } from "./timeline-math";
 
 interface TimelineProps {
   entries: TimelineEntry[] | null | undefined;
@@ -80,9 +80,10 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
         {visible.map(({ entry, state, index }, i) => {
           const displayLabel = cleanLabel(entry.label);
           const displayDate = formatDayMonthYear(entry.date);
+          const stage = milestoneStageOf(entry);
           return (
-            <button key={index} type="button" className="cl-tl-marker" data-state={state} aria-pressed={selected === index} aria-label={`${displayLabel} · ${displayDate}`} onClick={() => setSelected(selected === index ? null : index)} style={{ ["--c" as string]: i + 1 }}>
-              <span className="cl-tl-date">{displayDate}</span>
+            <button key={index} type="button" className="cl-tl-marker" data-state={state} aria-pressed={selected === index} aria-label={`${displayLabel} · ${displayDate}${stage ? ` · ${stage}` : ""}`} onClick={() => setSelected(selected === index ? null : index)} style={{ ["--c" as string]: i + 1 }}>
+              <span className="cl-tl-date">{displayDate}{stage ? ` · ${stage}` : ""}</span>
               <span className="cl-tl-dotcell"><TimelineDot state={state} bandHex={band.hex} size={state === "next" ? 12 : 8} ring={3} /></span>
               <span title={displayLabel} className="cl-tl-label">{displayLabel}</span>
             </button>
@@ -91,20 +92,23 @@ export function Timeline({ entries, band, nowIso, onFullSchedule, fullScheduleHr
       </div>
       {showAll && (
         <div className="cl-tl-schedule" aria-label="Full milestone schedule">
-          {classified.map(({ entry, state, index }) => (
-            <button key={index} type="button" onClick={() => setSelected(selected === index ? null : index)} className={`cl-tl-schedule-row${state === "next" ? " cl-tl-schedule-row--next" : ""}`}>
-              <TimelineDot state={state} bandHex={band.hex} size={state === "next" ? 10 : 8} ring={2} />
-              <span className="cl-tl-schedule-date">{formatDayMonthYear(entry.date)}</span>
-              <span className="cl-tl-schedule-label">{cleanLabel(entry.detail ?? entry.label)}</span>
-              <span className={`cl-tl-schedule-badge cl-tl-schedule-badge--${state}`}>{state === "passed" ? "Passed" : state === "next" ? "Next due" : "Upcoming"}</span>
-            </button>
-          ))}
+          {classified.map(({ entry, state, index }) => {
+            const stage = milestoneStageOf(entry);
+            return (
+              <button key={index} type="button" onClick={() => setSelected(selected === index ? null : index)} className={`cl-tl-schedule-row${state === "next" ? " cl-tl-schedule-row--next" : ""}`}>
+                <TimelineDot state={state} bandHex={band.hex} size={state === "next" ? 10 : 8} ring={2} />
+                <span className="cl-tl-schedule-date">{formatDayMonthYear(entry.date)}</span>
+                <span className="cl-tl-schedule-label">{cleanLabel(entry.detail ?? entry.label)}</span>
+                <span className={`cl-tl-schedule-badge cl-tl-schedule-badge--${state}`}>{stage ? `${stage} · ` : ""}{state === "passed" ? "Passed" : state === "next" ? "Next due" : "Upcoming"}</span>
+              </button>
+            );
+          })}
         </div>
       )}
       {selectedEntry && (
         <div data-part="timeline-context" className="cl-tl-context">
           <div className="cl-tl-context-head">
-            <span className="cl-tl-context-tag">{selectedEntry.date}{selectedEntry.kind ? ` · ${selectedEntry.kind.replace(/_/g, " ")}` : ""}</span>
+            <span className="cl-tl-context-tag">{selectedEntry.date}{milestoneStageOf(selectedEntry) ? ` · ${milestoneStageOf(selectedEntry)}` : ""}</span>
             <button type="button" onClick={() => setSelected(null)} className="cl-tl-context-close" aria-label="Close milestone details">Close ✕</button>
           </div>
           <p className="cl-tl-context-body">{selectedEntry.detail ?? selectedEntry.label}</p>

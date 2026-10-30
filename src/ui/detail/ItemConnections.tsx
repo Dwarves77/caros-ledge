@@ -81,14 +81,12 @@ export type RelevanceState = { phase: "loading" } | { phase: "failed"; retry: ()
 
 /** The relevance rail card: the lens band, the one-line summary and the applicability gate in words. A failed read says so with Retry; no workspace profile is an honest "not available", never a band. */
 export function RelevanceRailCard({ state }: { state: RelevanceState }) {
+  const triggers = state.phase === "ready" && state.relevance ? [...new Set((state.relevance.binding?.lines ?? []).flatMap((l) => l.triggers.map((t) => t.label)))] : [];
+  const reasons = state.phase === "ready" && state.relevance?.applicability?.reasons?.length ? state.relevance.applicability.reasons : [];
   return (
     <RailCard title="Relevance to you" dataAudit="relevance-rail">
-      {state.phase === "loading" ? (
-        <p className="cl-detail-link-note">Loading…</p>
-      ) : state.phase === "failed" ? (
-        <StateNote tone="error" action={{ label: "Retry", onClick: state.retry }}>
-          Relevance did not load.
-        </StateNote>
+      {state.phase === "loading" ? <p className="cl-detail-link-note">Loading…</p> : state.phase === "failed" ? (
+        <StateNote tone="error" action={{ label: "Retry", onClick: state.retry }}>Relevance did not load.</StateNote>
       ) : !state.relevance ? (
         <p className="cl-detail-link-note">Add your sectors, modes and jurisdictions in your profile to see how this reaches your operation.</p>
       ) : (
@@ -96,6 +94,8 @@ export function RelevanceRailCard({ state }: { state: RelevanceState }) {
           <TagChip>{BAND_WORDS[state.relevance.band]}</TagChip>
           <p style={{ fontSize: "var(--fs-12)", color: "var(--ink-2)", margin: "var(--sp-8) 0 0" }}>{state.relevance.summary}</p>
           {state.relevance.applicability && <p className="cl-detail-link-note">{APPLIES_WORDS[state.relevance.applicability.status] ?? ""}</p>}
+          {triggers.length > 0 && <p className="cl-detail-link-note">In scope because: {triggers.join("; ")}</p>}
+          {reasons.length > 0 && <p className="cl-detail-link-note">{reasons.join(" ")}</p>}
         </>
       )}
     </RailCard>

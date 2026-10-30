@@ -4,11 +4,7 @@
 import type { TimelineEntry } from "@/core/types";
 
 export type TimelineDotState = "passed" | "next" | "ahead";
-export interface ClassifiedMilestone {
-  entry: TimelineEntry;
-  state: TimelineDotState;
-  index: number;
-}
+export interface ClassifiedMilestone { entry: TimelineEntry; state: TimelineDotState; index: number }
 
 /** passed (status past), next (status current, else the first not-past entry when none is marked current), ahead (the rest). */
 export function classifyTimelineEntries(entries: TimelineEntry[]): Array<{ entry: TimelineEntry; state: TimelineDotState }> {
@@ -85,22 +81,25 @@ function summarizeObligationText(text: string, fallback: string): string {
   return (lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated).trim() + "…";
 }
 
-export interface ObligationEventInput {
-  id?: string;
-  event_date: string;
-  event_kind: string;
-  obligation_text?: string | null;
-  source_span?: string | null;
-  source_claim_id?: string | null;
-  source_section_id?: string | null;
+export interface ObligationEventInput { id?: string; event_date: string; event_kind: string; obligation_text?: string | null; source_span?: string | null; source_claim_id?: string | null; source_section_id?: string | null }
+
+const STAGE_BY_KIND: Readonly<Record<string, string>> = { consultation_close: "Proposed / consultation", entry_into_force: "Entry into force", implementing_act_due: "Rulemaking due", delegated_act_due: "Rulemaking due", guidance_expected: "Rulemaking due", phase_step: "Phase-in", review_or_report: "Review / report", compliance_deadline: "Enacted deadline" };
+
+/** Deterministic statutory stage badge for a milestone from its obligation event_kind or verbatim label. */
+export function milestoneStageOf(entry: TimelineEntry): string | null {
+  if (entry.kind && entry.kind !== "other") return STAGE_BY_KIND[entry.kind] ?? entry.kind.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+  const text = `${entry.label ?? ""} ${entry.detail ?? ""}`;
+  if (/\b(consultation|proposal|proposed|draft|comment period)\b/i.test(text)) return "Proposed / consultation";
+  if (/\b(entry into force|enters into force|effective date)\b/i.test(text)) return "Entry into force";
+  if (/\b(delegated act|implementing act|commission to adopt|guidance)\b/i.test(text)) return "Rulemaking due";
+  if (/\b(review|report|evaluation|assessment)\b/i.test(text)) return "Review / report";
+  if (/\b(transitional|phase-in|phased|permitted until|derogation)\b/i.test(text)) return "Phase-in";
+  if (/\b(prohibited|mandatory|ban|must|shall|apply|applies|deadline|obligation)\b/i.test(text)) return "Enacted deadline";
+  return null;
 }
 
 /** Event rows merged into a timeline by date: a date already on the timeline is not repeated. Preserves obligation_text, claimId, and builds concise label. */
-export function mergeObligationEvents(
-  timeline: TimelineEntry[],
-  events: Array<ObligationEventInput>,
-  kindLabels: Record<string, string>
-): TimelineEntry[] {
+export function mergeObligationEvents(timeline: TimelineEntry[], events: Array<ObligationEventInput>, kindLabels: Record<string, string>): TimelineEntry[] {
   const seen = new Map<string, number>();
   timeline.forEach((t, i) => seen.set(t.date, i));
   const merged = [...timeline];
@@ -109,27 +108,12 @@ export function mergeObligationEvents(
     const existingIndex = seen.get(ev.event_date);
     if (existingIndex !== undefined) {
       const existing = merged[existingIndex];
-      if (existing && !existing.detail && ev.obligation_text) {
-        merged[existingIndex] = {
-          ...existing,
-          detail: ev.obligation_text,
-          claimId: existing.claimId ?? ev.source_claim_id ?? null,
-          sectionId: existing.sectionId ?? ev.source_section_id ?? null,
-          kind: existing.kind ?? ev.event_kind,
-        };
-      }
+      if (existing) merged[existingIndex] = { ...existing, detail: existing.detail || ev.obligation_text || undefined, claimId: existing.claimId ?? ev.source_claim_id ?? null, sectionId: existing.sectionId ?? ev.source_section_id ?? null, kind: existing.kind ?? ev.event_kind };
       continue;
     }
     seen.set(ev.event_date, merged.length);
     const label = summarizeObligationText(ev.obligation_text ?? "", kindLabels[ev.event_kind] ?? ev.event_kind);
-    merged.push({
-      date: ev.event_date,
-      label,
-      detail: ev.obligation_text || undefined,
-      claimId: ev.source_claim_id ?? null,
-      sectionId: ev.source_section_id ?? null,
-      kind: ev.event_kind,
-    });
+    merged.push({ date: ev.event_date, label, detail: ev.obligation_text || undefined, claimId: ev.source_claim_id ?? null, sectionId: ev.source_section_id ?? null, kind: ev.event_kind });
   }
   return merged;
 }

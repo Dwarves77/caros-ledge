@@ -88,7 +88,7 @@ export function RegulationDetail(p: Props) {
     <ActionCard
       bare band={band} kindLabel="Regulation" nowIso={nowIso} extraChips={<GradeChip itemGrade={r.itemGrade} />} tier={typeof r.sourceTier === "number" ? r.sourceTier : null} biasTags={r.biasTags} meta={meta}
       onExport={() => void downloadMarkdownBrief(r, { filenamePrefix: "regulation", metaRows: [r.jurisdiction ? `- Jurisdiction: ${r.jurisdiction}` : null, r.priority ? `- Priority: ${r.priority}` : null, r.complianceDeadline ? `- Compliance deadline: ${r.complianceDeadline}` : null, r.url ? `- Source: ${r.url}` : null] })}
-      {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <DetailWatch type="reg" id={r.id} />, onTag: () => setTagOpen((v) => !v) })}
+      {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <DetailWatch type="reg" id={r.id} />, onTag: () => setTagOpen((v) => !v), relevance: p.relevance.phase === "ready" ? p.relevance.data.relevance : null })}
       where={{ value: [r.sub || r.topic, jurisLabel].filter(Boolean).join(" · ") || null }} timeline={timeline} moreMarkersHref="#obligation-register" overflow={<PriorityMenu itemId={r.id} title={r.title} priority={r.priority} archivable />}
     />
   );

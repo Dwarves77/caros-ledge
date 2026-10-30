@@ -196,3 +196,66 @@ test("getClaims resolves directly from getSession user without a network round-t
   assert.deepEqual(claims, { userId: "u-fast-1", email: "fast@carosledge.com", name: "Fast User" });
   assert.equal(networkCalls, 0, "Expected 0 network calls to GoTrue getClaims when getSession already holds the decoded user");
 });
+
+test("milestoneStageOf classifies statutory stages from event_kind or verbatim milestone labels and renders on Timeline markers", async () => {
+  const { BAND_ORDER } = await import("@/core/lists/bands");
+  const { Timeline } = await import("@/ui/Timeline");
+  const { milestoneStageOf } = await import("@/ui/timeline-math");
+  assert.equal(milestoneStageOf({ date: "2026-06-01", label: "Public consultation closes", kind: "consultation_close" }), "Proposed / consultation");
+  assert.equal(milestoneStageOf({ date: "2026-11-21", label: "Commission to adopt first list of non-OECD authorised countries" }), "Rulemaking due");
+  assert.equal(milestoneStageOf({ date: "2026-12-31", label: "Green-listed waste paper procedures permitted until this date (transitional)" }), "Phase-in");
+  assert.equal(milestoneStageOf({ date: "2026-11-21", label: "Plastic waste B3011 export to non-OECD countries prohibited (Article 39(1)(d))" }), "Enacted deadline");
+  const html = renderToStaticMarkup(
+    createElement(Timeline, {
+      entries: [
+        { date: "2026-11-21", label: "Plastic waste B3011 export prohibited" },
+        { date: "2026-12-31", label: "Transitional paper procedures permitted until this date" },
+      ],
+      band: BAND_ORDER[0]!,
+      nowIso: "2026-10-30T00:00:00Z",
+    }),
+  );
+  assert.ok(html.includes("21 Nov 2026 · Enacted deadline"), "Expected enacted deadline stage badge on timeline marker");
+  assert.ok(html.includes("31 Dec 2026 · Phase-in"), "Expected phase-in stage badge on timeline marker");
+});
+
+test("commonActionCardProps and RelevanceRailCard surface deterministic applicability assumptions and scope triggers", async () => {
+  const { RelevanceRailCard } = await import("@/ui/detail/ItemConnections");
+  const relevance = {
+    band: "high" as const,
+    matchedModes: ["road", "ocean"],
+    matchedVerticals: [],
+    matchedJurisdictions: ["EU"],
+    roleSignals: ["forwarder"],
+    summary: "Relevance to your operation: affects your road/ocean operations, your role as forwarder in EU.",
+    applicability: { status: "applies" as const, reasons: ["Applies to EU road and ocean freight forwarders."], missingDimensions: [] },
+    binding: {
+      decomposed: true,
+      objectCount: 1,
+      applicability: { status: "applies" as const, reasons: ["Applies to EU road and ocean freight forwarders."], missingDimensions: [], grain: "obligation" as const },
+      lines: [{ position: "direct", label: "Your duty", note: "", dutyHolders: [{ id: "forwarder", label: "Freight forwarder" }], triggers: [{ attribute: "org_role", value: "forwarder", comparison: undefined, obsStatus: undefined, label: "Your organisation role is Freight forwarder" }], artifacts: [], applicability: null, objectCount: 1, costSlots: [] }],
+      penalties: [],
+    },
+  };
+  const resource = {
+    id: "reg-1157",
+    title: "Regulation (EU) 2024/1157",
+    url: "https://eur-lex.europa.eu",
+    type: "regulation",
+    topic: "waste",
+    priority: "HIGH",
+    jurisdiction: "European Union",
+    modes: ["road", "ocean"],
+    operationalScenarioTags: ["cross-border-waste-shipment"],
+    complianceObjectTags: ["freight-forwarder", "exporter"],
+  } as unknown as Resource;
+  const props = commonActionCardProps(resource, { tagPopover: null, watch: null, onTag: () => {}, relevance });
+  const lanes = String(props.yourLanes.value ?? "");
+  assert.ok(lanes.includes("Matched: affects your road/ocean operations"), `Expected matched summary in yourLanes, got: ${lanes}`);
+  assert.ok(lanes.includes("In scope: Your organisation role is Freight forwarder"), `Expected trigger assumption in yourLanes, got: ${lanes}`);
+  assert.ok(lanes.includes("Scenarios: cross border waste shipment"), `Expected scenario tags in yourLanes, got: ${lanes}`);
+
+  const railHtml = renderToStaticMarkup(createElement(RelevanceRailCard, { state: { phase: "ready", relevance } }));
+  assert.ok(railHtml.includes("In scope because: Your organisation role is Freight forwarder"), "Expected RelevanceRailCard to render explicit scope triggers");
+  assert.ok(railHtml.includes("Applies to EU road and ocean freight forwarders."), "Expected RelevanceRailCard to render applicability reasons");
+});
