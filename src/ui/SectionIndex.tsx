@@ -23,7 +23,7 @@ export const SECTION_DESCRIPTIONS: Readonly<Record<string, string>> = {
   summary: "Executive overview of what this item covers, key takeaways, and how its timeline and scope affect freight operations.",
   obligations: "Actionable compliance duties grouped by who is bound and what operational steps must be taken, backed by verbatim statutory citations.",
   requirements: "Technical thresholds, reporting standards, and substantive mandates required for statutory compliance.",
-  registration: "Mandatory registration, authorization, and reporting procedures with competent regulatory authorities.",
+  registration: "Mandatory registration, licensing, and reporting procedures with competent regulatory authorities.",
   operations: "Day-to-day operational requirements, transport documentation, and shipment handling rules.",
   compliance: "End-to-end compliance chain responsibilities across shippers, carriers, forwarders, and consignees.",
   purpose: "The statutory objective, legal basis, and jurisdictional scope of this regulatory instrument.",
