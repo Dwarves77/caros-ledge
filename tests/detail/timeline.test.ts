@@ -71,5 +71,5 @@ test("Timeline: milestone nodes render as interactive buttons with accessible at
   const out = renderApp(createElement(Timeline, { entries, band, nowIso: "2026-06-01" }));
   assert.match(out, /<button[^>]*class="[^"]*\bcl-tl-marker\b[^"]*"/);
   assert.match(out, /type="button"/);
-  assert.match(out, /aria-label="Phase 1 Starts · 2026-01-01"/);
+  assert.match(out, /aria-label="Phase 1 Starts · 1 Jan 2026 · Entry into force"/);
 });
