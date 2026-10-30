@@ -1,5 +1,5 @@
 {
-  "ruling": "operator 2026-10-30 (DRAIN-2G): item 947e08f3 (IEA Electricity Mid-Year Update 2025) repaired not rejected: only the sentences carrying the 15 Gate A orphan figures are rewritten (proven figure kept, unprovable figure dropped, gap stated in label form); every other byte of the stored brief is unchanged. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "ruling": "coordinator 2026-10-30 (DRAIN-2G r1): item 947e08f3 (IEA Electricity Mid-Year Update 2025) rewritten to the current research_summary contract: every figure is bound to a verbatim span in a stored capture of the item, the 15 Gate A orphan figures that no stored capture states stay out, and the primary-source note states the truth (reachable, not captured under the build-mode hold). No review block is authored here; the second reader judges next. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
   "steps": [
     {
       "name": "drain-2g-dry",
