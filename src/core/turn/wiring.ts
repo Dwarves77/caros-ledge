@@ -5,7 +5,7 @@ import { fetchAllRows, isServiceConfigured, serviceClient } from "@/core/db";
 import { deriveKey } from "@/core/intake/canonical-key";
 import type { IdentityHelpers } from "@/core/intake";
 import { assertFetchAllowed, capture, classifyBody, detectAccessWall, fetchAllowed, fetchDirect, makePoliteGate, parseOjReference } from "@/core/fetch";
-import { isStorableClass } from "@/core/fetch/classify-body";
+import { bodyOpts, isStorableClass } from "@/core/fetch/classify-body";
 import { congruence, matchExistingSubject, sourceRole } from "@/core/entities";
 import { currentRunContext, makeRecorder, type RecorderContext } from "@/core/harness";
 import { timePhase, withServerTiming } from "@/core/perf";
@@ -180,8 +180,8 @@ export function buildDeps(sb: Db, env: Env = process.env, opts: DepsOptions = {}
       const o = officialnessOf(text, hostOf(url), { hostTier: ctx.hostTier, floorTier: ctx.floorTier });
       return { path: o.path, cleanBody: o.cleanBody };
     },
-    classifyBody(body) {
-      const v = classifyBody(body);
+    classifyBody(body, url) {
+      const v = classifyBody(body, bodyOpts(url));
       return { errorBody: !isStorableClass(v.class), reason: v.class };
     },
     classTierForHost: (host) => classTierForHost(host),

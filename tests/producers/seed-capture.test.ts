@@ -28,6 +28,14 @@ test("the same chrome on the EUR-Lex portal with no instrument body is still an 
   assert.equal(classifyBody(BODY, bodyOpts(EC, { status: 200 })).class, BODY_CLASS.OK);
 });
 
+test("CLASSIFY-FIX-2 B: the EUR-Lex shell rule is host-gated; the Commission body with no host is content, EUR-Lex chrome with its host is still a shell", () => {
+  assert.equal(classifyBody(BODY).class, BODY_CLASS.OK);
+  assert.equal(classifyBody(BODY, bodyOpts(EC, { status: 200 })).class, BODY_CLASS.OK);
+  assert.equal(classifyBody(BODY, bodyOpts(EURLEX, { status: 200 })).class, BODY_CLASS.INTERFACE_SHELL);
+  // No host: the rule cannot tell portal chrome from a Commission page that carries the same words; stored captures were already class-checked WITH their host at capture, so ground (no host) must not re-judge them.
+  assert.notEqual(classifyBody(CHROME).class, BODY_CLASS.INTERFACE_SHELL);
+});
+
 test("a page no tier could store says why for each tier it tried, so the note names the browser tier's outcome and not only the direct tier's", async () => {
   const wall = "Skip to main content. Please enable JavaScript to view this site.";
   const f = fixture({ routes: { [EC]: () => new Response(`<html><body><p>${wall}</p></body></html>`, { status: 200, headers: { "content-type": "text/html" } }) } });

@@ -66,7 +66,7 @@ export async function rehomeQuarantined(deps: Deps, input: { apply?: boolean; li
         const r = await sources.resolveSource(p.url);
         const host = hostOf(p.url);
         const codified = r?.tier == null ? sources.classTierForHost(host) : null;
-        if (sources.classifyBody(p.text).errorBody) continue;
+        if (sources.classifyBody(p.text, p.url).errorBody) continue;
         captures.push({ id: p.id, url: p.url, text: p.text, tier: r?.tier ?? codified, sourceId: r?.sourceId ?? null, host, needsRegister: r?.tier == null && codified != null });
       }
       const ordered = floorPool(captures, floor).filter((c) => sources.officialness(c.url, c.text, { hostTier: c.tier, floorTier: floor }).path === "a");

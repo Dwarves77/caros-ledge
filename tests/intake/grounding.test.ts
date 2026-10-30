@@ -145,6 +145,13 @@ test("INV-160 end to end: ground forces a slot FACT only on a confirmation that 
   assert.equal(w.db.rows("section_claim_provenance").filter((c) => c.claim_kind === "GAP").length, 1, "the slot is an honest GAP");
 });
 
+test("CLASSIFY-FIX-2 A: S-NUMERIC reads a figure through an HTML space (&nbsp; and U+00A0 fold to a space); a span with no figure is still held", () => {
+  const held = (claim_text: string, source_span: string) => mintGates([{ id: "n", claim_kind: "FACT", claim_text, source_span, source_id: SOURCE, source_tier_at_grounding: 1 }], { itemFloor: 2 }).numericHeldIds;
+  assert.deepEqual(held("Recycled content of at least 15 % applies", "a share of at least 15&nbsp;% of the plastic"), []);
+  assert.deepEqual(held("Recycled content of at least 50 % applies", "a share of at least 50 % of the plastic"), []);
+  assert.deepEqual(held("Recycled content of at least 15 % applies", "a share of the plastic, no figure here"), ["n"]);
+});
+
 test("mint gates: S-CONFLATE and S-NUMERIC are HOLDS (the ids come back), below-floor and generic-source are counted", () => {
   const span = "Regulation (EU) 2023/1805 sets the FuelEU maritime requirements for ships.";
   const conflated = ["Regulation 2023/1805 applies", "Regulation 2022/999 applies", "ReFuelEU applies"].map((t, i) => ({ id: `f${i}`, claim_kind: "FACT", claim_text: t, source_span: span, source_id: SOURCE, source_tier_at_grounding: 1 }));
