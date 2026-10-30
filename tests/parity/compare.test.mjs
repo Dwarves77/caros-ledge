@@ -181,7 +181,7 @@ test('conditional: a data-conditional control is compared when present on both s
   assert.deepEqual(run(ctl('S3', RC, 'Add note', 'Back to list')).fails, ['control reordered: button:Add note'], 'other controls still gate order');
   assert.deepEqual(run(ctl('S3', RC, 'Back to list')).fails, ['control missing: button:Add note'], 'other controls still gate presence');
   assert.deepEqual(run(ctl(RC, 'S3', 'Back to list', 'Add note')).fails, ['control reordered: button:Request coverage'], 'a present conditional control is held to its place');
-  const real = JSON.parse(await readFile(new URL('./baseline/operations-detail.1280x900.json', import.meta.url), 'utf8'));
+  const real = JSON.parse(await readFile(new URL('./fixtures/operations-detail.1280x900.json', import.meta.url), 'utf8'));
   const keep = real.controls.filter((c, i) => i !== 61);
   assert.equal(real.controls.filter((c) => c.name === RC).length, 2, 'the baseline holds the two buttons');
   assert.deepEqual(compareRecord('operations-detail', '1280x900', real, { ...real, controls: keep }, [], config.dataNames ?? [], config.conditional ?? []).fails, [], 'the committed config covers the production case');
@@ -191,7 +191,8 @@ test('conditional: a data-conditional control is compared when present on both s
 // PARITY-4 (main run 40222359593): the ruled runs wrote production while the parity job read it. Market lost two of its three absence-state buttons (oem_tech_roadmaps and reroute_events filled), and market-detail lost the
 // theme brief's own headings (the 18:43 theme recompute put the baseline item into a theme with no brief). Both are data the baseline predates; the committed config must cover them and nothing else.
 test('conditional: the production case of main run 40222359593 passes under the committed config, and a changed neighbour still fails', async () => {
-  const read = async (name) => JSON.parse(await readFile(new URL(`./baseline/${name}.1280x900.json`, import.meta.url), 'utf8'));
+  // Recorded production cases (the baseline as of main run 40222359593 and PARITY-5), kept as fixtures: the engine tests pin these data conditions, and a look refresh of the baseline must not change them.
+  const read = async (name) => JSON.parse(await readFile(new URL(`./${name === 'market' ? 'baseline' : 'fixtures'}/${name}.1280x900.json`, import.meta.url), 'utf8'));
   const run = (route, b, c) => compareRecord(route, '1280x900', b, c, [], config.dataNames ?? [], config.conditional ?? []).fails;
   const market = await read('market');
   const rc = market.controls.map((c, i) => (c.name === 'Request coverage' ? i : -1)).filter((i) => i >= 0);
@@ -245,7 +246,7 @@ test('dataNames run: the member chips compare as one token, a missing run still 
   assert.deepEqual(run('market-detail', base, ctl('Add note', 'Jason', 'Other control', 'Due date (optional)', 'Assign')).fails.length, 0, 'extra buttons in the span are chips: the roster is data');
   assert.deepEqual(run('market-detail', ctl('Add note', 'Export', 'Due date (optional)'), ctl('Add note', 'Due date (optional)')).fails, ['control missing: button:member name'], 'a baseline run is owed whatever it held');
   assert.equal(run('market', base, ctl('Add note', 'Jason', 'Jason', 'Due date (optional)', 'Assign')).fails.length, 1, 'per route: elsewhere the name still gates');
-  const real = JSON.parse(await readFile(new URL('./baseline/market-detail.1280x900.json', import.meta.url), 'utf8'));
+  const real = JSON.parse(await readFile(new URL('./fixtures/market-detail.1280x900.json', import.meta.url), 'utf8'));
   assert.deepEqual(run('market-detail', real, { ...real, controls: real.controls.map((c) => (c.name === '— Name not set' ? { ...c, name: 'Jason' } : c)) }).fails, [], 'the production case under the committed config');
   assert.equal(run('market-detail', real, { ...real, controls: real.controls.filter((c) => c.name !== '— Name not set' && c.name !== 'Jason') }).fails.length, 1, 'the committed baseline owes the run');
   assert.equal(run('market-detail', real, { ...real, controls: real.controls.map((c) => (c.name === 'Add note' ? { ...c, name: 'Add a note' } : c)) }).fails.length > 0, true, 'a different control changed still fails under the committed config');
@@ -291,4 +292,13 @@ test('PARITY-7: a missing theme pill passes when marked as an item slot; unmarke
   assert.deepEqual(run(bm, rec(['Fuels & SAF'], true)), [], 'first and last pills missing: data');
   assert.equal(run(bm, rec([], true)).length > 0, true, 'whole facet row gone: fails');
   assert.equal(run(bm, { ...rec(['Operations', 'Policy'], true), controls: rec(['Operations', 'Policy'], true).controls.filter((c) => c.name !== 'Filter') }).length > 0, true, 'a non-slot button missing still fails');
+});
+
+// A closed disclosure's "Collapse" button is an item in the capture; the later same-named button must not be taken for it, or every control between falls out of order (PR 165: "Back to list" read as reordered).
+test('an item slot that holds a baseline key in place satisfies it; the later same-named control does not make the controls between reordered', () => {
+  const mk = (...cs) => ({ landmarks: [], headings: [], rows: { items: [] }, controls: cs.map(([role, name, item]) => ({ role, name, ...(item ? { item: true } : {}) })) });
+  const base = mk(['button', 'Collapse'], ['button', 'Back to list'], ['button', 'Collapse']);
+  assert.deepEqual(compareRecord('market-detail', '1280x900', base, mk(['button', 'Collapse'], ['button', 'Back to list'], ['button', 'Collapse', true]), []).fails, []);
+  assert.deepEqual(compareRecord('market-detail', '1280x900', base, mk(['button', 'Collapse'], ['button', 'Collapse'], ['button', 'Back to list']), []).fails, ['control reordered: button:Collapse'], 'a real reorder still fails');
+  assert.deepEqual(compareRecord('market-detail', '1280x900', base, mk(['button', 'Collapse'], ['button', 'Collapse', true]), []).fails, ['control missing: button:Back to list'], 'a missing control still fails');
 });
