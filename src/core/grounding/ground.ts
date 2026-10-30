@@ -37,7 +37,7 @@ export interface GroundSources {
   registerAndRate(url: string): Promise<{ sourceId: string | null; tier: number | null; refused?: string }>;
   matchTarget(pool: { url: string; text: string }[], identity: TargetIdentity): TargetMatch;
   officialness(url: string, text: string, ctx: { hostTier: number | null; floorTier: number | null }): { path: "a" | "b"; cleanBody: string | null };
-  classifyBody(body: string): { errorBody: boolean; reason?: string };
+  classifyBody(body: string, url?: string): { errorBody: boolean; reason?: string };
 }
 export interface GroundDeps { sb: Db; sources: GroundSources; now: () => Date }
 export interface GroundInput {
@@ -110,7 +110,7 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
   // ---- pool, error-body gate, cited-host gate -------------------------------------------------------------
   const allRows = await readAllPoolRows(sb, itemId);
   const content = allRows.filter((r) => r.text.length > GROUND_CONFIG.MIN_USABLE_POOL_CHARS);
-  const bodies = content.map((r) => ({ r, c: sources.classifyBody(r.text) }));
+  const bodies = content.map((r) => ({ r, c: sources.classifyBody(r.text, r.url) }));
   const errorBodies = bodies.filter((b) => b.c.errorBody).map((b) => b.r);
   const pool: PoolRow[] = bodies.filter((b) => !b.c.errorBody).map((b) => b.r);
   if (errorBodies.length && !dry) {

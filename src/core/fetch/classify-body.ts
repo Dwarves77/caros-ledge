@@ -114,7 +114,7 @@ export function targetLangRatio(text: string | null | undefined): number {
 /** EUR-Lex /legal-content/ page whose captured window is all portal chrome and no instrument body; a genuine EUR-Lex portal page is not flagged. */
 function looksLikeEurlexInterfaceShell(text: string, opts: { host?: string | null; path?: string | null } = {}): boolean {
   const host = (opts.host || "").toLowerCase().replace(/^www\./, "");
-  if (host && !/(^|\.)eur-lex\.europa\.eu$/.test(host)) return false;
+  if (!/(^|\.)eur-lex\.europa\.eu$/.test(host)) return false;
   if (opts.path && !/\/legal-content\//i.test(opts.path)) return false;
   return EURLEX_CHROME_RE.test(text) && !LEGISLATIVE_BODY_RE.test(text);
 }
@@ -140,7 +140,7 @@ export interface BodyVerdict {
 const verdict = (cls: BodyClass, evidence = ""): BodyVerdict => ({ class: cls, evidence: evidence.slice(0, 200) });
 
 export type BodyOpts = { status?: number; timedOut?: boolean; host?: string | null; path?: string | null };
-/** The options of a fetched URL: its host and path beside the status, so a rule that belongs to one host (the EUR-Lex interface shell) stays on that host. A caller that knows the URL passes it here; a body with no host is judged by the host-free rules and the EUR-Lex one. */
+/** The options of a fetched URL: its host and path beside the status, so a rule that belongs to one host (the EUR-Lex interface shell) stays on that host. A caller that knows the URL passes it here; a body with no host is judged by the host-free rules only (the EUR-Lex rule needs the host to apply). */
 export function bodyOpts(url: string | null | undefined, extra: Pick<BodyOpts, "status" | "timedOut"> = {}): BodyOpts {
   try {
     const u = new URL(String(url));
