@@ -661,7 +661,7 @@ button, input, select, textarea { font-family: inherit; }
   .cl-tl-track { display: block; position: relative; padding: var(--sp-12) 0 0; }
   .cl-tl-line { position: absolute; left: 90px; top: 10px; bottom: 10px; width: 2px; height: auto; margin: 0; background: linear-gradient(to bottom, var(--awareness) 0%, var(--awareness) var(--tl-green, 0%), var(--line-1) var(--tl-green, 0%)); }
   .cl-tl-marker { display: grid; grid-template-columns: 84px 14px 1fr; align-items: center; min-height: var(--target); padding-bottom: var(--sp-14); box-sizing: border-box; background: none; border: 0; text-align: left; }
-  .cl-tl-date { grid-row: auto; grid-column: 1; justify-self: end; text-align: right; width: 84px; padding: 0 var(--sp-8) 0 0; font-size: var(--fs-11); font-weight: 600; max-width: none; }
+  .cl-tl-date { grid-row: auto; grid-column: 1; justify-self: end; text-align: right; width: 84px; white-space: normal; line-height: 1.25; padding: 0 var(--sp-8) 0 0; font-size: var(--fs-11); font-weight: 600; max-width: none; }
   .cl-tl-marker[data-state="next"] .cl-tl-date { font-weight: 800; }
   .cl-tl-dotcell { grid-row: auto; grid-column: 2; justify-self: center; padding-top: var(--sp-2); }
   .cl-tl-label { grid-row: auto; grid-column: 3; justify-self: start; text-align: left; white-space: normal; overflow: visible; padding: 0 0 0 var(--sp-8); font-size: var(--fs-12); font-weight: 500; overflow-wrap: anywhere; min-width: 0; }
