@@ -1,0 +1,21 @@
+{
+  "ruling": "operator and coordinator 2026-10-30 (SYNTH-APPLY-4): the last two admin capital-radar answers, accepted by the second reader in round 4 under cluster ids 3044eff9ae3a3673 and 5dfc029959e1ecc9 and mapped by anchors and angles to the stable ENGINE-FIX-2 ids 68275fe1d81735bb and 5d16d8d5fc4b3799, are applied to production through the briefs stage after the repair rounds 6 to 8 (5d16d8d5fc4b3799 converted to the gaps-and-signposts form when its price rows left the graph) were accepted by the independent second reader. The signposts, the coverage-gap discovery needs and the connection write through the shared write-back. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "synth-apply-4-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-10-30-synth-apply-4.admin.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "synth-apply-4",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-30-synth-apply-4.admin.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

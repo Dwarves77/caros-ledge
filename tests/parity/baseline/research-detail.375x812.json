@@ -6,13 +6,14 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-20T11:17:22.109Z",
+  "captured_at": "2026-10-30T20:59:33.758Z",
   "http_status": 200,
   "final_path": "/research/a7fd2700-de27-4cc1-b5e6-442fdf8a66ad",
-  "network_idle": true,
+  "settled": true,
+  "settle_reason": null,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Research\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 43 · Research / United Kingdom\n  - 'heading \"Embedding Social Vulnerability in UK Climate Adaptation Policy: Tyndall Centre Research into Government Decision-Making\" [level=1]'\n  - text: Research · published May 10, 2026\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - text: Action · ≤ 6 months Finding research finding All modes T3 1 source · 1 connection\n  - group \"Source bias tags\":\n    - text: Primary source Academic institution Independent research Analytical synthesis\n    - button \"+2 more\"\n  - button \"Export brief\"\n  - button \"Share\"\n  - button \"Watch\" [disabled]\n  - button \"+ Tag\"\n  - paragraph: Exposure\n  - paragraph: Where\n  - text: United Kingdom\n  - paragraph: Who pays\n  - text: needs primary-source figure\n  - paragraph: Your lanes\n  - text: needs primary-source figure\n  - paragraph: Next milestone\n  - text: needs more data\n  - paragraph: Timeline\n  - text: 1 milestone · 1 passed\n  - 'img \"Milestone timeline: 1 milestones, 1 passed\"': \"2026-03-01 Mar 2026 - other: …Do not claim the Fellowship has produced findings — it runs from March 2026 to February 2027 and outputs are not yet available.\"\n  - text: Last milestone passed · 1 Mar 2026 · no further step is scheduled on this timeline\n  - paragraph: Connections\n  - link \"References · research Tyndall Centre for Climate Research — Transport Decarbonisation\":\n    - /url: /research/tyndall-centre-for-climate-research-transport-decarbonisation\n    - paragraph: References · research\n    - paragraph: Tyndall Centre for Climate Research — Transport Decarbonisation\n  - navigation \"Section index\":\n    - link \"S1 Summary\":\n      - /url: \"#summary\"\n    - link \"S2 Findings\":\n      - /url: \"#findings\"\n    - link \"S5 Sources\":\n      - /url: \"#sources\"\n    - link \"S6 Related\":\n      - /url: \"#related\"\n    - link \"S7 Connected\":\n      - /url: \"#across-pages\"\n    - group \"Summary depth\":\n      - button \"Summary\" [pressed]\n      - button \"Full brief\"\n  - text: S1\n  - heading \"Summary\" [level=2]\n  - paragraph: \"A research summary synthesising an active British Academy Innovation Fellowship (Route B: Policy-led, Sustainable Futures) held by a Tyndall Centre for Climate Change Research (University of East Anglia) researcher working with the UK Government Office for Science (GO-Science), alongside a peer-reviewed study on UK Climate Change Committee (CCC) recommendation uptake and two UK government policy documents on embedding social vulnerability in climate adaptation decision-making. The Fellowship runs from 1 March 2026 to 28 February 2027.\"\n  - 'button \"Evidence × agreement: needs evidence-synthesis data (1)\"'\n  - 'button \"Source authority: needs role-class data\"'\n  - text: S2\n  - heading \"Substantive findings\" [level=2]\n  - paragraph: What the research found\n  - paragraph: \"This brief synthesises intelligence across a cluster of interconnected activities rather than a single publication: an active British Academy Fellowship at the Tyndall Centre for Climate Change Research (University of East Anglia), a peer-reviewed study on UK Climate Change Committee (CCC) recommendation uptake, and two authoritative UK government policy documents committing to embed social vulnerability in adaptation decision-making.\"\n  - paragraph:\n    - strong: The Fellowship — design and current phase\n  - paragraph: SCOPE\n  - paragraph: \"The researcher profile documents that a Tyndall Centre researcher holds a \\\"British Academy Innovation Fellow (Route B: Policy-led, Sustainable Futures), working with the Government Office for Science (GO-Science) to strengthen the evidence base for climate and societal decision-making.\\\"\"\n  - paragraph: The Fellowship is recorded as running from \"1/03/26 → 28/02/27.\"\n  - paragraph: — Dr Katie Jenkins Researcher Profile\n  - link \"research-portal.uea.ac.uk\":\n    - /url: https://research-portal.uea.ac.uk/en/persons/katie-jenkins/\n  - paragraph: \"University of East Anglia. URL:\"\n  - paragraph: — Dr Katie Jenkins Researcher Profile\n  - link \"research-portal.uea.ac.uk\":\n    - /url: https://research-portal.uea.ac.uk/en/persons/katie-jenkins/\n  - paragraph: \"University of East Anglia. URL:\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: The Fellowship is therefore in its pre-commencement or early active phase at the time of this brief (late 2025/early 2026), with substantive outputs expected in the 2026–2027 window. The forward-intelligence value lies in the design and stated intent, not yet in published findings.\n  - paragraph: not citable\n  - paragraph: The Fellowship's stated purpose — embedding social vulnerability evidence into government decision-making via GO-Science — connects directly to two concurrent UK government policy commitments (see below), creating a policy-pull environment that is unusually well-aligned with the research design.\n  - paragraph:\n    - strong: The CCC recommendation-uptake study — headline finding\n  - paragraph: SCOPE\n  - paragraph: A peer-reviewed study published in Climate Policy (Taylor & Francis) reports that \"a systematic content analysis of government responses to 592 of the CCC's 700 recommendations (2009–2020) finds that 23% were accepted, of which only 2% were accepted in full.\"\n  - paragraph: The same study finds that \"for those addressing adaptation, the only predictor of acceptance was the degree of repetition; repeated recommendations were nearly five-times more likely to be accepted than fresh ones.\"\n  - paragraph: The study further finds that \"for mitigation recommendations, those with a cross-sectoral focus were over four-times more likely to be accepted than those addressing a specific sector.\"\n  - paragraph: \"— \\\"The policy impact of climate change advisory bodies: government responses to the UK Climate Change Committee's recommendations\"\n  - link \"tandfonline.com\":\n    - /url: https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2497881\n  - paragraph: \"published online 28 April 2025. URL:\"\n  - paragraph: — Climate Policy\n  - paragraph: Taylor & Francis\n  - link \"tandfonline.com\":\n    - /url: https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2497881\n  - paragraph: \"28 April 2025. URL:\"\n  - paragraph: — Climate Policy\n  - paragraph: Taylor & Francis\n  - link \"tandfonline.com\":\n    - /url: https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2497881\n  - paragraph: \"28 April 2025. URL:\"\n  - paragraph:\n    - strong: Methodology and scope note\n  - paragraph: SCOPE\n  - paragraph: The study used \"written acceptance as a proxy for policy impact\" and covered the period 2009–2020.\n  - paragraph: — Climate Policy\n  - paragraph: Taylor & Francis\n  - link \"tandfonline.com\":\n    - /url: https://www.tandfonline.com/doi/full/10.1080/14693062.2025.2497881\n  - paragraph: \"28 April 2025. URL:\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: Acceptance is itself acknowledged in the study as a proxy, not confirmed implementation. The gap between written acceptance and real-world policy change is a scope limit the study explicitly surfaces — making its findings conservative rather than inflated.\n  - paragraph: not citable\n  - paragraph:\n    - strong: Government policy commitment — £15 million UKRI research programme\n  - paragraph: SCOPE\n  - paragraph: \"The UK Government's response to the CCC's 2025 Adaptation Progress Report states: \\\"The government is investing £15 million in UKRI-led research programmes to improve understanding of climate vulnerability and adaptive capacity across government and society.\\\"\"\n  - paragraph: — Government response to the Climate Change Committee 2025 adaptation progress report\n  - link \"gov.uk\":\n    - /url: https://www.gov.uk/government/publications/government-response-to-the-climate-change-committee-2025-adaptation-progress-report/government-response-to-the-climate-change-committee-2025-adaptation-progress-report\n  - paragraph: \"published 29 October 2025. URL:\"\n  - paragraph:\n    - strong: Government R&I Framework — explicit call for socio-economic vulnerability integration\n  - paragraph: SCOPE\n  - paragraph: \"The Climate Adaptation Research and Innovation Framework, published jointly by DEFRA and the Government Office for Science, states: \\\"investments to develop both adaptation solutions and policy mechanisms are required to ensure that the UK adapts to a changing climate effectively and equitably.\\\"\"\n  - paragraph: The same Framework identifies \"cross-cutting and systems-wide issues and linkages between sectors\" as a distinct analytical priority alongside 11 named sectors.\n  - paragraph: — Climate Adaptation Research and Innovation Framework\n  - link \"gov.uk\":\n    - /url: https://www.gov.uk/government/publications/climate-adaptation-research-and-innovation-framework/climate-adaptation-research-and-innovation-framework\n  - paragraph: \"published 7 April 2025. URL:\"\n  - paragraph: — Climate Adaptation Research and Innovation Framework\n  - link \"gov.uk\":\n    - /url: https://www.gov.uk/government/publications/climate-adaptation-research-and-innovation-framework/climate-adaptation-research-and-innovation-framework\n  - paragraph: \"7 April 2025. URL:\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: The explicit cross-sectoral framing in the R&I Framework is structurally consistent with the CCC study's finding that cross-sectoral recommendations are over four times more likely to be accepted — suggesting the government's own framework design may reflect lessons from recommendation-uptake research, whether intentionally or convergently.\n  - paragraph: not citable\n  - separator\n  - paragraph: Why it matters operationally\n  - paragraph: \"This section is filtered to the workspace's operational context: a global freight forwarder whose supply chains serve cargo verticals including live events, fine art, luxury goods, film and TV, high-value automotive, and humanitarian freight, operating primarily by air with road secondary and ocean tertiary, across the Americas, Europe, and Asia trade lanes.\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Operational implication\n  - paragraph: The direct regulatory mechanism is not yet activated for freight operators. The Fellowship and the R&I Framework are upstream policy-development activities. Their downstream effect on freight operations will flow through future National Adaptation Programme iterations, sector-specific resilience standards, or climate risk disclosure requirements — not through immediate compliance obligations.\n  - paragraph: \"However, for workspaces with clients in sectors that are directly named in the UK Climate Adaptation R&I Framework — including health, transport infrastructure, buildings, and business/finance — client-side climate adaptation requirements are likely to intensify. A freight forwarder serving healthcare logistics, infrastructure construction, or financial-sector event clients in the UK may face upstream pressure as those clients respond to adaptation mandates. The humanitarian cargo vertical is particularly exposed: humanitarian supply chains serve populations defined in part by social vulnerability, which is the exact construct this research cluster is designed to embed into government decision-making.\"\n  - paragraph: The CCC study's finding that only 23% of adaptation recommendations are accepted — and only 2% in full — is operationally relevant as a calibration signal. It suggests that even well-evidenced policy advice moves slowly through UK government, meaning adaptation requirements affecting freight operations are unlikely to materialise as surprise overnight obligations. The lead time exists; the question is whether workspaces use it.\n  - paragraph: The £15 million UKRI commitment, combined with the Fellowship's GO-Science placement, represents a deliberate government effort to close the evidence-to-policy gap that the CCC acceptance-rate data exposes. If this mechanism succeeds, the acceptance-rate pattern documented for 2009–2020 may not hold for the next NAP cycle (NAP4, expected mid-2028 under the five-year statutory cycle).\n  - paragraph: not citable\n  - paragraph: not citable\n  - paragraph: not citable\n  - paragraph: not citable\n  - separator\n  - paragraph: Strategy & claims\n  - paragraph:\n    - strong: For workspaces operating humanitarian cargo verticals\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: Humanitarian freight operations serve populations that are by definition socially vulnerable. As UK (and likely EU and international) adaptation policy increasingly embeds social vulnerability metrics, humanitarian programme sponsors and institutional donors may begin specifying climate-vulnerability-weighted routing or resilience criteria in logistics contracts. Workspaces already operating in this vertical should track whether new UKRI-funded vulnerability frameworks generate procurement criteria that affect how humanitarian logistics contracts are specified and evaluated.\n  - paragraph: not citable\n  - paragraph:\n    - strong: For workspaces tracking UK climate disclosure and reporting requirements\n  - paragraph: SCOPE\n  - paragraph: \"The UK Government's October 2025 CCC response states: \\\"In June 2025, the government published a consultation on draft UK Sustainability Reporting Standards, which aim to include reporting on climate-related risks, and adaptation efforts and investments. The government is also consulting on the role of climate adaptation in transition planning.\\\"\"\n  - paragraph: — Government response to the CCC 2025 adaptation progress report\n  - link \"gov.uk\":\n    - /url: https://www.gov.uk/government/publications/government-response-to-the-climate-change-committee-2025-adaptation-progress-report/government-response-to-the-climate-change-committee-2025-adaptation-progress-report\n  - paragraph: \"29 October 2025. URL:\"\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Operational implication\n  - paragraph: \"If UK Sustainability Reporting Standards are finalised to include climate adaptation disclosure, freight forwarders operating as intermediaries for UK-domiciled clients may face upstream data requests: clients will need supply-chain climate risk data to populate their own adaptation disclosures. This is the same mechanism already in operation for Scope 3 emissions reporting. Workspaces that build climate-risk data capability now — especially vulnerability-weighted route and corridor data — will be positioned to respond to these requests when they arrive.\"\n  - paragraph: not citable\n  - paragraph: LEGAL CONFIRMATION REQUIRED\n  - paragraph: Whether and when finalised UK Sustainability Reporting Standards will impose supply-chain climate adaptation data obligations on freight intermediaries, and whether the consultation on transition planning will extend to logistics providers, requires legal review of the finalised standards when published.\n  - paragraph: —\n  - paragraph:\n    - strong: For the competitive and commercial position\n  - paragraph: ANALYTICAL INFERENCE\n  - paragraph: Analytical inference\n  - paragraph: The research cluster documented here — the Fellowship, the CCC uptake study, and the R&I Framework — collectively signals a tightening of the science-to-policy pipeline in UK climate adaptation. Workspaces that can demonstrate alignment with emerging vulnerability-integrated adaptation frameworks (for example, through route-level climate risk assessments or climate-resilient supply chain design for vulnerable-population clients) are positioned to differentiate in tendering for UK public sector and humanitarian contracts.\n  - paragraph: not citable\n  - paragraph:\n    - strong: What this does NOT change immediately\n  - paragraph: No operational compliance deadline is activated by this research cluster. The Fellowship produces outputs in 2026–2027; the UKRI research programmes are newly funded; the UK Sustainability Reporting Standards remain in consultation. No immediate action is required in the compliance sense.\n  - separator\n  - paragraph: Talking points\n  - paragraph:\n    - strong: What the workspace can credibly say\n  - paragraph: SCOPE\n  - paragraph: The UK government has committed £15 million to UKRI-led research specifically on climate vulnerability and adaptive capacity, published 29 October 2025. This is a sourced, government-confirmed fact available for use in client conversations.\n  - paragraph: — DEFRA CCC response\n  - paragraph: 29 October 2025.* - The UK's Climate Adaptation Research and Innovation Framework (April 2025) signals that socio-economic equity is now explicitly part of the government's adaptation R&I agenda, not just physical risk. This is publicly available and citable. - Research published in *Climate Policy* (April 2025) documents that only 23% of CCC adaptation recommendations were accepted between 2009 and 2020\n  - paragraph: with cross-sectoral framing and repetition being the strongest predictors of uptake. This is useful framing for clients asking why adaptation policy appears to move slowly\n  - paragraph:\n    - strong: What to avoid saying\n  - list:\n    - listitem: Do not claim the Fellowship has produced findings — it runs from March 2026 to February 2027 and outputs are not yet available.\n    - listitem:\n      - text: Do not characterise the £15 million UKRI programme as targeting freight or logistics — the sourced text refers to \"climate vulnerability and adaptive capacity across government and society.\" Sector-specific application to freight is\n      - emphasis: \"Analytical inference:\"\n      - text: \", not a stated government commitment.\"\n    - listitem:\n      - text: Do not assert that UK Sustainability Reporting Standards will impose adaptation disclosure requirements on freight intermediaries — this is a live consultation, not a finalised rule.\n      - emphasis: Legal Confirmation Required\n      - text: on scope.\n  - paragraph:\n    - strong: Questions to pose to clients\n  - list:\n    - listitem: Is your organisation required to respond to the UK Adaptation Reporting Power (ARP)? If so, what climate risk data do you need from your supply chain to complete that response?\n    - listitem: Are your humanitarian programme funders beginning to specify vulnerability-weighted logistics criteria in tenders?\n    - listitem: Is your organisation in scope for the UK Sustainability Reporting Standards consultation on climate adaptation disclosure?\n  - separator\n  - paragraph: What does not resolve\n  - paragraph:\n    - strong: The Fellowship outcome is pending.\n    - text: The British Academy Fellowship runs to 28 February 2027. Its specific findings — what methods for embedding social vulnerability in government decision-making it recommends, what policy tools it produces, and whether GO-Science acts on them — are not yet available.\n    - emphasis: \"Re-check window: on Fellowship completion.\"\n  - paragraph:\n    - strong: The UKRI £15 million programme scope is unspecified in available sources.\n    - text: The government response commits the funding but does not specify which research programmes will be funded, what the call criteria are, or when outputs will be available.\n    - emphasis: Specific programme scope and call dates not available from primary sources as of this brief's most recent authoring pass.\n  - paragraph:\n    - strong: The CCC acceptance-rate study covers 2009–2020 only.\n    - text: The study explicitly notes \"further research should also explore other factors that influence government responses as well as assess how far accepted recommendations are implemented.\" The post-2020 period — including the post-COP26 and post-CCRA3 environment — is not covered. Whether the acceptance rate has changed under recent policy conditions is an open question.\n  - paragraph:\n    - strong: The UK Sustainability Reporting Standards are in consultation.\n    - text: Whether finalised standards will extend climate adaptation disclosure requirements to supply chain intermediaries including freight forwarders is unresolved.\n    - emphasis: Legal Confirmation Required\n    - text: when standards are finalised.\n  - paragraph:\n    - strong: No authoritative guidance has been published as of this brief's most recent authoring pass\n    - text: on how the R&I Framework's cross-cutting vulnerability priorities translate into specific procurement criteria, contract specifications, or logistics-sector obligations.\n  - separator\n  - text: S5\n  - heading \"Sources\" [level=2]\n  - text: 1 · tier = provenance, never urgency\n  - link \"T3 Tyndall Centre for Climate Change Research (tyndall.ac.uk)\":\n    - /url: https://tyndall.ac.uk/reports/decarbonising-the-uk-energy-in-a-climate-conscious-future\n    - text: T3\n    - paragraph: Tyndall Centre for Climate Change Research (tyndall.ac.uk)\n  - group \"Source bias tags\":\n    - text: Academic institution Independent research Analytical synthesis\n    - button \"+2 more\"\n  - text: S6\n  - heading \"Related\" [level=2]\n  - text: same source\n  - link \"Tyndall Centre for Climate Research — Transport Decarbonisation Tyndall Centre research on aviation and shipping decarbonisation including SAF lifecycle analysis, maritime fuel pathways, and carbon budget modelling for transport sectors.. Ow…\":\n    - /url: /research/tyndall-centre-for-climate-research-transport-decarbonisation\n    - paragraph: Tyndall Centre for Climate Research — Transport Decarbonisation\n    - paragraph: Tyndall Centre research on aviation and shipping decarbonisation including SAF lifecycle analysis, maritime fuel pathways, and carbon budget modelling for transport sectors.. Ow…\n  - text: S7\n  - heading \"Connected intelligence\" [level=2]\n  - text: Intersections and theme analysis\n  - paragraph: Theme analysis\n  - paragraph: 847 items across Regulations, Market Intel, Research, Operations\n  - text: A brief for this theme has not been written yet, so what this connection means is not stated here.\n  - paragraph: Other items in this theme\n  - paragraph: Regulations · 828\n  - link \"Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)\":\n    - /url: /regulations/0053d552-1856-4796-8873-968894400956\n    - paragraph: Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)\n  - link \"Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste\":\n    - /url: /regulations/00a2452a-677e-4556-9ef2-c5749ab5f005\n    - paragraph: Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste\n  - 'link \"Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty\"':\n    - /url: /regulations/01936f81-7f2f-419a-af3c-681c1d577b6a\n    - paragraph: \"Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty\"\n  - 'link \"2000/532/EC: Commission Decision of 3 May 2000 replacing Decision 94/3/EC establishing a list of wastes pursuant to Article 1(a) of Council Directive 75/442/EEC on waste and Council Decision 94/904/EC establishing a list of hazardous waste pursuant to Article 1(4) of Council Directive 91/689/EEC on hazardous waste (notified under document number C(2000) 1147)\"':\n    - /url: /regulations/7af4c993-223b-49ce-af26-019edf16be58\n    - paragraph: \"2000/532/EC: Commission Decision of 3 May 2000 replacing Decision 94/3/EC establishing a list of wastes pursuant to Article 1(a) of Council Directive 75/442/EEC on waste and Council Decision 94/904/EC establishing a list of hazardous waste pursuant to Article 1(4) of Council Directive 91/689/EEC on hazardous waste (notified under document number C(2000) 1147)\"\n  - 'link \"2000/728/EC: Commission Decision of 10 November 2000 establishing the application and annual fees of the Community Eco-label (notified under document number C(2000) 3279)\"':\n    - /url: /regulations/321b425e-1979-4e63-b977-f9f39d45f2e3\n    - paragraph: \"2000/728/EC: Commission Decision of 10 November 2000 establishing the application and annual fees of the Community Eco-label (notified under document number C(2000) 3279)\"\n  - 'link \"2000/729/EC: Commission Decision of 10 November 2000 on a standard contract covering the terms of use of the Community Eco-label (notified under document number C(2000) 3278)\"':\n    - /url: /regulations/97c37bb0-a017-4312-a3f0-98a174e2062d\n    - paragraph: \"2000/729/EC: Commission Decision of 10 November 2000 on a standard contract covering the terms of use of the Community Eco-label (notified under document number C(2000) 3278)\"\n  - link \"and 822 more on Regulations\":\n    - /url: /regulations\n    - paragraph: and 822 more on Regulations\n  - paragraph: Market Intel · 6\n  - 'link \"Aviation Week: Sustainability\"':\n    - /url: /market/a8\n    - paragraph: \"Aviation Week: Sustainability\"\n  - link \"Carbon Allowance Price Intelligence\":\n    - /url: /market/carbon-allowance-price-intelligence\n    - paragraph: Carbon Allowance Price Intelligence\n  - link \"E-Fuel Alliance\":\n    - /url: /market/r26\n    - paragraph: E-Fuel Alliance\n  - link \"First Movers Coalition - WEF Global Sustainability Initiative\":\n    - /url: /market/7ae06612-5467-40ca-a9b3-e6dc14601b44\n    - paragraph: First Movers Coalition - WEF Global Sustainability Initiative\n  - link \"IATA Sustainable Aviation Fuel (SAF) Framework and Net Zero Roadmap\":\n    - /url: /market/5fec12c6-23be-4a7f-b2d3-4b8e9faadc22\n    - paragraph: IATA Sustainable Aviation Fuel (SAF) Framework and Net Zero Roadmap\n  - link \"Maritime Carbon Intelligence\":\n    - /url: /market/r36\n    - paragraph: Maritime Carbon Intelligence\n  - paragraph: Operations · 5\n  - link \"EU Core Markets Regional Operations Profile\":\n    - /url: /operations/eu-core-markets-regional-operations-profile\n    - paragraph: EU Core Markets Regional Operations Profile\n  - link \"IEA Electricity Price Data for Large Industrial Customers (2019-2024)\":\n    - /url: /operations/3f11f1fc-5b1f-422a-93bc-a34f6b3c9f3b\n    - paragraph: IEA Electricity Price Data for Large Industrial Customers (2019-2024)\n  - link \"Industrial Electricity Tariff Benchmarks by Jurisdiction\":\n    - /url: /operations/industrial-electricity-tariff-benchmarks-by-jurisdiction\n    - paragraph: Industrial Electricity Tariff Benchmarks by Jurisdiction\n  - link \"Japan Regional Operations Profile\":\n    - /url: /operations/japan-regional-operations-profile\n    - paragraph: Japan Regional Operations Profile\n  - link \"United Kingdom Regional Operations Profile\":\n    - /url: /operations/united-kingdom-regional-operations-profile\n    - paragraph: United Kingdom Regional Operations Profile\n  - paragraph: Research (this page) · 4\n  - link \"ITF International Transport Forum\":\n    - /url: /research/g31\n    - paragraph: ITF International Transport Forum\n  - 'link \"Transportation 2050: Pathways for Decarbonization and Climate Resilience in Latin America and the Caribbean\"':\n    - /url: /research/68af10b5-66a2-4fc1-b62b-89bd7fbf12a6\n    - paragraph: \"Transportation 2050: Pathways for Decarbonization and Climate Resilience in Latin America and the Caribbean\"\n  - link \"Tyndall Centre for Climate Research — Transport Decarbonisation\":\n    - /url: /research/tyndall-centre-for-climate-research-transport-decarbonisation\n    - paragraph: Tyndall Centre for Climate Research — Transport Decarbonisation\n  - link \"World Resources Institute\":\n    - /url: /research/r4\n    - paragraph: World Resources Institute\n  - region \"Recalculation notices\":\n    - text: Recalculation notices\n    - paragraph: No recalculations on your team's watchlist in this window.\n  - paragraph: At a glance\n  - text: Topic research\n  - paragraph: Impact assessment\n  - text: —\n  - paragraph: Relevance to you\n  - text: Medium relevance\n  - paragraph: \"Relevance to your operation: affects your operations across modes in GB, GB-ENG.\"\n  - paragraph: Applies to your organisation\n  - heading \"Horizon assessment\" [level=2]\n  - paragraph: No horizon assessment yet. One needs a maturity phrase or a dated instrument in the finding's text.\n  - heading \"Dissent\" [level=2]\n  - paragraph: No dissent recorded for this finding. Dissent needs a second source of different standing, or a stated conclusion that differs.\n  - heading \"Signposts\" [level=2]\n  - paragraph: No signposts yet. A signpost needs a dated instrument or roadmap to anchor the horizon.\n  - heading \"Assessment history\" [level=2]\n  - paragraph: No history yet. It starts with the first assessment of this finding.\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n  - paragraph: In this list\n  - paragraph: needs primary-source figure\n  - link \"Back to list\":\n    - /url: /research\n  - heading \"Notes\" [level=2]\n  - text: Visible to your workspace only Add a note for your workspace\n  - textbox \"Add a note for your workspace\":\n    - /placeholder: Which lanes or clients this touches, who is on it, what was decided\n  - button \"Add note\" [disabled]\n  - text: 0 / 4,000\n  - status\n  - paragraph: No notes on this item yet. Notes are visible to your workspace only, never to other organisations.\n  - heading \"Assignments\" [level=2]\n  - text: Assign teammates, with a notification\n  - paragraph: Nobody is assigned to this item yet.\n  - status\n  - group \"Assign to\":\n    - text: Assign to\n    - button \"Jason\"\n    - button \"connect ↗ Name not set\": — Name not set\n  - text: Due date (optional)\n  - textbox \"Due date (optional)\"\n  - button \"Assign\" [disabled]\n  - text: Pick at least one person.\n- button \"Back to top\"\n- alert"
+    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Research\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 44 · Research / United Kingdom\n  - 'heading \"Embedding Social Vulnerability in UK Climate Adaptation Policy: Tyndall Centre Research into Government Decision-Making\" [level=1]'\n  - text: Research · published May 10, 2026\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - text: Action · ≤ 6 months Finding Research finding All modes T3 1 source · 1 connection\n  - group \"Source bias tags\":\n    - text: Source Academic institution Independent research Analytical synthesis\n    - button \"+2 more\"\n  - button \"Export brief\"\n  - button \"Share\"\n  - button \"Watch\"\n  - button \"+ Tag\"\n  - paragraph: Where\n  - text: United Kingdom\n  - paragraph: Who pays\n  - text: Research finding targeting research duty holders\n  - paragraph: Your lanes\n  - text: GB\n  - paragraph: Next milestone\n  - text: needs more data\n  - paragraph: Timeline\n  - text: 1 milestone · 1 passed\n  - 'img \"Milestone timeline: 1 milestones, 1 passed\"':\n    - 'button \"Mar 2026 - other: …Do not claim the Fellowship has produced findings — it runs from March 2026 to February 2027 and outputs are not yet available. · Mar 2026\"': \"Mar 2026 Mar 2026 - other: …Do not claim the Fellowship has produced findings — it runs from March 2026 to February 2027 and outputs are not yet available.\"\n  - text: Last milestone passed · Mar 2026 · no further step is scheduled on this timeline\n  - paragraph: Connections\n  - link \"References · research Tyndall Centre for Climate Research — Transport Decarbonisation Bound by shared source\":\n    - /url: /research/tyndall-centre-for-climate-research-transport-decarbonisation\n    - paragraph: References · research\n    - paragraph: Tyndall Centre for Climate Research — Transport Decarbonisation\n    - paragraph: Bound by shared source\n  - navigation \"Section index\":\n    - link \"S1 Summary\":\n      - /url: \"#summary\"\n    - link \"S2 Findings\":\n      - /url: \"#findings\"\n    - link \"S5 Sources\":\n      - /url: \"#sources\"\n    - link \"S6 Related\":\n      - /url: \"#related\"\n    - link \"S7 Connected\":\n      - /url: \"#across-pages\"\n    - group \"Summary depth\":\n      - button \"Summary\" [pressed]\n      - button \"Full brief\"\n  - text: S1\n  - heading \"Summary\" [level=2]\n  - paragraph: Executive overview of what this item covers, key takeaways, and how its timeline and scope affect freight operations.\n  - paragraph: \"A research summary synthesising an active British Academy Innovation Fellowship (Route B: Policy-led, Sustainable Futures) held by a Tyndall Centre for Climate Change Research (University of East Anglia) researcher working with the UK Government Office for Science (GO-Science), alongside a peer-reviewed study on UK Climate Change Committee (CCC) recommendation uptake and two UK government policy documents on embedding social vulnerability in climate adaptation decision-making. The Fellowship runs from 1 March 2026 to 28 February 2027.\"\n  - 'button \"Source authority: 0 high-authority · 1 medium · 0 vendor-flagged\"'\n  - text: S2\n  - heading \"Substantive findings\" [level=2]\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Detailed analytical breakdown of operational drivers, cost baselines, mode impacts, and strategic talking points.\n  - paragraph: What the research found\n  - paragraph: \"This brief synthesises intelligence across a cluster of interconnected activities rather than a single publication: an active British Academy Fellowship at the Tyndall Centre for Climate Change Research (University of East Anglia), a peer-reviewed study on UK Climate Change Committee (CCC) recommendation uptake, and two authoritative UK government policy documents committing to embed social vulnerability in adaptation decision-making.\"\n  - paragraph: Why it matters operationally\n  - paragraph: \"This section is filtered to the workspace's operational context: a global freight forwarder whose supply chains serve cargo verticals including live events, fine art, luxury goods, film and TV, high-value automotive, and humanitarian freight, operating primarily by air with road secondary and ocean tertiary, across the Americas, Europe, and Asia trade lanes.\"\n  - group: Additional Research Breakdown (3 sections) Showing top 2 research sub-sections in Summary view. Expand or switch to Full brief to inspect all 5 sub-sections. Expand 3 more sections ▾\n  - text: S5\n  - heading \"Sources\" [level=2]\n  - text: 1 · tier = provenance, never urgency\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Primary statutory, regulatory, and institutional sources backing this brief, rated by provenance tier and bias profile.\n  - link \"T3 Tyndall Centre for Climate Change Research (tyndall.ac.uk)\":\n    - /url: https://tyndall.ac.uk/reports/decarbonising-the-uk-energy-in-a-climate-conscious-future\n    - text: T3\n    - paragraph: Tyndall Centre for Climate Change Research (tyndall.ac.uk)\n  - group \"Source bias tags\":\n    - text: Academic institution Independent research Analytical synthesis\n    - button \"+2 more\"\n  - text: S6\n  - heading \"Related\" [level=2]\n  - text: same source\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Directly related intelligence items sharing the same regulatory instrument, regional scope, or market signal band.\n  - link \"Tyndall Centre for Climate Research — Transport Decarbonisation Tyndall Centre research on aviation and shipping decarbonisation including SAF lifecycle analysis, maritime fuel pathways, and carbon budget modelling for transport sectors.. Ow…\":\n    - /url: /research/tyndall-centre-for-climate-research-transport-decarbonisation\n    - paragraph: Tyndall Centre for Climate Research — Transport Decarbonisation\n    - paragraph: Tyndall Centre research on aviation and shipping decarbonisation including SAF lifecycle analysis, maritime fuel pathways, and carbon budget modelling for transport sectors.. Ow…\n  - paragraph: At a glance\n  - text: Topic research\n  - paragraph: Impact assessment\n  - text: 2/12\n  - paragraph: Relevance to you\n  - text: Medium relevance\n  - paragraph: \"Relevance to your operation: affects your operations across modes in GB, GB-ENG.\"\n  - paragraph: Applies to your organisation\n  - paragraph: Applies, no role or size restriction on this obligation.\n  - heading \"Horizon assessment\" [level=2]\n  - text: \"Inferred Technical no TRL corridor read from this finding's recorded text Commercial CRI 3-4 (read from the finding's recorded text against the commercial readiness ladder) Horizon Not forecastable: no dated statutory instrument, no named institutional roadmap date, and no technical-maturity corridor to prior from\"\n  - heading \"Dissent\" [level=2]\n  - paragraph: No dissent recorded for this finding. Dissent needs a second source of different standing, or a stated conclusion that differs.\n  - heading \"Signposts\" [level=2]\n  - paragraph: No signposts yet. A signpost needs a dated instrument or roadmap to anchor the horizon.\n  - heading \"Assessment history\" [level=2]\n  - text: Current Oct 25, 2026 emerging CRI 3-4\n  - paragraph: \"No earlier version: this is the first assessment of this finding.\"\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n  - paragraph: In this list\n  - paragraph: Opened directly\n  - link \"Back to list\":\n    - /url: /research\n  - heading \"Notes\" [level=2]\n  - text: Visible to your workspace only\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Private workspace notes shared only with members of your organisation.\n  - text: Add a note for your workspace\n  - textbox \"Add a note for your workspace\":\n    - /placeholder: Which lanes or clients this touches, who is on it, what was decided\n  - button \"Add note\" [disabled]\n  - text: 0 / 4,000\n  - status\n  - paragraph: No notes on this item yet. Notes are visible to your workspace only, never to other organisations.\n  - heading \"Assignments\" [level=2]\n  - text: Assign teammates, with a notification\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Workspace task assignments and ownership tracking for your team.\n  - paragraph: Nobody is assigned to this item yet.\n  - status\n  - group \"Assign to\":\n    - text: Assign to\n    - button \"Jason\"\n    - button \"Jason\"\n  - text: Due date (optional)\n  - textbox \"Due date (optional)\"\n  - button \"Assign\" [disabled]\n  - text: Pick at least one person. S7\n  - heading \"Connected intelligence\" [level=2]\n  - text: Intersections and theme analysis\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: How this item connects across the Caro’s Ledge repository — related regulations, market signals, research findings, and operations profiles.\n  - paragraph: Theme analysis\n  - paragraph: 24 items across Regulations, Market Intel, Research, Operations\n  - text: Narrative synthesis pending for this cluster. Items below are linked by shared scenarios, cross-domain intersection, shared jurisdiction and topic.\n  - paragraph: Members by horizon\n  - text: Within 6 months 3 items 88 dated obligations · Regulations Ongoing / no fixed date 21 items Regulations, Market Intel, Research, Operations\n  - paragraph: Other items in this theme\n  - paragraph: Regulations · 7 items\n  - link \"EU Aviation ETS Regulations\":\n    - /url: /regulations/a2\n    - paragraph: EU Aviation ETS\n    - paragraph: Regulations\n  - link \"Brazil National Policy on Alternative Fuels (PNCA) Regulations\":\n    - /url: /regulations/brazil-national-policy-on-alternative-fuels-pnca\n    - paragraph: Brazil National Policy on Alternative Fuels (PNCA)\n    - paragraph: Regulations\n  - link \"Council Decision (EU) 2020/768 of 9 June 2020 amending Decision (EU) 2016/915 as regards the reference period intended to be used for measuring the growth of CO2 emissions, to take account of the consequences of the COVID-19 pandemic in the context of CORSIA Regulations\":\n    - /url: /regulations/bd4142f0-59d7-49a9-894d-9786e25f8987\n    - paragraph: Council Decision (EU) 2020/768 of 9 June 2020 amending Decision (EU) 2016/915 as regards the reference period intended to be used for measuring the growth of CO2 emissions, to take account of the consequences of the COVID-19 pandemic in the context of CORSIA\n    - paragraph: Regulations\n  - link \"Decision (EU) 2023/136 of the European Parliament and of the Council of 18 January 2023 amending Directive 2003/87/EC as regards the notification of offsetting in respect of a global market-based measure for aircraft operators based in the Union Regulations\":\n    - /url: /regulations/b7235653-a4bd-4a0c-afe8-4cf4b0018bec\n    - paragraph: Decision (EU) 2023/136 of the European Parliament and of the Council of 18 January 2023 amending Directive 2003/87/EC as regards the notification of offsetting in respect of a global market-based measure for aircraft operators based in the Union\n    - paragraph: Regulations\n  - link \"EU Fit for 55 Package Regulations\":\n    - /url: /regulations/g1\n    - paragraph: EU Fit for 55 Package\n    - paragraph: Regulations\n  - link \"Georgia Multimodal Freight Network - GDOT Framework Regulations\":\n    - /url: /regulations/db8577c6-96e3-4cfa-8bd6-daf538ac3dc5\n    - paragraph: Georgia Multimodal Freight Network - GDOT Framework\n    - paragraph: Regulations\n  - link \"and 1 more on Regulations\":\n    - /url: /regulations\n    - paragraph: and 1 more on Regulations\n  - paragraph: Market Intel · 7 items\n  - link \"Sustainable Aviation Fuel (SAF) Production & Pricing Market Intel\":\n    - /url: /market/sustainable-aviation-fuel-saf-production-pricing\n    - paragraph: Sustainable Aviation Fuel (SAF) Production & Pricing\n    - paragraph: Market Intel\n  - 'link \"Air Cargo Market Dynamics: Elevated Rates, Geopolitical Impacts, and Capacity Adjustments (May 2026) Market Intel\"':\n    - /url: /market/5b37050b-7b9e-462c-8eae-84a51d3b3010\n    - paragraph: \"Air Cargo Market Dynamics: Elevated Rates, Geopolitical Impacts, and Capacity Adjustments (May 2026)\"\n    - paragraph: Market Intel\n  - 'link \"Aviation Week: Sustainability Market Intel\"':\n    - /url: /market/a8\n    - paragraph: \"Aviation Week: Sustainability\"\n    - paragraph: Market Intel\n  - link \"Crude Oil & Jet Fuel Price Intelligence Market Intel\":\n    - /url: /market/crude-oil-jet-fuel-price-intelligence\n    - paragraph: Crude Oil & Jet Fuel Price Intelligence\n    - paragraph: Market Intel\n  - link \"E-Fuel Alliance Market Intel\":\n    - /url: /market/r26\n    - paragraph: E-Fuel Alliance\n    - paragraph: Market Intel\n  - link \"First Movers Coalition - WEF Global Sustainability Initiative Market Intel\":\n    - /url: /market/7ae06612-5467-40ca-a9b3-e6dc14601b44\n    - paragraph: First Movers Coalition - WEF Global Sustainability Initiative\n    - paragraph: Market Intel\n  - link \"and 1 more on Market Intel\":\n    - /url: /market\n    - paragraph: and 1 more on Market Intel\n  - paragraph: Operations · 4 items\n  - link \"EU Core Markets Regional Operations Profile Operations\":\n    - /url: /operations/eu-core-markets-regional-operations-profile\n    - paragraph: EU Core Markets Regional Operations Profile\n    - paragraph: Operations\n  - link \"Singapore Regional Operations Profile Operations\":\n    - /url: /operations/singapore-regional-operations-profile\n    - paragraph: Singapore Regional Operations Profile\n    - paragraph: Operations\n  - link \"U.S. Bureau of Labor Statistics - Major Economic Indicators April 2026 Operations\":\n    - /url: /operations/71b03469-c11c-4218-8b44-c1fec3ffda25\n    - paragraph: U.S. Bureau of Labor Statistics - Major Economic Indicators April 2026\n    - paragraph: Operations\n  - link \"United Kingdom Regional Operations Profile Operations\":\n    - /url: /operations/united-kingdom-regional-operations-profile\n    - paragraph: United Kingdom Regional Operations Profile\n    - paragraph: Operations\n  - paragraph: Research (this page) · 5 items\n  - link \"ITF International Transport Forum Research\":\n    - /url: /research/g31\n    - paragraph: ITF International Transport Forum\n    - paragraph: Research\n  - 'link \"Transportation 2050: Pathways for Decarbonization and Climate Resilience in Latin America and the Caribbean Research\"':\n    - /url: /research/68af10b5-66a2-4fc1-b62b-89bd7fbf12a6\n    - paragraph: \"Transportation 2050: Pathways for Decarbonization and Climate Resilience in Latin America and the Caribbean\"\n    - paragraph: Research\n  - link \"Tyndall Centre for Climate Research — Transport Decarbonisation Research\":\n    - /url: /research/tyndall-centre-for-climate-research-transport-decarbonisation\n    - paragraph: Tyndall Centre for Climate Research — Transport Decarbonisation\n    - paragraph: Research\n  - 'link \"World Bank Transport Strategy: Jobs, Growth, and Development Focus Areas Research\"':\n    - /url: /research/0a8b8ef0-0c6c-406c-a5b5-321709fa5237\n    - paragraph: \"World Bank Transport Strategy: Jobs, Growth, and Development Focus Areas\"\n    - paragraph: Research\n  - link \"World Resources Institute Research\":\n    - /url: /research/r4\n    - paragraph: World Resources Institute\n    - paragraph: Research\n  - region \"Recalculation notices\":\n    - text: Recalculation notices\n    - paragraph: No recalculations on your team's watchlist in this window.\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -53,7 +54,8 @@
     },
     {
       "level": 1,
-      "text": "Embedding Social Vulnerability in UK Climate Adaptation Policy: Tyndall Centre Research into Government Decision-Making"
+      "text": "Embedding Social Vulnerability in UK Climate Adaptation Policy: Tyndall Centre Research into Government Decision-Making",
+      "item": true
     },
     {
       "level": 2,
@@ -70,10 +72,6 @@
     {
       "level": 2,
       "text": "Related"
-    },
-    {
-      "level": 2,
-      "text": "Connected intelligence"
     },
     {
       "level": 2,
@@ -98,6 +96,10 @@
     {
       "level": 2,
       "text": "Assignments"
+    },
+    {
+      "level": 2,
+      "text": "Connected intelligence"
     }
   ],
   "controls": [
@@ -146,28 +148,38 @@
       "name": "+ Tag"
     },
     {
-      "role": "link",
-      "name": "References · researchTyndall Centre for Climate Research — Transport Decarbonisation"
+      "role": "button",
+      "name": "Mar 2026 - other: …Do not claim the Fellowship has produced findings — it runs from March 2026 to February 2027 and outputs are not yet available. · Mar 2026"
     },
     {
       "role": "link",
-      "name": "S1 Summary"
+      "name": "References · researchTyndall Centre for Climate Research — Transport DecarbonisationBound by shared source",
+      "item": true
     },
     {
       "role": "link",
-      "name": "S2 Findings"
+      "name": "S1 Summary",
+      "item": true
     },
     {
       "role": "link",
-      "name": "S5 Sources"
+      "name": "S2 Findings",
+      "item": true
     },
     {
       "role": "link",
-      "name": "S6 Related"
+      "name": "S5 Sources",
+      "item": true
     },
     {
       "role": "link",
-      "name": "S7 Connected"
+      "name": "S6 Related",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "S7 Connected",
+      "item": true
     },
     {
       "role": "button",
@@ -179,155 +191,42 @@
     },
     {
       "role": "button",
-      "name": "Evidence × agreement: needs evidence-synthesis data (1)"
+      "name": "Source authority: 0 high-authority · 1 medium · 0 vendor-flagged"
     },
     {
       "role": "button",
-      "name": "Source authority: needs role-class data"
+      "name": "Collapse ▴"
+    },
+    {
+      "role": "button",
+      "name": "Collapse ▴"
     },
     {
       "role": "link",
-      "name": "research-portal.uea.ac.uk ↗"
-    },
-    {
-      "role": "link",
-      "name": "research-portal.uea.ac.uk ↗"
-    },
-    {
-      "role": "link",
-      "name": "tandfonline.com ↗"
-    },
-    {
-      "role": "link",
-      "name": "tandfonline.com ↗"
-    },
-    {
-      "role": "link",
-      "name": "tandfonline.com ↗"
-    },
-    {
-      "role": "link",
-      "name": "tandfonline.com ↗"
-    },
-    {
-      "role": "link",
-      "name": "gov.uk ↗"
-    },
-    {
-      "role": "link",
-      "name": "gov.uk ↗"
-    },
-    {
-      "role": "link",
-      "name": "gov.uk ↗"
-    },
-    {
-      "role": "link",
-      "name": "gov.uk ↗"
-    },
-    {
-      "role": "link",
-      "name": "T3Tyndall Centre for Climate Change Research (tyndall.ac.uk)"
+      "name": "T3Tyndall Centre for Climate Change Research (tyndall.ac.uk)",
+      "item": true
     },
     {
       "role": "button",
       "name": "+2 more"
     },
     {
-      "role": "link",
-      "name": "Tyndall Centre for Climate Research — Transport DecarbonisationTyndall Centre research on aviation and shipping decarbonisation including SAF lifecycle analysis, maritime fuel pathways, and carbon budget modelling for transport sectors.. Ow…"
+      "role": "button",
+      "name": "Collapse ▴",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)"
-    },
-    {
-      "role": "link",
-      "name": "Council Regulation (EC) No 1420/1999 of 29 April 1999 establishing common rules and procedures to apply to shipments to certain non-OECD countries of certain types of waste"
-    },
-    {
-      "role": "link",
-      "name": "Final Act of the International Conference and Decision by the Energy Charter Conference in respect of the amendment to the trade-related provisions of the Energy Charter Treaty - Joint Declarations - Annex I: Amendment to the Trade-Related Provisions of the Energy Charter Treaty - Annex II: Decisions in connection with the Adoption of the Amendment to the Trade-Related Provisions of the Energy Charter Treaty"
-    },
-    {
-      "role": "link",
-      "name": "2000/532/EC: Commission Decision of 3 May 2000 replacing Decision 94/3/EC establishing a list of wastes pursuant to Article 1(a) of Council Directive 75/442/EEC on waste and Council Decision 94/904/EC establishing a list of hazardous waste pursuant to Article 1(4) of Council Directive 91/689/EEC on hazardous waste (notified under document number C(2000) 1147)"
-    },
-    {
-      "role": "link",
-      "name": "2000/728/EC: Commission Decision of 10 November 2000 establishing the application and annual fees of the Community Eco-label (notified under document number C(2000) 3279)"
-    },
-    {
-      "role": "link",
-      "name": "2000/729/EC: Commission Decision of 10 November 2000 on a standard contract covering the terms of use of the Community Eco-label (notified under document number C(2000) 3278)"
-    },
-    {
-      "role": "link",
-      "name": "and 822 more on Regulations"
-    },
-    {
-      "role": "link",
-      "name": "Aviation Week: Sustainability"
-    },
-    {
-      "role": "link",
-      "name": "Carbon Allowance Price Intelligence"
-    },
-    {
-      "role": "link",
-      "name": "E-Fuel Alliance"
-    },
-    {
-      "role": "link",
-      "name": "First Movers Coalition - WEF Global Sustainability Initiative"
-    },
-    {
-      "role": "link",
-      "name": "IATA Sustainable Aviation Fuel (SAF) Framework and Net Zero Roadmap"
-    },
-    {
-      "role": "link",
-      "name": "Maritime Carbon Intelligence"
-    },
-    {
-      "role": "link",
-      "name": "EU Core Markets Regional Operations Profile"
-    },
-    {
-      "role": "link",
-      "name": "IEA Electricity Price Data for Large Industrial Customers (2019-2024)"
-    },
-    {
-      "role": "link",
-      "name": "Industrial Electricity Tariff Benchmarks by Jurisdiction"
-    },
-    {
-      "role": "link",
-      "name": "Japan Regional Operations Profile"
-    },
-    {
-      "role": "link",
-      "name": "United Kingdom Regional Operations Profile"
-    },
-    {
-      "role": "link",
-      "name": "ITF International Transport Forum"
-    },
-    {
-      "role": "link",
-      "name": "Transportation 2050: Pathways for Decarbonization and Climate Resilience in Latin America and the Caribbean"
-    },
-    {
-      "role": "link",
-      "name": "Tyndall Centre for Climate Research — Transport Decarbonisation"
-    },
-    {
-      "role": "link",
-      "name": "World Resources Institute"
+      "name": "Tyndall Centre for Climate Research — Transport DecarbonisationTyndall Centre research on aviation and shipping decarbonisation including SAF lifecycle analysis, maritime fuel pathways, and carbon budget modelling for transport sectors.. Ow…",
+      "item": true
     },
     {
       "role": "link",
       "name": "Back to list"
+    },
+    {
+      "role": "button",
+      "name": "Collapse ▴"
     },
     {
       "role": "textbox",
@@ -339,11 +238,15 @@
     },
     {
       "role": "button",
+      "name": "Collapse ▴"
+    },
+    {
+      "role": "button",
       "name": "Jason"
     },
     {
       "role": "button",
-      "name": "— Name not set"
+      "name": "Jason"
     },
     {
       "role": "textbox",
@@ -355,6 +258,126 @@
     },
     {
       "role": "button",
+      "name": "Collapse ▴",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "EU Aviation ETSRegulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Brazil National Policy on Alternative Fuels (PNCA)Regulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Council Decision (EU) 2020/768 of 9 June 2020 amending Decision (EU) 2016/915 as regards the reference period intended to be used for measuring the growth of CO2 emissions, to take account of the consequences of the COVID-19 pandemic in the context of CORSIARegulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Decision (EU) 2023/136 of the European Parliament and of the Council of 18 January 2023 amending Directive 2003/87/EC as regards the notification of offsetting in respect of a global market-based measure for aircraft operators based in the UnionRegulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "EU Fit for 55 PackageRegulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Georgia Multimodal Freight Network - GDOT FrameworkRegulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "and 1 more on Regulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Sustainable Aviation Fuel (SAF) Production & PricingMarket Intel",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Air Cargo Market Dynamics: Elevated Rates, Geopolitical Impacts, and Capacity Adjustments (May 2026)Market Intel",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Aviation Week: SustainabilityMarket Intel",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Crude Oil & Jet Fuel Price IntelligenceMarket Intel",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "E-Fuel AllianceMarket Intel",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "First Movers Coalition - WEF Global Sustainability InitiativeMarket Intel",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "and 1 more on Market Intel",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "EU Core Markets Regional Operations ProfileOperations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Singapore Regional Operations ProfileOperations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "U.S. Bureau of Labor Statistics - Major Economic Indicators April 2026Operations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "United Kingdom Regional Operations ProfileOperations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "ITF International Transport ForumResearch",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Transportation 2050: Pathways for Decarbonization and Climate Resilience in Latin America and the CaribbeanResearch",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Tyndall Centre for Climate Research — Transport DecarbonisationResearch",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "World Bank Transport Strategy: Jobs, Growth, and Development Focus AreasResearch",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "World Resources InstituteResearch",
+      "item": true
+    },
+    {
+      "role": "button",
       "name": "Back to top"
     }
   ],
@@ -363,8 +386,8 @@
     "items": [],
     "containers": []
   },
-  "document_height": 17075,
-  "tiles": 2,
+  "document_height": 8324,
+  "tiles": 1,
   "truncated": false,
   "offences": []
 }
