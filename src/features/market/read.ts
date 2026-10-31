@@ -139,7 +139,7 @@ export interface OemRow {
   roadmap_id: string;
   tech_category: string;
   commercial_stage: string;
-  target_year: number | null;
+  target_year: number | null; energy_density_wh_kg?: number | null; c_rate_max?: number | null; usable_kwh?: number | null;
   density_basis: string | null;
   confidence_admiralty: string | null;
   announced_at: string;
@@ -147,7 +147,7 @@ export interface OemRow {
 export interface RerouteRow {
   reroute_id: string;
   baseline_corridor_id: string;
-  reroute_corridor_id: string;
+  reroute_corridor_id: string; route_via?: string | null; distance_delta_nm?: number | null; transit_delta_days?: number | null;
   cause: string;
   fuel_burn_multiplier: number;
   effective_from: string;
@@ -181,8 +181,8 @@ export interface MarketPanels {
 /** The three spec 09 panels. Indexation is the viewer's organisation only (and none for a viewer with no organisation). */
 async function readPanels(db: Db, orgId: string | null): Promise<MarketPanels> {
   const [oem, reroute, indexation] = await Promise.all([
-    section("oem roadmaps", () => panel<OemRow>(db.from("oem_tech_roadmaps").select("roadmap_id, tech_category, commercial_stage, target_year, density_basis, confidence_admiralty, announced_at").order("announced_at", { ascending: false }).limit(PANEL_ROWS) as never, "oem_tech_roadmaps")),
-    section("reroute events", () => panel<RerouteRow>(db.from("reroute_events").select("reroute_id, baseline_corridor_id, reroute_corridor_id, cause, fuel_burn_multiplier, effective_from, effective_to").order("effective_from", { ascending: false }).limit(PANEL_ROWS) as never, "reroute_events")),
+    section("oem roadmaps", () => panel<OemRow>(db.from("oem_tech_roadmaps").select("roadmap_id, tech_category, commercial_stage, target_year, energy_density_wh_kg, density_basis, c_rate_max, usable_kwh, confidence_admiralty, announced_at").order("announced_at", { ascending: false }).limit(PANEL_ROWS) as never, "oem_tech_roadmaps")),
+    section("reroute events", () => panel<RerouteRow>(db.from("reroute_events").select("reroute_id, baseline_corridor_id, reroute_corridor_id, route_via, cause, distance_delta_nm, transit_delta_days, fuel_burn_multiplier, effective_from, effective_to").order("effective_from", { ascending: false }).limit(PANEL_ROWS) as never, "reroute_events")),
     section("indexation clauses", async () => (orgId ? panel<IndexationRow>(db.from("indexation_clauses").select("clause_id, contract_ref, corridor_id, index_id, base_value, base_date, passthrough_pct, cap_pct, floor_pct, review_cadence, rounding_rule").eq("org_id", orgId).order("created_at", { ascending: false }).limit(PANEL_ROWS) as never, "indexation_clauses") : [])),
   ]);
   return { oem, reroute, indexation };

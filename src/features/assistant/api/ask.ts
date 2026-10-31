@@ -22,7 +22,7 @@ const HIT_LIMIT = 8;
 const EXCERPT_CHARS = 800;
 const INTERSECTION_CHARS = 600;
 const SELECT =
-  "id, title, summary, priority, severity, item_type, domain, jurisdictions, jurisdiction_iso, transport_modes, source_id, source_url, intersection_summary, related_items, full_brief, source:sources!source_id(id, name, url, base_tier, effective_tier, tier_override)";
+  "id, title, summary, what_is_it, why_matters, priority, severity, item_type, domain, jurisdictions, jurisdiction_iso, transport_modes, source_id, source_url, intersection_summary, related_items, full_brief, source:sources!source_id(id, name, url, base_tier, effective_tier, tier_override)";
 const body = z.object({ question: z.string().trim().min(2).max(500) });
 
 interface Source {
@@ -36,7 +36,7 @@ interface Source {
 interface Raw {
   id: string;
   title: string;
-  summary: string | null;
+  summary: string | null; what_is_it?: string | null; why_matters?: string | null;
   priority: string | null;
   item_type: string | null;
   domain: number | null;
@@ -85,7 +85,7 @@ export const POST = route(NAME, async (request) => {
       jurisdiction: jurisdictionCode({ jurisdictionIso: r.jurisdiction_iso ?? undefined, jurisdiction: r.jurisdictions?.[0] ?? undefined }),
       type: r.item_type,
       tier: embeddedTier(src),
-      summary: clip(redactDeep(r.summary, mine), INTERSECTION_CHARS),
+      summary: clip(redactDeep(r.what_is_it || r.summary || r.why_matters || null, mine), INTERSECTION_CHARS),
       excerpt: clip(brief, EXCERPT_CHARS),
       intersection: clip(redactDeep(r.intersection_summary, mine), INTERSECTION_CHARS),
       relatedCount: r.related_items?.length ?? 0,

@@ -13,7 +13,7 @@ import { normalizeDisplayTitle } from "@/core/fetch/titles";
 import type { UrgencyBand } from "@/core/lists";
 import { displayTitle } from "@/core/lists/display-title";
 import { itemIdFromDetailPath } from "@/core/workspace/paths";
-import type { ImpactScores } from "@/core/types";
+import type { ImpactReasoning, ImpactScores, Resource } from "@/core/types";
 
 import { ImpactMeter } from "../ImpactMeter";
 import { Masthead } from "../Masthead";
@@ -119,16 +119,7 @@ export function topRecommendedAction(actions: readonly RecommendedAction[] | nul
 }
 
 export function DetailRail({ atAGlance, impact, relevance, designed, legend, undesigned }: { atAGlance?: ReactNode; impact?: ReactNode; relevance?: ReactNode; designed?: ReactNode; legend?: ReactNode; undesigned?: ReactNode }) {
-  return (
-    <>
-      {atAGlance}
-      {impact}
-      {relevance}
-      {designed}
-      {legend}
-      {undesigned}
-    </>
-  );
+  return <>{atAGlance}{impact}{relevance}{designed}{legend}{undesigned}</>;
 }
 
 const MASTHEAD_FIELDS: ReadonlySet<string> = new Set(["band", "type", "kind", "jurisdiction", "region", "source", "published"]);
@@ -136,26 +127,42 @@ const MASTHEAD_FIELDS: ReadonlySet<string> = new Set(["band", "type", "kind", "j
 export function AtAGlanceCard({ rows }: { rows: Array<{ label: string; value: ReactNode }> }) {
   const present = rows.filter((r) => r.value !== null && r.value !== undefined && r.value !== "" && !MASTHEAD_FIELDS.has(r.label.trim().toLowerCase()));
   if (present.length === 0) return null;
-  return (
-    <RailCard title="At a glance" dataAudit="at-a-glance-rail">
-      <div className="cl-glance">
-        {present.map((r) => (
-          <div key={r.label} style={{ display: "contents" }}>
-            <span className="cl-glance-k">{r.label}</span>
-            <span className="cl-glance-v">{r.value}</span>
-          </div>
-        ))}
-      </div>
-    </RailCard>
-  );
+  return <RailCard title="At a glance" dataAudit="at-a-glance-rail"><div className="cl-glance">{present.map((r) => <div key={r.label} style={{ display: "contents" }}><span className="cl-glance-k">{r.label}</span><span className="cl-glance-v">{r.value}</span></div>)}</div></RailCard>;
 }
 
+const fmtReasoning = (r?: string | ImpactReasoning | null): string => (!r ? "" : typeof r === "string" ? r.trim() : [r.cost, r.compliance, r.operational, r.client].filter(Boolean).join(" · ").trim());
 /** The impact card: the scores, or the dash with the sentence of the input they wait for (the list row no longer draws either). */
-export const ImpactRailCard = ({ scores, absence }: { scores?: ImpactScores | null; absence?: string | undefined }) => (
-  <RailCard title="Impact assessment" dataAudit="impact-assessment-rail">
-    <ImpactMeter scores={scores} absence={absence} valueVisible />
-  </RailCard>
-);
+export const ImpactRailCard = ({ scores, absence, reasoning }: { scores?: ImpactScores | null; absence?: string | undefined; reasoning?: string | ImpactReasoning | null | undefined }) => {
+  const note = fmtReasoning(reasoning);
+  return (
+    <RailCard title="Impact assessment" dataAudit="impact-assessment-rail">
+      <ImpactMeter scores={scores} absence={absence} valueVisible />
+      {scores && (scores.cost > 0 || scores.compliance > 0 || scores.client > 0 || scores.operational > 0) && <ImpactMeter scores={scores} variant="full" />}
+      {note && <p className="cl-detail-link-note" style={{ marginTop: "var(--sp-8)" }}>{note}</p>}
+    </RailCard>
+  );
+};
+
+export function BriefContextCallout({ r }: { r: Resource }) {
+  const lead = (r.whatIsIt || r.note || "").trim();
+  const why = (r.whyMatters?.trim() && r.whyMatters.trim() !== lead ? r.whyMatters.trim() : "") || (r.whatIsIt?.trim() && r.note?.trim() && r.note.trim() !== lead ? r.note.trim() : "");
+  const changes = r.whatItChanges?.trim() && r.whatItChanges.trim() !== lead && r.whatItChanges.trim() !== why ? r.whatItChanges.trim() : "";
+  const keyData = (r.keyData ?? []).map((k) => k.trim()).filter(Boolean);
+  const ops = (r.operationalImpact ?? []).map((o) => `${o.mode} (${o.function}): ${o.impact}`.trim()).filter(Boolean);
+  const risks = (r.riskRegister ?? []).map((k) => `${k.risk} (${k.severity})`.trim()).filter(Boolean);
+  const ps = r.priceStat?.valueDisplay ? r.priceStat : null;
+  if (!why && !changes && !keyData.length && !ops.length && !risks.length && !ps) return null;
+  return (
+    <div className="cl-summary-grid" data-part="brief-context">
+      {why && <div className="cl-summary-subcard"><p className="cl-summary-subcard-title">Why it matters</p><p className="cl-summary-subcard-body">{why}</p></div>}
+      {changes && <div className="cl-summary-subcard"><p className="cl-summary-subcard-title">What it changes</p><p className="cl-summary-subcard-body">{changes}</p></div>}
+      {ps && <div className="cl-summary-subcard"><p className="cl-summary-subcard-title">{ps.label || "Key figure"}</p><p className="cl-summary-subcard-body"><b>{ps.valueDisplay}</b>{ps.unit ? ` ${ps.unit}` : ""}</p></div>}
+      {keyData.length > 0 && <div className="cl-summary-subcard"><p className="cl-summary-subcard-title">Key data</p>{keyData.slice(0, 4).map((d, i) => <p key={i} className="cl-summary-subcard-body">{d}</p>)}</div>}
+      {ops.length > 0 && <div className="cl-summary-subcard"><p className="cl-summary-subcard-title">Operational impact</p>{ops.slice(0, 3).map((d, i) => <p key={i} className="cl-summary-subcard-body">{d}</p>)}</div>}
+      {risks.length > 0 && <div className="cl-summary-subcard cl-summary-subcard--unresolved"><p className="cl-summary-subcard-title">Risk register</p>{risks.slice(0, 3).map((d, i) => <p key={i} className="cl-summary-subcard-body">{d}</p>)}</div>}
+    </div>
+  );
+}
 
 /** "In this list": N of M in the band, the way back, prev and next; an item opened directly says the position is not known. */
 export function InThisListStat({ backHref, backLabel, band }: { backHref: string; backLabel: string; band?: UrgencyBand }) {

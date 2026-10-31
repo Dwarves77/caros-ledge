@@ -19,7 +19,7 @@ import type { RecommendedAction } from "@/core/brief";
 import type { PenaltyView } from "@/core/workspace";
 import { useWorkspaceStore } from "@/core/workspace/store";
 import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, sectionThemeOf, StateNote, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, PendingTriggers, pendingTriggers, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
+import { AtAGlanceCard, BriefContextCallout, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, PendingTriggers, pendingTriggers, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, RequirementTrajectory, SourcesGrid, topRecommendedAction, type CrossPageData, type DetailSurfaceSharedProps } from "@/ui/detail";
 import { LegendRailCard } from "@/ui/list-surface";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
 import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
@@ -110,8 +110,8 @@ export function RegulationDetail(p: Props) {
           <DetailLayout
             rail={
               <DetailRail
-                atAGlance={<AtAGlanceCard rows={[{ label: "Instrument", value: r.legalInstrument }, { label: "Topic", value: r.topic }, { label: "Deadline", value: r.complianceDeadline ? formatDate(r.complianceDeadline) : null }]} />}
-                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} />}
+                atAGlance={<AtAGlanceCard rows={[{ label: "Instrument", value: r.legalInstrument }, { label: "Topic", value: r.topic }, { label: "Deadline", value: r.complianceDeadline ? formatDate(r.complianceDeadline) : null }, { label: "Penalty", value: r.penaltyRange ?? null }, { label: "Cost mechanism", value: r.costMechanism ?? null }, { label: "Enforcement", value: r.enforcementBody ?? null }]} />}
+                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />}
                 relevance={<RelevanceRailCard state={p.relevance.phase === "ready" ? { phase: "ready", relevance: p.relevance.data.relevance } : p.relevance.phase === "failed" ? { phase: "failed", retry: p.relevance.retry } : { phase: "loading" }} />}
                 designed={<><OwnerCard itemId={r.id} assigneeName={r.actionOwner ?? null} lastVerifiedDate={r.lastVerifiedDate ?? null} hasWorkspace={p.hasWorkspace} /><InThisListStat backHref="/regulations" backLabel="Back to list" band={band} /></>}
                 legend={<LegendRailCard />}
@@ -187,6 +187,7 @@ function BriefSummary({ r, changelog, dispute, trajectory, doesNotResolve, pendi
   return (
     <>
       {shortText && <p className="cl-summary-lead">{shortText}</p>}
+      <BriefContextCallout r={r} />
       {hasSubcards && (
         <div className="cl-summary-grid">
           {trajectory && <div className="cl-summary-subcard"><p className="cl-summary-subcard-title">Trajectory</p><div className="cl-summary-subcard-body">{trajectory}</div></div>}

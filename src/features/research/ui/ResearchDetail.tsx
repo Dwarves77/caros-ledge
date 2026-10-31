@@ -21,7 +21,7 @@ import { bandFromPriority, itemTypeLabel } from "@/core/lists";
 import { formatDate, pluralize } from "@/core/shared";
 import type { Resource } from "@/core/types";
 import { ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, PendingTriggers, pendingTriggers, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { AtAGlanceCard, BriefContextCallout, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, PendingTriggers, pendingTriggers, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { LegendRailCard } from "@/ui/list-surface";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
@@ -149,7 +149,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
             rail={
               <DetailRail
                 atAGlance={<AtAGlanceCard rows={[{ label: "Theme", value: theme ? themeLabel(theme) : null }, { label: "Topic", value: r.topic ?? null }]} />}
-                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} />}
+                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />}
                 relevance={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />}
                 designed={
                   <>
@@ -174,6 +174,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
                 <StateNote>The summary for this finding is not written yet; it needs the finding’s brief.</StateNote>
               )}
               {trajectory && <div style={{ marginTop: "var(--sp-12)" }}>{prose(trajectory)}</div>}
+              <BriefContextCallout r={r} />
               {depth === "full" && unparsedBrief && (
                 <div className={styles.fullBrief}>
                   <GfmSection markdown={unparsedBrief} />

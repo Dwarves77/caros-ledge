@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 
 import type { RecommendedAction } from "@/core/brief";
-import { stripSourcesSection } from "@/core/brief";
+import { parseRecordSections, splitKeyDateFacts, stripSourcesSection } from "@/core/brief";
 import type { SectionRow } from "@/core/detail/item-read";
 import { withObligationEvents } from "@/core/detail/timeline";
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
@@ -22,7 +22,7 @@ import { formatDate, pluralize } from "@/core/shared";
 import type { Resource } from "@/core/types";
 import { regionGroupForLabel } from "@/core/workspace/vocabulary";
 import { ActionCard, ClaimTierProvider, DetailSubSection, downloadMarkdownBrief, GfmSection, GradeChip, RailCard, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { AtAGlanceCard, BriefContextCallout, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { LegendRailCard } from "@/ui/list-surface";
 import { useItemRelevance } from "@/features/regulations/useItemRelevance";
@@ -88,6 +88,9 @@ export function OperationsDetail(p: OperationsDetailProps) {
   const regionGroup = regionGroupForLabel(jurisLabel);
   const rows = useMemo(() => sourceEntriesOf(r), [r]);
   const known = useMemo(() => p.sections.filter((s) => s.section_key in HEADINGS), [p.sections]);
+  const isRecord = r.itemGrade === "record";
+  const parsed = useMemo(() => (isRecord ? parseRecordSections(p.sections, p.claimTiers) : null), [isRecord, p.sections, p.claimTiers]);
+  const split = parsed ? splitKeyDateFacts(parsed.facts) : { dateFacts: [], otherFacts: [] };
   const unparsedBrief = known.length === 0 && r.fullBrief ? stripSourcesSection(r.fullBrief) : "";
   const presence = crossPagePresence(p.crossPage);
   const dek = [`Operations · ${jurisLabel}`, r.sourceName, r.added ? `published ${formatDate(r.added)}` : null, r.modes && r.modes.length > 0 ? r.modes.map((m) => m.toUpperCase()).join(" · ") : null].filter(Boolean).join(" · ");
@@ -166,7 +169,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
             rail={
               <DetailRail
                 atAGlance={<AtAGlanceCard rows={[{ label: "Topic", value: r.topic ?? null }, { label: "Comparison", value: p.eligibility.unavailable ? "Not available" : p.eligibility.s3Eligible ? "Available" : `Building${p.eligibility.resolvedRegionCodes.length > 0 ? ` (${p.eligibility.resolvedRegionCodes.join(", ")})` : ""}` }]} />}
-                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} />}
+                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />}
                 relevance={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />}
                 designed={<><RelatedRegionCard related={p.related} region={regionGroup || jurisLabel} onRetry={retry} /><DerivedFigures figures={p.derived} retryHref={here} /></>}
                 legend={<LegendRailCard />}
@@ -175,7 +178,8 @@ export function OperationsDetail(p: OperationsDetailProps) {
             }
           >
             <DetailSection id="summary" title="Summary" index={1}>
-              {r.whatIsIt || r.note || r.whyMatters ? <p className={styles.summaryProse}>{r.whatIsIt || r.note || r.whyMatters}</p> : <StateNote>The summary for this regional profile is not written yet; it needs the profile&apos;s brief.</StateNote>}
+              {isRecord && parsed && (split.dateFacts.length > 0 || split.otherFacts.length > 0) ? <RecordFacts leadNote="This regional profile was captured directly from its source document. Every fact below is quoted verbatim." dateFacts={split.dateFacts} otherFacts={split.otherFacts} tags={r.tags} /> : r.whatIsIt || r.note || r.whyMatters ? <p className={styles.summaryProse}>{r.whatIsIt || r.note || r.whyMatters}</p> : <StateNote>The summary for this regional profile is not written yet; it needs the profile&apos;s brief.</StateNote>}
+              <BriefContextCallout r={r} />
               {depth === "full" && unparsedBrief && <div className={styles.fullBrief}><GfmSection markdown={unparsedBrief} /></div>}
             </DetailSection>
             <DetailSection id="findings" title="Substantive findings" index={2}>

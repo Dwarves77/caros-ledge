@@ -61,7 +61,7 @@ export function Spec09Panels({ panels, corridorLabels }: { panels: MarketPanels;
               {rows.map((r) => (
                 <div key={r.roadmap_id} className={styles.panelCard}>
                   <p className={styles.panelCardTitle}>{words(r.tech_category)}</p>
-                  <p className={styles.muted}>{words(r.commercial_stage)}{r.target_year ? ` · target ${r.target_year}` : ""}</p>
+                  <p className={styles.muted}>{words(r.commercial_stage)}{r.target_year ? ` · target ${r.target_year}` : ""}{r.usable_kwh != null ? ` · ${r.usable_kwh} kWh` : ""}{r.energy_density_wh_kg != null ? ` · ${r.energy_density_wh_kg} Wh/kg` : ""}{r.c_rate_max != null ? ` · ${r.c_rate_max}C` : ""}</p>
                   <p className={styles.muted}>Density basis: {r.density_basis ?? "not stated"} · Confidence: {r.confidence_admiralty ?? "not stated"}</p>
                 </div>
               ))}
@@ -79,7 +79,7 @@ export function Spec09Panels({ panels, corridorLabels }: { panels: MarketPanels;
                 return (
                   <div key={r.reroute_id} className={styles.panelCard}>
                     <p className={styles.panelCardTitle}>{r.cause}</p>
-                    <p className={styles.muted}>{name(r.baseline_corridor_id)} → {name(r.reroute_corridor_id)}</p>
+                    <p className={styles.muted}>{name(r.baseline_corridor_id)} → {name(r.reroute_corridor_id)}{r.route_via ? ` · via ${words(r.route_via)}` : ""}{r.distance_delta_nm != null ? ` · +${r.distance_delta_nm} nm` : ""}{r.transit_delta_days != null ? ` · +${r.transit_delta_days}d transit` : ""}</p>
                     <p className={styles.muted}>Fuel burn ×{r.fuel_burn_multiplier} ({pct === null ? "no figure" : `${pct >= 0 ? "+" : ""}${pct.toFixed(0)}%`})</p>
                   </div>
                 );

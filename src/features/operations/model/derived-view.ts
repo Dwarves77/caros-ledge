@@ -4,7 +4,7 @@ import { originClassLabel } from "./region-grid";
 
 /** The tables whose rows are Operations inputs: cost and fuel prices and exchange rates (market series), emission factors (grid and fuel intensity) and the regional facts themselves. */
 export const OPERATIONS_INPUT_TABLES: readonly string[] = ["market_series", "emission_factors", "regional_data_facts"];
-const METHOD_WORDS: Readonly<Record<string, string>> = { market_series_delta: "One-week movement", carbon_intensity_tkm: "Carbon intensity per tonne-kilometre" };
+const METHOD_WORDS: Readonly<Record<string, string>> = { market_series_delta: "One-week movement", carbon_intensity_tkm: "Carbon intensity per tonne-kilometre", carbon_price_eur_t: "Carbon price benchmark", corridor_distance_km: "Corridor distance", feu_payload_tonnes: "Default container payload", carbon_cost_per_feu: "Carbon cost per FEU", pattern_velocity_burst: "Signal velocity burst", pattern_mandate_capacity: "Mandate vs. capacity collision", pattern_lead_lag: "Regulatory-to-market lead/lag", pattern_cross_modal: "Cross-modal spillover", pattern_penalty_abatement: "Penalty vs. abatement crossover", pattern_regulatory_stacking: "Multi-regulation stacking" };
 
 export interface DerivedRow {
   value_id: string;

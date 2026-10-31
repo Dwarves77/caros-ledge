@@ -6,7 +6,7 @@ export interface ThemeChip {
   themeId: string;
   href: string;
   label: string;
-  itemTitle: string;
+  itemTitle: string; meaning?: string | null;
   memberCount: number;
   pages: Array<{ surface: string; label: string }>;
   hasBrief: boolean;
@@ -45,6 +45,7 @@ export function ThemeStrip({ chips }: { chips: ThemeChip[] }) {
               ))}
               {c.hasBrief && <span className={`cl-theme-brief${c.stale ? " cl-theme-brief--stale" : ""}`}>{c.stale ? "Brief · out of date" : "Brief"}</span>}
             </div>
+            {c.meaning && <p className="cl-detail-link-note">{c.meaning}</p>}
             {c.links.length > 0 && (
               <div className="cl-theme-links">
                 {c.links.map((m) => (
