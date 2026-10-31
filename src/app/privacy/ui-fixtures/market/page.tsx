@@ -1,11 +1,14 @@
 import { notFound } from "next/navigation";
 
+import { whyLines } from "@/features/flywheel/radar/read";
+import { selectHeadlineSeries } from "@/features/market/lib/headline";
 import { buildSeriesBoard, type SeriesRow } from "@/features/market/lib/series-board";
 import type { SourceRating } from "@/features/market/lib/provenance";
 import type { CarbonState, CarbonStore } from "@/core/derived/carbon";
 import type { MarketRead } from "@/features/market/read";
 import { MarketView } from "@/features/market/ui/MarketView";
 import type { Resource } from "@/core/types";
+
 
 // The UX smoke mounts the Market page here (tests/ux/market-smoke.mjs) from fixed data, `?state=failed` with every part's read failed. A 404 unless the env flag is set (the CI parity job and the local smoke run only); under /privacy so the
 // proxy treats it as a public path. The data is generic fixture data, not a customer's.
@@ -24,8 +27,8 @@ const SERIES: SeriesRow[] = [
   ...point("ecb-fx:eur-gbp", "EUR/GBP", 20, 0.84, { unit: "GBP/EUR", currency: "GBP", source_key: "ecb", source_ref: "ECB euro foreign exchange reference rates" }),
   ...Array.from({ length: 5 }, (_, i) => ({ id: `sbti-${i}`, series_key: `sbti:near-term-lead-time-sector-${i}`, label: `Sector ${i + 1}`, reference_period: day(0), as_at_date: day(0), value_numeric: 18 + i * 9, unit: "months", currency: null, derivation: "calculated", origin_class: "derived", source_key: "sbti_dashboard", n_observations: 40 + i })),
 ];
-const rating = (sourceKey: string, name: string, url: string, tier: number): [string, SourceRating] => [sourceKey, { sourceKey, name, url, licence: "Open licence", attribution: name, tier, via: "class" }];
-const RATINGS = Object.fromEntries([rating("ec_weekly_oil_bulletin", "European Commission, DG ENER", "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en", 2), rating("eia", "US Energy Information Administration", "https://www.eia.gov/opendata/", 2), rating("ecb", "European Central Bank", "https://www.ecb.europa.eu/", 2)]);
+const rating = (sourceKey: string, name: string, url: string | null, tier: number): [string, SourceRating] => [sourceKey, { sourceKey, name, url, licence: "Open licence", attribution: name, tier, via: "class" }];
+const RATINGS = Object.fromEntries([rating("ec_weekly_oil_bulletin", "European Commission, DG ENER", "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en", 2), rating("eia", "US Energy Information Administration", "https://www.eia.gov/opendata/", 2), rating("ecb", "European Central Bank", "https://www.ecb.europa.eu/", 2), rating("sbti_dashboard", "Science Based Targets initiative", null, 3)]);
 const BANDS = ["CRITICAL", "HIGH", "HIGH", "HIGH", "MODERATE", "LOW", "LOW", "LOW"] as const;
 const KINDS = ["action_required", "cost_alert", "window_closing", "competitive_edge", "monitoring"];
 const ROWS: Resource[] = Array.from({ length: 36 }, (_, i) => ({
@@ -68,5 +71,5 @@ export default async function MarketFixturesPage({ searchParams }: { searchParam
   if (process.env.UI_FIXTURES !== "1") notFound();
   const state = (await searchParams).state ?? "ok";
   const chips = state === "failed" ? null : [{ themeId: "t1", href: "/research/t1", label: "Fixture theme across the corpus", itemTitle: "Fixture theme", memberCount: 6, pages: [{ surface: "market", label: "Market" }], hasBrief: true, stale: false, links: [] }];
-  return <div data-fx="market"><MarketView read={readFor(state)} nowIso={NOW} coverage={state === "failed" ? { denominator: null, error: "fixture: read failed" } : { denominator: { surface: "market_intel", label: "market", numerator: 30, denominator: 54, verifiedBriefs: 54, href: "/dashboard/coverage?data_class=market_intel" }, error: null }} chips={chips} /></div>;
+  return <div data-fx="market"><MarketView read={readFor(state)} nowIso={NOW} coverage={state === "failed" ? { denominator: null, error: "fixture: read failed" } : { denominator: { surface: "market_intel", label: "market", numerator: 30, denominator: 54, verifiedBriefs: 54, href: "/dashboard/coverage?data_class=market_intel" }, error: null }} chips={chips} radar={state === "failed" ? null : { patterns: [], forming: [] }} why={state === "failed" ? null : Object.fromEntries(selectHeadlineSeries(buildSeriesBoard(SERIES)).cards.map((c, i) => [c.familyKey, whyLines(i === 0 ? [{ refTable: "intelligence_items", refId: "i", entity: { id: "e", kind: "instrument", canonicalName: "Directive 2023/959" }, hop: 0, surface: "regulations", summary: { label: "Directive 2023/959", date: "2027-01-01", penalty: { value: 100, unit: "EUR/t excess emissions" } } }] : [], c.label)]))} /></div>;
 }

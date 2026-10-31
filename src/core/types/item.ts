@@ -56,9 +56,12 @@ export interface ItemConnection {
   direction: "outgoing" | "incoming";
   relationship: string;
   origin: string;
-  basis: Array<{ signal: string; detail: string; weight: number }> | null;
+  /** The stored basis: a list of {signal, detail, weight}, or the typed EdgeBasis (discover.ts). */
+  basis: import("@/core/flywheel/discover").EdgeBasis | null;
   score: number | null;
   surface: string;
+  /** intelligence_items.id of the other end, the key of the facts join. */
+  uuid?: string;
 }
 
 export interface OperationalImpact {

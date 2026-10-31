@@ -7,6 +7,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { buildConnectionRows, buildResourceLookup, buildSupersessionRows, type ConnectionRow, type ResourceLookup } from "@/core/flywheel";
+import { readEntityFacts } from "@/core/flywheel/facts-join";
 import { userClient, type Db } from "@/core/db";
 import { attachImpact } from "@/core/impact/attach";
 import type { DetailSurface } from "@/core/lists";
@@ -64,12 +65,14 @@ export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface,
 
   const lookupPromise = buildResourceLookup(client, [...new Set([...connections.map((c) => c.id), ...supersessions.flatMap((s) => [s.old, s.new])])].filter(Boolean));
 
+  // the structured rows tied to this item's entities and to its connections', for the causal sentence of each connection and the "What moves with this" block
+  const facts = await readEntityFacts(client, [uuid, ...connections.flatMap((c) => (c.uuid ? [c.uuid] : []))]);
   const [, claimsRead, lookup, itemScoped, rawCrossPage] = await Promise.all([
     (async () => await attachImpact(client, [resource], new Map([[resource.id, uuid]]), orgId, undefined, new Map([[uuid, item.relevanceInput as unknown as Record<string, unknown>]])))(),
     readClaims(client, uuid).then((c) => ({ ok: true as const, ...c }), (e: unknown) => ({ ok: false as const, error: e })),
     lookupPromise,
     loadItemScoped ? loadItemScoped({ db: client, uuid, resource, connections, supersessions }) : Promise.resolve(undefined as ItemScoped),
-    readCrossPage(client, uuid, surface, item.intersectionSummary, connections, lookupPromise, asOfIso),
+    readCrossPage(client, uuid, surface, item.intersectionSummary, connections, lookupPromise, asOfIso, facts.get(uuid) ?? []),
   ]);
   // INV-270 fails closed: without the suppressions the text is withheld (a named degraded block), never rendered unredacted and never read as 'nothing suppressed'.
   const claims = claimsRead.ok ? claimsRead : { tiers: {} as ClaimTierMap, suppressed: [] };
@@ -88,7 +91,7 @@ export async function loadDetail<ItemScoped = undefined>(surface: DetailSurface,
     claimTiers: claims.tiers,
     claimsDegraded: !claimsRead.ok,
     resourceLookup: lookup,
-    connectionRows: [...buildSupersessionRows(supersessions, resource.id, lookup), ...buildConnectionRows(connections, lookup)],
+    connectionRows: [...buildSupersessionRows(supersessions, resource.id, lookup), ...buildConnectionRows(connections, lookup, { self: facts.get(uuid) ?? [], facts })],
     crossPage,
     recommendedActions: item.recommendedActions,
     relevanceInput: item.relevanceInput,

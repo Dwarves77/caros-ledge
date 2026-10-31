@@ -55,6 +55,8 @@ export interface StatementComponent {
   index: number | null;
 }
 export interface Statement {
+  /** The "Why this matters" lines of the first component that has them. */
+  why?: readonly string[];
   dimension: string;
   factLabel: string;
   /** Null exactly when `absence` is set. */
@@ -122,13 +124,14 @@ export function buildStatements(i: { facts: readonly OperationsFact[]; regions: 
       const f = g.byRegion.get(r.code) as OperationsFact;
       return { regionCode: r.code, regionLabel: r.label, value: f.valueNumeric as number, unit: f.unit as string, currency: text(f.currency) ? f.currency : null, valueText: formatEnvelopedValue(f) as string, sourceName: f.sourceName ?? f.sourceKey, sourceUrl: f.sourceUrl, sourceTier: f.sourceTier, datasetRef: text(f.sourceRef) ? f.sourceRef : null, referencePeriod: text(f.referencePeriod) ? f.referencePeriod : null, statusFlag: derivationLabel(f.derivation), originClass: originClassLabel(f.originClass), asAtDate: text(f.asAtDate) ? f.asAtDate : null, index: null };
     });
+    const why = [...g.byRegion.values()].find((f) => f.why?.length)?.why;
     if (components.length < 2) {
-      statements.push({ dimension: g.dimension, factLabel: g.label, sentence: null, components, absence: NEEDS_SECOND_REGION });
+      statements.push({ dimension: g.dimension, factLabel: g.label, sentence: null, components, absence: NEEDS_SECOND_REGION, ...(why ? { why } : {}) });
       continue;
     }
     const index = indexGroup(components, roster, i.baseRegionCode);
     const missing = roster.filter((r) => !g.byRegion.has(r.code)).map((r) => r.label);
-    statements.push({ dimension: g.dimension, factLabel: g.label, sentence: `${g.label}: ${components.map((c) => clause(c, index)).join("; ")}.${missing.length > 0 ? ` ${missing.join(", ")}: not available.` : ""}`, components, ...(index ? { index } : {}) });
+    statements.push({ dimension: g.dimension, factLabel: g.label, sentence: `${g.label}: ${components.map((c) => clause(c, index)).join("; ")}.${missing.length > 0 ? ` ${missing.join(", ")}: not available.` : ""}`, components, ...(index ? { index } : {}), ...(why ? { why } : {}) });
   }
   statements.sort((a, b) => dims.indexOf(a.dimension) - dims.indexOf(b.dimension) || a.factLabel.localeCompare(b.factLabel));
   return { statements, droppedVerdicts: refused.size };

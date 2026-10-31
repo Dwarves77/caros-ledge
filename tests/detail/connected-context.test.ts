@@ -10,7 +10,7 @@ import { ItemConnections } from "@/ui/detail/ItemConnections";
 import { memoryDb } from "../_support/memory-db.ts";
 import { renderApp } from "../_support/render.ts";
 
-test("themeAnalysisView: with no brief the cluster is structure (ids, surface keys, signal tokens, counts), not a sentence", () => {
+test("themeAnalysisView: with no brief the cluster is structure (ids, surface keys, the words it is linked by, counts), not a sentence", () => {
   const themes = [
     {
       id: "t1",
@@ -39,38 +39,15 @@ test("themeAnalysisView: with no brief the cluster is structure (ids, surface ke
 
   assert.ok(view);
   assert.equal(view.hasBrief, false);
-  assert.deepEqual(view.cluster, { memberIds: ["item-a", "item-b", "item-c"], pivotIds: [], surfaces: ["regulations", "market"], signals: ["shared_source", "shared_scenario"], memberCount: 3, surfaceCount: 2, density: 0.82 });
+  assert.deepEqual(view.cluster, { memberIds: ["item-a", "item-b", "item-c"], pivotIds: [], surfaces: ["regulations", "market"], linkedBy: [], memberCount: 3, surfaceCount: 2, density: 0.82 });
 });
 
-test("ItemConnections: explains why and how items connect via rendered context lines", () => {
-  const rowWithBasis = {
-    id: "r1",
-    title: "Maritime Fuel Standard",
-    priority: "HIGH",
-    label: "References",
-    surface: "market",
-    href: "/market/r1",
-    origin: "provenance_discovery",
-    discovered: true,
-    basisSummary: [{ signal: "shared_source" }, { signal: "shared_scenario" }],
-    score: 0.9,
-  };
-  const html1 = renderApp(createElement(ItemConnections, { rows: [rowWithBasis] as never }));
-  assert.match(html1, /Bound by shared source, shared scenario/);
-
-  const rowSupersedes = {
-    id: "r2",
-    title: "Old Fuel Standard",
-    priority: "LOW",
-    label: "Supersedes",
-    surface: "regulations",
-    href: "/regulations/r2",
-    origin: "manual",
-    discovered: false,
-    basisSummary: [],
-    score: null,
-  };
-  const html2 = renderApp(createElement(ItemConnections, { rows: [rowSupersedes] as never }));
+test("ItemConnections: each connection says why in one sentence, never a tag or a score", () => {
+  const row = { id: "r1", title: "Maritime Fuel Standard", priority: "HIGH", label: "References", surface: "market", href: "/market/r1", origin: "provenance_discovery", discovered: true, reason: "Shared operating context: ocean fuel surcharge." };
+  const html1 = renderApp(createElement(ItemConnections, { rows: [row] as never }));
+  assert.match(html1, /Shared operating context: ocean fuel surcharge\./);
+  assert.doesNotMatch(html1, /Bound by|shared_|0\.\d\d/);
+  const html2 = renderApp(createElement(ItemConnections, { rows: [{ ...row, id: "r2", label: "Supersedes", surface: "regulations", href: "/regulations/r2", reason: "Replaces prior statutory provisions." }] as never }));
   assert.match(html2, /Replaces prior statutory provisions/);
 });
 

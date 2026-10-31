@@ -2,6 +2,8 @@
 // Ported from old_repo/src/components/shell/ThemeStrip.tsx (lines 1-9)
 import Link from "next/link";
 
+import { FlywheelRadar, type RadarView } from "../flywheel/FlywheelRadar";
+
 export interface ThemeChip {
   themeId: string;
   href: string;
@@ -18,9 +20,12 @@ export interface ThemeChip {
  * The strip of theme cards on a list page. The chips arrive built (the research surface owns theme-brief resolution and the bounded reader); an empty
  * list renders nothing: an honest omission, there is no strip when no live theme touches the page.
  */
-export function ThemeStrip({ chips }: { chips: ThemeChip[] }) {
-  if (chips.length === 0) return null;
+export function ThemeStrip({ chips, radar }: { chips: ThemeChip[]; radar?: RadarView | null | undefined }) {
+  // `radar` undefined: the page read none (a fixture); null: its read failed; otherwise the cross-surface patterns of this page, drawn under the themes
+  const panel = radar === undefined ? null : <FlywheelRadar view={radar} />;
+  if (chips.length === 0) return panel;
   return (
+    <>
     <section className="cl-themes">
       <div className="cl-themes-head">
         <h2 className="cl-themes-title">Themes across the corpus</h2>
@@ -43,7 +48,7 @@ export function ThemeStrip({ chips }: { chips: ThemeChip[] }) {
                   {p.label}
                 </span>
               ))}
-              {c.hasBrief && <span className={`cl-theme-brief${c.stale ? " cl-theme-brief--stale" : ""}`}>{c.stale ? "Brief · out of date" : "Brief"}</span>}
+              {c.hasBrief && <span className={`cl-theme-brief${c.stale ? " cl-theme-brief--stale" : ""}`}>{c.stale ? "Written for an earlier membership" : "Brief"}</span>}
             </div>
             {c.meaning && <p className="cl-detail-link-note">{c.meaning}</p>}
             {c.links.length > 0 && (
@@ -59,5 +64,7 @@ export function ThemeStrip({ chips }: { chips: ThemeChip[] }) {
         ))}
       </div>
     </section>
+    {panel}
+    </>
   );
 }

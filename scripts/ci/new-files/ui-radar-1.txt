@@ -1,0 +1,4 @@
+# OPERATOR-OVERRIDE: operator directive 2026-10-31, Section 0 / rulings 44 and 50 (UI-RADAR-1 brief): grants these two new src files and no other.
+# path | reason (files with no "Ported from" header)
+src/features/flywheel/radar/read.ts | new in UI-RADAR-1 (granted): the radar's reads for a scope (corpus, one surface, one item): the emerging and forming pattern rows, the items and entities each joins by surface, the signpost that would confirm it, the open needs that name its missing part, the candidate edges, and the two-line "Why this matters" of a structured row through the facts join
+src/ui/flywheel/FlywheelRadar.tsx | new in UI-RADAR-1 (granted): the customer face of those findings, the radar panel, the two-line "Why this matters" under a figure and the "What moves with this" rows of a detail page; presentational, every string a sentence composed on the server

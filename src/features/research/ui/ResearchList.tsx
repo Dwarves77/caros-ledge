@@ -10,6 +10,7 @@ import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { BAND_ORDER, bandFromPriority, type UrgencyBandKey } from "@/core/lists";
 import { formatLocaleDate, formatNumber } from "@/core/shared";
 import { BiasLegend, CoverageState, ErrorState, isImpactScored, RailCard, StateNote } from "@/ui";
+import type { RadarView } from "@/features/flywheel/radar/read";
 import { filterRows, LegendRailCard, liveFacetCounts, ListSurface, SortRow, ThemeStrip, useListUrlState, type FacetGroup, type ListWindowKey, type ThemeChip } from "@/ui/list-surface";
 import { filterByWindow, WINDOW_OPTIONS } from "@/ui/list-surface/filter-sort";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
@@ -34,12 +35,14 @@ export interface ResearchListProps {
   /** The request's one instant: every date and window on the page is measured from it. */
   nowIso: string;
   chips: ThemeChip[];
+  /** The cross-surface patterns of this page; null: that read failed; absent: none was read. */
+  radar?: RadarView | null | undefined;
   denominator: DenominatorProps;
   /** The theme strip's own read failed. */
   chipsFailed?: boolean;
 }
 
-export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = false }: ResearchListProps) {
+export function ResearchList({ data, nowIso, chips, radar, denominator, chipsFailed = false }: ResearchListProps) {
   const router = useRouter();
   const url = useListUrlState(["theme"]);
   const tagsFacet = useTagsFacet();
@@ -92,7 +95,7 @@ export function ResearchList({ data, nowIso, chips, denominator, chipsFailed = f
   if (data.rowsFailed) return <ErrorState title="Research did not load" message="The findings could not be read just now. Try again; nothing was changed." onRetry={() => router.refresh()} />;
   const tail: ReactNode = (
     <div className={styles.below}>
-      {chipsFailed ? <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>The theme strip did not load.</StateNote> : <ThemeStrip chips={chips} />}
+      {chipsFailed ? <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>The theme strip did not load.</StateNote> : <ThemeStrip chips={chips} radar={radar} />}
       <DenominatorLine {...denominator} />
       <div className={styles.credRow}>
         <span className={styles.credLabel}>Credibility model</span>

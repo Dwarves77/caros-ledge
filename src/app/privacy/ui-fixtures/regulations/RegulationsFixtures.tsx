@@ -9,6 +9,8 @@ import { ObligationRegister } from "@/features/regulations/ObligationRegister";
 import { RegulationsLedger } from "@/features/regulations/RegulationsLedger";
 import type { Resource } from "@/core/types";
 
+import { RADAR_FX } from "../surfaces/SurfaceFixtures";
+
 const NOW = "2026-10-15T12:00:00.000Z";
 const PRIORITIES = ["CRITICAL", "HIGH", "HIGH", "MODERATE", "MODERATE", "LOW"] as const;
 const JURISDICTIONS = [["EU"], ["US"], ["GB"], ["DE"], ["CN"], ["BR"]];
@@ -48,7 +50,7 @@ const BRIEF = ["## 15. Sources", "| Source Name | Tier | URL |", "|---|---|---|"
 // Five linked items, the first with a 600-character title (a real record title can run to hundreds of words): the strip clamps it to two lines, and the fifth sits behind the closed disclosure.
 const LONG_TITLE = Array.from({ length: 75 }, (_, i) => `provision${i + 1}`).join(" ");
 const CONNECTIONS = [LONG_TITLE, "Euro 7 Standard", "California Advanced Clean Fleets Rule", "Sustainable Trucking", "A fifth linked item"].map((title, i) => ({
-  id: `dddddddd-0000-4000-8000-${String(i + 1).padStart(12, "0")}`, title, priority: null, label: "References", surface: "regulations", href: `/regulations/fx-connection-${i + 1}`, origin: "manual", discovered: false, basisSummary: [], score: null,
+  id: `dddddddd-0000-4000-8000-${String(i + 1).padStart(12, "0")}`, title, priority: null, label: "References", surface: "regulations", href: `/regulations/fx-connection-${i + 1}`, origin: "manual", discovered: i === 1, reason: i === 1 ? "Regulation (EU) 2023/959 binds ocean carriers from 1 Jan 2027 (penalty EUR 100/t). Heavy fuel oil 3.5%S rose 24.8% over the last week." : "Cited directly in the source text.", ...(i === 4 ? { developing: { family: "Economic/abatement crossover forming", next: "a Research abatement-cost evaluation for methanol engines" } } : {}),
 }));
 const DETAIL: ComponentProps<typeof DetailView> = {
   resource: resource(1, { fullBrief: BRIEF, compliance_deadline: "2027-01-01", sourceUrl: "https://eur-lex.europa.eu/doc" } as Partial<Resource>),
@@ -57,7 +59,7 @@ const DETAIL: ComponentProps<typeof DetailView> = {
   sections,
   claimTiers: {},
   recommendedActions: [],
-  crossPage: { intersections: null, theme: null, inferences: null, degraded: [] },
+  crossPage: { intersections: null, theme: null, radar: RADAR_FX, moves: [{ kind: "Price or figure", line: "Heavy fuel oil 3.5%S (EU average) rose 24.8% over the last week." }, { kind: "Obligation", line: "Regulation (EU) 2023/959 binds ocean carriers from 1 Jan 2027 (penalty EUR 100/t excess emissions)." }], inferences: null, degraded: [] },
   connectionRows: CONNECTIONS,
   events: [{ event_date: "2027-01-01", event_kind: "entry_into_force" }],
   eventsFailed: false,
@@ -75,7 +77,7 @@ export function RegulationsFixtures({ screen }: { screen: string }) {
   return (
     <div data-fx="regulations">
       {screen === "ledger" ? (
-        <RegulationsLedger initial={ROWS} aggregates={{ totalItems: ROWS.length, byPriority: { CRITICAL: 3, HIGH: 5, MODERATE: 4, LOW: 2 }, byStatus: {}, byJurisdiction: { EU: 6, US: 4 }, totalJurisdictions: 6, lastUpdatedAt: NOW }} hasMore={false} nowIso={NOW} chips={[]} rail={null} />
+        <RegulationsLedger initial={ROWS} aggregates={{ totalItems: ROWS.length, byPriority: { CRITICAL: 3, HIGH: 5, MODERATE: 4, LOW: 2 }, byStatus: {}, byJurisdiction: { EU: 6, US: 4 }, totalJurisdictions: 6, lastUpdatedAt: NOW }} hasMore={false} nowIso={NOW} chips={[]} radar={RADAR_FX} rail={null} />
       ) : null}
       {screen === "detail" ? <DetailView {...DETAIL}>{null}</DetailView> : null}
       {screen === "record" ? <DetailView {...DETAIL} resource={{ ...DETAIL.resource, itemGrade: "record", fullBrief: "" }} sections={[]}>{null}</DetailView> : null}

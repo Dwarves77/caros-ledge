@@ -4,12 +4,12 @@
     { "id": "signed-in", "owner": "LIVE-GATE-1", "armed": true, "rule": "each of the five list pages ends off /login and draws the account menu" },
     { "id": "no-404", "owner": "OPS-FIX-1", "armed": true, "rule": "every detail link on the five lists answers a non-404 page that is not the sign-in page" },
     { "id": "no-raw-ids", "owner": "OPS-FIX-1 / UI-RADAR-1", "armed": false, "rule": "no uuid, no '. 0.xx' score, no pattern_ method id and no _gap token in the text a reader sees on the five lists and their first details" },
-    { "id": "rows-have-why", "owner": "UI-RADAR-1 (renderer); CONTENT-OIL-1 / REG-BACKFILL-1 (rows)", "armed": false, "rule": "every list row on the five lists draws a non-empty second line" },
-    { "id": "connections-have-reason", "owner": "UI-RADAR-1", "armed": false, "rule": "every connection entry on a first detail renders a sentence of at least three words, not a token" },
+    { "id": "rows-have-why", "owner": "UI-RADAR-1 (renderer); CONTENT-OIL-1 / REG-BACKFILL-1 (rows)", "armed": true, "rule": "every list row on the five lists draws a non-empty second line" },
+    { "id": "connections-have-reason", "owner": "UI-RADAR-1", "armed": true, "rule": "every connection entry on a first detail renders a sentence of at least three words, not a token" },
     { "id": "no-pending-text", "owner": "THEME-1 / UI-RADAR-1", "armed": false, "rule": "the pending-synthesis and stale-synthesis notices are absent from the five lists and their first details" },
     { "id": "own-mandates", "owner": "OPS-FIX-1", "armed": false, "rule": "on a first detail, the pending-triggers panel is absent or every trigger text contains the item's instrument number" },
     { "id": "scoped-grid", "owner": "OPS-FIX-1", "armed": false, "params": { "region": "United States", "forbidden": ["UK Power Networks"] }, "rule": "the profile opened from the United States column of the operations matrix names none of the forbidden other-region entities" },
     { "id": "ribbon-complete", "owner": "LIVE-GATE-2", "armed": true, "rule": "on /market the ribbon's 'N families from M series' line is read, N equals the cards drawn, the series behind the cards cover every series the series board holds with a latest value, and M equals the board's series count" },
-    { "id": "radar-present", "owner": "UI-RADAR-1", "armed": false, "rule": "the dashboard draws an element marked data-audit=flywheel-radar holding at least one link or an absence statement" }
+    { "id": "radar-present", "owner": "UI-RADAR-1", "armed": true, "rule": "the dashboard draws an element marked data-audit=flywheel-radar holding at least one link or an absence statement" }
   ]
 }

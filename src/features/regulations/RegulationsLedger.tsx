@@ -13,6 +13,7 @@ import type { WorkspaceAggregates } from "@/features/lists";
 import { mergeWithOverrides, useItemStateStore } from "@/features/workspace/state";
 import { requestJson } from "@/core/http/request-json";
 import { StateNote } from "@/ui";
+import type { RadarView } from "@/features/flywheel/radar/read";
 import { filterRows, isFilterActive, liveFacetCounts, ListSurface, SortRow, sortResourceRows, ThemeStrip, useListRows, useListUrlState, withListPosition, type FacetGroup, type ListSortKey, type ThemeChip } from "@/ui/list-surface";
 import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
@@ -39,7 +40,7 @@ async function fetchRest(): Promise<LedgerRow[]> {
 }
 
 /** `chips` is null when the theme strip's read failed; `degraded` are the sentences for reads that failed beside the list (profile, milestones, marks), each with Retry. */
-export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips, degraded = [], rail, below }: { initial: LedgerRow[]; aggregates: WorkspaceAggregates | null; hasMore: boolean; nowIso: string; chips: ThemeChip[] | null; degraded?: readonly string[]; rail: ReactNode; below?: ReactNode }) {
+export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips, radar, degraded = [], rail, below }: { initial: LedgerRow[]; aggregates: WorkspaceAggregates | null; hasMore: boolean; nowIso: string; chips: ThemeChip[] | null; radar?: RadarView | null | undefined; degraded?: readonly string[]; rail: ReactNode; below?: ReactNode }) {
   const router = useRouter();
   const now = useMemo(() => new Date(nowIso), [nowIso]);
   const url = useListUrlState();
@@ -167,7 +168,7 @@ export function RegulationsLedger({ initial, aggregates, hasMore, nowIso, chips,
       stateNote={remainder.loadingMore ? <StateNote>Loading the rest of the regulations in the background.</StateNote> : null}
       belowRows={
         <>
-          {chips === null ? <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>The theme strip did not load.</StateNote> : <ThemeStrip chips={chips} />}
+          {chips === null ? <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>The theme strip did not load.</StateNote> : <ThemeStrip chips={chips} radar={radar} />}
           {below}
           <DismissedStash dismissed={dismissed} onRestore={restore} />
         </>
