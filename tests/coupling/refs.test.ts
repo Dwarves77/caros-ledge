@@ -7,14 +7,14 @@ import { mineRefs, uuidOf } from "@/core/coupling";
 
 import { NOW } from "../integration/world.ts";
 
-import { claim, E, ITEM, OBLIGATION, patternFixture, propagate } from "./_world.ts";
+import { claim, E, ITEM, OBLIGATION, patternFixture, connect } from "./_world.ts";
 
 const refsOf = (f: ReturnType<typeof patternFixture>) => f.db.rows("entity_refs").filter((r) => r.asserted_by === "coupling/refs");
 
 test("C2a: a claim resolves to an entity by a formal code it states (an instrument identifier, a UN/LOCODE), with the claim id and span as its basis; the item the claim belongs to is filed under the union of its claims' refs; a name in prose resolves nothing", async () => {
   const f = patternFixture();
   f.db.seed("section_claim_provenance", [claim(ITEM.reg, "Regulation (EU) 2023/2405 raises the blending obligation.", "2026-10-01", "b1000000-0000-4000-8000-000000000031", 1), claim(ITEM.reg, "Green ammonia offtake agreements were announced.", "2026-10-01", "b1000000-0000-4000-8000-000000000032", 1)]);
-  await propagate(f);
+  await connect(f);
   const byId = refsOf(f).find((r) => r.entity_id === E("instrument:32023R2405") && r.ref_table === "section_claim_provenance");
   assert.equal((byId?.basis as { how: string }).how, "identifier", "an instrument named by its number resolves through the parse module's equality, not a substring");
   assert.equal(byId?.role, "cites_instrument");
@@ -84,7 +84,7 @@ test("NE1: the mining retires nothing: a ref is never deleted because its entity
 test("NE1: a ref copied through a foreign key carries where it came from: an obligation and a forward event are filed under their item's refs (inherited_from_item), and an item under the union of its claims' refs", async () => {
   const f = patternFixture();
   f.db.seed("section_claim_provenance", [claim(ITEM.reg, "Regulation (EU) 2023/2405 raises the blending obligation.", "2026-10-01", "b1000000-0000-4000-8000-000000000031", 1)]);
-  await propagate(f);
+  await connect(f);
   const inherited = (table: string, id: string) => refsOf(f).filter((r) => r.ref_table === table && r.ref_id === id && "inherited_from_item" in (r.basis as object));
   const ocean = inherited("obligation_objects", uuidOf(OBLIGATION.ocean));
   assert.ok(ocean.some((r) => r.entity_id === E("instrument:32023R2405")), "the ocean obligation names no instrument itself and takes its item's");
@@ -96,7 +96,7 @@ test("NE1: a ref copied through a foreign key carries where it came from: an obl
 
 test("C2b: a typed table's rows are mined through the column map: an entity id column, a closed mode token, the refs of the claim an event rests on; a text key is keyed by its uuid; no word is mapped to an entity", async () => {
   const f = patternFixture();
-  await propagate(f);
+  await connect(f);
   const of = (table: string, entity: string) => refsOf(f).filter((r) => r.ref_table === table && r.entity_id === E(entity));
   assert.deepEqual(of("oem_tech_roadmaps", "carrier:hefa_saf"), [], "a technology category is a word: the mining files nothing from it (the Reader's ref stands)");
   const ob = of("obligation_objects", "mode:air");
@@ -111,7 +111,7 @@ test("C2b: a typed table's rows are mined through the column map: an entity id c
 
 test("INV-CN2-8: every ref the mining writes carries a basis and the method version; a second run writes none; a dry run writes none and counts the new ones", async () => {
   const f = patternFixture();
-  await propagate(f);
+  await connect(f);
   const mined = refsOf(f);
   assert.ok(mined.length > 10);
   for (const r of mined) {
@@ -133,7 +133,7 @@ test("NE1: a market series is filed only under the entity its typed entity_id co
   const f = patternFixture();
   const row = (n: number, key: string, entity: string | null) => ({ id: `b7000000-0000-4000-8000-00000000000${n}`, series_key: key, label: "a label that names nothing", entity_id: entity, value_numeric: 1, unit: "EUR/t", currency: "EUR", derivation: "observed", origin_class: "official", source_key: "fixture", source_ref: "fixture", as_at_date: "2026-10-01" });
   f.db.seed("market_series", [row(1, "eu-oil-bulletin:automotive-diesel", null), row(2, "ecb-fx:eur-usd", E("carrier:fossil_diesel"))]);
-  await propagate(f);
+  await connect(f);
   const filed = (n: number) => refsOf(f).filter((r) => r.ref_table === "market_series" && r.ref_id === `b7000000-0000-4000-8000-00000000000${n}`).map((r) => [r.entity_id, r.role, (r.basis as { column: string }).column]);
   assert.deepEqual(filed(1), [], "a formal series code is not mapped to a fuel by the engine");
   assert.deepEqual(filed(2), [[E("carrier:fossil_diesel"), "cites_carrier", "entity_id"]]);

@@ -1,4 +1,4 @@
-// CONNECT-2: the fixture turn. The propagate stage seeds the vocabulary and mines the planted claims and typed rows into entity_refs; the connect stage then runs all five detectors, and the planted data yields exactly the planted patterns: one per kind and one per relation kind
+// CONNECT-2: the fixture turn. The connect stage reads the backlog, mines the planted claims and typed rows into entity_refs, and then runs all five detectors, and the planted data yields exactly the planted patterns: one per kind and one per relation kind
 // the cross-modal detector crosses (INV-CN2-5, less the needs-search row, which is PR B). Each pattern is a derived value under its registered method with one derivation edge per evidence row (INV-CN2-1); a second connect finds the same patterns and writes none.
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -11,7 +11,6 @@ const byMethod = (rows: Record<string, unknown>[]) => Object.fromEntries(Object.
 
 test("INV-CN2-5: the planted data yields exactly one pattern per kind it can start and one cross-modal pattern per relation kind a non-mode entity can cross, no other; the burst stands on the document dates of the claims' captures", async () => {
   const f = patternFixture();
-  assert.equal((await propagate(f)).exit, 0);
   assert.equal((await connect(f)).exit, 0);
   const rows = patterns(f);
   assert.deepEqual(byMethod(rows), { pattern_velocity_burst: 1, pattern_mandate_capacity: 1, pattern_lead_lag: 1, pattern_cross_modal: 3, pattern_penalty_abatement: 1, pattern_regulatory_stacking: 0 });
@@ -29,7 +28,6 @@ test("INV-CN2-5: the planted data yields exactly one pattern per kind it can sta
 
 test("INV-CN2-1: every pattern value names its evidence: member, evidence or key edges, one per evidence row, and the method version is recorded", async () => {
   const f = patternFixture();
-  await propagate(f);
   await connect(f);
   const edges = f.db.rows("derivation_edges");
   for (const p of patterns(f)) {
@@ -50,7 +48,6 @@ test("INV-CN2-1: every pattern value names its evidence: member, evidence or key
 
 test("a second connect finds the same patterns and writes none; a pattern whose input moves out of its window is retired", async () => {
   const f = patternFixture();
-  await propagate(f);
   await connect(f);
   const first = patterns(f).length;
   await connect(f);
@@ -59,7 +56,6 @@ test("a second connect finds the same patterns and writes none; a pattern whose 
   // the maritime step reaches its day (the lead window is 1 to 730 days ahead): the lead-lag pattern no longer holds and is retired, not left standing
   const event = f.db.rows("item_forward_events")[0] as Record<string, unknown>;
   event.event_date = NOW.toISOString().slice(0, 10);
-  await propagate(f);
   await connect(f);
   const retired = patterns(f).filter((p) => p.method_id === "pattern_lead_lag");
   assert.deepEqual(retired.map((p) => p.lifecycle), ["obsolete"]);
@@ -72,7 +68,6 @@ const OEM = "a0000000-0000-4000-8000-000000000400";
 
 test("the invalidation DAG: a changed evidence row marks the patterns citing it stale and the drain recomputes each through its registered method; one that still holds is superseded, one that no longer holds stays stale", async () => {
   const f = patternFixture();
-  await propagate(f);
   await connect(f);
   const mandate = () => patterns(f).filter((p) => p.method_id === "pattern_mandate_capacity");
   const before = mandate().length;
@@ -105,7 +100,6 @@ test("INV-CN2-6: the connect stage's corpus counts and theme delta are those of 
     if (t !== "market_series") bare.db.rows(t).length = 0;
   }
   await propagate(planted);
-  await propagate(bare);
   await connect(planted);
   await connect(bare);
   const [a, b] = [countsOf(planted, "corpus-turn"), countsOf(bare, "corpus-turn")];
@@ -115,12 +109,10 @@ test("INV-CN2-6: the connect stage's corpus counts and theme delta are those of 
 
 test("a bulk intake of old law yields no burst: claims whose items entered the corpus this month but whose captures state a document date years ago, or none, are in no window, and the burst of the same claims dated by their documents is found", async () => {
   const bulk = patternFixture({ documentDate: "2005-03-01" });
-  await propagate(bulk);
   await connect(bulk);
   assert.equal(patterns(bulk).filter((p) => p.method_id === "pattern_velocity_burst").length, 0, "old documents, recent intake");
   const undated = patternFixture();
   for (const c of undated.db.rows("agent_run_searches")) (c as Record<string, unknown>).document_date = null;
-  await propagate(undated);
   await connect(undated);
   assert.equal(patterns(undated).filter((p) => p.method_id === "pattern_velocity_burst").length, 0, "no document date, no clock");
   assert.equal(countsOf(undated, "corpus-turn").captures_dated, 0);

@@ -7,7 +7,7 @@ import { test } from "node:test";
 import { FAMILIES } from "@/core/harness";
 import { runTurn } from "@/core/turn";
 
-import { connect, patternFixture, propagate } from "../coupling/_world.ts";
+import { connect, patternFixture } from "../coupling/_world.ts";
 import { fixture, NOW } from "../integration/world.ts";
 import type { Fixture } from "../integration/world.ts";
 
@@ -35,7 +35,6 @@ async function collected(): Promise<Map<string, Set<string>>> {
     add(turn);
   }
   const coupling = patternFixture();
-  await propagate(coupling);
   await connect(coupling);
   add(coupling);
   return all;

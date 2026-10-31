@@ -2,10 +2,9 @@
 src/core/coupling/coupling.ts | new in CONNECT-2 PR A: the coupling vocabulary (feedstocks, carriers, nodes, modal-shift corridors, consignment-wide mandates, attributes, windows) as validated data with its indexes; the old tree had one regulation-number regex as its only cross-item relation
 src/core/coupling/data/couplings.json | new in CONNECT-2 PR A: the couplings the operator named, each with the published page and verbatim quote it is taken from, and the column-to-entity mapping of the typed tables
 src/core/coupling/index.ts | new in CONNECT-2 PR A: the public surface of the coupling module
-src/core/coupling/read.ts | new in CONNECT-2 PR A: the one paged read of the seed and ref passes
-src/core/coupling/refs.ts | new in CONNECT-2 PR A: entity-ref mining over the claims, the typed tables and the scenario tags, each ref with its basis and the version of the rule
-src/core/coupling/resolve.ts | new in CONNECT-2 PR A: the text resolver of the spine (instrument identifiers by equality, aliases on word boundaries)
-src/core/coupling/seed.ts | new in CONNECT-2 PR A: the seeds pass; writes the vocabulary as entities, aliases and relations grounded on captured pages
+src/core/coupling/read.ts | new in CONNECT-2 PR A: the one paged read of the ref mining and the pattern loader
+src/core/coupling/refs.ts | new in CONNECT-2 PR A: entity-ref mining over the claims (by formal code), the typed tables and their foreign keys, each ref with its basis and the version of the rule
+src/core/coupling/resolve.ts | new in CONNECT-2 PR A: the text resolver of the spine (instrument identifiers and UN/LOCODEs by equality; no name or alias is matched)
 src/core/flywheel/patterns/config.ts | new in CONNECT-2 PR A: the detector thresholds and the per-table fact adapters as validated data
 src/core/flywheel/patterns/data/facts.json | new in CONNECT-2 PR A: the per-table adapters from a stored row to a detector fact (hashed with the methods)
 src/core/flywheel/patterns/data/patterns.json | new in CONNECT-2 PR A: the thresholds of the five detectors and their version (hashed with the methods)
