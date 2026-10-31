@@ -1,6 +1,6 @@
 // Ported from old_repo/src/lib/market/series-family.mjs (lines 1-180)
 // Ported from old_repo/src/lib/market/headline-series-select.mjs (lines 1-156)
-// The headline row (INV-253, operator ruling steps 1-4, 2026-09-08): a series with no computed change is not a headline; the rest fold into families (one card per signal, the others folded under it with a COMPUTED count,
+// The headline row (INV-253, operator ruling steps 1-4, 2026-09-08): a series with a latest value is always a headline (its window changes, or the line saying there is no prior, are the card's to show; OPS-FIX-2); the rest fold into families (one card per signal, the others folded under it with a COMPUTED count,
 // never a literal); cards order fuels, carbon, FX, other; five are visible and the rest are reachable.
 import { z } from "zod";
 
@@ -46,8 +46,8 @@ export interface HeadlineSelection {
   excludedSeriesKeys: string[];
 }
 
-/** True when the series has at least one computed window change. */
-const hasComputedDelta = (d: SeriesDisplayRow["deltas"] | null | undefined): boolean => !!d && [d.delta1w, d.delta1m, d.deltaYoY].some((w) => typeof w?.value === "number" && Number.isFinite(w.value));
+/** A series is a headline when it holds a latest value; a window with no prior is stated on its card, never a reason to hide the series. */
+const hasLatest = (row: SeriesDisplayRow): boolean => row.emptyReason === null;
 
 const rank = (c: string): number => {
   const i = (FAMILY_CLASS_ORDER as readonly string[]).indexOf(c);
@@ -59,7 +59,7 @@ export const headlineCaption = (s: Pick<HeadlineSelection, "cards" | "totalSerie
 
 export function selectHeadlineSeries(board: Pick<SeriesBoard, "groups" | "unregistered">, o: { cap?: number; families?: readonly SeriesFamily[] } = {}): HeadlineSelection {
   const located = [...board.groups.flatMap((g) => g.series.map((row) => ({ row, group: g }))), ...board.unregistered.map((row) => ({ row, group: null as ProducerGroup | null }))];
-  const eligible = located.filter((x) => hasComputedDelta(x.row.deltas));
+  const eligible = located.filter((x) => hasLatest(x.row));
   const byFamily = new Map<string, { fam: SeriesFamily; members: typeof eligible }>();
   for (const x of eligible) {
     const fam = resolveSeriesFamily(x.row.seriesKey, o.families);
@@ -86,5 +86,5 @@ export function selectHeadlineSeries(board: Pick<SeriesBoard, "groups" | "unregi
   cards.sort((a, b) => rank(a.familyClass) - rank(b.familyClass) || (a.freightMode ? 0 : 1) - (b.freightMode ? 0 : 1) || producerOrder(a.row.seriesKey) - producerOrder(b.row.seriesKey) || a.familyKey.localeCompare(b.familyKey));
   const cap = Math.max(0, o.cap ?? HEADLINE_VISIBLE_CAP);
   const visible = cards.slice(0, cap);
-  return { cards, visible, overflow: cards.slice(cap), familiesShown: visible.length, totalSeries: located.length, excludedSeriesKeys: located.filter((x) => !hasComputedDelta(x.row.deltas)).map((x) => x.row.seriesKey) };
+  return { cards, visible, overflow: cards.slice(cap), familiesShown: visible.length, totalSeries: located.length, excludedSeriesKeys: located.filter((x) => !hasLatest(x.row)).map((x) => x.row.seriesKey) };
 }
