@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { normalizeDisplayTitle } from "@/core/fetch/titles";
+import { displayTitle as shortTitle } from "@/core/lists/display-title";
 import { pickVisibleInferences, type InferenceView } from "@/core/detail/inference-view";
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
 import type { buildIntersectionView } from "@/core/flywheel/view-model";
@@ -64,7 +65,7 @@ const Block = ({ label, children }: { label: string; children: ReactNode }) => (
   </div>
 );
 const RowLink = ({ href, title, note }: { href: string; title: string; note?: string | undefined }) => {
-  const { title: displayTitle, subtitle } = normalizeDisplayTitle(title);
+  const { title: displayTitle, subtitle } = normalizeDisplayTitle(shortTitle(title, true));
   const secondary = [subtitle, note].filter(Boolean).join(" · ");
   return (
     <Link href={href} prefetch={false} className="cl-detail-link">

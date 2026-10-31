@@ -12,6 +12,7 @@ import { RELATIONS } from "@/core/coupling";
 import { PATTERN_METHODS } from "@/core/propagation/methods";
 import { nameForJurisdiction } from "@/core/entities/unlocode-names";
 import { formatDate, formatFigure } from "@/core/shared";
+import { displayTitle } from "@/core/lists/display-title";
 import { joinLabels, labelForComplianceObject, labelForScenario } from "@/core/tags/vocabulary";
 import { SURFACE_LABELS, SURFACE_ORDER, SURFACE_PATH, surfaceHref, surfaceOf } from "@/core/routing";
 import { JURISDICTIONS } from "@/core/workspace/vocabulary";
@@ -187,7 +188,7 @@ async function readForming(db: Db, scope: RadarScope): Promise<RadarForming[]> {
   for (const e of edges.data) {
     const [a, b] = [items.get(e.source_item_id), items.get(e.target_item_id)];
     if (!a || !b) continue;
-    const chain = [a, b].map((it) => ({ title: it.title, surface: surfaceOf(it.item_type, it.domain), href: surfaceHref(surfaceOf(it.item_type, it.domain), it.legacy_id || it.id) as string }));
+    const chain = [a, b].map((it) => ({ title: shortTitle(it.title), surface: surfaceOf(it.item_type, it.domain), href: surfaceHref(surfaceOf(it.item_type, it.domain), it.legacy_id || it.id) as string }));
     if (scope.kind === "surface" && !chain.some((c) => c.surface === scope.surface)) continue;
     const basis = e.basis && !Array.isArray(e.basis) ? e.basis : null;
     shown.push({ key: `${e.source_item_id}|${e.target_item_id}`, family: familyWords(basis?.missing?.patternFamily), chain, reason: reasonFor({ basis: e.basis, origin: CANDIDATE_ORIGIN, label: "Related" }) ?? "A chain is forming between the two.", next: basis?.missing?.truth?.trim() || null });
@@ -353,7 +354,7 @@ export function whyLines(links: readonly FactLink[], subject: string): string[] 
   const regs = links.filter((l) => l.surface === "regulations");
   const others = links.filter((l) => l.surface !== "regulations");
   const reg = regs[0];
-  const first = reg ? `${reg.summary.label ?? reg.entity.canonicalName}${reg.summary.date ? `: next dated obligation ${dateWords(reg.summary.date)}` : ""}${reg.summary.penalty ? `, penalty ${formatFigure(reg.summary.penalty.value)} ${reg.summary.penalty.unit}` : ""}${regs.length > 1 ? `, and ${regs.length - 1} more regulation${regs.length > 2 ? "s" : ""}` : ""}.` : `No regulation in the ledger is tied to ${subject} yet.`;
+  const first = reg ? `${displayTitle(reg.summary.label ?? reg.entity.canonicalName)}${reg.summary.date ? `: next dated obligation ${dateWords(reg.summary.date)}` : ""}${reg.summary.penalty ? `, penalty ${formatFigure(reg.summary.penalty.value)} ${reg.summary.penalty.unit}` : ""}${regs.length > 1 ? `, and ${regs.length - 1} more regulation${regs.length > 2 ? "s" : ""}` : ""}.` : `No regulation in the ledger is tied to ${subject} yet.`;
   const other = others[0];
   const second = other ? `Also tied: ${other.summary.label ?? other.entity.canonicalName} (${surfaceName(other.surface)})${others.length > 1 ? `, and ${others.length - 1} more` : ""}.` : `No operations, market or research item is tied to ${subject} yet.`;
   return [first, second];

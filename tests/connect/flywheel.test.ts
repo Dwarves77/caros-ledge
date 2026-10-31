@@ -6,7 +6,7 @@ import { clusterThemes } from "@/core/flywheel/cluster";
 import { computeTagFrequencies, discoverAll, type TagFrequencies } from "@/core/flywheel/discover";
 import { detectIntersections } from "@/core/flywheel/intersections";
 import type { Signature } from "@/core/flywheel/signature";
-import { computeMemberHash, convergenceBand, diffThemes, isBriefStale, lineageFromThemeDelta, resolveBriefForTheme } from "@/core/flywheel/themes";
+import { computeMemberHash, convergenceBand, diffThemes, isBriefStale, resolveBriefForTheme } from "@/core/flywheel/themes";
 
 const discoverConnections = (item: Signature, candidates: readonly Signature[], opts: Parameters<typeof discoverAll>[2] = {}) => discoverAll(item, candidates, opts).kept;
 const sig = (id: string, over: Partial<Signature> = {}): Signature => ({ id, item_type: "regulation", domain: 1, ...over });
@@ -89,14 +89,13 @@ test("clusterThemes: label propagation finds two components and is deterministic
   assert.deepEqual(r1.themes.map((t) => [t.id, t.members]), r2.themes.map((t) => [t.id, t.members]));
 });
 
-test("diffThemes: persisted, split, merged, dissolved, appeared at the 0.5 overlap; lineage is derived from the delta", () => {
+test("diffThemes: persisted, split, merged, dissolved, appeared at the 0.5 overlap", () => {
   const prior = [{ id: "P1", members: ["a", "b", "c", "d"] }, { id: "P2", members: ["x", "y"] }, { id: "P3", members: ["q"] }];
   const next = [{ id: "N1", members: ["a", "b", "c", "d", "e"] }, { id: "N2", members: ["x"] }, { id: "N3", members: ["z"] }];
   const d = diffThemes(prior, next);
   assert.equal(d.persisted.length + d.renamed.length >= 1, true);
   assert.deepEqual(d.dissolved, ["P3"]);
   assert.deepEqual(d.appeared, ["N3"]);
-  assert.ok(lineageFromThemeDelta(d).some((l) => l.prior_id === "P1" && l.new_id === "N1"));
   const half = diffThemes([{ id: "H1", members: ["a", "b"] }], [{ id: "H2", members: ["a", "c"] }]);
   assert.equal(half.dissolved.length + half.appeared.length, 0, "a 0.5 overlap is the same theme");
   const same = diffThemes(next, next);
@@ -109,7 +108,7 @@ test("member hash is order-independent; a brief is stale when the members move; 
   assert.equal(isBriefStale(computeMemberHash(["a", "b"]), ["b", "a"]), false);
   assert.equal(isBriefStale(computeMemberHash(["a"]), ["a", "b"]), true);
   assert.deepEqual([convergenceBand(0.4), convergenceBand(0.5), convergenceBand(1.5)], ["low", "medium", "high"]);
-  const r = resolveBriefForTheme({ id: "T", member_ids: ["a", "b"] }, [{ theme_id: "T", member_hash: computeMemberHash(["a"]) } as never]);
-  assert.equal(r.match, "exact");
+  const r = resolveBriefForTheme({ id: "T", member_ids: ["a", "b"] }, [{ theme_id: "T", member_hash: computeMemberHash(["a"]) }]);
+  assert.equal(r.brief?.theme_id, "T");
   assert.equal(r.stale, true);
 });

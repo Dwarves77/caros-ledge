@@ -26,6 +26,8 @@ export interface ThemeDelta {
   split: { prior_id: string; new_ids: string[] }[];
   merged: { new_id: string; prior_ids: string[] }[];
   dissolved: string[];
+  /** The dissolved themes whose members now cluster below the convergence floor (ruling 58): a subset of `dissolved`, reason below_floor. Absent on a delta stored before the floor. */
+  below_floor?: string[];
   appeared: string[];
   summary: Record<"prior_count" | "new_count" | "persisted" | "renamed" | "split" | "merged" | "dissolved" | "appeared", number>;
 }
@@ -52,7 +54,7 @@ function overlapCoefficient(a: Iterable<string>, b: Iterable<string>): number {
 const cmpId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 /** Diff two theme sets by member overlap (>= the threshold counts as the same theme); a split, a merge, a 1:1 mutual best match is a rename or persist. */
-export function diffThemes(priorThemes: readonly ThemeLike[] | null | undefined, newThemes: readonly ThemeLike[] | null | undefined, opts: { overlapThreshold?: number } = {}): ThemeDelta {
+export function diffThemes(priorThemes: readonly ThemeLike[] | null | undefined, newThemes: readonly ThemeLike[] | null | undefined, opts: { overlapThreshold?: number; belowFloor?: readonly ThemeLike[] } = {}): ThemeDelta {
   const threshold = opts.overlapThreshold ?? OVERLAP_THRESHOLD;
   const priors = normalize(priorThemes);
   const news = normalize(newThemes);
@@ -115,23 +117,15 @@ export function diffThemes(priorThemes: readonly ThemeLike[] | null | undefined,
   for (const n of news) if (!claimedNew.has(n.id)) appeared.push(n.id);
   dissolved.sort();
   appeared.sort();
+  const floored = normalize(opts.belowFloor); const below_floor = dissolved.filter((id) => floored.some((f) => overlapCoefficient((priors.find((p) => p.id === id) as Norm).members, f.members) >= threshold));
   persisted.sort((a, b) => cmpId(a.prior_id, b.prior_id));
   renamed.sort((a, b) => cmpId(a.prior_id, b.prior_id));
   split.sort((a, b) => cmpId(a.prior_id, b.prior_id));
   merged.sort((a, b) => cmpId(a.new_id, b.new_id));
   return {
-    persisted, renamed, split, merged, dissolved, appeared,
+    persisted, renamed, split, merged, dissolved, below_floor, appeared,
     summary: { prior_count: priors.length, new_count: news.length, persisted: persisted.length, renamed: renamed.length, split: split.length, merged: merged.length, dissolved: dissolved.length, appeared: appeared.length },
   };
-}
-
-/** prior-to-new theme id pairs a delta implies (renamed, split daughters, merged parents), for the surfaces that follow a theme across runs. */
-export function lineageFromThemeDelta(delta: Partial<ThemeDelta> | null | undefined): { prior_id: string; new_id: string }[] {
-  const out: { prior_id: string; new_id: string }[] = [];
-  for (const r of delta?.renamed ?? []) if (r?.prior_id && r.new_id) out.push({ prior_id: r.prior_id, new_id: r.new_id });
-  for (const s of delta?.split ?? []) for (const n of s?.new_ids ?? []) if (s.prior_id && n) out.push({ prior_id: s.prior_id, new_id: n });
-  for (const m of delta?.merged ?? []) for (const p of m?.prior_ids ?? []) if (m.new_id && p) out.push({ prior_id: p, new_id: m.new_id });
-  return out;
 }
 
 export function computeThemeStats(themes: readonly ThemeLike[] | null | undefined): { total: number; avg_convergence: number; cross_surface_count: number; single_surface_count: number } {
@@ -163,28 +157,10 @@ export interface BriefLike {
   theme_id: string;
   member_hash?: string | null;
   member_ids?: readonly string[] | null;
-  [k: string]: unknown;
+  superseded_at?: string | null;
 }
-/** The brief for a theme: exact id match, else (when the theme id moved) the dissolved theme's brief by member overlap or recorded lineage, always stale. */
-export function resolveBriefForTheme<B extends BriefLike>(theme: ThemeLike | null | undefined, briefs: readonly B[] | null | undefined, opts: { liveThemeIds?: Set<string>; overlapThreshold?: number; lineage?: readonly { prior_id: string; new_id: string }[] } = {}): { brief: B | null; match: "exact" | "overlap" | "lineage" | null; stale: boolean; supersedes_theme_id: string | null } {
-  const none = { brief: null, match: null, stale: false, supersedes_theme_id: null };
-  if (!theme || typeof theme.id !== "string") return none;
-  const live = theme.member_ids ?? [];
-  const list = (briefs ?? []).filter((b) => b && typeof b.theme_id === "string");
-  const exact = list.find((b) => b.theme_id === theme.id);
-  if (exact) return { brief: exact, match: "exact", stale: isBriefStale(exact.member_hash, live), supersedes_theme_id: null };
-  const liveIds = opts.liveThemeIds ?? new Set<string>();
-  const threshold = opts.overlapThreshold ?? OVERLAP_THRESHOLD;
-  const lineageFor = new Set((opts.lineage ?? []).filter((p) => p && p.new_id === theme.id).map((p) => p.prior_id));
-  type Cand = { b: B; coef: number; match: "overlap" | "lineage" };
-  const cands: Cand[] = [];
-  for (const b of list) {
-    if (liveIds.has(b.theme_id)) continue;
-    if (Array.isArray(b.member_ids) && b.member_ids.length > 0) {
-      const coef = overlapCoefficient(b.member_ids, live);
-      if (coef >= threshold) cands.push({ b, coef, match: "overlap" });
-    } else if (lineageFor.has(b.theme_id)) cands.push({ b, coef: 0, match: "lineage" });
-  }
-  const best = cands.reduce<Cand | null>((acc, cand) => (!acc || cand.coef > acc.coef || (cand.coef === acc.coef && cand.b.theme_id < acc.b.theme_id) ? cand : acc), null);
-  return best ? { brief: best.b, match: best.match, stale: true, supersedes_theme_id: best.b.theme_id } : none;
+/** The brief for a theme: the one stored under the theme's own id and not retired (superseded_at null), stale when its member hash no longer matches. A brief of another theme id is never attached, whatever its member overlap; a theme without one needs a brief. */
+export function resolveBriefForTheme<B extends BriefLike>(theme: ThemeLike | null | undefined, briefs: readonly B[] | null | undefined): { brief: B | null; stale: boolean } {
+  const brief = theme ? ((briefs ?? []).find((b) => b && b.theme_id === theme.id && !b.superseded_at) ?? null) : null;
+  return { brief, stale: brief ? isBriefStale(brief.member_hash, theme?.member_ids ?? theme?.members) : false };
 }

@@ -9,6 +9,7 @@
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
 import { clusterThemes, type Theme } from "@/core/flywheel/cluster";
+import { CONFIG } from "@/core/flywheel/config";
 import { SIGNATURE_CAP } from "@/core/flywheel/signature";
 import { readAllEdges, writeIntersectionEdges, type SnapshotSink } from "@/core/flywheel/edges";
 import { entityRefs } from "@/core/flywheel/facts-join";
@@ -54,7 +55,11 @@ export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<
 
   edges = input.dry ? (inter.projected ?? edges) : await readAllEdges(sb);
   const nodes = items.map((it) => ({ id: it.id, item_type: it.item_type ?? null, domain: it.domain ?? null, dates: it.added_date }));
-  const clustered = clusterThemes(nodes, edges.map((e) => ({ source: e.source_item_id, target: e.target_item_id, score: e.score ?? null, basis: e.basis ?? null, origin: e.origin })));
+  const clusteredAll = clusterThemes(nodes, edges.map((e) => ({ source: e.source_item_id, target: e.target_item_id, score: e.score ?? null, basis: e.basis ?? null, origin: e.origin })));
+  // Ruling 58 (theme.minConvergence): a cluster below the floor writes no theme and its members stay unthemed; a prior theme it replaces is dissolved with reason below_floor.
+  const floor = CONFIG.theme.minConvergence;
+  const clustered = { ...clusteredAll, themes: clusteredAll.themes.filter((t) => t.convergence >= floor) };
+  const belowFloor = clusteredAll.themes.filter((t) => t.convergence < floor);
 
   const wsRes = await sb.from("workspace_settings").select("jurisdiction_weights").limit(1);
   if (wsRes.error) throw new Error(`workspace_settings read failed: ${wsRes.error.message}`);
@@ -74,8 +79,8 @@ export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<
   Object.assign(counts, { themes: clustered.themes.length, nodes_clustered: clustered.nodesClustered, edges_used: clustered.edgesUsed, rounds: clustered.rounds, gaps: gaps.length, anticipated: anticipated.length });
 
   const prior = await fetchAllRows<{ id: string; member_ids: string[] }>((from, to) => sb.from("connection_themes").select("id, member_ids").order("id", { ascending: true }).range(from, to), { cap: 100_000 });
-  const themeDelta = diffThemes(prior, clustered.themes);
-  Object.assign(counts, { delta_persisted: themeDelta.summary.persisted, delta_renamed: themeDelta.summary.renamed, delta_split: themeDelta.summary.split, delta_merged: themeDelta.summary.merged, delta_dissolved: themeDelta.summary.dissolved, delta_appeared: themeDelta.summary.appeared });
+  const themeDelta = diffThemes(prior, clustered.themes, { belowFloor });
+  Object.assign(counts, { delta_persisted: themeDelta.summary.persisted, delta_renamed: themeDelta.summary.renamed, delta_split: themeDelta.summary.split, delta_merged: themeDelta.summary.merged, delta_dissolved: themeDelta.summary.dissolved, delta_below_floor: themeDelta.below_floor?.length ?? 0, delta_appeared: themeDelta.summary.appeared });
   if (input.dry) return { counts, outcome: "ok", notes: [...notes, "dry: nothing written"], data: { themeDelta, themes: clustered.themes.length } };
 
   const run = await sb.from("connection_theme_runs").insert({ started_at: nowIso, status: "running", args: { dry: false, intersections: { pairs: pairs.length } }, nodes_read: nodes.length, edges_read: edges.length }).select("id").single();

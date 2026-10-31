@@ -2,6 +2,7 @@
 // The rail card's rows: events inside 30 days of the server's day, soonest first, at most the artboard's four. UTC day math; `now` is passed in by the
 // caller (the server's clock, never the client's).
 import { normalizeDisplayTitle } from "@/core/fetch/titles";
+import { displayTitle } from "@/core/lists/display-title";
 
 const OBLIGATION_RAIL_WINDOW_DAYS = 30;
 const OBLIGATION_RAIL_ROW_CAP = 4;
@@ -55,5 +56,5 @@ const cut = (text: string, max: number): string => {
 /** A rail row's two lines: the item's short title (an Annex list is the title's tail and goes) and the first sentence of the clause cut at 140 characters; the full clause lives on the item. */
 export function railRowLines(ev: { item: { title: string | null }; obligation_text: string }): { title: string; lead: string } {
   const text = String(ev.obligation_text ?? "").replace(/\s+/g, " ").trim();
-  return { title: cut(normalizeDisplayTitle(ev.item.title ?? "").title, RAIL_TITLE_MAX), lead: cut(text.split(/(?<=[.!?])\s+/)[0] ?? text, RAIL_LEAD_MAX) };
+  return { title: cut(displayTitle(normalizeDisplayTitle(ev.item.title ?? "").title, true), RAIL_TITLE_MAX), lead: cut(text.split(/(?<=[.!?])\s+/)[0] ?? text, RAIL_LEAD_MAX) };
 }

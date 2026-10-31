@@ -2,6 +2,8 @@
 // Ported from old_repo/src/components/shell/ThemeStrip.tsx (lines 1-9)
 import Link from "next/link";
 
+import { displayTitle } from "@/core/lists/display-title";
+
 import { FlywheelRadar, type RadarView } from "../flywheel/FlywheelRadar";
 
 export interface ThemeChip {
@@ -58,7 +60,7 @@ export function ThemeStrip({ chips, radar }: { chips: ThemeChip[]; radar?: Radar
               <div className="cl-theme-links">
                 {c.links.map((m) => (
                   <Link key={m.href} href={m.href} prefetch={false} title={m.title} className="cl-theme-member">
-                    · {m.title}
+                    · {displayTitle(m.title, true)}
                   </Link>
                 ))}
               </div>

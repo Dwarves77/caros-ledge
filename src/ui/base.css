@@ -374,7 +374,7 @@ button, input, select, textarea { font-family: inherit; }
 /* ── section index, depth switch ── */
 .cl-section-index { position: sticky; top: 0; z-index: 5; background: var(--page); padding: var(--sp-6) 0; margin-bottom: var(--sp-16); display: flex; align-items: center; gap: var(--sp-10); max-width: 100%; min-width: 0; }
 .cl-section-index-strip { display: flex; align-items: center; gap: var(--sp-4); background: var(--card); border: 1px solid var(--line-1); border-radius: 8px; padding: var(--sp-4); font-size: var(--fs-125); min-width: 0; flex: 1 1 auto; }
-.cl-section-index-tabs { display: flex; align-items: center; gap: var(--sp-4); overflow-x: auto; white-space: nowrap; flex: 1 1 auto; min-width: 0; }
+.cl-section-index-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); flex: 1 1 auto; min-width: 0; }
 .cl-section-index-link { font-size: var(--fs-125); font-weight: 600; color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; min-height: var(--target); border-radius: 6px; padding: var(--sp-6) var(--sp-12); white-space: nowrap; flex-shrink: 0; }
 .cl-section-index-link[aria-current="true"] { font-weight: 700; color: var(--invert-text); background: var(--brand); }
 .cl-section-index-depth { flex-shrink: 0; padding-left: var(--sp-8); border-left: 1px solid var(--line-2); }
@@ -425,7 +425,7 @@ button, input, select, textarea { font-family: inherit; }
 .cl-shell-main { flex: 1 1 auto; overflow-y: auto; width: 100%; }
 .cl-shell-banner { padding: var(--sp-10) var(--sp-16); background: var(--accent-bg); border-bottom: 1px solid var(--line-1); font-size: var(--fs-12); color: var(--ink); display: flex; align-items: center; gap: var(--sp-12); flex-wrap: wrap; }
 .cl-shell-banner-link { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--fs-11); font-weight: 600; text-decoration: underline; color: var(--ink); }
-.cl-shell-note { padding: var(--sp-12) var(--sp-16) 0; }
+.cl-shell-note { padding: var(--sp-12) 4.5rem 0 var(--sp-16); }
 .cl-nav-card { display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; align-self: stretch; margin: var(--sp-20) 0 var(--sp-16) var(--sp-16); background: var(--card); border: 1px solid var(--line-1); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
 .cl-nav-drawer { display: flex; flex-direction: column; min-height: 100%; }
 .cl-nav-brand { padding: var(--sp-20) var(--sp-16); border-bottom: 1px solid var(--line-1); }
@@ -482,7 +482,7 @@ button, input, select, textarea { font-family: inherit; }
 .cl-list-surface-masthead { padding: var(--sp-20) var(--sp-40) 0; }
 .cl-list-surface-grid { padding: var(--sp-20) var(--sp-40) var(--sp-40); display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--sp-28); align-items: start; }
 .cl-list-surface-col { display: flex; flex-direction: column; gap: var(--sp-16); min-width: 0; }
-.cl-list-surface-rail { display: flex; flex-direction: column; gap: var(--sp-16); }
+.cl-list-surface-rail { display: flex; flex-direction: column; gap: var(--sp-16); min-width: 0; }
 .cl-facets-mobile, .cl-filters-btn { display: none; }
 .cl-filter-sheet { display: flex; flex-direction: column; gap: var(--sp-12); }
 .cl-filter-sheet-group { min-height: var(--target); display: flex; flex-direction: column; justify-content: center; }
@@ -522,8 +522,8 @@ button, input, select, textarea { font-family: inherit; }
 .cl-themes-head { display: flex; align-items: baseline; gap: var(--sp-8); margin-bottom: var(--sp-10); }
 .cl-themes-title { font-size: var(--fs-13); font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink); }
 .cl-themes-count { font-size: var(--fs-115); color: var(--ink-3); }
-.cl-themes-strip { display: flex; gap: var(--sp-12); overflow-x: auto; max-width: 100%; padding-bottom: var(--sp-4); scroll-snap-type: x proximity; }
-.cl-theme-card { flex: 0 0 260px; min-width: 0; overflow: hidden; scroll-snap-align: start; border: 1px solid var(--line-1); border-radius: 8px; padding: var(--sp-10) var(--sp-12); background: var(--card); }
+.cl-themes-strip { display: flex; flex-wrap: wrap; gap: var(--sp-12); max-width: 100%; }
+.cl-theme-card { flex: 1 1 220px; max-width: 260px; min-width: 0; overflow: hidden; border: 1px solid var(--line-1); border-radius: 8px; padding: var(--sp-10) var(--sp-12); background: var(--card); }
 .cl-theme-link { display: flex; align-items: center; min-height: 44px; text-decoration: none; color: inherit; }
 .cl-theme-label { font-size: var(--fs-125); font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .cl-theme-meta { display: flex; flex-wrap: wrap; gap: var(--sp-4); margin: 0.3125rem 0 var(--sp-8); }
@@ -541,11 +541,11 @@ button, input, select, textarea { font-family: inherit; }
 .cl-gfm-li { margin: 0 0 var(--sp-4); }
 .cl-gfm-tablewrap { overflow-x: auto; margin: 0 0 var(--sp-12); }
 .cl-gfm-table { border-collapse: collapse; width: 100%; font-size: var(--fs-13); }
-.cl-gfm-th, .cl-gfm-td { border: 1px solid var(--line-1); padding: var(--sp-8) var(--sp-12); font-size: var(--fs-13); line-height: 1.5; text-align: left; vertical-align: top; }
+.cl-gfm-th, .cl-gfm-td { border: 1px solid var(--line-1); padding: var(--sp-8) var(--sp-12); font-size: var(--fs-13); line-height: 1.5; text-align: left; vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
 .cl-gfm-th { font-size: var(--fs-10); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--ink-3); background: var(--page); }
 .cl-gfm-td { color: var(--ink-2); border-bottom-color: var(--line-3); }
 .cl-gfm-sub { font-size: var(--fs-12); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); margin: var(--sp-18) 0 var(--sp-10); padding-bottom: var(--sp-6); border-bottom: 2px solid var(--line-1); }
-.cl-gfm-a { color: var(--brand); text-decoration: underline; }
+.cl-gfm-a { color: var(--brand); text-decoration: underline; overflow-wrap: anywhere; word-break: break-word; }
 .cl-gfm-code { font-size: 0.9em; background: var(--tag); padding: 1px var(--sp-4); border-radius: 3px; }
 .cl-gfm-quote { border-left: 3px solid var(--line-1); padding-left: var(--sp-12); color: var(--ink-2); }
 .cl-gfm-hr { border: 0; border-top: 1px solid var(--line-1); margin: var(--sp-16) 0; }
