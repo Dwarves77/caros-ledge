@@ -4,7 +4,7 @@
 import { z } from "zod";
 
 import { LEG_MODE_CODES, normaliseMode } from "@/core/contracts/vocabularies";
-import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
+import { fetchAllByIdChunks, type Db } from "@/core/db";
 
 import rulesJson from "./data/object-rules.json";
 
@@ -42,21 +42,24 @@ export function classifyMode(span: string, instrument: { title?: string | null |
  * column tokens that are leg modes. An item with neither is absent from the map.
  */
 export async function readInstrumentModes(sb: Db, items: readonly { id: string; transport_modes?: readonly string[] | null | undefined }[]): Promise<Map<string, string[]>> {
-  const refs = await fetchAllByIdChunks<{ ref_id: string; entity_id: string }>(items.map((i) => i.id), async (slice) => {
-    const { data, error } = await sb.from("entity_refs").select("ref_id, entity_id").eq("ref_table", "intelligence_items").eq("role", "cites_mode").in("ref_id", slice);
+  const refs = await fetchAllByIdChunks<{ ref_id: string; entity_id: string; basis: { column?: unknown; value?: unknown } | null }>(items.map((i) => i.id), async (slice) => {
+    const { data, error } = await sb.from("entity_refs").select("ref_id, entity_id, basis").eq("ref_table", "intelligence_items").eq("role", "cites_mode").in("ref_id", slice);
     if (error) throw new Error(`instrument modes: entity_refs read failed: ${error.message}`);
     return data ?? [];
   }, { manyPerId: true });
-  const entities = [...new Set(refs.map((r) => r.entity_id))];
-  const tokensOf = new Map<string, Set<string>>();
-  for (let i = 0; i < entities.length; i += 50) {
-    const slice = entities.slice(i, i + 50);
-    const rows = await fetchAllRows<{ entity_id: string; basis: { value?: unknown } | null }>((from, to) => sb.from("entity_refs").select("entity_id, basis").eq("role", "cites_mode").contains("basis", { column: "mode" }).in("entity_id", slice).order("entity_id", { ascending: true }).order("ref_table", { ascending: true }).order("ref_id", { ascending: true }).range(from, to));
-    for (const r of rows) { const t = normaliseMode(r.basis?.value); if (t) tokensOf.set(r.entity_id, new Set([...(tokensOf.get(r.entity_id) ?? []), t])); }
+  // The token a ref names: its own basis when it was filed from the mode column; else the entity's one typed-column ref (one row per mode entity, never the entity's whole citation list).
+  const tokenOf = new Map<string, string>();
+  for (const r of refs) { const t = r.basis?.column === "mode" ? normaliseMode(r.basis.value) : null; if (t) tokenOf.set(r.entity_id, t); }
+  for (const entity of new Set(refs.map((r) => r.entity_id))) {
+    if (tokenOf.has(entity)) continue;
+    const { data, error } = await sb.from("entity_refs").select("basis").eq("entity_id", entity).eq("role", "cites_mode").contains("basis", { column: "mode" }).limit(1);
+    if (error) throw new Error(`instrument modes: entity_refs read failed: ${error.message}`);
+    const t = normaliseMode(((data ?? [])[0] as { basis?: { value?: unknown } } | undefined)?.basis?.value);
+    if (t) tokenOf.set(entity, t);
   }
   const out = new Map<string, string[]>();
   for (const it of items) {
-    const filed = LEG_MODE_CODES.filter((m) => refs.some((r) => r.ref_id === it.id && tokensOf.get(r.entity_id)?.has(m)));
+    const filed = LEG_MODE_CODES.filter((m) => refs.some((r) => r.ref_id === it.id && tokenOf.get(r.entity_id) === m));
     const column = LEG_MODE_CODES.filter((m) => (it.transport_modes ?? []).some((t) => normaliseMode(t) === m));
     const modes = filed.length ? filed : column;
     if (modes.length) out.set(it.id, modes);

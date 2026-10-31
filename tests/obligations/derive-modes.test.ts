@@ -12,7 +12,7 @@ import { OBJECT_DERIVATION_VERSION } from "@/features/obligations/derive/derive-
 import rules from "@/features/obligations/derive/data/object-rules.json" with { type: "json" };
 import { cursorAfter, fillObjectFields } from "@/features/obligations/derive/fill-fields";
 import { extractStatutory, groundingRefusal } from "@/features/obligations/derive/maximum";
-import { classifyMode } from "@/features/obligations/derive/mode";
+import { classifyMode, readInstrumentModes } from "@/features/obligations/derive/mode";
 import { runPropagate } from "@/core/turn";
 
 import { fixture } from "../integration/world.ts";
@@ -268,4 +268,22 @@ test("INV-OD-3: the backfill fills source_id and instrument_entity_id only where
   assert.deepEqual([again.counts.source_set, again.counts.instrument_entity_set, again.data?.plan.filter((p) => Object.keys(p.patch).length).length], [0, 0, 0], "a second run plans nothing");
   const born = (await deriveObligationObjects(connectDb({ intelligence_items: [carrier], section_claim_provenance: [], fact_suppressions: [], item_forward_events: [], agent_run_searches: [CAPTURE], obligation_objects: [] }).db, { dry: true, itemIds: [], extraCandidates: [candidate()] })).data as { plan: { toInsert: Array<{ row: Row }> } };
   assert.deepEqual([born.plan.toInsert[0]?.row.source_id, born.plan.toInsert[0]?.row.instrument_entity_id], [SOURCE, INSTRUMENT], "a new object is born with both columns");
+});
+
+test("INV-OD-6: readInstrumentModes learns the token from the item's own ref and issues no query over entity_refs keyed by entity_id; only a ref without the token costs one row per entity", async () => {
+  const item = { ...ITEM, transport_modes: [] };
+  const carrying: Row = { ref_table: "intelligence_items", ref_id: "i1", entity_id: OCEAN_ENTITY, role: "cites_mode", asserted_by: "t", basis: { column: "mode", value: "ocean" }, method_version: "t" };
+  const spy = (rows: Row[]) => {
+    const w = connectDb({ intelligence_items: [item], entity_refs: rows });
+    const calls: string[] = [];
+    const from = w.db.from.bind(w.db);
+    (w.db as { from: unknown }).from = (t: string) => { const q = from(t) as Record<string, (...a: unknown[]) => unknown>; const eq = q.eq?.bind(q); if (t === "entity_refs" && eq) q.eq = (c: unknown, v: unknown) => { calls.push(String(c)); return eq(c, v); }; return q; };
+    return { w, calls };
+  };
+  const a = spy([carrying]);
+  assert.deepEqual([...(await readInstrumentModes(a.w.db, [item])).entries()], [["i1", ["ocean"]]]);
+  assert.equal(a.calls.includes("entity_id"), false, "no entity_refs query keyed by entity_id");
+  const b = spy(modeRefs("road"));
+  assert.deepEqual([...(await readInstrumentModes(b.w.db, [item])).entries()], [["i1", ["road"]]], "a ref without the token falls back to one typed-column row for that entity");
+  assert.equal(b.calls.filter((c) => c === "entity_id").length, 1);
 });
