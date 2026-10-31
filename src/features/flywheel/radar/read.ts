@@ -210,7 +210,7 @@ const tokensOf = (e: BasisEntry, kind: "scenarios" | "objects"): string[] => {
 };
 const dateWords = (iso: string): string => (/^\d{4}-\d{2}-\d{2}/.test(iso) ? formatDate(iso.slice(0, 10)) : iso);
 /** An item's title as a card shows it: as written up to 90 characters, else cut at the last whole word with an ellipsis (the title stays whole on the item's page and in the link's title). */
-export const shortTitle = (title: string, max = 90): string => (title.length <= max ? title : `${title.slice(0, max).replace(/\s+\S*$/, "").replace(/[\s,;:(–—-]+$/, "")}…`);
+const shortTitle = (title: string, max = 90): string => (title.length <= max ? title : `${title.slice(0, max).replace(/\s+\S*$/, "").replace(/[\s,;:(–—-]+$/, "")}…`);
 /** A jurisdiction token in words: the workspace vocabulary's label, else a short code in capitals. */
 const placeWords = (token: string): string => JURISDICTIONS.find((j) => j.id === token.toLowerCase())?.label ?? (token.length <= 3 ? token.toUpperCase() : token);
 /** The jurisdictions and topics of a jurisdiction-and-topic entry: the typed tokens, or the stored detail ("both in sg/us on fuels/emissions"). */

@@ -13,7 +13,7 @@ import type { FactLink } from "@/core/flywheel/facts-join";
 import { toListRowFields } from "@/core/lists/row-fields";
 import { themeAnalysisView, themeChips } from "@/core/themes/theme-view";
 import { isOperationsFigure } from "@/features/operations/model/derived-view";
-import { readItemExtras, readLinkedBy, readFlywheelRadar, readWhyMatters, nameChips, reasonFor, shortTitle, whyLines, type RadarView } from "@/features/flywheel/radar/read";
+import { readItemExtras, readLinkedBy, readFlywheelRadar, readWhyMatters, nameChips, reasonFor, whyLines, type RadarView } from "@/features/flywheel/radar/read";
 import { DerivedFigures } from "@/features/operations/ui/Spec09Panels";
 import { CrossPageSection } from "@/ui/detail/CrossPageSection";
 import { ItemConnections } from "@/ui/detail/ItemConnections";
@@ -258,13 +258,9 @@ test("UI-RADAR-2 reasons: the strongest legacy evidence (a shared regulation ide
   assert.deepEqual(rows.map((r) => [r.id, r.reason]), [["a", "Both name regulation 2099/2002 in their titles."], ["b", "Both name Council Decision and European Union in their titles."]]);
 });
 
-test("UI-RADAR-2 detail: a detail with no forming connection says so in words; shortTitle cuts at a whole word", () => {
+test("UI-RADAR-2 detail: a detail with no forming connection says so in words", () => {
   const rows = buildConnectionRows([edge("a", { basis: [SCN] })], LOOKUP);
   assert.match(textOf(renderApp(createElement(ItemConnections, { rows }))), /Developing No connection is forming for this item yet\./);
-  const long = "Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community";
-  assert.equal(shortTitle("Short title"), "Short title");
-  const cut = shortTitle(long);
-  assert.ok(cut.length <= 91 && cut.endsWith("…") && long.startsWith(cut.slice(0, -1)) && /\s/.test(long[cut.length - 1] ?? " "), cut);
 });
 
 const LEAD_LAG = (n: number, inputs: unknown[]) => ({
@@ -294,7 +290,8 @@ test("UI-RADAR-2 radar: five rows of one pattern joining the same members are ON
   assert.match(text, /Operations ?: Shanghai \(CN\) → Genoa \(IT\), ocean/);
   assert.doesNotMatch(text, /CNSHA-ITGOA/);
   const regs = p.groups.find((g) => g.surface === "regulations")?.items[0]?.title ?? "";
-  assert.ok(regs.length <= 91 && regs.startsWith("Directive 2003/87/EC of the European Parliament"), `short title: ${regs}`);
+  assert.ok(regs.length <= 91 && regs.endsWith("…") && longTitle.startsWith(regs.slice(0, -1)) && /\s/.test(longTitle[regs.length - 1] ?? " "), `a title over 90 characters is cut at a whole word: ${regs}`);
+  assert.equal(p.groups.find((g) => g.surface === "regulations")?.items[0]?.href.startsWith("/regulations/"), true);
   // all four surfaces on the card: a need that names any of them is not drawn
   const four = [...TWO_SURFACES, { table: "market_series", pk: "m", kind: "member", surface: "market" }, { table: "emission_factors", pk: "r", kind: "member", surface: "research" }];
   const full = memoryDb({ derived_values: [LEAD_LAG(1, four)], integrity_flags: [{ id: "f9", subject_ref: "pattern:leadLag:ev1:far", description: "x", recommended_actions: [{ action: "missing", surface: "market" }], created_by: "flywheel-gap:pattern_trigger_gap", status: "open" }] }).db;
