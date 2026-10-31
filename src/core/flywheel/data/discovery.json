@@ -27,5 +27,6 @@
   "pairBands": { "strong": 0.9, "medium": 0.5 },
   "convergenceBands": { "high": 1.5, "medium": 0.5 },
   "cluster": { "maxRounds": 20, "pivotK": 3 },
-  "themeOverlapThreshold": 0.5
+  "themeOverlapThreshold": 0.5,
+  "theme": { "minConvergence": 0.10 }
 }

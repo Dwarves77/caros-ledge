@@ -26,6 +26,8 @@ export interface ThemeDelta {
   split: { prior_id: string; new_ids: string[] }[];
   merged: { new_id: string; prior_ids: string[] }[];
   dissolved: string[];
+  /** The dissolved themes whose members now cluster below the convergence floor (ruling 58): a subset of `dissolved`, reason below_floor. Absent on a delta stored before the floor. */
+  below_floor?: string[];
   appeared: string[];
   summary: Record<"prior_count" | "new_count" | "persisted" | "renamed" | "split" | "merged" | "dissolved" | "appeared", number>;
 }
@@ -52,7 +54,7 @@ function overlapCoefficient(a: Iterable<string>, b: Iterable<string>): number {
 const cmpId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
 /** Diff two theme sets by member overlap (>= the threshold counts as the same theme); a split, a merge, a 1:1 mutual best match is a rename or persist. */
-export function diffThemes(priorThemes: readonly ThemeLike[] | null | undefined, newThemes: readonly ThemeLike[] | null | undefined, opts: { overlapThreshold?: number } = {}): ThemeDelta {
+export function diffThemes(priorThemes: readonly ThemeLike[] | null | undefined, newThemes: readonly ThemeLike[] | null | undefined, opts: { overlapThreshold?: number; belowFloor?: readonly ThemeLike[] } = {}): ThemeDelta {
   const threshold = opts.overlapThreshold ?? OVERLAP_THRESHOLD;
   const priors = normalize(priorThemes);
   const news = normalize(newThemes);
@@ -115,12 +117,14 @@ export function diffThemes(priorThemes: readonly ThemeLike[] | null | undefined,
   for (const n of news) if (!claimedNew.has(n.id)) appeared.push(n.id);
   dissolved.sort();
   appeared.sort();
+  const floored = normalize(opts.belowFloor);
+  const below_floor = dissolved.filter((id) => floored.some((f) => overlapCoefficient((priors.find((p) => p.id === id) as Norm).members, f.members) >= threshold));
   persisted.sort((a, b) => cmpId(a.prior_id, b.prior_id));
   renamed.sort((a, b) => cmpId(a.prior_id, b.prior_id));
   split.sort((a, b) => cmpId(a.prior_id, b.prior_id));
   merged.sort((a, b) => cmpId(a.new_id, b.new_id));
   return {
-    persisted, renamed, split, merged, dissolved, appeared,
+    persisted, renamed, split, merged, dissolved, below_floor, appeared,
     summary: { prior_count: priors.length, new_count: news.length, persisted: persisted.length, renamed: renamed.length, split: split.length, merged: merged.length, dissolved: dissolved.length, appeared: appeared.length },
   };
 }
@@ -159,8 +163,13 @@ export function computeMemberHash(memberIds: readonly string[] | null | undefine
 }
 export const isBriefStale = (storedHash: string | null | undefined, memberIds: readonly string[] | null | undefined): boolean => computeMemberHash(memberIds) !== storedHash;
 
+/** theme_briefs has no status column: a brief retired by retire-orphan-theme-briefs carries this prefix in generated_by (the trigger of migration 0039 keeps the prior row), and a rewrite by apply_theme_brief replaces it. */
+export const SUPERSEDED_PREFIX = "superseded:";
+export const isSupersededBrief = (b: { generated_by?: string | null } | null | undefined): boolean => typeof b?.generated_by === "string" && b.generated_by.startsWith(SUPERSEDED_PREFIX);
+
 export interface BriefLike {
   theme_id: string;
+  generated_by?: string | null;
   member_hash?: string | null;
   member_ids?: readonly string[] | null;
   [k: string]: unknown;
@@ -170,7 +179,7 @@ export function resolveBriefForTheme<B extends BriefLike>(theme: ThemeLike | nul
   const none = { brief: null, match: null, stale: false, supersedes_theme_id: null };
   if (!theme || typeof theme.id !== "string") return none;
   const live = theme.member_ids ?? [];
-  const list = (briefs ?? []).filter((b) => b && typeof b.theme_id === "string");
+  const list = (briefs ?? []).filter((b) => b && typeof b.theme_id === "string" && !isSupersededBrief(b));
   const exact = list.find((b) => b.theme_id === theme.id);
   if (exact) return { brief: exact, match: "exact", stale: isBriefStale(exact.member_hash, live), supersedes_theme_id: null };
   const liveIds = opts.liveThemeIds ?? new Set<string>();

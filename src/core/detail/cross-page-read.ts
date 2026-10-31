@@ -1,5 +1,5 @@
 // Ported from old_repo/src/lib/supabase-server.ts (lines 4236-4423)
-// The cross-page reads: the stated intersection summary, the theme analysis (members by page, the brief, the lineage of a dissolved theme), the inferences a customer may read, and the theme
+// The cross-page reads: the stated intersection summary, the theme analysis (members by page, the brief), the inferences a customer may read, and the theme
 // chips of a list page. Every read is on the caller's client (RLS) and bounded; a failed block is NAMED in `degraded` so the page says it did not load, never an absent section (INV-263).
 import { admitItems } from "@/core/derived/admissible";
 import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
@@ -7,14 +7,14 @@ import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { surfaceHref, surfaceOf } from "@/core/routing";
 import { log } from "@/core/shared/log";
-import { buildIntersectionView, lineageFromThemeDelta, type ConnectionIn, type ResourceLookup } from "@/core/flywheel";
+import { buildIntersectionView, type ConnectionIn, type ResourceLookup } from "@/core/flywheel";
 import { type ItemExtras, readItemExtras, readLinkedBy } from "@/features/flywheel/radar/read";
 import { compareThemes, HORIZONS, inThemeScope, themeAnalysisView, themeChips, themeForItem, type BriefRow, type MemberRow, type ThemeAnalysisView, type ThemeEventRow, type ThemeRow } from "@/core/themes";
 
 import { readCustomerInferences, type InferenceView } from "./inference-view";
 
 const THEME_COLUMNS = "id, member_ids, dominant_signals, density, convergence, surfaces, pivots";
-const BRIEF_COLUMNS = "theme_id, title, brief_md, member_hash, generated_at, sections, member_ids";
+const BRIEF_COLUMNS = "theme_id, title, brief_md, member_hash, generated_at, generated_by, sections, member_ids";
 const CAP = 5000;
 
 export interface CrossPage extends ItemExtras {
@@ -27,12 +27,6 @@ export interface CrossPage extends ItemExtras {
 
 const readThemes = (db: Db): Promise<ThemeRow[]> => fetchAllRows<ThemeRow>((from, to) => db.from("connection_themes").select(THEME_COLUMNS).order("id", { ascending: true }).range(from, to) as never, { cap: CAP });
 const readBriefs = (db: Db): Promise<BriefRow[]> => fetchAllRows<BriefRow>((from, to) => db.from("theme_briefs").select(BRIEF_COLUMNS).order("theme_id", { ascending: true }).range(from, to) as never, { cap: CAP });
-
-async function readLineage(db: Db) {
-  const { data, error } = await db.from("connection_theme_runs").select("theme_delta").eq("status", "ok").order("started_at", { ascending: false }).limit(50);
-  if (error) throw new Error(`connection_theme_runs read failed: ${error.message}`);
-  return (data ?? []).flatMap((r) => lineageFromThemeDelta((r as { theme_delta: never }).theme_delta));
-}
 
 /** Admissible items by uuid: verified, not archived, not replaced (the readers' own RLS applies on top). */
 const readVerifiedItemsByIds = (db: Db, ids: readonly string[]): Promise<MemberRow[]> =>
@@ -67,8 +61,8 @@ async function readTheme(db: Db, itemUuid: string, surface: string, asOfIso: str
   const themes = await readThemes(db);
   const theme = themeForItem(themes, itemUuid);
   if (!theme) return null;
-  const [briefs, lineage, members, events] = await Promise.all([readBriefs(db), readLineage(db), readVerifiedItemsByIds(db, theme.member_ids), readMemberEvents(db, theme.member_ids, asOfIso.slice(0, 10))]);
-  const input = { itemId: itemUuid, surface, themes, briefs, lineage, members, events, asOfIso };
+  const [briefs, members, events] = await Promise.all([readBriefs(db), readVerifiedItemsByIds(db, theme.member_ids), readMemberEvents(db, theme.member_ids, asOfIso.slice(0, 10))]);
+  const input = { itemId: itemUuid, surface, themes, briefs, members, events, asOfIso };
   const view = themeAnalysisView(input);
   // a theme with no usable brief says what its edges are mostly about (their entities and scenarios); the edges are read only then
   return view?.cluster ? themeAnalysisView({ ...input, linkedBy: await readLinkedBy(db, theme.member_ids) }) : view;
@@ -109,6 +103,6 @@ export async function readThemeChips(db: Db, opts: { surface: string | null; min
   // the same scope and order themeChips applies, so the 25 read are the 25 it can show
   const themes = all.filter((t) => inThemeScope(key(t).members, key(t).surfaces) && (opts.surface ? (t.surfaces ?? []).includes(opts.surface) : key(t).surfaces >= (opts.minPages ?? 1))).sort((a, b) => compareThemes(key(a), key(b))).slice(0, 25);
   if (themes.length === 0) return [];
-  const [lineage, items] = await Promise.all([readLineage(db), readVerifiedItemsByIds(db, themes.flatMap((t) => t.member_ids ?? []))]);
-  return themeChips({ themes, items, briefs, lineage, surface: opts.surface, minPages: opts.minPages ?? 1, max: opts.max ?? 6 });
+  const items = await readVerifiedItemsByIds(db, themes.flatMap((t) => t.member_ids ?? []));
+  return themeChips({ themes, items, briefs, surface: opts.surface, minPages: opts.minPages ?? 1, max: opts.max ?? 6 });
 }
