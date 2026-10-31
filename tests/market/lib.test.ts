@@ -100,7 +100,7 @@ test("registry: six producers as data, their runtime side exists, and the implem
   for (const p of PRODUCERS) if (p.producer && registry.some((r) => r.name === p.producer)) assert.equal(registry.find((r) => r.name === p.producer)?.domain_table, "market_series");
 });
 
-test("INV-253 selectHeadlineSeries: no-delta series are excluded, families fold with a COMPUTED count, class order is fuel, carbon, fx, index, five are visible", () => {
+test("INV-253 selectHeadlineSeries: a series with a latest value is a headline whether or not it has a prior (OPS-FIX-2); only a series with no value is excluded, families fold with a COMPUTED count, class order is fuel, carbon, fx, index, five are visible", () => {
   const mk = (key: string, v: [number, number], over: Partial<SeriesRow> = {}) => [obs(key, "2026-03-01", v[0], over), obs(key, "2026-03-08", v[1], over)];
   const rows = [
     ...mk("ecb-fx:eur-usd", [1.1, 1.2], { unit: "USD/EUR", currency: "USD" }),
@@ -112,20 +112,24 @@ test("INV-253 selectHeadlineSeries: no-delta series are excluded, families fold 
     ...mk("eu-oil-bulletin:eurosuper-95", [1500, 1510]),
     ...mk("eia-v2:jet-fuel-kerosene-eer-epjk-pf4-rgc-dpg", [2, 3], { unit: "USD/GAL", currency: "USD" }),
     obs("eu-oil-bulletin:lpg-motor-fuel", "2026-03-08", 50),
+    obs("mystery:empty", "2026-03-08", null as never),
     ...mk("carrier-ets:acme", [90, 95], { unit: "USD/TEU", currency: "USD" }),
     ...mk("mystery:thing", [1, 2]),
   ];
   const s = selectHeadlineSeries(buildSeriesBoard(rows));
-  assert.deepEqual(s.excludedSeriesKeys, ["eu-oil-bulletin:lpg-motor-fuel"]);
+  assert.deepEqual(s.excludedSeriesKeys, ["mystery:empty"], "a one-observation series is a headline; only a series with no value is excluded");
+  assert.ok(s.cards.some((c) => c.row.seriesKey === "eu-oil-bulletin:lpg-motor-fuel"), "the LPG series with a single observation and no prior still has its card");
   assert.equal(s.visible.length, 5);
-  assert.deepEqual(s.cards.map((c) => c.familyClass), ["fuel", "fuel", "fuel", "fuel", "fuel", "carbon", "fx", "index"]);
+  assert.deepEqual(s.cards.map((c) => c.familyClass), ["fuel", "fuel", "fuel", "fuel", "fuel", "fuel", "carbon", "fx", "index"]);
   const fx = s.cards.find((c) => c.familyKey === "fx:ecb-reference-rates");
   assert.deepEqual([fx?.row.seriesKey, fx?.fold], ["ecb-fx:eur-usd", { count: 2, noun: "rates" }], "the fold is the family's eligible member count minus one, here 2 not the declared 4");
   assert.equal(s.cards.find((c) => c.familyKey === "fuel:jet-fuel")?.freightMode, "air");
   assert.equal(s.familiesShown, 5);
-  assert.equal(s.overflow.length, 3);
-  // a declared primary that has no delta hands the card to another member, with that member's own label
-  const alt = selectHeadlineSeries(buildSeriesBoard([...mk("eia-v2:diesel-no2-low-sulfur-eer-epd2f-pf4-y35ny-dpg", [2, 3], { unit: "USD/GAL", currency: "USD", label: "NY diesel" }), obs("eu-oil-bulletin:automotive-diesel", "2026-03-08", 1400)]));
+  assert.equal(s.overflow.length, 4);
+  // a declared primary with no prior still holds the card (it has a value); one with no value hands it to another member, with that member's own label
+  const held = selectHeadlineSeries(buildSeriesBoard([...mk("eia-v2:diesel-no2-low-sulfur-eer-epd2f-pf4-y35ny-dpg", [2, 3], { unit: "USD/GAL", currency: "USD", label: "NY diesel" }), obs("eu-oil-bulletin:automotive-diesel", "2026-03-08", 1400)]));
+  assert.deepEqual([held.cards[0]?.label, held.cards[0]?.fold.count], ["Diesel · EU avg before tax", 1]);
+  const alt = selectHeadlineSeries(buildSeriesBoard([...mk("eia-v2:diesel-no2-low-sulfur-eer-epd2f-pf4-y35ny-dpg", [2, 3], { unit: "USD/GAL", currency: "USD", label: "NY diesel" }), obs("eu-oil-bulletin:automotive-diesel", "2026-03-08", null as never)]));
   assert.deepEqual([alt.cards[0]?.label, alt.cards[0]?.fold.count], ["NY diesel", 0]);
 });
 
@@ -242,4 +246,17 @@ test("OPS-FIX-1 item 9: a window's change stands only on a prior inside the wind
   const year = computeSeriesDeltas([obs("a:x", "2025-10-19", 100), obs("a:x", "2026-10-19", 110)]);
   assert.equal(year.deltaYoY?.fromDate, "2025-10-19");
   assert.equal(computeSeriesDeltas([obs("a:x", "2025-05-01", 100), obs("a:x", "2026-10-19", 110)]).deltaYoY?.insufficientHistory, true, "a 17-month-old prior is not a year-over-year change");
+});
+
+test("OPS-FIX-2: a series whose only prior is 49 days old still renders its card with its latest value and date; each window says there is no prior", () => {
+  const rows = [obs("eu-oil-bulletin:heavy-fuel-oil-3-5pct", "2026-08-31", 535.77), obs("eu-oil-bulletin:heavy-fuel-oil-3-5pct", "2026-10-19", 668.65)];
+  const s = selectHeadlineSeries(buildSeriesBoard(rows));
+  assert.deepEqual(s.cards.map((c) => c.row.seriesKey), ["eu-oil-bulletin:heavy-fuel-oil-3-5pct"], "the card is not hidden for want of a prior");
+  const card = s.cards[0]!;
+  assert.deepEqual([card.row.asAtDate ?? card.row.referencePeriod, card.row.displayValue === "—"], ["2026-10-19", false], "latest value and date");
+  for (const w of ["1w", "1m"] as const) {
+    const cell = deltaCellModel(card.row.deltas, w);
+    assert.equal(cell.kind, "absent");
+    assert.match(cell.kind === "absent" ? cell.detail : "", new RegExp(`^No ${w} prior`));
+  }
 });
