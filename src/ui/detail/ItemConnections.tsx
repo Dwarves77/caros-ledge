@@ -48,12 +48,8 @@ export function ItemConnections({ rows }: { rows: ConnectionRow[] }) {
           </MoreBelowDisclosure>
         </>
       )}
-      {forming.length > 0 && (
-        <>
-          <p className="cl-detail-label">Developing</p>
-          <div className="cl-conn-grid">{forming.slice(0, SHOWN).map(item)}</div>
-        </>
-      )}
+      <p className="cl-detail-label">Developing</p>
+      {forming.length > 0 ? <div className="cl-conn-grid">{forming.slice(0, SHOWN).map(item)}</div> : <p className="cl-detail-link-note">No connection is forming for this item yet. One appears here when two items share a link that still lacks one fact.</p>}
     </div>
   );
 }
