@@ -60,6 +60,11 @@ export function measure(opts) {
     const width = card.getBoundingClientRect().width;
     if (card.getClientRects().length && width > 262) out.push(`theme card stretched to ${Math.round(width)} px (declared 260)`);
   }
+  for (const card of document.querySelectorAll('[data-audit="headline-card"]')) {
+    const r = card.getBoundingClientRect();
+    const tr = card.closest('[data-audit="headline-track"]')?.getBoundingClientRect();
+    if (r.width && tr && (r.right > tr.right + 1 || r.left < tr.left - 1)) out.push(`headline card clipped by track: ${Math.round(r.left)}..${Math.round(r.right)} outside ${Math.round(tr.left)}..${Math.round(tr.right)} at ${vw}px`);
+  }
   for (const el of document.querySelectorAll('.cl-tl-date')) {
     if (el.getClientRects().length && el.scrollWidth > el.clientWidth + 1) out.push(`timeline date clipped: "${(el.textContent || '').trim()}" needs ${el.scrollWidth} px, has ${el.clientWidth}`);
   }

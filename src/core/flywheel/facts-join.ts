@@ -233,7 +233,7 @@ export async function readFactItems(sb: Db, refTable: string, refIds: readonly s
     };
     for (const e of entities) add(e, 0);
     for (const e of entities) for (const n of near.get(e) ?? []) add(n.entity, 1, n.relation);
-    out.set(row, [...links.values()].sort((a, b) => a.hop - b.hop || a.refId.localeCompare(b.refId)));
+    out.set(row, [...links.values()].sort((a, b) => a.hop - b.hop || Number(!a.summary.date) - Number(!b.summary.date) || Number(!a.summary.penalty) - Number(!b.summary.penalty) || a.refId.localeCompare(b.refId)));
   }
   return out;
 }

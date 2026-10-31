@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { normalizeDisplayTitle } from "@/core/fetch/titles";
+import { displayTitle as shortTitle } from "@/core/lists/display-title";
 import type { ConnectionRow } from "@/core/flywheel/view-model";
 import type { ItemRelevance } from "@/core/workspace";
 
@@ -21,7 +22,7 @@ export function ItemConnections({ rows }: { rows: ConnectionRow[] }) {
   const forming = rows.filter((r) => r.href && r.developing);
   if (linked.length === 0 && forming.length === 0) return null;
   const item = (r: ConnectionRow) => {
-    const { title: displayTitle, subtitle } = normalizeDisplayTitle(r.title);
+    const { title: displayTitle, subtitle } = normalizeDisplayTitle(shortTitle(r.title, true));
     return (
       <Link key={`${r.id}-${r.label}`} href={r.href as string} prefetch={false} className="cl-detail-link" title={r.title} data-discovered={r.discovered ? "true" : undefined}>
         <p className="cl-detail-label" style={{ margin: 0 }}>
