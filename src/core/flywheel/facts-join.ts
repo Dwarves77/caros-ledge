@@ -54,12 +54,12 @@ export interface RelationRow {
   relation: string;
 }
 
-const CHUNK = 500;
+const CHUNK = 200;
 const DAY = 86_400_000;
 const num = (v: unknown): number | undefined => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? undefined : Number(v));
 const str = (v: unknown): string | undefined => (typeof v === "string" && v.trim() ? v : undefined);
 
-/** An id-list read in chunks of 500 under a total order; a failed page throws. */
+/** An id-list read in chunks of 200 (500 uuids url-encode past the 16 KB request-line limit) under a total order; a failed page throws. */
 const chunked = <T>(ids: Iterable<string>, page: (slice: string[]) => (from: number, to: number) => unknown): Promise<T[]> =>
   fetchAllByIdChunks<T>(ids, (slice) => fetchAllRows<T>(page(slice) as never, { cap: 500_000 }), { chunk: CHUNK, manyPerId: true });
 

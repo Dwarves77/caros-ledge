@@ -7,7 +7,7 @@ import { test } from "node:test";
 
 import { clusterThemes } from "@/core/flywheel/cluster";
 import { discoverAll, evidenceOf, isCorroborationOnly } from "@/core/flywheel/discover";
-import { missingFor, readEntityFacts, readFactItems } from "@/core/flywheel/facts-join";
+import { entityRefs, missingFor, readEntityFacts, readFactItems, refsOfRows, relationsAround } from "@/core/flywheel/facts-join";
 import { createdBy, GAP_NAMESPACE, reflectFindings } from "@/core/flywheel/flags";
 import { detectGaps, gapFindings } from "@/core/flywheel/gaps";
 import { withEntityGraph, type Signature } from "@/core/flywheel/signature";
@@ -222,4 +222,20 @@ test("INV-6b: a gap flag carries its typed payload {surface, truth, entity} besi
   const home = gapFindings(detectGaps([{ ...theme, surfaces: ["regulations"] }], { profile: { jurisdictions: { US: 3 } }, jurisdictionsByMember: { a: ["DE"], b: ["FR"] } }), new Map([["cl:jurisdiction:7bb4f2d2b3d6dde1", { id: "cl:jurisdiction:7bb4f2d2b3d6dde1", kind: "jurisdiction", canonicalName: "United States" }]]));
   const j = home.flatMap((f) => f.row.recommended_actions as { action?: string; surface?: string; truth?: string; entity?: string | null }[]).find((a) => a.action === "missing" && a.surface === "regulations");
   assert.equal(j?.truth?.startsWith("a Regulations dated obligation"), true);
+});
+
+// ── JOIN-CHUNK-1: an id list in a read is bounded under the request-line budget (500 uuids url-encode to ~19 KB, over the 16 KB header limit: UND_ERR_HEADERS_OVERFLOW, "fetch failed") ──────
+test("JOIN-CHUNK-1: no single query of the facts join carries more than 200 ids, whatever the width of the list", async () => {
+  const ids = Array.from({ length: 450 }, (_, i) => `70000000-0000-4000-8000-${String(i).padStart(12, "0")}`);
+  const entities = Array.from({ length: 450 }, (_, i) => `cl:material:${String(i).padStart(16, "0")}`);
+  const m = connectDb({ entities: graph(), entity_refs: [ref(ids[0] as string, E_FUEL, "cites_feedstock"), ref(ids[449] as string, E_ACT, "cites_instrument")] });
+  await refsOfRows(m.db, "intelligence_items", ids);
+  await entityRefs(m.db, entities);
+  await relationsAround(m.db, entities);
+  await readEntityFacts(m.db, ids);
+  await readFactItems(m.db, "market_series", ids, NOW);
+  const widest = m.reads.flatMap((r) => r.filters).filter(([k]) => k.startsWith("in:")).map(([k, v]) => [k, Array.isArray(v) ? v.length : 0] as const);
+  assert.ok(widest.length >= 5, `the lists were read (${widest.length} in-filters seen)`);
+  assert.deepEqual(widest.filter(([, n]) => n > 200), [], "an in-filter carried more than 200 ids");
+  assert.ok(widest.some(([, n]) => n === 200), "a full 200-id chunk was issued (the 450 ids are split, not read whole)");
 });
