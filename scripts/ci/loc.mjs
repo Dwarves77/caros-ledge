@@ -3,8 +3,8 @@ import { appendFileSync, readFileSync } from "node:fs";
 
 import { isMain, walk } from "../lib/fs.mjs";
 
-// WAVE-CTX 2026-10-31: raised for the customer-context wave (ENGINE-JOIN-1, ENGINE-ORDER-1, UI-RADAR-1, OPS-FIX-1) by operator directive; LOCK re-pins to actuals after the wave.
-export const LIMITS = { src: 68100, "src/core": 20850, "src/core/brief": 1336, "src/core/digest": 270, "src/features": 40300 };
+// LOCK-NO-BLOAT-2 2026-10-31: re-pinned to actuals after the customer-context wave; src only shrinks from here (operator-override marker required to raise).
+export const LIMITS = { src: 67229, "src/core": 20815, "src/core/brief": 1334, "src/core/digest": 270, "src/features": 39640 };
 const CODE_FILE = /\.(ts|tsx|js|jsx|mjs)$/;
 
 /** The code lines of one source text: blank lines, `//` lines and block comments do not count. */
