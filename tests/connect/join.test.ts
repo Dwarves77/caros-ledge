@@ -221,5 +221,5 @@ test("INV-6b: a gap flag carries its typed payload {surface, truth, entity} besi
   assert.deepEqual(payload, { action: "missing", surface: "market", truth: "a Market Intel price series that ties these items together", entity: null });
   const home = gapFindings(detectGaps([{ ...theme, surfaces: ["regulations"] }], { profile: { jurisdictions: { US: 3 } }, jurisdictionsByMember: { a: ["DE"], b: ["FR"] } }), new Map([["cl:jurisdiction:7bb4f2d2b3d6dde1", { id: "cl:jurisdiction:7bb4f2d2b3d6dde1", kind: "jurisdiction", canonicalName: "United States" }]]));
   const j = home.flatMap((f) => f.row.recommended_actions as { action?: string; surface?: string; truth?: string; entity?: string | null }[]).find((a) => a.action === "missing" && a.surface === "regulations");
-  assert.equal(j?.truth.startsWith("a Regulations dated obligation"), true);
+  assert.equal(j?.truth?.startsWith("a Regulations dated obligation"), true);
 });
