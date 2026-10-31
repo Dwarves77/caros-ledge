@@ -61,7 +61,7 @@ export function toListRowFields(r: Resource, now: Date): ListRowFields {
     jurisdiction: jurisdictionCode(r),
     title: r.title,
     type: r.type ?? null,
-    summary: r.whatIsIt?.trim() || null,
+    summary: r.whatIsIt?.trim() || r.whyMatters?.trim() || r.whatItChanges?.trim() || r.note?.trim() || null,
     due: due ? { label: due.label, days: due.days } : null,
     tier: r.sourceTier ?? null,
     watchType: watchTypeForItem(r),

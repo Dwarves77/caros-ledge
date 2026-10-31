@@ -134,12 +134,8 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
             {data.stateCosts === null && <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>The state-level cost facts did not load, so the US sub-national line is not shown.</StateNote>}
             {gaps.length > 0 && (
               <div className={styles.rail}>
-                {gaps.map((g) => (
-                  <div key={g.label} className={styles.railRow}>
-                    <b>{g.label}</b>
-                    <span className={styles.railFigure}>{g.figure}</span>
-                  </div>
-                ))}
+                {gaps.map((g) => <div key={g.label} className={styles.railRow}><b>{g.label}</b><span className={styles.railFigure}>{g.figure}</span></div>)}
+                {data.stateCosts && data.stateCosts.slice(0, 6).map((s) => <div key={`${s.stateCode}-${s.factLabel}`} className={styles.railRow}><span className={styles.railFigure}>{s.stateLabel || s.stateCode} · {s.factLabel}</span><span className={styles.railFigure}><b>{s.value}</b>{s.unit ? ` ${s.unit}` : ""}{s.statuteCitation ? ` (${s.statuteCitation})` : ""}</span></div>)}
               </div>
             )}
           </RailCard>

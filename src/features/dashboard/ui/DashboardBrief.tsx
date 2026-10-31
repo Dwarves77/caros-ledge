@@ -103,7 +103,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
                       <span data-guard-title className={styles.themeLabel}>
                         {t.label}
                       </span>
-                      <span className={styles.themePages}>{t.pages.map((pg) => pg.label).join(" · ")}</span>
+                      <span className={styles.themePages}>{t.pages.map((pg) => pg.label).join(" · ")}</span>{t.meaning && <span className={styles.note} style={{ display: "block" }}>{t.meaning}</span>}
                     </Link>
                   ))}
                 </div>

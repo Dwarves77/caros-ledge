@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import type { RecommendedAction } from "@/core/brief";
-import { stripSourcesSection } from "@/core/brief";
+import { parseRecordSections, splitKeyDateFacts, stripSourcesSection } from "@/core/brief";
 import { withObligationEvents } from "@/core/detail/timeline";
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
 import type { ObligationEventInput } from "@/ui/timeline-math";
@@ -25,7 +25,7 @@ import { useItemRelevance } from "@/features/regulations/useItemRelevance";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
 import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
 import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { AtAGlanceCard, BriefContextCallout, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { DetailSubSection } from "@/ui/ItemGroup";
 import { LegendRailCard } from "@/ui/list-surface";
@@ -104,6 +104,8 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
   const [depth, setDepth] = useState<"summary" | "full">("summary");
   const [tagOpen, setTagOpen] = useState(false);
   const map = useMemo(() => Object.fromEntries(claimsDegraded ? [] : sections.filter((s) => (s.content_md || "").trim()).map((s) => [s.section_key, s.content_md.trim()])), [sections, claimsDegraded]);
+  const parsed = useMemo(() => (isRecord ? parseRecordSections(sections, claimTiers) : null), [isRecord, sections, claimTiers]);
+  const split = parsed ? splitKeyDateFacts(parsed.facts) : { dateFacts: [], otherFacts: [] };
   const sourceRows = useMemo(() => sourceEntriesOf(r), [r]);
   const citers = bundle.convergence.ok ? (bundle.convergence.data?.independent_citers ?? null) : null;
   const promotion = derivePromotionState({ originClass: r.originClass ?? null, independentCiters: citers });
@@ -218,7 +220,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
                     ]}
                   />
                 }
-                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} />}
+                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />}
                 relevance={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />}
                 designed={<InThisListStat backHref="/market" backLabel="Back to list" band={band} />}
                 legend={<LegendRailCard />}
@@ -227,7 +229,9 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
           >
             <DetailSection id="summary" title="Summary" aside="Generated · 30-second read" index={1}>
               <PriceBoardBlock bundle={bundle} nowIso={nowIso} />
-              {map["1"] ? <FactBlocks markdown={map["1"]} {...fbOpts} /> : note("The movement analysis")}
+              {r.whatIsIt || r.note ? <p className={styles.muted} style={{ color: "var(--ink)", fontSize: "var(--fs-14)", lineHeight: 1.65 }}>{r.whatIsIt || r.note}</p> : null}
+              <BriefContextCallout r={r} />
+              {isRecord && parsed && (split.dateFacts.length > 0 || split.otherFacts.length > 0) ? <RecordFacts leadNote="This signal was captured directly from its source document. Every fact below is quoted verbatim." dateFacts={split.dateFacts} otherFacts={split.otherFacts} tags={r.tags} /> : map["1"] ? <FactBlocks markdown={map["1"]} {...fbOpts} /> : note("The movement analysis")}
               {depth === "full" && !isRecord && !claimsDegraded && Object.keys(map).length === 0 && r.fullBrief ? (
                 <div style={{ marginTop: "var(--sp-16)", paddingTop: "var(--sp-14)", borderTop: "1px solid var(--line-3)" }}>
                   <GfmSection markdown={stripSourcesSection(r.fullBrief)} />

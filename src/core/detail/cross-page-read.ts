@@ -27,9 +27,9 @@ const readThemes = (db: Db): Promise<ThemeRow[]> => fetchAllRows<ThemeRow>((from
 const readBriefs = (db: Db): Promise<BriefRow[]> => fetchAllRows<BriefRow>((from, to) => db.from("theme_briefs").select(BRIEF_COLUMNS).order("theme_id", { ascending: true }).range(from, to) as never, { cap: CAP });
 
 async function readLineage(db: Db) {
-  const { data, error } = await db.from("connection_theme_runs").select("theme_delta").eq("status", "ok").order("started_at", { ascending: false }).limit(1);
+  const { data, error } = await db.from("connection_theme_runs").select("theme_delta").eq("status", "ok").order("started_at", { ascending: false }).limit(50);
   if (error) throw new Error(`connection_theme_runs read failed: ${error.message}`);
-  return data?.length ? lineageFromThemeDelta((data[0] as { theme_delta: never }).theme_delta) : [];
+  return (data ?? []).flatMap((r) => lineageFromThemeDelta((r as { theme_delta: never }).theme_delta));
 }
 
 /** Admissible items by uuid: verified, not archived, not replaced (the readers' own RLS applies on top). */
@@ -84,8 +84,8 @@ export async function readCrossPage(db: Db, itemUuid: string, surface: string, i
 
 /** The theme chips of a list page (`surface` null is the cross-page view the dashboard reads). Throws on a failed read; the caller says the strip did not load. */
 export async function readThemeChips(db: Db, opts: { surface: string | null; minPages?: number; max?: number }) {
-  const themes = (await readThemes(db)).filter((t) => (opts.surface ? (t.surfaces ?? []).includes(opts.surface) : (t.surfaces ?? []).length >= (opts.minPages ?? 1))).sort((a, b) => (b.convergence ?? 0) - (a.convergence ?? 0)).slice(0, 12);
+  const themes = (await readThemes(db)).filter((t) => (opts.surface ? (t.surfaces ?? []).includes(opts.surface) : (t.surfaces ?? []).length >= (opts.minPages ?? 1))).sort((a, b) => (b.convergence ?? 0) - (a.convergence ?? 0)).slice(0, 25);
   if (themes.length === 0) return [];
-  const [briefs, lineage, items] = await Promise.all([fetchAllRows<BriefRow>((from, to) => db.from("theme_briefs").select("theme_id, title, member_hash, generated_at, member_ids").order("theme_id", { ascending: true }).range(from, to) as never, { cap: CAP }), readLineage(db), readVerifiedItemsByIds(db, themes.flatMap((t) => t.member_ids ?? []))]);
+  const [briefs, lineage, items] = await Promise.all([readBriefs(db), readLineage(db), readVerifiedItemsByIds(db, themes.flatMap((t) => t.member_ids ?? []))]);
   return themeChips({ themes, items, briefs, lineage, surface: opts.surface, minPages: opts.minPages ?? 1, max: opts.max ?? 6 });
 }

@@ -160,7 +160,7 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
   const byId = new Map(items.filter((it) => it && trim(it.title)).map((it) => [it.id, it]));
   const live = themes.filter((t) => t && typeof t.id === "string" && Array.isArray(t.member_ids));
   const liveThemeIds = new Set(live.map((t) => t.id));
-  const out: Array<{ themeId: string; convergence: number; href: string; label: string; itemTitle: string; briefTitle: string | null; memberCount: number; pages: Array<{ surface: string; label: string }>; hasBrief: boolean; stale: boolean; links: Array<{ title: string; href: string }> }> = [];
+  const out: Array<{ themeId: string; convergence: number; href: string; label: string; itemTitle: string; briefTitle: string | null; meaning: string | null; memberCount: number; pages: Array<{ surface: string; label: string }>; hasBrief: boolean; stale: boolean; links: Array<{ title: string; href: string }> }> = [];
   for (const t of live) {
     const pivotRank = new Map((t.pivots ?? []).map((p, i) => [p?.id, i]));
     const members = t.member_ids.flatMap((id) => {
@@ -184,7 +184,7 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
       href: target.href,
       label: briefTitle ?? deriveThemeLabel({ signals: t.dominant_signals, pages, memberCount: t.member_ids.length }),
       itemTitle: target.title,
-      briefTitle: brief?.title ?? null,
+      briefTitle: brief?.title ?? null, meaning: (surface && brief?.sections && SURFACE_HEADING[surface] ? trim(parseRamifications(String(brief.sections.ramifications ?? "")).subs.get(SURFACE_HEADING[surface] ?? "")) : null) ?? trim(brief?.sections?.meaning) ?? trim(brief?.sections?.connection) ?? trim((brief?.brief_md ?? "").split(/\r?\n\r?\n/).map((p) => p.trim()).find((p) => p.length > 40 && !p.startsWith("#") && !p.startsWith("**") && !p.startsWith("|"))?.replace(/\*\*|`/g, "").slice(0, 220)) ?? null,
       memberCount: t.member_ids.length,
       pages,
       hasBrief: Boolean(brief),
@@ -192,6 +192,6 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
       links: [...others.filter((m) => m.surface !== target.surface), ...others.filter((m) => m.surface === target.surface)].slice(0, MAX_CHIP_MEMBER_LINKS).map(({ title, href }) => ({ title, href })),
     });
   }
-  out.sort((a, b) => b.convergence - a.convergence || (a.themeId < b.themeId ? -1 : 1));
-  return out.slice(0, Math.max(0, max)).map((c) => ({ themeId: c.themeId, href: c.href, label: c.label, itemTitle: c.itemTitle, memberCount: c.memberCount, pages: c.pages, hasBrief: c.hasBrief, stale: c.stale, links: c.links }));
+  out.sort((a, b) => (b.hasBrief ? 1 : 0) - (a.hasBrief ? 1 : 0) || b.convergence - a.convergence || (a.themeId < b.themeId ? -1 : 1));
+  return out.slice(0, Math.max(0, max)).map((c) => ({ themeId: c.themeId, href: c.href, label: c.label, itemTitle: c.itemTitle, meaning: c.meaning, memberCount: c.memberCount, pages: c.pages, hasBrief: c.hasBrief, stale: c.stale, links: c.links }));
 }

@@ -39,6 +39,7 @@ export function PriceBoardBlock({ bundle, nowIso }: MarketBlockProps) {
                 {p.releasedAt ? ` · released ${formatDate(p.releasedAt.slice(0, 10))}` : ""}
               </span>
               {p.nextReleaseAt ? <span className={styles.muted}> · next {p.nextReleaseLabel ?? formatDate(p.nextReleaseAt.slice(0, 10))}</span> : null}
+              {p.contextLine ? <span className={styles.muted}> — {p.contextLine}</span> : null}
             </li>
           ))}
         </ul>

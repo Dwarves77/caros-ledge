@@ -68,7 +68,7 @@ export function buildRecordPayload(a: RecordPayloadInput): RecordPayload {
     item: {
       source_url: a.sourceUrl, item_type: a.itemType, priority: a.priority ?? "MODERATE", title: a.title,
       instrument_identifier: a.instrumentIdentifier ?? null, canonical_instrument_key: a.canonicalInstrumentKey ?? null,
-      jurisdiction_iso: a.jurisdictionIso ?? null, full_brief: buildRecordFullBrief({ sourceUrl: a.sourceUrl, claims }), grade: "record",
+      jurisdiction_iso: a.jurisdictionIso ?? null, what_is_it: claims.find((c) => c.claim_kind === "FACT" && c.section_key !== "identity")?.source_span ?? null, full_brief: buildRecordFullBrief({ sourceUrl: a.sourceUrl, claims }), grade: "record",
     },
     source: a.source,
     screen: a.screen ?? null,

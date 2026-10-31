@@ -69,7 +69,7 @@ export function GridQueuePanel({ rows, retryHref }: { rows: GridQueueRow[] | nul
   return (
     <div data-guard-container="grid-queue" className={styles.spec}>
       <div className={styles.specSummary}>
-        <span>{rows.length} {rows.length === 1 ? "substation" : "substations"} monitored against {DECISION_HORIZON_MONTHS}-month horizon</span>
+        <span>{rows.length} {rows.length === 1 ? "substation" : "substations"} monitored against {DECISION_HORIZON_MONTHS}-month horizon{[...new Set(rows.map((r) => r.dso_name.split(",")[0]?.trim()).filter(Boolean))].length > 0 ? ` · ${[...new Set(rows.map((r) => r.dso_name.split(",")[0]?.trim()).filter(Boolean))].join(", ")}` : ""}</span>
         <span>{clearCount} Clear · {blockedCount} Blocked · {unknownCount} Unknown</span>
       </div>
       <div className={styles.specGrid}>{rows.slice(0, 4).map((r, i) => drawSubstation(r, i))}</div>
