@@ -276,8 +276,9 @@ test("INV-OD-6: readInstrumentModes learns the token from the item's own ref and
   const spy = (rows: Row[]) => {
     const w = connectDb({ intelligence_items: [item], entity_refs: rows });
     const calls: string[] = [];
-    const from = w.db.from.bind(w.db);
-    (w.db as { from: unknown }).from = (t: string) => { const q = from(t) as Record<string, (...a: unknown[]) => unknown>; const eq = q.eq?.bind(q); if (t === "entity_refs" && eq) q.eq = (c: unknown, v: unknown) => { calls.push(String(c)); return eq(c, v); }; return q; };
+    const db = w.db as unknown as { from: (t: string) => unknown };
+    const from = db.from.bind(db);
+    db.from = (t: string) => { const q = from(t) as Record<string, (...a: unknown[]) => unknown>; const eq = q.eq?.bind(q); if (t === "entity_refs" && eq) q.eq = (c: unknown, v: unknown) => { calls.push(String(c)); return eq(c, v); }; return q; };
     return { w, calls };
   };
   const a = spy([carrying]);
