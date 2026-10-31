@@ -10,7 +10,7 @@ import { DELETE as leave } from "@/features/community/api/group-members";
 import { POST as createGroup } from "@/features/community/api/groups";
 import { POST_ACCEPT, POST_DECLINE, POST_REVOKE } from "@/features/community/api/invitation-respond";
 import { POST_ACT } from "@/features/community/api/moderation";
-import { PATCH as editPost } from "@/features/community/api/post";
+import { PATCH as editPost, POST_CITE } from "@/features/community/api/post";
 import { POST as createPost } from "@/features/community/api/posts";
 import { POST as reply } from "@/features/community/api/replies";
 import { GET as listPosts } from "@/features/community/api/posts";
@@ -22,7 +22,7 @@ import { deriveOrganisationKey, resolveOrganisationSalt } from "@/features/commu
 
 import { scripted } from "../_support/fake-clients.ts";
 
-import { call, clientFor, ENTITY, ENTITY_2, EXTRA, HIDDEN, INVITE, PRIV, PUB, REPORT, SIGNOFF, STRANGER, T_HIDDEN, T_PUB, USER, world, type Persona, type World } from "./_world.ts";
+import { call, clientFor, ENTITY, ENTITY_2, EXTRA, HIDDEN, INVITE, ITEM_LIVE, PRIV, PUB, REPORT, SIGNOFF, STRANGER, T_HIDDEN, T_PUB, USER, world, type Persona, type World } from "./_world.ts";
 
 // A free-mail provider, assembled so the tree check for personal mail addresses (scripts/ci/tree-checks.mjs) does not read the fixture as an address.
 const FREE_MAIL_DOMAIN = ["out", "look"].join("") + ".com";
@@ -435,4 +435,22 @@ test("INV-240/241/238 together: the round trip's refusals leave no trace (an EXT
   const db = world();
   assert.ok(!db.group(EXTRA));
   assert.equal(HIDDEN.length, 36);
+});
+
+// ── INV-AD-1 and INV-AD-2: a thread cites an item only through the one admissible-row predicate ─────────────────────
+
+test("INV-AD-1: a verified item that another item replaces is refused with a 404, and the thread is not changed", async () => {
+  const db = world();
+  const ITEM_SUPERSEDED = "aaaaaaaa-0000-4000-8000-000000000003";
+  db.seed("intelligence_items", [{ id: ITEM_SUPERSEDED, title: "Superseded rule", provenance_status: "verified", is_archived: false, replaced_by: ITEM_LIVE, jurisdiction_iso: ["EU"] }]);
+  const res = await call(POST_CITE, "member", "POST", `/api/community/posts/${T_PUB}/cite`, { item_id: ITEM_SUPERSEDED }, { id: T_PUB });
+  assert.equal(res.status, 404);
+  assert.equal(writesTo(db, "community_posts").length, 0);
+});
+
+test("INV-AD-2: a verified live item is cited into the thread", async () => {
+  const db = world();
+  const res = await call(POST_CITE, "member", "POST", `/api/community/posts/${T_PUB}/cite`, { item_id: ITEM_LIVE }, { id: T_PUB });
+  assert.equal(res.status, 200);
+  assert.deepEqual(db.rows("community_posts").find((p) => p.id === T_PUB)?.referenced_intelligence_item_ids, [ITEM_LIVE]);
 });
