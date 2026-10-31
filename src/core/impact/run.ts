@@ -69,7 +69,7 @@ export async function scoreItems(deps: { sb: Db; now: () => Date; registry: Meth
         failure(table, error);
         return (data ?? []) as T[];
       }, { chunk: 50, manyPerId: true });
-    const itemRows = await read<{ id: string; item_type: string | null; source_id: string | null; transport_modes: string[] | null; operational_scenario_tags: string[] | null; cost_mechanism: string | null; penalty_range: string | null }>("intelligence_items", "id, item_type, source_id, transport_modes, operational_scenario_tags, cost_mechanism, penalty_range", "id");
+    const itemRows = await read<{ id: string; item_type: string | null; source_id: string | null; transport_modes: string[] | null; operational_scenario_tags: string[] | null; cost_mechanism: string | null; penalty_range: string | null; severity: string | null }>("intelligence_items", "id, item_type, source_id, transport_modes, operational_scenario_tags, cost_mechanism, penalty_range, severity", "id");
     const sourceIds = [...new Set(itemRows.map((r) => r.source_id).filter((s): s is string => !!s))];
     const sources = await read<{ id: string; base_tier: number | null; effective_tier: number | null; tier_override: number | null }>("sources", "id, base_tier, effective_tier, tier_override", "id", sourceIds);
     const objects = await read<ImpactObject & { instrument_item_id: string; supersedes: string | null }>("obligation_objects", "obligation_id, instrument_item_id, supersedes, binding_position, duty_holder_class, entry_into_force, date_of_application, first_deadline, sanction_class, statutory_maximum, direct_compliance_cost", "instrument_item_id");
@@ -81,7 +81,7 @@ export async function scoreItems(deps: { sb: Db; now: () => Date; registry: Meth
       const tier = customerTierOf(sources.find((s) => s.id === item.source_id));
       const score = method({
         today, examined: examined.has(item.id), objects: own, computations: computations.filter((c) => own_ids.has(c.obligation_id)).map((c) => c.computation_id),
-        item: { transport_modes: item.transport_modes ?? [], operational_scenario_tags: item.operational_scenario_tags ?? [], cost_mechanism: item.cost_mechanism, penalty_range: item.penalty_range },
+        item: { transport_modes: item.transport_modes ?? [], operational_scenario_tags: item.operational_scenario_tags ?? [], cost_mechanism: item.cost_mechanism, penalty_range: item.penalty_range, severity: item.severity },
         sourceTier: tier, floorTier: authorityFloorFor(item.item_type), holderRoles: HOLDER_ROLES,
       });
       for (const m of score.missing) counts[`impact_missing_${m}`] = (counts[`impact_missing_${m}`] ?? 0) + 1;

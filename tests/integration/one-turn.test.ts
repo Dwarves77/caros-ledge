@@ -180,7 +180,7 @@ test("the Market surface reads what the producer run wrote: the figure, the rati
 
 // P4 (P2-12): the Operations panel and the Research list render what the turn produced. The derived value the propagation stage recomputed shows with its previous value, its inputs and a rating; the research finding the
 // intake stage minted shows on the Research list with the assessment the producer wrote for it, anchored on the dated statutory event and a maturity corridor read from the text.
-test("P4: the derived value the turn propagated reads on the Operations panel with provenance, and the research assessment the turn produced reads on the Research list", async () => {
+test("P4: the derived value the turn propagated is stored, an unchanged recalculation is not a panel notice, and the research assessment the turn produced reads on the Research list", async () => {
   const f = fixture({ research: true });
   // The page's list rpc, answered from the minted rows (the database function projects the same columns); a range-able reply like the real client's.
   const listRows = (): unknown[] => f.db.rows("intelligence_items").filter((x) => x.item_type === "research_finding").map((x) => ({ id: x.id, legacy_id: x.legacy_id ?? null, title: x.title, item_type: x.item_type, domain: x.domain, priority: x.priority, added_date: String(x.added_date ?? NOW.toISOString()).slice(0, 10), is_archived: false, effective_archived: false }));
@@ -190,10 +190,11 @@ test("P4: the derived value the turn propagated reads on the Operations panel wi
   const r = await runTurn({ stage: "all", mode: "apply", input: { intake: { census: { limit: 5 }, verdicts: { [RESEARCH_URL]: RESEARCH_VERDICT }, maxPromote: 5 }, propagate: { producers: { only: "ecb-fx" } } } }, { d: f.d, env: {}, now: () => NOW });
   assert.equal(r.exit, 0);
 
-  const figures = await readDerivedFigures(f.db.client);
-  const delta = figures.find((x) => x.title.includes("EUR"));
-  assert.ok(delta, "the propagated figure reads on the panel");
-  assert.ok(Math.abs(Number(delta.value) - 0.05) < 1e-9 && delta.previous !== null && delta.inputs.length >= 1);
+  // The turn propagated the delta (0.05) and recomputed it to the same value: the stored chain is two rows, and an unchanged recalculation is not a notice on the panel (OPS-FIX-1 item 2c).
+  const stored = f.db.rows("derived_values").filter((x) => x.method_id === "market_series_delta");
+  assert.ok(stored.length === 2 && stored.every((x) => Math.abs(Number(x.value) - 0.05) < 1e-9) && stored.some((x) => x.supersedes !== null), "the propagated delta is stored, the recomputation superseding the first");
+  const figures = await readDerivedFigures(f.db.client, null);
+  assert.deepEqual(figures, [], "an unchanged recalculation is not on the panel");
   assert.ok(!JSON.stringify(figures).includes("market_series_delta"), "no internal method name reaches the surface");
 
   const finding = f.db.rows("intelligence_items").find((x) => x.item_type === "research_finding") as Row;

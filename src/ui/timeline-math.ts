@@ -58,9 +58,19 @@ export function collapseTimeline(classified: ClassifiedMilestone[]): { visible: 
   return { visible, hiddenCount: classified.length - visible.length, collapsed: true };
 }
 
+/** The event token a stored label opens with ("2030 — other: ..."), or null. */
+const LABEL_KIND = /^(?:\d{4}(?:-\d{2}(?:-\d{2})?)?\s*[—–-]\s*)?([a-z]+(?:_[a-z]+)*):\s/;
+const HEADLINE_MAX_CHARS = 90;
+/** A milestone may headline a card when its event kind is not `other`; a label with no event token must be short enough to read as a milestone, not a sentence lifted from the source. */
+const headlines = (e: TimelineEntry): boolean => {
+  const kind = e.kind ?? LABEL_KIND.exec(e.label)?.[1] ?? null;
+  return kind ? kind !== "other" : e.label.length <= HEADLINE_MAX_CHARS;
+};
+
+/** The next milestone that is still to come and may headline the card, or null (the card then says none is held). */
 export function nextMilestoneClause(classified: ClassifiedMilestone[], nowIso: string): string | null {
-  const next = classified.find((c) => c.state === "next");
-  return next ? `${next.entry.label.replace(/^(?:\d{4}-\d{2}(?:-\d{2})?\s*(?:[—–\-:]|\s)+)+/, "").trim() || next.entry.label} · ${formatDayMonthYear(next.entry.date)} · ${daysPhrase(daysBetween(next.entry.date, nowIso))}` : null;
+  const next = classified.find((c) => c.state !== "passed" && headlines(c.entry));
+  return next ? `${next.entry.label.replace(/^(?:\d{4}-\d{2}(?:-\d{2})?\s*(?:[—–\-:]|\s)+)+/, "").replace(LABEL_KIND, "").trim() || next.entry.label} · ${formatDayMonthYear(next.entry.date)} · ${daysPhrase(daysBetween(next.entry.date, nowIso))}` : null;
 }
 
 /** Where the green part of the track ends, as a percent of the first-to-last marker span. */

@@ -23,7 +23,7 @@ export interface ImpactInput {
   objects: readonly ImpactObject[];
   /** The ids of the statutory computations written for those obligations. */
   computations: readonly string[];
-  item: { transport_modes: readonly string[]; operational_scenario_tags: readonly string[]; cost_mechanism: string | null; penalty_range: string | null };
+  item: { transport_modes: readonly string[]; operational_scenario_tags: readonly string[]; cost_mechanism: string | null; penalty_range: string | null; severity: string | null };
   /** The customer tier of the item's source and the authority floor of its type (the largest tier number that still counts), null when unknown or exempt. */
   sourceTier: number | null;
   floorTier: number | null;
@@ -81,9 +81,15 @@ function operational(i: ImpactInput): { value: number | null; basis: Record<stri
   return { value, basis: { modes: [...i.item.transport_modes], tags: [...i.item.operational_scenario_tags], holders } };
 }
 
+/** The cost dimension with the item's typed severity: a cost-alert severity is a cost signal (1) where the figures and mechanisms name none, so an alert the brief states is never scored 0 or left waiting. */
+function costWithSeverity(i: ImpactInput): { value: number | null; basis: Record<string, unknown> } {
+  const k = cost(i);
+  return RULES.costSeverities.includes(i.item.severity ?? "") && !k.value ? { value: 1, basis: { ...k.basis, signals: ["intelligence_items.severity"] } } : k;
+}
+
 /** The three stored dimensions of an item. Pure: the same input gives the same score, so a rules edit is a new method version. */
 export function scoreImpact(input: ImpactInput): ImpactScore {
-  const [c, k, o] = [compliance(input), cost(input), operational(input)];
+  const [c, k, o] = [compliance(input), costWithSeverity(input), operational(input)];
   const missing: ImpactInputName[] = [c.value === null ? "obligations" : null, k.value === null ? "cost" : null, o.value === null ? "operational" : null].filter((m): m is ImpactInputName => m !== null);
   return { compliance: c.value, cost: k.value, operational: o.value, basis: { compliance: c.basis, cost: k.basis, operational: o.basis }, missing };
 }

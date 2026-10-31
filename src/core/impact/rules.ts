@@ -15,6 +15,7 @@ export const RULES = z
   .object({
     horizonDays: z.number().int().positive(),
     nonBinding: z.array(z.string()),
+    costSeverities: z.array(z.string()),
     dueFields: z.array(z.string()).min(1),
     inForceFields: z.array(z.string()),
     operationalRoles: z.array(z.string()).min(1),

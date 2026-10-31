@@ -54,11 +54,9 @@ async function authorMarketSeriesDeltaEdges(sb: Db, seriesKeys: Iterable<string>
   for (const seriesKey of keys) {
     try {
       const inWindow = await fetchAllRows<SeriesRowLite>((from, to) => sb.from("market_series").select(SELECT).eq("series_key", seriesKey).gte("reference_period", cutoff).order("id", { ascending: true }).range(from, to) as never, { cap: 5000 });
-      // The comparator is the nearest observation at or before the window start (INV-252), however old: a series observed every few weeks has its prior outside any fixed window, and reading only the window made it look like a first observation (FIX-EDGES-1).
-      const before = await sb.from("market_series").select(SELECT).eq("series_key", seriesKey).lt("reference_period", cutoff).order("reference_period", { ascending: false }).limit(1) as unknown as { data: SeriesRowLite[] | null; error: { message: string } | null };
-      if (before.error) throw new Error(`market_series prior read failed for ${seriesKey}: ${before.error.message}`);
-      const rows = [...(before.data ?? []), ...inWindow];
-      t(`${seriesKey}: ${inWindow.length} row(s) in the ${LOOKBACK_DAYS}-day window (cutoff ${cutoff}) and ${before.data?.length ?? 0} prior to it`);
+      // A one-week delta stands on a prior 5 to 9 days before the latest (lib/deltas.ts), so the window read is all the method can use; a series with no such prior has no one-week edge.
+      const rows = inWindow;
+      t(`${seriesKey}: ${rows.length} row(s) in the ${LOOKBACK_DAYS}-day window (cutoff ${cutoff})`);
       if (rows.length < 2) {
         counts.insufficientHistory += 1;
         continue;
@@ -94,9 +92,9 @@ async function authorMarketSeriesDeltaEdges(sb: Db, seriesKeys: Iterable<string>
   return { counts, trace };
 }
 
-/** Fail closed: real rows landed but DAG authorship produced no edge (the defect that shipped silently for every producer run). Throws. */
-function assertEdgesAuthored(o: { rowsChanged: number; edgesAuthored: number }): void {
-  if (o.rowsChanged > 0 && o.edgesAuthored === 0) {
+/** Fail closed: real rows landed but DAG authorship produced no edge and either accounted for no series at all (the defect that shipped silently for every producer run) or refused or errored on one. A series with no prior 5 to 9 days back is a stated count (insufficientHistory), not a failure. Throws. */
+function assertEdgesAuthored(o: { rowsChanged: number; edgesAuthored: number; accounted: number; failed: number }): void {
+  if (o.rowsChanged > 0 && o.edgesAuthored === 0 && (o.accounted === 0 || o.failed > 0)) {
     throw new Error(`assertEdgesAuthored: this run wrote ${o.rowsChanged} row(s) to market_series but authored 0 derivation_edges; authorship was called and had no effect. Re-run with trace to see which outcome bucket each touched series_key landed in (insufficientHistory, unitMismatch, refused, unknownMethod, errored).`);
   }
 }
@@ -109,7 +107,7 @@ export async function afterMarketWrite(ctx: ProducerCtx, written: { rows: Rec[];
   const touched = due(written.rows);
   if (!touched.length && written.rows.length) return { edges_not_due: written.rows.length };
   const { counts } = await authorMarketSeriesDeltaEdges(ctx.sb as Db, touched.map((r) => String(r.series_key)), "apply", { ...m, now: ctx.now, trace: ctx.input.trace === true });
-  assertEdgesAuthored({ rowsChanged: due(written.created).length + due(written.updated).length, edgesAuthored: counts.authored });
+  assertEdgesAuthored({ rowsChanged: due(written.created).length + due(written.updated).length, edgesAuthored: counts.authored, accounted: counts.authored + counts.skippedAlready + counts.insufficientHistory + counts.unitMismatch, failed: counts.refused + counts.unknownMethod + counts.errored });
   return { edges_authored: counts.authored, edges_already: counts.skippedAlready, edges_insufficient_history: counts.insufficientHistory, edges_unit_mismatch: counts.unitMismatch, edges_refused: counts.refused, edges_unknown_method: counts.unknownMethod, edges_errored: counts.errored, edges_not_due: written.rows.length - touched.length };
 }
 
