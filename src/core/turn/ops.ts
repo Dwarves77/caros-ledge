@@ -8,6 +8,7 @@ import type { RunResult } from "@/core/types/run-result";
 import { runResult } from "@/core/types/run-result";
 import { committedNames, drainExporters } from "@/features/batches";
 import { finishDrain, leaseDeps, planDrain, runNotificationOutbox } from "@/features/drain";
+import { retireOrphanThemeBriefs } from "@/features/flywheel";
 import { groundInjected, eraseQuarantined, idStamp, planQuarantine, rehomeQuarantined, resolveQuarantined } from "@/features/intake";
 import { triggerQuestionsForItem } from "@/features/learning";
 import { healItem, healQuarantined, rederiveStale, reopenHolds } from "@/features/mint";
@@ -71,6 +72,7 @@ const OPS: Readonly<Record<string, Op>> = {
   "classify-sources": (c, d, a) => classifySources({ db: d.sb, now: d.now, surfaceOf }, { ...a, dry: c.dry }),
   "triage-suspended": (c, d, a) => triageSuspended(fetchDeps(d), { ...a, apply: !c.dry }),
   "verify-candidate": (c, d, a) => verifyCandidate(fetchDeps(d), ({ ...a, dry: c.dry } as never)),
+  "retire-orphan-theme-briefs": (c, d) => retireOrphanThemeBriefs({ sb: d.sb, now: d.now }, { dry: c.dry }),
   "statutory-run": async (c, d, a) => (d.statutory ? statutoryRun({ sb: d.sb, now: d.now, statutory: d.statutory }, { dry: c.dry, file: a.file }) : owed("computeStatutory", "P2-10 regulations surface")),
 };
 

@@ -75,7 +75,7 @@ test("INV-1: no surface the brief touches renders an edge score, a method id, a 
     patterns: [{ key: "00000000-0000-4000-8000-000000000001", label: "Mandate vs. capacity collision", means: "A rule requires something by a date.", forming: false, groups: [{ surface: "regulations", label: "Regulations", href: "/regulations", items: [{ title: "FuelEU Maritime", href: "/regulations/x" }], names: [] }], watch: "Watch: confirmed while the evidence behind it keeps holding.", missingParts: [], next: null }],
     forming: [{ key: "f", family: "Economic/abatement crossover forming", chain: [{ title: "Item A", href: "/market/a", surface: "market" }], reason: "Both apply to ocean fuel surcharge operations.", next: null }],
   };
-  const theme = { memberCount: 3, pages: [{ surface: "market", label: "Market Intel" }], hasBrief: false, title: null, stale: false, supersedesThemeId: null, briefMd: null, sections: null, forwardOutlook: { horizons: [] }, membersByPage: [], cluster: { memberIds: [], pivotIds: [], surfaces: ["market"], linkedBy: ["Directive 2023/959"], memberCount: 3, surfaceCount: 1, density: 0.82 }, ramificationsMissing: false };
+  const theme = { memberCount: 3, pages: [{ surface: "market", label: "Market Intel" }], hasBrief: false, title: null, stale: false, briefMd: null, sections: null, forwardOutlook: { horizons: [] }, membersByPage: [], cluster: { memberIds: [], pivotIds: [], surfaces: ["market"], linkedBy: ["Directive 2023/959"], memberCount: 3, surfaceCount: 1, density: 0.82 }, ramificationsMissing: false };
   const surfaces: Record<string, string> = {
     connections: renderApp(createElement(ItemConnections, { rows })),
     radar: renderApp(createElement(FlywheelRadar, { view })),

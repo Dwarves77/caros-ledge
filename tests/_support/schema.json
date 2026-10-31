@@ -4613,7 +4613,8 @@
     "generated_by",
     "sections",
     "claims",
-    "member_ids"
+    "member_ids",
+    "superseded_at"
    ],
    "uuid": [],
    "defaults": {
