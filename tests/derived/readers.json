@@ -106,14 +106,5 @@
    "why": "The admin corrections API lists an item's corrections and finds the ones whose claim is gone: it reads the claims of any item in any state to do it."
   }
  ],
- "owed": [
-  {
-   "file": "src/features/community/api/post.ts",
-   "tables": [
-    "intelligence_items"
-   ],
-   "owner": "R2e",
-   "finding": "reads intelligence_items without the admissible-row predicate (I13); Community is R2e, so the coordinator assigns the edit"
-  }
- ]
+ "owed": []
 }

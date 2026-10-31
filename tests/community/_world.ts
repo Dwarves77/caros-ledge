@@ -31,6 +31,7 @@ export const REPORT = "eeeeeeee-0000-4000-8000-000000000001";
 export const SIGNOFF = "eeeeeeee-0000-4000-8000-000000000002";
 export const INVITE = "eeeeeeee-0000-4000-8000-000000000003";
 export const ITEM_LIVE = "aaaaaaaa-0000-4000-8000-000000000001";
+export const ITEM_SUPERSEDED = "aaaaaaaa-0000-4000-8000-000000000003";
 export const ITEM_DRAFT = "aaaaaaaa-0000-4000-8000-000000000002";
 export const ENTITY = "cl:jurisdiction:aaaaaaaaaaaaaaaa";
 export const ENTITY_2 = "cl:corridor:bbbbbbbbbbbbbbbb";
@@ -119,7 +120,7 @@ export class World extends MemDb {
       { id: R_HIDDEN, group_id: PUB, parent_post_id: T_PUB, author_user_id: HIDDEN, title: null, body: "Quietly agreed.", anonymous: true, reply_count: 0 },
     ]);
     this.seed("community_thread_entities", [T_PUB, T_HIDDEN, T_PRIV, T_ROOM].map((t) => ({ thread_id: t, entity_id: ENTITY, entity_kind: "jurisdiction" })));
-    this.seed("intelligence_items", [{ id: ITEM_LIVE, title: "Live rule", provenance_status: "verified", is_archived: false, jurisdiction_iso: ["EU"] }, { id: ITEM_DRAFT, title: "Draft rule", provenance_status: "unverified", is_archived: false, jurisdiction_iso: ["EU"] }]);
+    this.seed("intelligence_items", [{ id: ITEM_LIVE, title: "Live rule", provenance_status: "verified", is_archived: false, jurisdiction_iso: ["EU"] }, { id: ITEM_SUPERSEDED, title: "Superseded rule", provenance_status: "verified", is_archived: false, replaced_by: ITEM_LIVE, jurisdiction_iso: ["EU"] }, { id: ITEM_DRAFT, title: "Draft rule", provenance_status: "unverified", is_archived: false, jurisdiction_iso: ["EU"] }]);
     this.seed("moderation_reports", [{ id: REPORT, target_kind: "post", target_id: T_PUB, reporter_user_id: USER.member, reason: "spam", status: "open" }]);
     this.seed("community_post_signoff_requests", [{ id: SIGNOFF, post_id: T_PUB, requested_by: USER.member, status: "pending" }]);
     this.seed("community_group_invitations", [{ id: INVITE, group_id: PUB, inviter_user_id: USER.admin, invitee_user_id: USER.nonMember, status: "pending" }]);
