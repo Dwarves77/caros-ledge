@@ -17,6 +17,8 @@ import type { PortfolioDetailView as Detail, PortfolioSummary } from "@/features
 import { Button } from "@/ui/Button";
 import { useBootstrapStore } from "@/ui/shell/use-bootstrap";
 
+import { RADAR_FX } from "../surfaces/SurfaceFixtures";
+
 const NOW = "2026-10-15T12:00:00.000Z";
 const DATE = "Thursday, October 15, 2026";
 const IMPACT = { cost: 3, compliance: 3, client: 2, operational: 2 };
@@ -33,11 +35,11 @@ const DUE: BriefRow[] = [
 const CHANGED: BriefRow[] = [
   row("c1", { title: "Euro 7 Standard", priority: "HIGH", isNew: true, changeDate: "2026-10-14", due: null, tier: null }),
   row("c2", { title: "EU ETS for Shipping: surrender obligations and phase-in", priority: "CRITICAL", isUpdated: true, updatedField: "full_brief", changeDate: "2026-10-13" }),
-  row("c3", { title: "A market signal with a very long title that has to wrap across more than one line on a phone without breaking the row", href: "/market/c3", watchType: "signal", priority: "MODERATE", isNew: true, changeDate: "2026-10-12", due: null, type: "market_signal", summary: null }),
+  row("c3", { title: "A market signal with a very long title that has to wrap across more than one line on a phone without breaking the row", href: "/market/c3", watchType: "signal", priority: "MODERATE", isNew: true, changeDate: "2026-10-12", due: null, type: "market_signal", summary: "Applies in EU; next date Nov 1, 2026." }),
 ];
 const COUNTS = { regulations: { totalItems: 1320, byPriority: { CRITICAL: 15, HIGH: 14, MODERATE: 1135, LOW: 7 }, byStatus: {}, byJurisdiction: {}, totalJurisdictions: 62, lastUpdatedAt: null }, surfaces: { regulations: 1320, marketIntel: 54, research: 39, operations: 26 }, aggregates: { totalItems: 1439, byPriority: { CRITICAL: 15, HIGH: 14, MODERATE: 1135, LOW: 7 }, byStatus: {}, byJurisdiction: {}, totalJurisdictions: 62, lastUpdatedAt: null } };
 const WATCH_ITEMS: WatchlistItem[] = [
-  { id: "d1", type: "reg", scope: "personal", title: "FuelEU Maritime: greenhouse gas intensity limits for ships calling at Union ports", watchedAt: "2026-10-12T09:00:00Z", note: null, addedBy: null, dueDays: 17, fields: { id: "d1", href: "/regulations/d1", priority: "CRITICAL", jurisdiction: "EU", title: "FuelEU Maritime", type: "regulation", summary: null, due: { label: "Nov 1, 2026", days: "17 days" }, tier: 1, watchType: "reg" } },
+  { id: "d1", type: "reg", scope: "personal", title: "FuelEU Maritime: greenhouse gas intensity limits for ships calling at Union ports", watchedAt: "2026-10-12T09:00:00Z", note: null, addedBy: null, dueDays: 17, fields: { id: "d1", href: "/regulations/d1", priority: "CRITICAL", jurisdiction: "EU", title: "FuelEU Maritime", type: "regulation", summary: "Applies in EU; next date Nov 1, 2026.", due: { label: "Nov 1, 2026", days: "17 days" }, tier: 1, watchType: "reg" } },
   { id: "s1", type: "market_series", scope: "team", title: "EUR/USD reference rate", watchedAt: "2026-10-10T09:00:00Z", note: "Quote basis for the Q4 tender", addedBy: "Pat Lee", dueDays: null, fields: null },
   { id: "src1", type: "source", scope: "team", title: "Official Journal of the European Union", watchedAt: "2026-10-09T09:00:00Z", note: null, addedBy: "Sam Ito", dueDays: null, fields: null },
   { id: "o9", type: "operations", scope: "personal", title: "Item no longer available", watchedAt: "2026-10-01T09:00:00Z", note: null, addedBy: null, dueDays: null, fields: null },
@@ -62,7 +64,7 @@ export function DashSearchFixtures({ screen, titles }: { screen: string; titles:
     useBootstrapStore.setState({ data: { personalState: [], members: null, adminAttention: null, overrides: [], navCounts: null, assistantEnabled: true, degraded: [] }, status: "ready" });
   }, []);
   const parityRows: SearchRow[] = titles.map((title, i) => ({ id: `p${i}`, title, item_type: "regulation", domain: 1, priority: "HIGH", jurisdictions: ["EU"], jurisdiction_iso: ["EU"], what_is_it: null, tier: null }));
-  const brief = (over: Partial<Parameters<typeof DashboardBrief>[0]> = {}) => <DashboardBrief dueRows={DUE} dueWindow="By next binding date · week of Oct 15, reaching to Jan 5, 2027" changedRows={CHANGED} totalChanges={49} windowDays={90} auditDate="2026-10-14" rowsFailed={false} ratingsFailed={false} degraded={[]} counts={COUNTS} watchlist={WATCH_ITEMS} themes={[{ themeId: "t1", href: "/research", label: "Carbon pricing reaches shipping", itemTitle: "Carbon pricing reaches shipping", memberCount: 4, pages: [{ surface: "regulations", label: "Regulations" }, { surface: "research", label: "Research" }], hasBrief: false, stale: false, links: [] }]} {...over} />;
+  const brief = (over: Partial<Parameters<typeof DashboardBrief>[0]> = {}) => <DashboardBrief dueRows={DUE} dueWindow="By next binding date · week of Oct 15, reaching to Jan 5, 2027" changedRows={CHANGED} totalChanges={49} windowDays={90} auditDate="2026-10-14" rowsFailed={false} ratingsFailed={false} degraded={[]} counts={COUNTS} watchlist={WATCH_ITEMS} radar={RADAR_FX} themes={[{ themeId: "t1", href: "/research", label: "Carbon pricing reaches shipping", itemTitle: "Carbon pricing reaches shipping", memberCount: 4, pages: [{ surface: "regulations", label: "Regulations" }, { surface: "research", label: "Research" }], hasBrief: false, stale: false, links: [] }]} {...over} />;
   return (
     <main data-fx="dash-search">
       {screen === "assistant" ? (

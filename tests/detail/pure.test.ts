@@ -7,7 +7,7 @@ import { deriveFactCardModels, deriveRecordFactCardModel, mergeAdjacentSameKind,
 import { crossPageOrd, indexFor, SECTION_INDEX } from "@/core/detail/section-index";
 import { formatTrajectoryStep, pickCurrentStepIndex, withObligationEvents } from "@/core/detail/timeline";
 import { countryGroupForIso, countryOf, isIso, isoCodesOf, isoToDisplayLabel, jurisdictionTier, jurisLabelOf, TIER1, TIER1_REGIONS, TIER2 } from "@/core/jurisdictions";
-import { themeAnalysisView, themeChips, themeForItem } from "@/core/themes";
+import { inThemeScope, themeAnalysisView, themeChips, themeForItem } from "@/core/themes";
 import { classifyMilestones, collapseTimeline } from "@/ui/timeline-math";
 import { coverageLineModel } from "@/features/regulations/coverage-line";
 import { isIdLabel } from "@/ui/detail/collab/collab-client";
@@ -150,13 +150,24 @@ test("theme views: the item's theme, the chips of a surface, the analysis when n
   const items = [{ id: "a", legacy_id: "g1", title: "Reg A", item_type: "regulation", domain: 1 }, { id: "b", legacy_id: null, title: "Mkt B", item_type: "market_signal", domain: 4 }];
   const chips = themeChips({ themes: themes as never, items, surface: "regulations", max: 6 });
   assert.deepEqual(chips.map((c) => [c.themeId, c.href, c.hasBrief]), [["t1", "/regulations/g1", false]]);
-  assert.match(chips[0]?.label ?? "", /^Shared source across /);
+  assert.match(chips[0]?.label ?? "", /^2 linked items across /);
   const view = themeAnalysisView({ itemId: "a", surface: "regulations", themes: themes as never, briefs: [], members: items, asOfIso: "2026-10-24T00:00:00Z" });
   assert.equal(view?.hasBrief, false);
   assert.deepEqual([view?.cluster?.memberCount, view?.cluster?.surfaces], [2, ["regulations", "market"]]);
   assert.deepEqual(view?.membersByPage.map((g) => [g.surface, g.total]), [["market", 1]]);
   const unsignalled = themeChips({ themes: [{ id: "t3", member_ids: ["a", "b"], surfaces: ["regulations", "market"], convergence: 0.5, pivots: [] }] as never, items, surface: "regulations", max: 6 });
   assert.ok((unsignalled[0]?.label ?? "").length > 0, "a theme with no named signal still has a label");
+});
+
+test("theme chips rank by fresh brief, surfaces spanned, member count, convergence; a single-surface pair is not a theme across the corpus", () => {
+  const mk = (n: number, domains: number[], prefix: string) => Array.from({ length: n }, (_, i) => ({ id: `${prefix}${i}`, legacy_id: null, title: `${prefix} item ${i}`, item_type: "x", domain: domains[i % domains.length] as number }));
+  const A = mk(2, [1], "a"), B = mk(35, [1, 4, 7, 3], "b"), C = mk(3, [1], "c"), D = mk(6, [1, 4], "d"), E = mk(4, [1, 4, 7], "e");
+  const theme = (id: string, rows: { id: string }[], surfaces: string[], convergence: number) => ({ id, member_ids: rows.map((r) => r.id), surfaces, convergence, pivots: [] });
+  const themes = [theme("tA", A, ["regulations"], 0.9), theme("tB", B, ["regulations", "market", "research", "operations"], 0.35), theme("tC", C, ["regulations"], 0.5), theme("tD", D, ["regulations", "market"], 0.2), theme("tE", E, ["regulations", "market", "research"], 0.6)];
+  const chips = themeChips({ themes: themes as never, items: [...A, ...B, ...C, ...D, ...E], surface: null, max: 5 });
+  assert.deepEqual(chips.map((c) => c.themeId), ["tB", "tE", "tD", "tC"], "four surfaces first, then three, then two; the 3-member single-surface theme last; the 2-member pair at 0.9 is out");
+  assert.ok(!themeChips({ themes: themes as never, items: [...A, ...B], surface: "regulations", max: 5 }).some((c) => c.themeId === "tA"), "a list page does not lead with a two-item single-surface pair either");
+  assert.ok(inThemeScope(3, 1) && inThemeScope(2, 2) && !inThemeScope(2, 1));
 });
 
 test("map: a row counts once under its primary code rolled up to the country; the title never decides the jurisdiction; subdivisions and EU members chip correctly", () => {

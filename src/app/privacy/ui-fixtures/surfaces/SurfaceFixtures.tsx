@@ -4,6 +4,7 @@
 import { useState } from "react";
 
 import type { Resource } from "@/core/types";
+import type { RadarView } from "@/features/flywheel/radar/read";
 import type { OperationsFact, CoverageRow } from "@/features/operations/model/region-grid";
 import { buildStatements } from "@/features/operations/model/statements";
 import type { OperationsPageData } from "@/features/operations/read/operations-reads";
@@ -22,6 +23,12 @@ import { ThemeBriefCard } from "@/features/research/ui/ThemeBriefCard";
 import { ScrollProvider } from "@/ui/shell/scroll-container";
 
 const NOW = "2026-10-15T00:00:00.000Z";
+/** The cross-surface findings a list or the dashboard draws, as the radar reader composes them: one emerging pattern with its signpost and a missing part, one forming chain. */
+export const RADAR_FX: RadarView = {
+  patterns: [{ key: "p1", label: "Mandate vs. capacity collision", means: "A rule requires something by a date while the capacity to comply (fuel, ports, grid) is not yet there, so expect extra cost or delay.", forming: false, groups: [{ surface: "regulations", label: "Regulations", href: "/regulations", items: [{ title: "FuelEU Maritime", href: "/regulations/fueleu" }], names: ["Shore power"] }, { surface: "operations", label: "Operations", href: "/operations", items: [], names: ["Rotterdam grid connection queue"] }], watch: "Watch: confirmed if the dated step still stands on 2027-01-01.", missingParts: ["Missing part: no Market Intel item yet; the chain is incomplete until one appears."], next: null }],
+  forming: [{ key: "f1", family: "Economic/abatement crossover forming", chain: [{ title: "EU ETS Extension to Maritime Transport", href: "/regulations/ets", surface: "regulations" }, { title: "Heavy fuel oil 3.5%S (EU average)", href: "/market/hfo", surface: "market" }], reason: "Shared operating context: ocean fuel surcharges.", next: "a Research abatement-cost evaluation for methanol engines" }],
+};
+export const WHY_FX = ["Regulation (EU) 2023/959: next dated obligation 1 Jan 2027, penalty EUR 100/t excess emissions.", "Also tied: Rotterdam shore-power profile (Operations)."] as const;
 const PRIORITIES = ["CRITICAL", "HIGH", "HIGH", "MODERATE", "MODERATE", "MODERATE", "LOW", "LOW", "LOW", "LOW"] as const;
 const TITLES = ["Zero-emission cargo bays for urban delivery", "Hydrogen trucks: a demonstration plant at scale", "A study of SAF feedstock supply and price", "Scope 3 accounting under ISO 14083", "EU ETS allowance prices and CBAM", "CSRD and ISSB S2 reporting convergence", "Reusable packaging under PPWR", "Cold-chain handling of fine art", "Port congestion outlook", "Electric heavy goods vehicle trials"];
 const R = (i: number, over: Partial<Resource> = {}): Resource => ({ id: `r${i}`, cat: "ocean", sub: "", title: TITLES[i % TITLES.length] as string, url: "", note: "", type: "research_finding", priority: PRIORITIES[i % PRIORITIES.length] as Resource["priority"], added: "2026-10-10", reasoning: "", tags: [], whatIsIt: "", whyMatters: "", keyData: [], modes: i % 2 ? ["air"] : ["ocean"], jurisdiction: ["EU", "US", "GB", "GLOBAL"][i % 4] as string, jurisdictionIso: [["EU", "US", "GB", "GLOBAL"][i % 4] as string], ...over });
@@ -47,7 +54,7 @@ const FACTS: OperationsFact[] = [
 const COVERAGE: CoverageRow[] = [{ regionCode: "EU", dimension: "labor_markets", state: "populated", factCount: 6, notes: null }];
 const OPERATIONS: OperationsPageData = {
   rows: REGIONS.map((r, i) => R(i, { id: `o${i}`, title: `${r.label} Regional Operations Profile`, type: "regional_data", jurisdiction: r.code, jurisdictionIso: [r.code] })), rowsFailed: false, aggregates: null,
-  roster: REGIONS, coverage: COVERAGE, facts: FACTS, stateCosts: [], linkedRegulations: { EU: 12, US: 4 }, derived: [{ valueId: "d1", title: "One-week movement · EUR/USD", value: 0.05, unit: "USD/EUR", currency: "USD", originClass: "Derived", lifecycle: "verified", confidence: 0.9, computedAt: "2026-10-15T12:00:00Z", previous: 0.03, inputs: [{ label: "EUR/USD", period: "2026-10-15", sourceName: "European Central Bank", tier: 1 }], tier: 1 }],
+  roster: REGIONS, coverage: COVERAGE, facts: FACTS, stateCosts: [], linkedRegulations: { EU: 12, US: 4 }, derived: [{ valueId: "d1", title: "One-week movement · EUR/USD", value: 0.05, unit: "USD/EUR", currency: "USD", originClass: "Derived", lifecycle: "verified", confidence: 0.9, computedAt: "2026-10-15T12:00:00Z", previous: 0.03, inputs: [{ label: "EUR/USD", period: "2026-10-15", sourceName: "European Central Bank", tier: 1 }], tier: 1, why: WHY_FX }],
 };
 
 export function SurfaceFixtures({ screen: requested }: { screen: string }) {
@@ -60,8 +67,8 @@ export function SurfaceFixtures({ screen: requested }: { screen: string }) {
   return (
     <ScrollProvider>
       <div style={{ background: "var(--page)", padding: "16px 0" }}>
-        {screen === "research" && <div data-fx="research"><ResearchList data={RESEARCH} nowIso={NOW} chips={CHIPS} denominator={DENOMINATOR} /></div>}
-        {screen === "operations" && <div data-fx="operations"><OperationsList data={OPERATIONS} nowIso={NOW} chips={CHIPS} denominator={{ ...DENOMINATOR, surfacePath: "/operations" }} /></div>}
+        {screen === "research" && <div data-fx="research"><ResearchList data={RESEARCH} nowIso={NOW} chips={CHIPS} radar={RADAR_FX} denominator={DENOMINATOR} /></div>}
+        {screen === "operations" && <div data-fx="operations"><OperationsList data={OPERATIONS} nowIso={NOW} chips={CHIPS} radar={RADAR_FX} denominator={{ ...DENOMINATOR, surfacePath: "/operations" }} /></div>}
         {screen === "parts" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: "0 16px", maxWidth: 1032 }}>
             <section data-fx="research-parts" style={{ display: "flex", flexDirection: "column", gap: 12 }}>

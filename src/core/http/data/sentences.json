@@ -21,6 +21,7 @@
   "counts_unavailable": "Counts did not load.",
   "band_counts_unavailable": "The band counts did not load, so the tiles are blank rather than zero.",
   "themes_unavailable": "The cross-page themes did not load.",
+  "radar_unavailable": "The cross-surface patterns did not load.",
   "ratings_unavailable": "Source ratings did not load, so tiers are not shown on these rows.",
   "discussions_unavailable": "discussions could not be loaded",
   "timelines_unavailable": "Milestone dates did not load for some rows, so their next dates are blank.",

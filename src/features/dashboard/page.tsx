@@ -10,6 +10,7 @@ import { StateNote } from "@/ui";
 import { PageFrame } from "@/ui/shell";
 import { readSourceCoverage } from "@/core/derived/source-coverage";
 import { readThemeChips } from "@/core/detail/cross-page-read";
+import { radarClients, readFlywheelRadar } from "@/features/flywheel/radar/read";
 
 import { readCounts, readDigest } from "./read/digest";
 import { buildChangedRows, buildDueNextRows, computeAuditDate, dueNextWindowLabel, firstNameOf, surfaceItemTotal } from "./rows";
@@ -55,13 +56,14 @@ export default async function DashboardRoute() {
       </>
     );
   }
-  const [{ profile, failed: profileFailed }, digest, counts, watch, name, themes, coverage] = await Promise.all([
+  const [{ profile, failed: profileFailed }, digest, counts, watch, name, themes, radar, coverage] = await Promise.all([
     readWorkspaceProfile(db, orgId),
     settle("digest", () => readDigest(db, orgId, serviceClient)),
     settle("counts", () => readCounts(db, orgId)),
     settle("watchlist", () => readWatchlist(db, { userId: session.userId, orgId }, WATCHLIST_RAIL_LIMIT, now)),
     readName(),
     settle("themes", () => readThemeChips(db, { surface: null, minPages: 2, max: 3 })),
+    settle("radar", () => readFlywheelRadar(radarClients(db), { kind: "corpus" })),
     settle("source coverage", () => readSourceCoverage(db)),
   ]);
 
@@ -91,6 +93,7 @@ export default async function DashboardRoute() {
         counts={totals}
         watchlist={watch?.items ?? null}
         themes={themes}
+        radar={radar}
         coverage={coverage}
       />
     </>

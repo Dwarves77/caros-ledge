@@ -4,7 +4,6 @@
 // The /market/[slug] page on the detail architecture (P2-10): the masthead with the action card, the section index and the Summary | Full brief switch, the rail, S1 Summary (price board, series figure, the stored movement analysis),
 // S2 Substantive findings (drivers and trajectory, carbon, cost by mode, do now, talking points), S5 Sources, S6 Related, the cross-page analysis and the recalculation notices. The loader's degraded blocks (claims that did
 // not load, a refused market read) are said where they sit with Retry; nothing here reads the clock or a table.
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -25,7 +24,7 @@ import { useItemRelevance } from "@/features/regulations/useItemRelevance";
 import { DetailTagRow } from "@/features/workspace/ui/DetailTagRow";
 import { DetailWatch } from "@/features/workspace/ui/DetailWatch";
 import { ActionCard, ClaimTierProvider, downloadMarkdownBrief, GfmSection, GradeChip, SectionIndex, StateNote, TagChip, type ClaimTierMap } from "@/ui";
-import { AtAGlanceCard, BriefContextCallout, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
+import { AtAGlanceCard, BriefContextCallout, commonActionCardProps, CrossPageSection, crossPagePresence, DetailLayout, DetailMasthead, DetailPageWrapper, DetailRail, DetailSection, FactBlocks, ImpactRailCard, InThisListStat, ItemConnections, RecordFacts, RelevanceRailCard, SourcesGrid, topRecommendedAction, type CrossPageData } from "@/ui/detail";
 import { NoticesRail } from "@/ui/figures";
 import { DetailSubSection } from "@/ui/ItemGroup";
 import { LegendRailCard } from "@/ui/list-surface";
@@ -52,41 +51,6 @@ export interface MarketDetailViewProps {
   eventsFailed?: boolean;
   kindLabels?: Record<string, string>;
   nowIso: string;
-}
-
-const SHOWN = 3;
-
-/** The connections of the item as the old rail card drew them: the relation and the surface it is on, the item, and why they are linked with the score; three shown, the rest behind "+N more". */
-function ConnectionList({ rows }: { rows: ConnectionRow[] }) {
-  const [all, setAll] = useState(false);
-  const linked = rows.filter((r) => r.href);
-  if (linked.length === 0) return null;
-  return (
-    <div data-part="item-connections">
-      <p className="cl-detail-label">Connections</p>
-      {(all ? linked : linked.slice(0, SHOWN)).map((r) => (
-        <Link key={`${r.id}-${r.label}`} href={r.href as string} prefetch={false} className="cl-detail-link" title={r.title}>
-          <p className="cl-detail-label" style={{ margin: 0 }}>
-            {r.label}· {r.surface}
-          </p>
-          <p data-guard-title className="cl-detail-link-title">
-            {r.title}
-          </p>
-          {r.basisSummary[0] ? (
-            <p className={styles.muted}>
-              {r.basisSummary[0].signal.replace(/_/g, " ")}
-              {r.score != null ? ` · ${r.score.toFixed(2)}` : ""}
-            </p>
-          ) : null}
-        </Link>
-      ))}
-      {linked.length > SHOWN && !all ? (
-        <button type="button" onClick={() => setAll(true)} className={styles.moreButton}>
-          +{linked.length - SHOWN} more
-        </button>
-      ) : null}
-    </div>
-  );
 }
 
 const WAITING = "appears here once the signal brief is generated.";
@@ -280,7 +244,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
             </DetailSection>
             {hasRelated && (
               <DetailSection id="related" title="Related" aside={signalBand ? BAND_LABEL[signalBand] : undefined} index={6}>
-                <ConnectionList rows={connectionRows} />
+                <ItemConnections rows={connectionRows} />
               </DetailSection>
             )}
           </DetailLayout>

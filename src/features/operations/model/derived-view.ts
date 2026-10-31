@@ -13,6 +13,15 @@ function movementWords(inputs: readonly ResolvedInput[]): string {
   const days = Math.round((Math.max(...at) - Math.min(...at)) / 86_400_000);
   return days >= 5 && days <= 9 ? "One-week movement" : days >= 14 ? `${Math.round(days / 7)}-week movement` : `${days}-day movement`;
 }
+/** UI-RADAR-1: the six cross-surface pattern methods in a reader's words (the flywheel radar draws them; they are not Operations figures): the name, what it means for the reader's cost or compliance, and the family it is called while still forming. */
+export const PATTERN_COPY: Readonly<Record<string, { label: string; means: string; forming: string }>> = {
+  pattern_velocity_burst: { label: "Signal velocity burst", means: "Many sources started reporting on the same subject at once, which often comes before a rule, price or supply change reaches you.", forming: "Signal velocity burst forming" },
+  pattern_mandate_capacity: { label: "Mandate vs. capacity collision", means: "A rule requires something by a date while the capacity to comply (fuel, ports, grid) is not yet there, so expect extra cost or delay.", forming: "Mandate vs capacity collision forming" },
+  pattern_lead_lag: { label: "Regulatory-to-market lead/lag", means: "A dated regulatory step is followed by a move in a related market price, so watch that price after the date.", forming: "Regulatory lead/lag forming" },
+  pattern_cross_modal: { label: "Cross-modal spillover", means: "A change in one transport mode or fuel is reaching another that competes for the same fuel or feedstock.", forming: "Cross-modal or feedstock spillover forming" },
+  pattern_penalty_abatement: { label: "Penalty vs. abatement crossover", means: "Paying the penalty and cutting the emissions cost about the same, so the cheaper route for your lanes may change.", forming: "Economic/abatement crossover forming" },
+  pattern_regulatory_stacking: { label: "Multi-regulation stacking", means: "Several rules fall due on the same subject within a short window, so the obligations add up instead of arriving one by one.", forming: "Regulatory stacking forming" },
+};
 
 export interface DerivedRow {
   value_id: string;
@@ -52,6 +61,8 @@ export interface DerivedFigure {
   inputs: ResolvedInput[];
   /** The weakest (highest-numbered) rating among the inputs; null when any input is unrated, which the surface draws as an absence. */
   tier: number | null;
+  /** The two "Why this matters" lines; empty when the facts join was not available. */
+  why: readonly string[];
 }
 
 const num = (v: unknown): number | null => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
@@ -65,6 +76,6 @@ export function toDerivedFigure(r: DerivedRow, inputs: ResolvedInput[], previous
   const tiers = inputs.map((i) => i.tier);
   return {
     valueId: r.value_id, title: subject ? `${method} · ${subject}` : method, value: num(r.value), unit: r.unit, currency: r.currency, originClass: originClassLabel(r.origin_class), lifecycle: r.lifecycle,
-    confidence: num(r.base_confidence) ?? 0, computedAt: r.computed_at, previous, inputs, tier: inputs.length > 0 && tiers.every((t) => t !== null) ? Math.max(...(tiers as number[])) : null,
+    confidence: num(r.base_confidence) ?? 0, computedAt: r.computed_at, previous, inputs, tier: inputs.length > 0 && tiers.every((t) => t !== null) ? Math.max(...(tiers as number[])) : null, why: [],
   };
 }

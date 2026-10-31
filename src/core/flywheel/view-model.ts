@@ -10,10 +10,16 @@ import { fetchAllByIdChunks } from "@/core/db";
 import { isUuid } from "@/core/http/parse";
 import { SURFACE_LABELS, SURFACE_ORDER, surfaceHref } from "@/core/routing";
 import { joinLabels, labelForComplianceObject, labelForScenario } from "@/core/tags/vocabulary";
+import { asBasis, familyWords, reasonFor } from "@/features/flywheel/radar/read";
 
-import type { BasisEntry } from "./discover";
-import { RELATIONSHIP_LABEL } from "./edges";
+import { CANDIDATE_ORIGIN, type EdgeBasis } from "./discover";
+import { DISCOVERY_ORIGIN, RELATIONSHIP_LABEL } from "./edges";
+import type { FactLink } from "./facts-join";
 import { isIntersectionEntry, type IntersectionDetail } from "./intersections";
+
+// -- the causal sentence of a connection, composed from the typed basis (discover.ts EdgeBasis) and the typed facts (facts-join.ts FactLink) ----------------------------------------------
+// UI-RADAR-1. A field a stored row does not hold is absent here: the sentence is composed from what the row holds, never from a guess. Rows written before the typed tokens carry a `detail` string, read as the fallback.
+export type FactsByItem = ReadonlyMap<string, readonly FactLink[]>;
 
 export interface ResourceRef {
   id: string;
@@ -23,11 +29,13 @@ export interface ResourceRef {
 export type ResourceLookup = Record<string, ResourceRef>;
 export interface ConnectionIn {
   id: string;
+  /** intelligence_items.id when the loader holds it (the key of the facts join). */
+  uuid?: string;
   relationship?: string;
   direction?: "outgoing" | "incoming";
   surface?: string;
   origin?: string;
-  basis?: BasisEntry[] | null;
+  basis?: EdgeBasis | null | undefined;
   score?: number | null;
 }
 export interface ConnectionRow {
@@ -39,8 +47,10 @@ export interface ConnectionRow {
   href: string | null;
   origin: string;
   discovered: boolean;
-  basisSummary: { signal: string; weight?: number }[];
-  score: number | null;
+  /** One plain sentence: why the two are connected. Never empty. */
+  reason: string;
+  /** A candidate edge: the chain is forming and the next link to watch. Such a row is drawn under "Developing", not in the connection list. */
+  developing?: { family: string | null; next: string | null };
 }
 
 /** "Supersedes", "Implements"...; a generic edge reads by direction (References, Referenced by). */
@@ -48,20 +58,22 @@ function labelForConnection(relationship: string | undefined, direction: string 
   return (relationship ? RELATIONSHIP_LABEL[relationship] : undefined) ?? (direction === "outgoing" ? "References" : "Referenced by");
 }
 
-export function buildConnectionRows(connections: readonly ConnectionIn[] | null | undefined, lookup: ResourceLookup | null | undefined): ConnectionRow[] {
+export function buildConnectionRows(connections: readonly ConnectionIn[] | null | undefined, lookup: ResourceLookup | null | undefined, ctx: { self?: readonly FactLink[]; facts?: FactsByItem } = {}): ConnectionRow[] {
   const seen = new Set<string>();
   const rows: ConnectionRow[] = [];
-  for (const c of connections ?? []) {
+  for (const c of [...(connections ?? [])].sort((a, b) => (b?.score ?? 0) - (a?.score ?? 0))) {
     const ref = lookup?.[c?.id];
     if (!c || !c.id || seen.has(c.id) || !ref) continue;
-    seen.add(c.id);
     const origin = c.origin || "manual";
-    const basis = Array.isArray(c.basis) ? c.basis : [];
+    const label = labelForConnection(c.relationship, c.direction);
+    const basis = asBasis(c.basis);
+    const reason = reasonFor({ basis: c.basis, origin, label }, { self: ctx.self ?? [], other: ctx.facts?.get(c.uuid ?? c.id) ?? [] });
+    if (!reason && origin !== CANDIDATE_ORIGIN) continue;
+    seen.add(c.id);
     const surface = c.surface || "uncategorized";
-    rows.push({ id: c.id, title: ref.title, priority: ref.priority, label: labelForConnection(c.relationship, c.direction), surface, href: surfaceHref(surface, c.id), origin, discovered: origin === "provenance_discovery" && basis.length > 0, basisSummary: basis.slice(0, 3).map((b) => ({ signal: b.signal, ...(b.weight !== undefined ? { weight: b.weight } : {}) })), score: typeof c.score === "number" ? c.score : null });
+    rows.push({ id: c.id, title: ref.title, priority: ref.priority, label, surface, href: surfaceHref(surface, c.id), origin, discovered: origin === DISCOVERY_ORIGIN && basis.evidence.length > 0, reason: reason ?? "A chain is forming between the two.", ...(origin === CANDIDATE_ORIGIN ? { developing: { family: familyWords(basis.missing?.patternFamily), next: basis.missing?.truth?.trim() || null } } : {}) });
   }
-  rows.sort((a, b) => (a.discovered !== b.discovered ? (a.discovered ? -1 : 1) : a.discovered && b.discovered ? (b.score ?? 0) - (a.score ?? 0) : 0));
-  return rows;
+  return rows.sort((a, b) => Number(!!a.developing) - Number(!!b.developing) || Number(b.discovered) - Number(a.discovered));
 }
 
 export interface Supersession {
@@ -75,7 +87,7 @@ export function buildSupersessionRows(supersessions: readonly Supersession[] | n
   const add = (id: string, label: string) => {
     const ref = lookup?.[id];
     if (!ref) return;
-    rows.push({ id, title: ref.title, priority: ref.priority, label, surface: "regulations", href: surfaceHref("regulations", id), origin: "manual", discovered: false, basisSummary: [], score: null });
+    rows.push({ id, title: ref.title, priority: ref.priority, label, surface: "regulations", href: surfaceHref("regulations", id), origin: "manual", discovered: false, reason: reasonFor({ basis: null, origin: "manual", label }) as string });
     seen.add(id);
   };
   for (const s of supersessions ?? []) {
@@ -161,19 +173,3 @@ export async function buildResourceLookup(sb: Db, relatedIds: readonly string[])
   if (uuids.length) await read("id", uuids);
   return lookup;
 }
-
-// -- the brief author's candidate block ------------------------------------------------------------------------------------------------------------
-
-export interface Candidate {
-  id: string;
-  relationship: string;
-  basis: BasisEntry[];
-  score: number | null;
-  sources: string[];
-}
-export interface Selection {
-  candidates: Candidate[];
-  theme: { id: string; memberCount: number; title: string | null; stale: boolean | null; dominantSignals: { signal: string }[] } | null;
-}
-
-

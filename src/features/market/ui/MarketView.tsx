@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import type { DenominatorLine as Denominator } from "@/core/coverage/matrix";
 import { trimRemainder } from "@/core/lists";
+import type { RadarView } from "@/features/flywheel/radar/read";
 import { DenominatorLine } from "@/features/coverage";
 import { NoticesRail } from "@/ui/figures";
 import { ThemeStrip, type ThemeChip } from "@/ui/list-surface";
@@ -30,9 +31,13 @@ export interface MarketViewProps {
   coverage: { denominator: Denominator | null; error: string | null };
   /** The theme strip's chips; null when that read failed. */
   chips: ThemeChip[] | null;
+  /** The cross-surface patterns of this page; null: that read failed; absent: none was read. */
+  radar?: RadarView | null | undefined;
+  /** Per headline card (its family key), the two "Why this matters" lines; null when that read failed. */
+  why?: Record<string, string[]> | null | undefined;
 }
 
-export function MarketView({ read, nowIso, coverage, chips }: MarketViewProps) {
+export function MarketView({ read, nowIso, coverage, chips, radar, why }: MarketViewProps) {
   const { signals, series, corridors, carbon, panels } = read;
   const board = series.ok ? series.data.board : null;
   const cards = corridors.ok && carbon.ok ? buildCarbonCards(corridors.data, carbon.data) : null;
@@ -46,11 +51,11 @@ export function MarketView({ read, nowIso, coverage, chips }: MarketViewProps) {
           failed={!signals.ok}
           nowIso={nowIso}
           seriesCount={board ? board.totalObservedSeries : null}
-          headline={board && series.ok ? <HeadlineSeries board={board} ratings={series.data.ratings} nowIso={nowIso} /> : <RetryNote what="The headline series" />}
+          headline={board && series.ok ? <HeadlineSeries board={board} ratings={series.data.ratings} nowIso={nowIso} why={why ?? null} /> : <RetryNote what="The headline series" />}
           rail={<MarketRail carbon={cards ? summariseCarbonCorridors(cards) : null} drops={board ? selectNextDataDrops(board, { now: new Date(nowIso) }) : null} board={board} />}
           belowRows={
             <>
-              {chips === null ? <RetryNote what="The theme strip" /> : <ThemeStrip chips={chips} />}
+              {chips === null ? <RetryNote what="The theme strip" /> : <ThemeStrip chips={chips} radar={radar} />}
               <DenominatorLine denominator={coverage.denominator} error={coverage.error} surfacePath="/market" />
             </>
           }

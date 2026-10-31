@@ -15,64 +15,45 @@ const SHOWN = 4;
 const BAND_WORDS: Record<ItemRelevance["band"], string> = { high: "High relevance", medium: "Medium relevance", low: "Low relevance" };
 const APPLIES_WORDS: Record<string, string> = { applies: "Applies to your organisation", does_not_apply: "Does not apply to your organisation", needs_profile_input: "Needs more of your profile to say" };
 
-/** The connections strip of the masthead card: superseded-by, supersedes and the items this one is linked to, each a link on its own surface; the rest behind a closed disclosure. */
-function formatConnectionContext(r: ConnectionRow): string {
-  if (r.basisSummary && r.basisSummary.length > 0) {
-    const signals = [...new Set(r.basisSummary.map((b) => b.signal.replace(/_/g, " ")))].join(", ");
-    return `Bound by ${signals}`;
-  }
-  switch (r.label.toLowerCase()) {
-    case "supersedes":
-      return "Replaces prior statutory provisions";
-    case "superseded by":
-      return "Succeeded by newer legislation";
-    case "implements":
-      return "Technical execution of parent framework";
-    case "implemented by":
-      return "Carried out by implementing legislation";
-    case "amends":
-      return "Modifies text or scope";
-    case "amended by":
-      return "Updated by subsequent amendment";
-    default:
-      return r.surface && r.surface !== "uncategorized"
-        ? `Cross-surface reference to ${r.surface}`
-        : "Direct reference in primary source";
-  }
-}
-
-/** The connections strip of the masthead card: superseded-by, supersedes and the items this one is linked to, each a link on its own surface; the rest behind a closed disclosure. */
+/** The connections strip of the masthead card: superseded-by, supersedes and the items this one is linked to, each a link on its own surface with the sentence that says why; the rest behind a closed disclosure. Chains that are still forming follow under "Developing". */
 export function ItemConnections({ rows }: { rows: ConnectionRow[] }) {
-  const linked = rows.filter((r) => r.href);
-  if (linked.length === 0) return null;
+  const linked = rows.filter((r) => r.href && !r.developing);
+  const forming = rows.filter((r) => r.href && r.developing);
+  if (linked.length === 0 && forming.length === 0) return null;
   const item = (r: ConnectionRow) => {
     const { title: displayTitle, subtitle } = normalizeDisplayTitle(r.title);
-    const contextLine = formatConnectionContext(r);
     return (
       <Link key={`${r.id}-${r.label}`} href={r.href as string} prefetch={false} className="cl-detail-link" title={r.title} data-discovered={r.discovered ? "true" : undefined}>
         <p className="cl-detail-label" style={{ margin: 0 }}>
-          {r.label}
+          {r.developing?.family ?? r.label}
           {r.surface && r.surface !== "uncategorized" ? ` · ${r.surface}` : ""}
         </p>
         <p data-guard-title className="cl-detail-link-title">
           {displayTitle}
         </p>
         {subtitle && <p className="cl-detail-link-note">{subtitle}</p>}
-        {contextLine && (
-          <p className="cl-detail-link-context">
-            {contextLine}
-          </p>
-        )}
+        <p className="cl-detail-link-context">{r.reason}</p>
+        {r.developing?.next && <p className="cl-detail-link-context">Next link to watch: {r.developing.next}</p>}
       </Link>
     );
   };
   return (
     <div data-part="item-connections">
-      <p className="cl-detail-label">Connections</p>
-      <div className="cl-conn-grid">{linked.slice(0, SHOWN).map(item)}</div>
-      <MoreBelowDisclosure count={linked.length - SHOWN} itemNoun="more connections">
-        <div className="cl-conn-grid">{linked.slice(SHOWN).map(item)}</div>
-      </MoreBelowDisclosure>
+      {linked.length > 0 && (
+        <>
+          <p className="cl-detail-label">Connections</p>
+          <div className="cl-conn-grid">{linked.slice(0, SHOWN).map(item)}</div>
+          <MoreBelowDisclosure count={linked.length - SHOWN} itemNoun="more connections">
+            <div className="cl-conn-grid">{linked.slice(SHOWN).map(item)}</div>
+          </MoreBelowDisclosure>
+        </>
+      )}
+      {forming.length > 0 && (
+        <>
+          <p className="cl-detail-label">Developing</p>
+          <div className="cl-conn-grid">{forming.slice(0, SHOWN).map(item)}</div>
+        </>
+      )}
     </div>
   );
 }
