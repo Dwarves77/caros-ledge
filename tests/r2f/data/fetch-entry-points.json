@@ -11,6 +11,8 @@
   "roots": ["src", "supabase/functions", "scripts"],
   "exempt": {
     "scripts/runs/visible.mjs": "opens our own detail pages in a browser as the test member (DRAIN-FIX-2); it fetches no third-party source",
+    "scripts/ci/live-session.mjs": "mints a session for our own admin account and opens our own deployment (production or localhost) to confirm it is accepted",
+    "scripts/ci/live/dom-gate.mjs": "loads pages of our own deployment as the signed-in account (the live checks' DOM gate, called by scripts/ci/live-checks.mjs)",
     "scripts/ci/live-checks.mjs": "reads our own deployment (the preview and production origins) and the accounts it is given",
     "scripts/ci/live/load.mjs": "loads pages of our own deployment (the live checks' page load, called by scripts/ci/live-checks.mjs)",
     "scripts/ops/measure-collection.mjs": "reaches the network only through honestFetch (the guard asks the register) and fetchBrowser (the hold gate asks it)",

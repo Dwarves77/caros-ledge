@@ -6,7 +6,9 @@ import { isMissingObject } from "../../../src/core/db/absent.ts";
 import { itemOnPageFinding } from "../../lib/item-on-page.mjs";
 import { shapeDiff } from "../schema/shape.mjs";
 
-export const CHECKS = ["member-reads", "sign-in", "pages", "identity-anonymous", "provenance-trigger", "notification-drain", "admin-pages", "invitation-email", "production-shape", "applied-items-render"];
+import { collectFacts, formatTable, gateResults } from "./dom-gate.mjs";
+
+export const CHECKS = ["member-reads", "sign-in", "pages", "identity-anonymous", "provenance-trigger", "notification-drain", "admin-pages", "invitation-email", "production-shape", "applied-items-render", "signed-in-dom"];
 /**
  * Checks that run only when a dispatch names them (--only): invitation-email sends a real message, and provenance-trigger takes a short lock on intelligence_items (migration 0069 disables a trigger under lock_timeout), which a
  * preview deployment must not do to production each time one is built. The default set runs on every preview; these two run on a named dispatch (the nightly one).
@@ -244,4 +246,16 @@ export async function appliedItemsRender(ctx) {
   return out;
 }
 
-export const RUNNERS = { "applied-items-render": appliedItemsRender, "member-reads": memberReads, "sign-in": signIn, pages, "identity-anonymous": identityAnonymous, "provenance-trigger": provenanceTrigger, "notification-drain": notificationDrain, "admin-pages": adminPages, "invitation-email": invitationEmail, "production-shape": productionShape };
+/**
+ * LIVE-GATE-1 (rule 15: a gate that passes with no session is not a gate): the five lists and the first detail of each are read as the signed-in account whose storage state scripts/ci/live-session.mjs minted, and judged against
+ * tests/live/assertions.json (scripts/ci/live/dom-gate.mjs). The table of every assertion is printed; an armed failure is a failure finding, an unarmed one a warning that names its owner lane. A missing or empty session is a
+ * failure: io.sessionContext throws when the file is unreadable, and an empty state ends every page on /login, which fails the armed signed-in assertion.
+ */
+export async function signedInDom(ctx) {
+  const { io } = ctx;
+  const results = gateResults(await collectFacts(await io.sessionContext(), io.base, { headers: io.bypass, log: io.log ?? console.log }));
+  (io.log ?? console.log)(formatTable(results));
+  return results.filter((r) => r.violations.length).map((r) => (r.armed ? fail : warn)("signed-in-dom", r.id, `${r.id} (owner ${r.owner}): ${r.violations.length} violation(s)${r.armed ? `, first: ${r.violations[0]}` : ", not armed"}`));
+}
+
+export const RUNNERS = { "applied-items-render": appliedItemsRender, "member-reads": memberReads, "sign-in": signIn, pages, "identity-anonymous": identityAnonymous, "provenance-trigger": provenanceTrigger, "notification-drain": notificationDrain, "admin-pages": adminPages, "invitation-email": invitationEmail, "production-shape": productionShape, "signed-in-dom": signedInDom };
