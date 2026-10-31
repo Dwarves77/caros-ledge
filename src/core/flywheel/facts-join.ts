@@ -191,7 +191,7 @@ export async function readEntityFacts(sb: Db, itemIds: readonly string[]): Promi
 }
 
 /** The first column that states when an obligation falls due. */
-const dueOf = (o: Row): string | undefined => str(o.due_date) ?? str(o.first_deadline) ?? str(o.date_of_application);
+export const dueOf = (o: Row): string | undefined => str(o.due_date) ?? str(o.first_deadline) ?? str(o.date_of_application);
 
 /**
  * The live items filed under the entities of structured rows (hop 0), or one relation away (hop 1), each with its next dated obligation (on or after `now`) and the penalty figure the statutory computations hold for it.

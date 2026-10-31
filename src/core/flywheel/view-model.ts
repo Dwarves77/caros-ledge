@@ -10,7 +10,7 @@ import { fetchAllByIdChunks } from "@/core/db";
 import { isUuid } from "@/core/http/parse";
 import { SURFACE_LABELS, SURFACE_ORDER, surfaceHref } from "@/core/routing";
 import { joinLabels, labelForComplianceObject, labelForScenario } from "@/core/tags/vocabulary";
-import { asBasis, familyWords, reasonFor } from "@/features/flywheel/radar/read";
+import { asBasis, familyWords, type ReasonContext, reasonFor } from "@/features/flywheel/radar/read";
 
 import { CANDIDATE_ORIGIN, type EdgeBasis } from "./discover";
 import { DISCOVERY_ORIGIN, RELATIONSHIP_LABEL } from "./edges";
@@ -58,7 +58,7 @@ function labelForConnection(relationship: string | undefined, direction: string 
   return (relationship ? RELATIONSHIP_LABEL[relationship] : undefined) ?? (direction === "outgoing" ? "References" : "Referenced by");
 }
 
-export function buildConnectionRows(connections: readonly ConnectionIn[] | null | undefined, lookup: ResourceLookup | null | undefined, ctx: { self?: readonly FactLink[]; facts?: FactsByItem } = {}): ConnectionRow[] {
+export function buildConnectionRows(connections: readonly ConnectionIn[] | null | undefined, lookup: ResourceLookup | null | undefined, ctx: { self?: readonly FactLink[]; facts?: FactsByItem; also?: ReasonContext } = {}): ConnectionRow[] {
   const seen = new Set<string>();
   const rows: ConnectionRow[] = [];
   for (const c of [...(connections ?? [])].sort((a, b) => (b?.score ?? 0) - (a?.score ?? 0))) {
@@ -67,7 +67,7 @@ export function buildConnectionRows(connections: readonly ConnectionIn[] | null 
     const origin = c.origin || "manual";
     const label = labelForConnection(c.relationship, c.direction);
     const basis = asBasis(c.basis);
-    const reason = reasonFor({ basis: c.basis, origin, label }, { self: ctx.self ?? [], other: ctx.facts?.get(c.uuid ?? c.id) ?? [] });
+    const reason = reasonFor({ basis: c.basis, origin, label }, { ...ctx.also, self: ctx.self ?? [], other: ctx.facts?.get(c.uuid ?? c.id) ?? [] });
     if (!reason && origin !== CANDIDATE_ORIGIN) continue;
     seen.add(c.id);
     const surface = c.surface || "uncategorized";

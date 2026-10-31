@@ -13,7 +13,7 @@ import type { FactLink } from "@/core/flywheel/facts-join";
 import { toListRowFields } from "@/core/lists/row-fields";
 import { themeAnalysisView, themeChips } from "@/core/themes/theme-view";
 import { isOperationsFigure } from "@/features/operations/model/derived-view";
-import { readItemExtras, readLinkedBy, readFlywheelRadar, readWhyMatters, nameChips, reasonFor, whyLines, type RadarView } from "@/features/flywheel/radar/read";
+import { readConnectionFacts, readItemExtras, readLinkedBy, readFlywheelRadar, readWhyMatters, nameChips, reasonFor, whyLines, type RadarView } from "@/features/flywheel/radar/read";
 import { DerivedFigures } from "@/features/operations/ui/Spec09Panels";
 import { CrossPageSection } from "@/ui/detail/CrossPageSection";
 import { ItemConnections } from "@/ui/detail/ItemConnections";
@@ -247,7 +247,7 @@ test("UI-RADAR-2 reasons: a fact that belongs to the source item alone is never 
   );
   const by = Object.fromEntries(rows.map((r) => [r.id, r.reason]));
   assert.equal(by.a, "Both concern Heavy fuel oil. Heavy fuel oil 3.5%S rose 24.8% over the last week.", "a fact tied to the entity both reach is the chain");
-  assert.equal(by.b, "Both apply to ocean bunkering operations in SG on fuels and emissions.", "scenario and place in words, nothing about the source item's own series");
+  assert.equal(by.b, "Both apply to ocean bunkering operations in Singapore on fuels and emissions.", "scenario and place in words, nothing about the source item's own series");
   assert.equal(by.c, "Both apply to ocean fuel surcharge operations.");
   assert.equal(new Set(Object.values(by)).size, 3, "three targets, three different pairs, three sentences");
   for (const r of rows) assert.doesNotMatch(r.reason, /jet fuel|5\.3%/i, `${r.id} quotes the source-only series`);
@@ -310,4 +310,64 @@ test("UI-RADAR-2 chips: a theme with no brief is named by what its edges are lin
   assert.deepEqual(chips[0]?.linkedBy, ["Directive 2023/959", "Heavy fuel oil", "Shore power"]);
   assert.match(chips[1]?.label ?? "", /^4 linked items across Regulations and Market Intel$/, "no name known: the count and the pages");
   assert.equal(new Set((await nameChips(memoryDb({}).db, base, themes)).map((c) => c.label)).size, 2, "two chips with the same derived label are told apart");
+});
+
+// -- UI-RADAR-3 (2026-10-31): an entity is named in words, never by its token; a shared obligation says who it binds, by when, under what -----------------------------------------------
+const EN = (kind: string, n: number, canonical_name: string, display_name: string | null = null) => ({ entity_id: `cl:${kind}:00000000000000${n}${n}`, kind, canonical_name, display_name });
+test("UI-RADAR-3 entity names: a token resolves by kind to words, a name already in words stands", async () => {
+  const ents = [EN("instrument", 1, "32023R1542"), EN("instrument", 3, "Directive 2023/959"), EN("jurisdiction", 4, "GLOBAL"), EN("jurisdiction", 5, "GB"), EN("method", 6, "ghg_intensity", "ghg_intensity"), EN("method", 7, "tonnage_cutoff"), EN("node", 8, "HDV charging", "HDV charging"), EN("zone", 9, "WIND_CAP")];
+  const db = memoryDb({
+    derived_values: [PATTERN(1, { inputs: [{ table: "obligation_objects", pk: "ob1", kind: "key", surface: "regulations", entities: [] }, { table: "grid_connection_queues", pk: "q1", kind: "member", surface: "research", entities: ents.map((e) => e.entity_id) }] })],
+    obligation_objects: [{ obligation_id: "ob1", instrument_item_id: "i1" }], intelligence_items: [ITEM("i1", "x")], entities: ents,
+  }).db;
+  const names = (await readFlywheelRadar({ db, admin: db }, { kind: "corpus" })).patterns[0]?.groups.find((g) => g.surface === "research")?.names ?? [];
+  assert.deepEqual(names, ["Directive 2023/959", "EU regulation 2023/1542", "GHG intensity (method)", "HDV charging", "tonnage cutoff (method)", "wind cap (zone)", "Global", "United Kingdom"]);
+});
+
+const NAMED_WORLD = (extra: Record<string, unknown[]> = {}) => memoryDb({
+  derived_values: [PATTERN(1, { inputs: [{ table: "obligation_objects", pk: "ob1", kind: "key", surface: "regulations", entities: ["cl:instrument:0000000000000001"] }, { table: "grid_connection_queues", pk: "q1", kind: "member", surface: "research", entities: ["cl:jurisdiction:0000000000000002", "cl:node:0000000000000003", "cl:material:0000000000000004", "cl:method:0000000000000005"] }] })],
+  obligation_objects: [{ obligation_id: "ob1", instrument_item_id: "i1" }],
+  intelligence_items: [{ ...ITEM("i1", "Battery Regulation"), instrument_entity_id: "cl:instrument:0000000000000001" }],
+  entities: [
+    { entity_id: "cl:instrument:0000000000000001", kind: "instrument", canonical_name: "32023R1542", display_name: null }, { entity_id: "cl:jurisdiction:0000000000000002", kind: "jurisdiction", canonical_name: "GLOBAL", display_name: null },
+    { entity_id: "cl:node:0000000000000003", kind: "node", canonical_name: "HDV charging", display_name: "HDV charging" }, { entity_id: "cl:material:0000000000000004", kind: "material", canonical_name: "Bio-methanol", display_name: "Bio-methanol" },
+    { entity_id: "cl:method:0000000000000005", kind: "method", canonical_name: "ghg_intensity", display_name: "ghg_intensity" },
+  ],
+  ...extra,
+}).db;
+test("UI-RADAR-3 radar card: every member is named in words, the subjects before the places, and an instrument by its item's title", async () => {
+  const db = NAMED_WORLD({ obligation_objects: [{ obligation_id: "ob1", instrument_item_id: "i9" }] });
+  const view = await readFlywheelRadar({ db, admin: db }, { kind: "corpus" });
+  const research = view.patterns[0]?.groups.find((g) => g.surface === "research");
+  assert.deepEqual(research?.names, ["Bio-methanol", "GHG intensity (method)", "HDV charging", "Global"], "places last");
+  const text = textOf(renderApp(createElement(FlywheelRadar, { view })));
+  assert.match(text, /Research ?: Bio-methanol · GHG intensity \(method\) · HDV charging · Global/);
+  assert.doesNotMatch(text, /GLOBAL|ghg_intensity|32023R1542/);
+  const viaItem = await readFlywheelRadar({ db: NAMED_WORLD(), admin: NAMED_WORLD() }, { kind: "corpus" });
+  assert.deepEqual(viaItem.patterns[0]?.groups.find((g) => g.surface === "regulations")?.items.map((i) => i.title), ["Battery Regulation"]);
+});
+
+const SHARED_OBL = { signal: "shared_obligation", detail: "both carry obligation cl:obligation:0000000000000009", weight: 0.35, tokens: { obligations: ["cl:obligation:0000000000000009"] } };
+test("UI-RADAR-3 shared obligation: the reason says who both bind, by when, under which instrument, ahead of the scenario sentence", async () => {
+  const db = memoryDb({
+    obligation_objects: [{ obligation_id: "cl:obligation:0000000000000009", instrument_item_id: "i1", duty_holder_class: ["importer_of_record", "carrier"], due_date: null, first_deadline: "2027-09-30", date_of_application: null }],
+    intelligence_items: [ITEM("i1", "Regulation (EU) 2023/1805 on the use of renewable and low-carbon fuels in maritime transport")],
+  }).db;
+  const conns = [edge("a", { basis: [SCN, SHARED_OBL] })];
+  const { facts, also } = await readConnectionFacts(db, "uuid-self", conns);
+  assert.equal(facts.size >= 1, true);
+  const rows = buildConnectionRows(conns, LOOKUP, { self: [], facts, also });
+  assert.equal(rows[0]?.reason, "Both bind importers of record and carriers by Sep 30, 2027 under Regulation (EU) 2023/1805 on the use of renewable and low-carbon…");
+  assert.equal(buildConnectionRows(conns, LOOKUP)[0]?.reason, "Both apply to ocean fuel surcharge operations.", "with no obligation read the scenario sentence stays the fallback");
+});
+
+test("UI-RADAR-3 connection facts: one batched read of the obligations for every edge of the page, and the entity a stored basis cites is re-read in words", async () => {
+  const OB = (n: number) => ({ signal: "shared_obligation", weight: 0.35, tokens: { obligations: [`cl:obligation:00000000000000${n}0`] } });
+  const mem = memoryDb({ obligation_objects: [1, 2, 3].map((n) => ({ obligation_id: `cl:obligation:00000000000000${n}0`, instrument_item_id: "i1", duty_holder_class: ["carrier"], first_deadline: "2027-01-01" })), intelligence_items: [ITEM("i1", "Regulation 1")], entities: [{ entity_id: "cl:jurisdiction:0000000000000002", kind: "jurisdiction", canonical_name: "GLOBAL" }] });
+  const { db } = mem;
+  const { also } = await readConnectionFacts(db, "u", [1, 2, 3].map((n) => edge(String(n), { basis: [OB(n), { signal: "shared_entity", tokens: { entities: [{ id: "cl:jurisdiction:0000000000000002", name: "GLOBAL" }] } }] })));
+  assert.equal(also.obligations?.size, 3);
+  assert.equal(mem.reads.filter((r) => r.table === "obligation_objects").length, 1, "one read of the obligation objects for all three edges");
+  assert.equal(also.names?.get("cl:jurisdiction:0000000000000002"), "Global");
+  assert.deepEqual(buildConnectionRows([edge("a", { basis: [{ signal: "shared_entity", tokens: { entities: [{ id: "cl:jurisdiction:0000000000000002", name: "GLOBAL" }] } }] })], LOOKUP, { also })[0]?.reason, "Both concern Global.");
 });

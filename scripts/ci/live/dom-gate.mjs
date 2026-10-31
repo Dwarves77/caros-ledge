@@ -25,7 +25,7 @@ export const domFacts = () => {
     triggers: all(".cl-trigger-row .cl-trigger-text").map(words),
     ribbon: ribbon ? { caption: words(ribbon.querySelector('[class*="hCaption"]')), cards: all('[data-audit="headline-card"]', ribbon).map((c) => words(c.querySelector('[data-audit="headline-card-label"] span'))) } : null,
     board: board ? { rows: all('[class*="seriesRow"]', board).map((r) => ({ hasLatest: !r.querySelector('[class*="seriesValue"]')?.hasAttribute("title") })), unregistered: Number(/(\d+) series from a source not yet listed/.exec(board.innerText)?.[1] ?? 0) } : null,
-    radar: radar ? { links: all("a", radar).length, absence: Boolean(radar.querySelector('[data-part="absence"], [data-part="state-note"]')) } : null,
+    radar: radar ? { text: words(radar), links: all("a", radar).length, absence: Boolean(radar.querySelector('[data-part="absence"], [data-part="state-note"]')) } : null,
   };
 };
 
@@ -38,6 +38,8 @@ const RAW = [
   ["a _gap token", /\b[a-z0-9]+_gap\b/gi],
   ["a corridor token", /\b[A-Z]{5}-[A-Z]{5}:[a-z]+\b/g],
 ];
+/** A metric or method token (ghg_intensity) in what the radar draws: its entity lines name things in words. */
+const SNAKE = /\b[a-z]+_[a-z_]+\b/g;
 const PENDING = /Narrative synthesis pending|Stale: this synthesis/;
 const INSTRUMENT = /\b\d{1,4}\/\d{1,4}\b/;
 const CAPTION = /^(\d+) famil(?:y|ies) from (\d+) series/;
@@ -55,7 +57,7 @@ export const EVALUATORS = {
     ...(f.links.length ? [] : ["no detail link was found on the five lists"]),
     ...f.links.filter((l) => l.status === 404 || l.status === 0 || l.status >= 500 || pathOf(l.finalUrl).startsWith("/login")).map((l) => `${l.href}: ${pathOf(l.finalUrl).startsWith("/login") && l.status < 400 ? "ended on /login" : `HTTP ${l.status}`} (linked from ${l.from})`),
   ],
-  "no-raw-ids": (f) => [...unread(f.lists, "list page"), ...unread(f.details, "detail page"), ...pages(f).flatMap((p) => RAW.flatMap(([what, re]) => [...new Set((p.facts?.text ?? "").match(re) ?? [])].map((m) => `${p.path}: shows ${what}: ${m}`)))],
+  "no-raw-ids": (f) => [...unread(f.lists, "list page"), ...unread(f.details, "detail page"), ...pages(f).flatMap((p) => RAW.flatMap(([what, re]) => [...new Set((p.facts?.text ?? "").match(re) ?? [])].map((m) => `${p.path}: shows ${what}: ${m}`)).concat([...new Set((p.facts?.radar?.text ?? "").match(SNAKE) ?? [])].map((m) => `${p.path}: the radar shows a snake_case token: ${m}`)))],
   "rows-have-why": (f) => [
     ...unread(f.lists, "list page"),
     ...f.lists.flatMap((p) => {
