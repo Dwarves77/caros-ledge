@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { createdBy, GAP_NAMESPACE, planReflect, reflectResolved, buildSubjectRef } from "@/core/flywheel/flags";
+import { createdBy, GAP_NAMESPACE, planReflect, reflectFindings, buildSubjectRef } from "@/core/flywheel/flags";
 import { detectGaps } from "@/core/flywheel/gaps";
 import { computeMemberHash } from "@/core/flywheel/themes";
 import { figureCoverage, parseThemeBriefEntry, type ThemeContext } from "@/core/briefs/theme-brief-contract";
@@ -21,22 +21,17 @@ type Row = Record<string, unknown>;
 const NOW = new Date("2026-10-15T00:00:00Z");
 const finding = (ref: string, type = "surface_gap") => ({ subjectRef: ref, row: { category: "coverage_gap", subject_type: "system", subject_ref: ref, description: "d", recommended_actions: [], created_by: createdBy(GAP_NAMESPACE, type) } });
 
-test("flags: findings are born resolved and de-duplicated on (subject_ref, created_by) of ANY status", async () => {
-  const m = connectDb({ integrity_flags: [{ id: "1", subject_ref: "T1", created_by: createdBy(GAP_NAMESPACE, "surface_gap"), status: "resolved" }] });
-  const dry = await reflectResolved(m.db, GAP_NAMESPACE, [finding("T1"), finding("T2")], "pass", NOW.toISOString(), { dry: true });
-  assert.deepEqual([dry.inserted, dry.unchanged], [1, 1]);
-  assert.equal(m.wrote("integrity_flags", "insert").length, 0);
-  const r = await reflectResolved(m.db, GAP_NAMESPACE, [finding("T1"), finding("T2")], "pass", NOW.toISOString());
-  assert.deepEqual([r.inserted, r.unchanged, r.failed], [1, 1, 0]);
-  const added = (m.tables.integrity_flags as Row[]).find((f) => f.subject_ref === "T2");
-  assert.deepEqual([added?.status, added?.resolved_by], ["resolved", "pass"]);
-  assert.equal((await reflectResolved(m.db, GAP_NAMESPACE, [finding("T2")], "pass", NOW.toISOString())).inserted, 0, "a reflected finding is not inserted twice");
+test("flags: a failed insert is counted and noted, a failed read throws, and a finding already open is not inserted twice", async () => {
+  const m = connectDb({});
+  const r = await reflectFindings(m.db, GAP_NAMESPACE, [finding("T1"), finding("T2")], "pass", NOW.toISOString());
+  assert.deepEqual([r.inserted, r.unchanged, r.failed], [2, 0, 0]);
+  assert.equal((await reflectFindings(m.db, GAP_NAMESPACE, [finding("T2")], "pass", NOW.toISOString())).inserted, 0, "a reflected finding is not inserted twice");
   const bad = connectDb({}, { failures: [{ table: "integrity_flags", op: "insert", message: "denied" }] });
-  const f = await reflectResolved(bad.db, GAP_NAMESPACE, [finding("T9")], "pass", NOW.toISOString());
+  const f = await reflectFindings(bad.db, GAP_NAMESPACE, [finding("T9")], "pass", NOW.toISOString());
   assert.deepEqual([f.failed, f.inserted], [1, 0]);
   assert.ok(f.notes[0]?.includes("denied"));
   const down = connectDb({}, { failures: [{ table: "integrity_flags", op: "select", message: "down" }] });
-  await assert.rejects(() => reflectResolved(down.db, GAP_NAMESPACE, [finding("T9")], "pass", NOW.toISOString()), /down/);
+  await assert.rejects(() => reflectFindings(down.db, GAP_NAMESPACE, [finding("T9")], "pass", NOW.toISOString()), /down/);
 });
 
 test("planReflect: new rows for findings without an open flag; stale open flags whose finding is no longer made", () => {
@@ -112,9 +107,9 @@ test("forward events: the migration-307 key (item, kind, date, md5 of the text) 
 });
 
 const sigItem = (id: string, over: Row = {}): Row => ({ id, item_type: "regulation", domain: 1, title: `Item ${id}`, canonical_instrument_key: null, instrument_entity_id: null, source_id: "s1", operational_scenario_tags: [], compliance_object_tags: [], jurisdictions: [], jurisdiction_iso: [], topic_tags: [], created_at: "2026-01-01T00:00:00Z", provenance_status: "verified", is_archived: false, ...over });
-const discoveryWorld = (edges: Row[] = [], corrections: Row[] = []) => connectDb({ intelligence_items: [sigItem("a"), sigItem("b"), sigItem("c", { source_id: "other" })], item_cross_references: edges, item_corrections: corrections, obligation_objects: [] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] } });
+const discoveryWorld = (edges: Row[] = [], corrections: Row[] = []) => connectDb({ intelligence_items: [sigItem("a"), sigItem("b"), sigItem("c", { source_id: "other" })], entities: [{ entity_id: "cl:instrument:0000000000000001", kind: "instrument", canonical_name: "the fuel standard", status: "active" }], entity_refs: ["a", "b"].map((id) => ({ ref_table: "intelligence_items", ref_id: id, entity_id: "cl:instrument:0000000000000001", role: "cites_instrument", asserted_by: "test" })), item_cross_references: edges, item_corrections: corrections, obligation_objects: [] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] } });
 
-test("connection discovery: a shared source scores 0.4, is written as a provenance_discovery edge, and a manual edge or a tombstone is left alone", async () => {
+test("connection discovery: items filed under one entity score 0.85, are written as a provenance_discovery edge, and a manual edge or a tombstone is left alone", async () => {
   const m = discoveryWorld();
   const dry = await runConnectionDiscovery({ sb: m.db }, "a", { dry: true });
   assert.equal(dry.found, 1);

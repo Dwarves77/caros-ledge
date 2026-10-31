@@ -1,7 +1,7 @@
 // Ported from old_repo/src/lib/connections/write-edges.mjs (lines 1-276)
 // Ported from old_repo/src/lib/connections/pair-view.mjs (lines 1-113)
 // The ONE item_cross_references writer and the pair view. INV-187: one row per ordered pair, both directions stored and collapsed at the reader (ADR-018);
-// a machine writer owns only its own origin (provenance_discovery): it skips and COUNTS a manual or foreign-origin row and an admin-tombstoned pair,
+// a machine writer owns only its own origins (provenance_discovery, and candidate: a developing connection, upgraded in place when a later pass scores it at the threshold and deleted when it no longer scores the floor): it skips and COUNTS a manual or foreign-origin row and an admin-tombstoned pair,
 // carries an intersection basis entry through a refresh, and snapshots every row it refreshes (through an injected sink). The existing-edge read is
 // scoped to the pairs about to be written (B-0244/1983), every failed chunk is counted, and a failed read throws.
 import type { Db } from "@/core/db";
@@ -10,7 +10,7 @@ import { log } from "@/core/shared/log";
 import { isPairTombstoned, readAllCorrections, readConnectionCorrectionsForMany, tombstonedPairKeys } from "@/core/corrections";
 
 import relationships from "./data/relationships.json";
-import type { BasisEntry } from "./discover";
+import { basisWith, CANDIDATE_ORIGIN, evidenceOf, type BasisEntry, type EdgeBasis } from "./discover";
 import { basisDetailText, basisEntryKey, buildIntersectionEntry, isCrossSurface, isIntersectionEntry, type IntersectionDetail, type IntersectionPair } from "./intersections";
 import { CONFIG } from "./config";
 
@@ -23,13 +23,12 @@ export interface EdgeRow {
   target_item_id: string;
   relationship: string;
   origin: string;
-  basis?: BasisEntry[] | null;
+  basis?: EdgeBasis | null;
   score?: number | null;
 }
 const pairKey = (s: string, t: string): string => `${s}|${t}`;
 const canonKey = (a: string, b: string): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
 const stableJson = (x: unknown): string => JSON.stringify(x, (_k, v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : 1))) : v));
-const basisOf = (r: { basis?: unknown }): BasisEntry[] => (Array.isArray(r.basis) ? (r.basis as BasisEntry[]) : []);
 
 export type SnapshotSink = (table: string, priorRows: readonly EdgeRow[]) => void | Promise<void>;
 export interface WriteOpts {
@@ -52,6 +51,12 @@ const sinkOf = (sb: Db, opts: WriteOpts): SnapshotSink | undefined => opts.snaps
 export interface DiscoveredWriteResult {
   inserted: number;
   refreshed: number;
+  /** Candidates that scored the threshold this pass: origin candidate to provenance_discovery in place. */
+  upgraded: number;
+  /** Candidates deleted: not found this pass (below the floor, or beyond the cap) for a source the pass owns. */
+  candidatesDeleted: number;
+  /** A candidate found for a pair that already holds an established discovery edge: the edge stands. */
+  skippedEstablished: number;
   skippedForeignOrigin: number;
   skippedTombstoned: number;
   written: number;
@@ -92,15 +97,18 @@ async function upsertChunks(sb: Db, rows: readonly Record<string, unknown>[], ch
   }
 }
 
+const OWNED_ORIGINS: readonly string[] = [DISCOVERY_ORIGIN, CANDIDATE_ORIGIN];
+
 /**
- * Write discovered edges (relationship related, origin provenance_discovery). Tombstoned pairs and rows of another origin are skipped and counted; an own-origin
- * row is refreshed (snapshotted first) and keeps the intersection entries it already carries.
+ * Write discovered edges (relationship related; origin provenance_discovery, or candidate for a developing connection). Tombstoned pairs and rows of another origin are skipped and counted; an own-origin row is refreshed (snapshotted first), keeps the intersection entries it
+ * already carries and a reader's rationale; a candidate that now scores the threshold is upgraded in place; a candidate found for a pair that holds an established edge leaves the edge alone. `candidateSources` are the items whose developing connections this pass fully
+ * recomputed: their candidate rows it did not write again are deleted (snapshotted first).
  */
-export async function writeDiscoveredEdges(sb: Db, edges: readonly EdgeRow[], opts: WriteOpts = {}): Promise<DiscoveredWriteResult> {
-  const result: DiscoveredWriteResult = { inserted: 0, refreshed: 0, skippedForeignOrigin: 0, skippedTombstoned: 0, written: 0, failedChunks: 0, notes: [] };
-  if (!edges.length) return result;
+export async function writeDiscoveredEdges(sb: Db, edges: readonly EdgeRow[], opts: WriteOpts & { candidateSources?: readonly string[] } = {}): Promise<DiscoveredWriteResult> {
+  const result: DiscoveredWriteResult = { inserted: 0, refreshed: 0, upgraded: 0, candidatesDeleted: 0, skippedEstablished: 0, skippedForeignOrigin: 0, skippedTombstoned: 0, written: 0, failedChunks: 0, notes: [] };
+  if (!edges.length && !opts.candidateSources?.length) return result;
   const ids = [...new Set(edges.flatMap((e) => [e.source_item_id, e.target_item_id]))];
-  const tombstones = tombstonedPairKeys(await readConnectionCorrectionsForMany(sb, ids));
+  const tombstones = ids.length ? tombstonedPairKeys(await readConnectionCorrectionsForMany(sb, ids)) : new Set<string>();
   const owner = await readEdgesForPairs(sb, edges);
   const writable: EdgeRow[] = [];
   const prior: EdgeRow[] = [];
@@ -110,32 +118,55 @@ export async function writeDiscoveredEdges(sb: Db, edges: readonly EdgeRow[], op
       continue;
     }
     const existing = owner.get(pairKey(e.source_item_id, e.target_item_id));
-    if (existing?.origin && existing.origin !== DISCOVERY_ORIGIN) {
+    if (existing?.origin && !OWNED_ORIGINS.includes(existing.origin)) {
       result.skippedForeignOrigin += 1;
       continue;
     }
-    if (existing?.origin === DISCOVERY_ORIGIN) {
-      result.refreshed += 1;
-      prior.push(existing);
-      const carried = basisOf(existing).filter(isIntersectionEntry);
-      const incoming = basisOf(e);
-      writable.push(carried.length && !incoming.some(isIntersectionEntry) ? { ...e, basis: [...incoming, ...carried] } : e);
-    } else {
+    if (existing?.origin === DISCOVERY_ORIGIN && e.origin === CANDIDATE_ORIGIN) {
+      result.skippedEstablished += 1;
+      continue;
+    }
+    if (!existing) {
       result.inserted += 1;
       writable.push(e);
+      continue;
     }
+    prior.push(existing);
+    if (existing.origin === CANDIDATE_ORIGIN) {
+      result[e.origin === DISCOVERY_ORIGIN ? "upgraded" : "refreshed"] += 1;
+      writable.push(e);
+      continue;
+    }
+    result.refreshed += 1;
+    const carried = evidenceOf(existing.basis).filter(isIntersectionEntry);
+    const incoming = evidenceOf(e.basis);
+    writable.push({ ...e, basis: basisWith(existing.basis, carried.length && !incoming.some(isIntersectionEntry) ? [...incoming, ...carried] : incoming) });
   }
   const sink = sinkOf(sb, opts);
-  if (sink && prior.length) await sink("item_cross_references", prior);
+  const written = new Set(edges.map((e) => pairKey(e.source_item_id, e.target_item_id)));
+  const stale = opts.candidateSources?.length
+    ? (await fetchAllByIdChunks<EdgeRow>(opts.candidateSources, (slice) => fetchAllRows<EdgeRow>((from, to) => sb.from("item_cross_references").select("id, source_item_id, target_item_id, relationship, origin, basis, score").eq("origin", CANDIDATE_ORIGIN).in("source_item_id", slice).order("id", { ascending: true }).range(from, to) as never, { cap: 500_000 }), { chunk: 500, manyPerId: true })).filter((r) => !written.has(pairKey(r.source_item_id, r.target_item_id)))
+    : [];
+  if (sink && (prior.length || stale.length)) await sink("item_cross_references", [...prior, ...stale]);
   await upsertChunks(sb, writable as unknown as Record<string, unknown>[], opts.chunk ?? 200, "discovered", result);
+  const gone = stale.map((r) => r.id).filter((x): x is string => !!x);
+  for (let i = 0; i < gone.length; i += 100) {
+    const { error } = await sb.from("item_cross_references").delete().in("id", gone.slice(i, i + 100));
+    if (error) {
+      result.failedChunks += 1;
+      result.notes.push(`candidate delete chunk ${i} failed: ${error.message}`);
+    } else result.candidatesDeleted += Math.min(100, gone.length - i);
+  }
   return result;
 }
 
 export interface IntersectionPlan {
   inserts: EdgeRow[];
-  updates: { row: EdgeRow; basis: BasisEntry[] }[];
-  removals: { row: EdgeRow; basis: BasisEntry[] }[];
+  updates: { row: EdgeRow; basis: EdgeBasis }[];
+  removals: { row: EdgeRow; basis: EdgeBasis }[];
   deletes: EdgeRow[];
+  /** Candidate rows the intersection upgrades: the insert overwrites them. */
+  replaced: EdgeRow[];
   unchanged: number;
   skippedManual: number;
   skippedTombstoned: number;
@@ -145,7 +176,7 @@ export interface IntersectionPlan {
 function planIntersectionEdges(existingRows: readonly EdgeRow[], pairs: readonly Pick<IntersectionPair, "a" | "b" | "shared_scenarios" | "shared_objects" | "strength" | "tier">[], tombstones?: Set<string>): IntersectionPlan {
   const byKey = new Map<string, EdgeRow>();
   for (const r of existingRows) byKey.set(pairKey(r.source_item_id, r.target_item_id), r);
-  const plan: IntersectionPlan = { inserts: [], updates: [], removals: [], deletes: [], unchanged: 0, skippedManual: 0, skippedTombstoned: 0 };
+  const plan: IntersectionPlan = { inserts: [], updates: [], removals: [], deletes: [], replaced: [], unchanged: 0, skippedManual: 0, skippedTombstoned: 0 };
   const holding = new Set<string>();
   for (const p of pairs) {
     holding.add(canonKey(p.a, p.b));
@@ -156,7 +187,8 @@ function planIntersectionEdges(existingRows: readonly EdgeRow[], pairs: readonly
         continue;
       }
       const row = byKey.get(pairKey(s, t));
-      if (!row) {
+      if (!row || row.origin === CANDIDATE_ORIGIN) {
+        if (row) plan.replaced.push(row);
         plan.inserts.push({ source_item_id: s, target_item_id: t, relationship: "related", origin: DISCOVERY_ORIGIN, basis: [entry], score: entry.weight ?? null });
         continue;
       }
@@ -164,17 +196,17 @@ function planIntersectionEdges(existingRows: readonly EdgeRow[], pairs: readonly
         plan.skippedManual += 1;
         continue;
       }
-      const basis = basisOf(row);
+      const basis = evidenceOf(row.basis);
       const priorEntry = basis.find(isIntersectionEntry);
       if (priorEntry && stableJson(priorEntry) === stableJson(entry)) {
         plan.unchanged += 1;
         continue;
       }
-      plan.updates.push({ row, basis: [...basis.filter((b) => !isIntersectionEntry(b)), entry] });
+      plan.updates.push({ row, basis: basisWith(row.basis, [...basis.filter((b) => !isIntersectionEntry(b)), entry]) });
     }
   }
   for (const row of existingRows) {
-    const basis = basisOf(row);
+    const basis = evidenceOf(row.basis);
     if (!basis.some(isIntersectionEntry) || holding.has(canonKey(row.source_item_id, row.target_item_id))) continue;
     if (row.origin === "manual") {
       plan.skippedManual += 1;
@@ -182,20 +214,20 @@ function planIntersectionEdges(existingRows: readonly EdgeRow[], pairs: readonly
     }
     const rest = basis.filter((b) => !isIntersectionEntry(b));
     if (!rest.length && row.origin === DISCOVERY_ORIGIN) plan.deletes.push(row);
-    else plan.removals.push({ row, basis: rest });
+    else plan.removals.push({ row, basis: basisWith(row.basis, rest) });
   }
   return plan;
 }
 
 /** The edge rows as they would stand after the plan (what a dry run clusters over). */
 function projectEdgeRows(existingRows: readonly EdgeRow[], plan: IntersectionPlan): EdgeRow[] {
-  const drop = new Set(plan.deletes.map((r) => pairKey(r.source_item_id, r.target_item_id)));
-  const patched = new Map<string, BasisEntry[]>();
+  const drop = new Set([...plan.deletes, ...plan.replaced].map((r) => pairKey(r.source_item_id, r.target_item_id)));
+  const patched = new Map<string, EdgeBasis>();
   for (const u of [...plan.updates, ...plan.removals]) patched.set(pairKey(u.row.source_item_id, u.row.target_item_id), u.basis);
   const out: EdgeRow[] = [];
   for (const r of existingRows) {
     const k = pairKey(r.source_item_id, r.target_item_id);
-    if (!drop.has(k)) out.push(patched.has(k) ? { ...r, basis: patched.get(k) as BasisEntry[] } : r);
+    if (!drop.has(k)) out.push(patched.has(k) ? { ...r, basis: patched.get(k) as EdgeBasis } : r);
   }
   return [...out, ...plan.inserts.map((r) => ({ ...r }))];
 }
@@ -220,7 +252,7 @@ export async function writeIntersectionEdges(sb: Db, pairs: readonly Intersectio
   const plan = planIntersectionEdges(opts.existing, pairs, tombstones);
   const out: IntersectionWriteResult = { inserted: plan.inserts.length, updated: plan.updates.length, removed: plan.removals.length, deleted: plan.deletes.length, unchanged: plan.unchanged, skippedManual: plan.skippedManual, skippedTombstoned: plan.skippedTombstoned, written: 0, failedChunks: 0, notes: [], projected: null };
   if (opts.dry) return { ...out, projected: projectEdgeRows(opts.existing, plan) };
-  const priors = [...plan.updates.map((u) => u.row), ...plan.removals.map((u) => u.row), ...plan.deletes];
+  const priors = [...plan.updates.map((u) => u.row), ...plan.removals.map((u) => u.row), ...plan.deletes, ...plan.replaced];
   const sink = sinkOf(sb, opts);
   if (sink && priors.length) await sink("item_cross_references", priors);
   const upserts: Record<string, unknown>[] = [
@@ -260,7 +292,7 @@ function collapsePairs(edgeRows: readonly Pick<EdgeRow, "source_item_id" | "targ
   for (const e of edgeRows ?? []) {
     const s = e?.source_item_id;
     const t = e?.target_item_id;
-    if (!s || !t || s === t) continue;
+    if (!s || !t || s === t || e.origin === CANDIDATE_ORIGIN) continue;
     const key = canonKey(s, t);
     const [a, b] = s < t ? [s, t] : [t, s];
     let p = pairs.get(key);
@@ -269,7 +301,7 @@ function collapsePairs(edgeRows: readonly Pick<EdgeRow, "source_item_id" | "targ
       const sc = typeof e.score === "number" && Number.isFinite(e.score) ? e.score : null;
       if (sc != null) p.score = p.score == null ? sc : Math.max(p.score, sc);
     } else p.explicitly_linked = true;
-    for (const bs of basisOf(e)) {
+    for (const bs of evidenceOf(e.basis)) {
       if (isIntersectionEntry(bs)) {
         const d: IntersectionDetail | null = bs.detail && typeof bs.detail === "object" ? bs.detail : null;
         if (d && (!p.intersection || (d.strength ?? 0) > p.intersection.strength)) p.intersection = { scenarios: d.scenarios ?? [], objects: d.objects ?? [], strength: d.strength ?? 0, tier: d.tier ?? "weak" };

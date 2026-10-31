@@ -11,7 +11,12 @@ import raw from "./data/discovery.json";
 
 const num = z.number().finite();
 const schema = z.object({
-  weights: z.object({ shared_source: num, shared_scenario: num, shared_compliance_object: num, shared_jurisdiction_topic: num, shared_entity: num, shared_obligation: num }),
+  weights: z.object({ shared_source: num, shared_scenario: num, shared_compliance_object: num, shared_jurisdiction_topic: num, shared_entity: num, shared_obligation: num, coupled_entity: num }),
+  candidate: z.object({ floor: num, cap: z.number().int().positive() }),
+  missing: z.object({
+    families: z.array(z.object({ family: z.string(), classes: z.array(z.array(z.string())), eachSide: z.boolean().optional(), surfaces: z.array(z.string()).min(1) })),
+    otherwise: z.object({ family: z.string(), surfaces: z.array(z.string()).min(1) }),
+  }),
   perTagCap: z.number().int().positive(),
   threshold: num,
   limit: z.number().int().positive(),

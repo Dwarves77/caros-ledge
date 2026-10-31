@@ -3,20 +3,18 @@
 // Ported from old_repo/src/lib/connections/signal-confidence.mjs (lines 115-142)
 // Ported from old_repo/src/lib/connections/signal-confidence.mjs (lines 211-274)
 // The whole-corpus pass, one function with the guarded service client injected (the old script had a raw client and no main guard). Steps: cross-surface
-// intersections as appended basis entries; shared-entity adoption for pairs with no edge (the old decisive regulation-identifier signal, now a discovery
-// basis); label-propagation clustering into themes REPLACED WHOLESALE inside one connection_theme_runs row that stores the delta against the prior set
-// (INV-190); coverage gaps and anticipated targets as flags born resolved; every open flywheel-signal flag resolved by the pass (INV-034). A dry run writes
+// intersections as appended basis entries; label-propagation clustering into themes REPLACED WHOLESALE inside one connection_theme_runs row that stores the delta against the prior set
+// (INV-190), over the edges that connect (a developing connection and a shared source alone do not); coverage gaps and anticipated targets as flags born OPEN and resolved by the pass that no longer finds them. A dry run writes
 // nothing and returns the same counts; a second dry run over unchanged data yields an empty theme delta.
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
 import { clusterThemes, type Theme } from "@/core/flywheel/cluster";
-import { regulationEntityTokens, SIGNATURE_CAP } from "@/core/flywheel/signature";
-import { DISCOVERY_ORIGIN, readAllEdges, writeDiscoveredEdges, writeIntersectionEdges, type EdgeRow, type SnapshotSink } from "@/core/flywheel/edges";
-import { ANTICIPATE_NAMESPACE, createdBy, GAP_NAMESPACE, readFlagKeys, reflectResolved, SIGNAL_NAMESPACE, type FlagCounts } from "@/core/flywheel/flags";
+import { SIGNATURE_CAP } from "@/core/flywheel/signature";
+import { readAllEdges, writeIntersectionEdges, type SnapshotSink } from "@/core/flywheel/edges";
+import { ANTICIPATE_NAMESPACE, createdBy, GAP_NAMESPACE, reflectFindings, type FlagCounts } from "@/core/flywheel/flags";
 import { anticipateFindings, computeAnticipatedTargets, detectGaps, gapFindings, type ForwardEventRow } from "@/core/flywheel/gaps";
 import { detectIntersections, type IntersectionItem } from "@/core/flywheel/intersections";
 import { diffThemes, type ThemeDelta } from "@/core/flywheel/themes";
-import { CONFIG } from "@/core/flywheel/config";
 import type { RunResult } from "@/core/sources/run-result";
 
 export interface CorpusDeps {
@@ -32,42 +30,10 @@ export interface CorpusInput {
 interface CorpusItem extends IntersectionItem {
   jurisdiction_iso?: string[] | null;
   added_date?: string | null;
-  title?: string | null;
   topic_tags?: string[] | null;
   canonical_instrument_key?: string | null;
-  instrument_entity_id?: string | null;
 }
-const ITEM_COLUMNS = "id, item_type, domain, priority, jurisdiction_iso, added_date, title, topic_tags, canonical_instrument_key, operational_scenario_tags, compliance_object_tags, related_items";
-const PER_TOKEN_ITEM_CAP = 6;
-
-/** Pairs of items that name the same regulation identifier in their titles and share no edge in either direction: they get a shared_entity edge in both directions. */
-function sharedEntityEdges(items: readonly { id: string; title?: string | null }[], existing: readonly Pick<EdgeRow, "source_item_id" | "target_item_id">[], entityTokens: (title: string | null | undefined) => string[]): EdgeRow[] {
-  const connected = new Set(existing.map((e) => (e.source_item_id < e.target_item_id ? `${e.source_item_id}|${e.target_item_id}` : `${e.target_item_id}|${e.source_item_id}`)));
-  const byToken = new Map<string, string[]>();
-  for (const it of items) for (const t of entityTokens(it.title)) byToken.set(t, [...(byToken.get(t) ?? []), it.id]);
-  const byPair = new Map<string, { a: string; b: string; values: Set<string> }>();
-  for (const token of [...byToken.keys()].sort()) {
-    const ids = [...new Set(byToken.get(token))].sort().slice(0, PER_TOKEN_ITEM_CAP);
-    for (let i = 0; i < ids.length; i += 1) {
-      for (let j = i + 1; j < ids.length; j += 1) {
-        const [a, b] = [ids[i] as string, ids[j] as string];
-        if (connected.has(`${a}|${b}`)) continue;
-        const p = byPair.get(`${a}|${b}`) ?? { a, b, values: new Set<string>() };
-        p.values.add(token.startsWith("reg:") ? token.slice(4) : token);
-        byPair.set(`${a}|${b}`, p);
-      }
-    }
-  }
-  const weight = CONFIG.weights.shared_entity;
-  const out: EdgeRow[] = [];
-  for (const key of [...byPair.keys()].sort()) {
-    const { a, b, values } = byPair.get(key) as { a: string; b: string; values: Set<string> };
-    const basis = [{ signal: "shared_entity", detail: `both name ${[...values].sort().map((v) => `"${v}"`).join(", ")} in their titles`, weight }];
-    for (const [s, t] of [[a, b], [b, a]] as const) out.push({ source_item_id: s, target_item_id: t, relationship: "related", origin: DISCOVERY_ORIGIN, basis, score: Math.min(1, weight) });
-  }
-  return out;
-}
-
+const ITEM_COLUMNS = "id, item_type, domain, priority, jurisdiction_iso, added_date, topic_tags, canonical_instrument_key, operational_scenario_tags, compliance_object_tags, related_items";
 export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<RunResult<{ themeDelta: ThemeDelta | null; themes: number }>> {
   const { sb } = deps;
   const notes: string[] = [];
@@ -85,15 +51,9 @@ export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<
   notes.push(...inter.notes);
   if (!input.dry && inter.failedChunks) return { counts, outcome: "failed", notes: [...notes, "refusing to cluster over a half-written graph"], data: { themeDelta: null, themes: 0 } };
 
-  const sharedEdges = sharedEntityEdges(items, input.dry ? (inter.projected ?? edges) : edges, regulationEntityTokens);
-  const shared = input.dry ? { written: 0, failedChunks: 0, notes: [] as string[] } : await writeDiscoveredEdges(sb, sharedEdges, snapshotOpts);
-  Object.assign(counts, { shared_entity_edges: sharedEdges.length, shared_entity_written: shared.written, shared_entity_failed_chunks: shared.failedChunks });
-  if (shared.failedChunks) failed += shared.failedChunks;
-  notes.push(...shared.notes);
-
   edges = input.dry ? (inter.projected ?? edges) : await readAllEdges(sb);
   const nodes = items.map((it) => ({ id: it.id, item_type: it.item_type ?? null, domain: it.domain ?? null, dates: it.added_date }));
-  const clustered = clusterThemes(nodes, edges.map((e) => ({ source: e.source_item_id, target: e.target_item_id, score: e.score ?? null, basis: e.basis ?? null })));
+  const clustered = clusterThemes(nodes, edges.map((e) => ({ source: e.source_item_id, target: e.target_item_id, score: e.score ?? null, basis: e.basis ?? null, origin: e.origin })));
 
   const wsRes = await sb.from("workspace_settings").select("jurisdiction_weights").limit(1);
   if (wsRes.error) throw new Error(`workspace_settings read failed: ${wsRes.error.message}`);
@@ -130,21 +90,12 @@ export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<
       const ins = await sb.from("connection_themes").insert(rows);
       if (ins.error) throw new Error(`connection_themes insert failed: ${ins.error.message}`);
     }
-    const reflected: FlagCounts[] = [await reflectResolved(sb, GAP_NAMESPACE, gapFindings(gaps), "corpus-pass", nowIso), await reflectResolved(sb, ANTICIPATE_NAMESPACE, anticipateFindings(anticipated), "corpus-pass", nowIso)];
+    const reflected: FlagCounts[] = [await reflectFindings(sb, GAP_NAMESPACE, gapFindings(gaps), "corpus-pass", nowIso, { owns: (by) => !by.startsWith(createdBy(GAP_NAMESPACE, "pattern_")) }), await reflectFindings(sb, ANTICIPATE_NAMESPACE, anticipateFindings(anticipated), "corpus-pass", nowIso)];
     for (const r of reflected) {
       failed += r.failed;
       notes.push(...r.notes);
     }
-    Object.assign(counts, { gap_flags_inserted: reflected[0]?.inserted ?? 0, anticipate_flags_inserted: reflected[1]?.inserted ?? 0 });
-    const open = (await readFlagKeys(sb, SIGNAL_NAMESPACE, "open")).map((f) => f.id);
-    if (open.length) {
-      const res = await sb.from("integrity_flags").update({ status: "resolved", resolved_at: nowIso, resolved_by: "corpus-pass", resolution_note: `superseded: shared regulation identifiers are a discovery basis (${createdBy(SIGNAL_NAMESPACE, "shared_regulation_identifier")}); no signal flag stays open after a pass` }).in("id", open);
-      if (res.error) {
-        failed += open.length;
-        notes.push(`signal flag resolution failed: ${res.error.message}`);
-      }
-    }
-    counts.signal_flags_resolved = failed ? 0 : open.length;
+    Object.assign(counts, { gap_flags_inserted: reflected[0]?.inserted ?? 0, gap_flags_resolved: reflected[0]?.resolved ?? 0, anticipate_flags_inserted: reflected[1]?.inserted ?? 0, anticipate_flags_resolved: reflected[1]?.resolved ?? 0 });
     const done = await sb.from("connection_theme_runs").update({ finished_at: deps.now().toISOString(), status: "ok", nodes_clustered: clustered.nodesClustered, edges_used: clustered.edgesUsed, themes_written: rows.length, gaps_flagged: gaps.length, rounds: clustered.rounds, theme_delta: themeDelta }).eq("id", runId);
     if (done.error) throw new Error(`connection_theme_runs close failed: ${done.error.message}`);
     const verify = await sb.from("connection_themes").select("id", { count: "exact", head: true });
