@@ -176,5 +176,10 @@
       "entities": "live reference data: the self-check reads every entity to prove each existing kind, id and entity_level still satisfies the new checks (a whole-table invariant; production holds the rows, the CI database none)",
       "entity_relations": "live reference data: the self-check reads every relation to prove each existing relation matches the new shape check"
     }
+  },
+  "0147_ets_maritime_item_replaced_by": {
+    "unscopedReads": {
+      "intelligence_items": "a repair of one named production row (ff4064ab replaced by 15f63ea9): the self-check reads exactly those two ids; a database that does not hold ff4064ab (the CI database) changes nothing and asserts nothing about live rows"
+    }
   }
 }

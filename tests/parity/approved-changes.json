@@ -157,13 +157,6 @@
       "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: Connected intelligence is drawn only while the item has a theme, a connection that states a reason, a structured row tied to its entities or a pattern (src/ui/detail/CrossPageSection.tsx). THEME-1a (#187, re-cluster to 100 themes) left the baseline research item (Tyndall Centre, UK climate adaptation) in no theme, and its one edge is a provenance_discovery edge, which is source-only and never rendered as a connection. Data, not design: retire when the baseline is recaptured from production or the item joins a theme."
     },
     {
-      "id": "r2d-lead-time-not-drawn",
-      "route": "market",
-      "kind": "heading",
-      "match": "^2:Lead-time position$",
-      "ruling": "Register surfaces:15 (tests/derived/market-stored-only.test.ts): the lead-time section is drawn only when rows exist or the producer that writes them is implemented. Production holds 0 market_series rows with series_key like 'sbti:%' (read-only query 2026-10-20: 2,747 rows in 16 series, none SBTi) and the SBTi producer is licence-blocked and registered as not implemented, so the baseline's empty section had no data to show. Retire when the baseline is recaptured from production after the R2d merge."
-    },
-    {
       "id": "r2d-roadmap-copy-evidence-research",
       "route": "research",
       "kind": "control",
@@ -180,16 +173,6 @@
     {
       "id": "ui1-list-reads-cleanly-regulations",
       "route": "regulations",
-      "kind": [
-        "control",
-        "row"
-      ],
-      "match": "^(button:(Immediate|Action|Monitor|Awareness) |button:[A-Za-z0-9_-]+$|checkbox:|div:)",
-      "ruling": "Brief UI-1 (operator 2026-10-20, \"Fix the UI. Make it correct\"; the code decides the look, the ratified UX laws stand): the list surfaces read cleanly. The unscored impact meter is one dash, an absence reads in sentence case, source bias is one muted line on the phone, band tiles name their window whole (\"background\" is \"later\"), and facet labels are sentence case from one label table, so a baseline band-tile or facet-checkbox name and a baseline row key (its text carries the old absence and bias words) differ by design. Covers only a baseline band tile button, a facet checkbox or facet chip (a single-word button on the phone) and a row key. Retire this entry when the baseline is recaptured from production right after the UI-1 merge."
-    },
-    {
-      "id": "ui1-list-reads-cleanly-market",
-      "route": "market",
       "kind": [
         "control",
         "row"
