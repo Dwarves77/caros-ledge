@@ -114,13 +114,14 @@ async function writeRefs(sb: Db, refs: readonly RefRow[], held: ReadonlySet<stri
 }
 
 /** What the mining would write over the database as it stands: every ref planned (new and already held), the keys held, and the counts. Reads only. */
-export async function planRefs(sb: Db): Promise<{ plan: RefRow[]; heldKeys: Set<string>; counts: Record<string, number> }> {
+/** `tables`: mine only these typed tables (the producer tables the propagate stage wrote); absent, the full pass over the claims, the items and every typed table. */
+export async function planRefs(sb: Db, tables?: readonly string[]): Promise<{ plan: RefRow[]; heldKeys: Set<string>; counts: Record<string, number> }> {
   const [entities, identifiers, existing, relations, claims] = await Promise.all([
     readAll<{ entity_id: string; kind: string; canonical_name: string }>(sb, "entities", "entity_id,kind,canonical_name", ["entity_id"]),
     readAll<{ entity_id: string; value: string }>(sb, "entity_identifiers", "entity_id,value", ["entity_id", "scheme", "value"], (q) => q.eq("scheme", "UNLOCODE")),
     readAll<{ ref_table: string; ref_id: string; entity_id: string; role: string; asserted_by: string; basis: { how?: string; span?: unknown; column?: unknown; value?: unknown } | null }>(sb, "entity_refs", "ref_table,ref_id,entity_id,role,asserted_by,basis", ["ref_table", "ref_id", "entity_id", "role"]),
     readAll<{ parent_entity_id: string; child_entity_id: string }>(sb, "entity_relations", "parent_entity_id,child_entity_id", ["parent_entity_id", "child_entity_id", "relation"]),
-    readAll<{ id: string; claim_text: string; claim_kind: string; intelligence_item_id: string | null }>(sb, "section_claim_provenance", "id,claim_text,claim_kind,intelligence_item_id", ["id"]),
+    tables ? Promise.resolve([]) : readAll<{ id: string; claim_text: string; claim_kind: string; intelligence_item_id: string | null }>(sb, "section_claim_provenance", "id,claim_text,claim_kind,intelligence_item_id", ["id"]),
   ]);
   // every ref already held is kept: this pass adds and never retires (a ref is not "prose" because its entity is not in a file)
   const held = new Map<string, string[]>();
@@ -141,7 +142,7 @@ export async function planRefs(sb: Db): Promise<{ plan: RefRow[]; heldKeys: Set<
   const counts: Record<string, number> = { claims: claims.length, claims_resolved: fromClaims.resolved, refs_claims_planned: fromClaims.refs.length, refs_items_from_claims_planned: fromClaims.itemRefs.length, resolver_codes: resolver.codes.size, resolver_instruments: resolver.instruments.size, refs_held: existing.length };
   for (const r of fromClaims.refs) counts[`claim_refs_${ctx.kinds.get(r.entity_id) ?? "entity"}`] = (counts[`claim_refs_${ctx.kinds.get(r.entity_id) ?? "entity"}`] ?? 0) + 1;
   for (const [kind, n] of Object.entries(fromClaims.unresolved)) counts[`claims_unresolved_${kind.toLowerCase()}`] = n;
-  for (const map of [ITEM_MAP, ...COLUMNS]) {
+  for (const map of tables ? COLUMNS.filter((m) => tables.includes(m.table)) : [ITEM_MAP, ...COLUMNS]) {
     const columns = [map.pk, ...map.maps.map((m) => m.column)];
     const rows = await readAll(sb, map.table, [...new Set(columns)].join(","), [map.pk]);
     const refs = columnRefs(map, rows, ctx);
@@ -157,10 +158,10 @@ export async function planRefs(sb: Db): Promise<{ plan: RefRow[]; heldKeys: Set<
   return { plan, heldKeys, counts };
 }
 
-export async function mineRefs(deps: { sb: Db; now: () => Date }, input: { dry: boolean }): Promise<RunResult<{ ids: Record<string, string[]> }>> {
+export async function mineRefs(deps: { sb: Db; now: () => Date }, input: { dry: boolean; tables?: readonly string[] }): Promise<RunResult<{ ids: Record<string, string[]> }>> {
   const { sb } = deps;
   const notes: string[] = [];
-  const { plan, heldKeys, counts } = await planRefs(sb);
+  const { plan, heldKeys, counts } = await planRefs(sb, input.tables);
   if (input.dry) return { counts, outcome: "ok", notes: [...notes, "dry: nothing written"], data: { ids: {} } };
   counts.refs_written = await writeRefs(sb, plan, heldKeys, notes);
   return { counts, outcome: notes.length ? "partial" : "ok", notes, data: { ids: {} } };

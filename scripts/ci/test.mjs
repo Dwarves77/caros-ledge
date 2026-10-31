@@ -5,6 +5,7 @@ import { availableParallelism } from "node:os";
 import { isMain } from "../lib/fs.mjs";
 
 export const testConcurrency = (cores = availableParallelism()) => Math.max(2, Math.floor(cores / 2));
-export const testArgs = (cores) => ["--import", "./tests/_support/register.mjs", "--test", `--test-concurrency=${testConcurrency(cores)}`, "tests/**/*.test.mjs", "tests/**/*.test.ts"];
+/** `files` narrows the run to those test files (the pre-push hook's changed-module tests); by default every test file. */
+export const testArgs = (cores, files = ["tests/**/*.test.mjs", "tests/**/*.test.ts"]) => ["--import", "./tests/_support/register.mjs", "--test", `--test-concurrency=${testConcurrency(cores)}`, ...files];
 
 if (isMain(import.meta.url)) process.exit(spawnSync(process.execPath, testArgs(), { stdio: "inherit" }).status ?? 1);
