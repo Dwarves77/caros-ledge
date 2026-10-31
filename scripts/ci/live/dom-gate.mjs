@@ -14,6 +14,8 @@ export const domFacts = () => {
   const words = (e) => (e?.textContent ?? "").replace(/\s+/g, " ").trim();
   const all = (s, root = document) => [...root.querySelectorAll(s)];
   const radar = document.querySelector('[data-audit="flywheel-radar"]');
+  const ribbon = document.querySelector('[data-audit="headline-series"]');
+  const board = document.querySelector('[data-audit="market-series-board"]');
   return {
     text: document.body.innerText,
     accountMenu: Boolean(document.querySelector('[aria-label="Open account menu"]')),
@@ -21,6 +23,8 @@ export const domFacts = () => {
     rows: all('[data-part="list-row"]').map((r) => ({ title: words(r.querySelector(".cl-row-title")), why: words(r.querySelector(".cl-row-summary")), href: r.querySelector("a.cl-row-link")?.getAttribute("href") ?? null })),
     connections: all('[data-part="item-connections"] .cl-detail-link').map((a) => ({ label: words(a.querySelector(".cl-detail-label")), title: words(a.querySelector(".cl-detail-link-title")), reason: words(a.querySelector(".cl-detail-link-context")) })),
     triggers: all(".cl-trigger-row .cl-trigger-text").map(words),
+    ribbon: ribbon ? { caption: words(ribbon.querySelector('[class*="hCaption"]')), cards: all('[data-audit="headline-card"]', ribbon).map((c) => words(c.querySelector('[data-audit="headline-card-label"] span'))) } : null,
+    board: board ? { rows: all('[class*="seriesRow"]', board).map((r) => ({ hasLatest: !r.querySelector('[class*="seriesValue"]')?.hasAttribute("title") })), unregistered: Number(/(\d+) series from a source not yet listed/.exec(board.innerText)?.[1] ?? 0) } : null,
     radar: radar ? { links: all("a", radar).length, absence: Boolean(radar.querySelector('[data-part="absence"], [data-part="state-note"]')) } : null,
   };
 };
@@ -35,6 +39,7 @@ const RAW = [
 ];
 const PENDING = /Narrative synthesis pending|Stale: this synthesis/;
 const INSTRUMENT = /\b\d{1,4}\/\d{1,4}\b/;
+const CAPTION = /^(\d+) famil(?:y|ies) from (\d+) series/;
 const WORDS = (s) => s.split(/\s+/).filter(Boolean).length;
 const pages = (facts) => [...facts.lists, ...facts.details];
 /** A page the gate did not read (it errored, or ended on the sign-in page) or no page at all: an assertion over it would pass vacuously, so each one reports it as a violation. */
@@ -77,6 +82,22 @@ export const EVALUATORS = {
     const seen = `${us.panel}
 ${us.profile.facts?.text ?? ""}`.toLowerCase();
     return [...unread([us.profile], `${params.region} profile`), ...params.forbidden.filter((w) => seen.includes(w.toLowerCase())).map((w) => `${us.profile.path}: the ${params.region} profile shows "${w}"`)];
+  },
+  "ribbon-complete": (f) => {
+    const ribbon = f.lists.find((p) => p.path === "/market")?.facts?.ribbon;
+    const board = f.series?.facts?.board;
+    if (!ribbon) return ["/market: no headline ribbon drawn"];
+    if (!board) return [`/market/series: no series board read${f.series?.error ? ` (${f.series.error})` : ""}`];
+    const said = CAPTION.exec(ribbon.caption);
+    if (!said) return [`/market: the ribbon's "N families from M series" line was not found, read "${ribbon.caption.slice(0, 80)}"`];
+    const [families, series] = [Number(said[1]), Number(said[2])];
+    const members = ribbon.cards.reduce((n, label) => n + 1 + Number(/^\+(\d+)/.exec(label)?.[1] ?? 0), 0);
+    const latest = board.rows.filter((r) => r.hasLatest).length;
+    return [
+      ...(families === ribbon.cards.length ? [] : [`/market: the ribbon says ${families} families but draws ${ribbon.cards.length} card(s)`]),
+      ...(members >= latest && members <= latest + board.unregistered ? [] : [`/market: the ${ribbon.cards.length} card(s) hold ${members} series (${families} families) but the series board holds ${latest} series with a latest value${board.unregistered ? ` plus ${board.unregistered} not yet listed` : ""}: a series with a latest value is always a headline card`]),
+      ...(series >= members && series === board.rows.length + board.unregistered ? [] : [`/market: the ribbon says ${series} series but the series board lists ${board.rows.length + board.unregistered}`]),
+    ];
   },
   "radar-present": (f) => {
     const home = f.lists.find((p) => p.path === "/");
@@ -147,7 +168,7 @@ async function scopedProfile(context, base, region) {
   }
 }
 
-/** The facts of one run: the five lists, every distinct detail link probed, the first detail of each list, and the scoped profile. A page that cannot load is a fact ({ error }), never a throw. */
+/** The facts of one run: the five lists, every distinct detail link probed, the first detail of each list, the series board the market ribbon links to, and the scoped profile. A page that cannot load is a fact ({ error }), never a throw. */
 export async function collectFacts(context, base, { headers = {}, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = console.log, assertions = loadAssertions() } = {}) {
   const lists = [];
   for (const path of LIST_PAGES) lists.push({ path, ...(await loadPage(context, base, path, { extract: domFacts })) });
@@ -158,7 +179,8 @@ export async function collectFacts(context, base, { headers = {}, sleep = (ms) =
     const first = p.facts?.rows.find((r) => r.href);
     if (first) details.push({ path: pathOf(first.href), ...(await loadPage(context, base, first.href, { extract: domFacts })) });
   }
+  const series = { path: "/market/series", ...(await loadPage(context, base, "/market/series", { extract: domFacts })) };
   const scoped = await scopedProfile(context, base, assertions.find((a) => a.id === "scoped-grid")?.params.region ?? "United States").catch((e) => ({ reason: e instanceof Error ? e.message : String(e) }));
   log(`signed-in DOM gate: ${lists.length} list(s), ${links.length} detail link(s) probed, ${details.length} detail(s) read`);
-  return { lists, links, details, scoped };
+  return { lists, links, details, series, scoped };
 }

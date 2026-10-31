@@ -11,13 +11,17 @@ import { EVALUATORS, formatTable, gateResults, linksOf, loadAssertions } from '.
 import { storageStateOf } from '../../scripts/ci/live-session.mjs';
 
 /** Once armed, never disarmed. A lane that arms an assertion in its own PR adds the id here in the same PR. */
-const ARMED_FLOOR = ['signed-in', 'no-404'];
+const ARMED_FLOOR = ['signed-in', 'no-404', 'ribbon-complete'];
 
 const row = (over = {}) => ({ title: 'Regulation (EU) 2024/1157', why: 'Sets the rules for shipments of waste across borders.', href: '/regulations/a?list=regulations', ...over });
-const page = (path, facts = {}, over = {}) => ({ path, status: 200, finalUrl: `https://x.test${path}`, facts: { text: 'A page a reader sees', accountMenu: true, title: 'Regulation (EU) 2024/1157', rows: [row()], connections: [], triggers: [], radar: { links: 2, absence: false }, ...facts }, ...over });
+const page = (path, facts = {}, over = {}) => ({ path, status: 200, finalUrl: `https://x.test${path}`, facts: { text: 'A page a reader sees', accountMenu: true, title: 'Regulation (EU) 2024/1157', rows: [row()], connections: [], triggers: [], radar: { links: 2, absence: false }, ribbon: null, board: null, ...facts }, ...over });
+/** The market ribbon: 3 families from 5 series (two cards each fold one more member); the board holds those 5 series, all with a latest value. */
+const ribbon = (over = {}) => ({ caption: '3 families from 5 series · dated, sourced observations · Series board →', cards: ['', '+1 quotes', '+1 rates'], ...over });
+const board = (over = {}) => ({ rows: Array.from({ length: 5 }, () => ({ hasLatest: true })), unregistered: 0, ...over });
 /** Facts from a run in which every assertion passes. */
 const good = () => ({
-  lists: ['/', '/regulations', '/market', '/operations', '/research'].map((p) => page(p)),
+  lists: ['/', '/regulations', '/market', '/operations', '/research'].map((p) => page(p, p === '/market' ? { ribbon: ribbon() } : {})),
+  series: page('/market/series', { board: board() }),
   links: [{ href: '/regulations/a', from: '/', status: 200, finalUrl: 'https://x.test/regulations/a' }],
   details: [page('/regulations/a', { connections: [{ label: 'References', title: 'Another act', reason: 'Bound by shared regulation identifier' }], triggers: ['By 21 May 2027 under 2024/1157 the Commission shall adopt an act.'] })],
   scoped: { panel: 'United States grid', profile: page('/operations/us') },
@@ -46,6 +50,7 @@ test('every assertion passes on good facts and trips on its own planted defect',
     'no-pending-text': (f) => { f.details[0].facts.text = 'Narrative synthesis pending for this cluster.'; },
     'own-mandates': (f) => { f.details[0].facts.triggers.push('The Commission shall adopt an act under 2023/9999.'); },
     'scoped-grid': (f) => { f.scoped.profile.facts.text = 'Substations monitored: UK Power Networks'; },
+    'ribbon-complete': (f) => { f.lists[2].facts.ribbon = ribbon({ caption: '2 families from 5 series', cards: ['', '+1 quotes'] }); },
     'radar-present': (f) => { f.lists[0].facts.radar = null; },
   };
   const clean = gateResults(good(), loadAssertions().map((a) => ({ ...a, armed: true })));
@@ -104,12 +109,35 @@ test('INV-1: a missing session file and an empty or expired storage state each m
   assert.ok(empty[0].failed >= 1, 'an empty storage state ends every page on /login: the armed signed-in assertion fails');
   const findings = await signedInDom({ io: { base: 'https://x.test', sessionContext: async () => fakeContext({}), bypass: {}, log: () => {} } });
   assert.ok(findings.some((x) => x.severity === 'fail' && x.url === 'signed-in'), 'the failing assertion is named');
-  const signed = (p) => ({ finalPath: p, facts: { text: 'A reader sees', accountMenu: true, title: 'Title', rows: [{ title: 'T', why: 'w', href: '/regulations/a' }], connections: [], triggers: [], radar: null } });
-  const live = await asRunner(async () => fakeContext({ '/': signed('/'), '/regulations': signed('/regulations'), '/market': signed('/market'), '/operations': signed('/operations'), '/research': signed('/research'), '/regulations/a': signed('/regulations/a') }));
+  const signed = (p, over = {}) => ({ finalPath: p, facts: { text: 'A reader sees', accountMenu: true, title: 'Title', rows: [{ title: 'T', why: 'w', href: '/regulations/a' }], connections: [], triggers: [], radar: null, ribbon: p === '/market' ? ribbon() : null, board: p === '/market/series' ? board() : null, ...over } });
+  const live = await asRunner(async () => fakeContext({ '/': signed('/'), '/regulations': signed('/regulations'), '/market': signed('/market'), '/operations': signed('/operations'), '/research': signed('/research'), '/market/series': signed('/market/series'), '/regulations/a': signed('/regulations/a') }));
   assert.equal(live[0].failed, 0, 'a signed-in run whose armed assertions pass is green; the unarmed ones only warn');
   assert.ok(live[0].warnings > 0, 'the unarmed assertions that would fail are printed as warnings');
-  const gone = await asRunner(async () => fakeContext({ '/': signed('/'), '/regulations': signed('/regulations'), '/market': signed('/market'), '/operations': signed('/operations'), '/research': signed('/research') }, { '/regulations/a': 404 }));
+  const gone = await asRunner(async () => fakeContext({ '/': signed('/'), '/regulations': signed('/regulations'), '/market': signed('/market'), '/operations': signed('/operations'), '/research': signed('/research'), '/market/series': signed('/market/series') }, { '/regulations/a': 404 }));
   assert.equal(gone[0].failed, 1, 'a 404 detail link is an armed failure');
+});
+
+test('ribbon-complete (ruling 56): fewer families than the board holds FAILs (the PR 181 shape), equal PASSes, a missing or unreadable ribbon line FAILs, never a vacuous pass', () => {
+  const judge = (ribbonFacts, boardFacts = board(), series = true) => {
+    const f = good();
+    f.lists[2].facts.ribbon = ribbonFacts;
+    f.series = series ? page('/market/series', { board: boardFacts }) : { path: '/market/series', error: 'timeout', finalUrl: 'https://x.test/market/series' };
+    return EVALUATORS['ribbon-complete'](f);
+  };
+  assert.deepEqual(judge(ribbon()), [], 'equal: 3 cards hold 5 series, the board holds 5 with a latest value');
+  const dropped = judge(ribbon({ caption: '2 families from 5 series', cards: ['', '+1 quotes'] }));
+  assert.equal(dropped.length, 1);
+  assert.match(dropped[0], /hold 3 series .* board holds 5 series with a latest value/);
+  assert.ok(judge(ribbon({ caption: '4 families from 5 series' })).some((l) => /says 4 families but draws 3/.test(l)), 'the line and the cards disagree');
+  assert.ok(judge(ribbon({ caption: '3 families from 7 series' })).some((l) => /says 7 series but the series board lists 5/.test(l)), 'M is the board count');
+  assert.ok(judge(ribbon(), board({ rows: [...board().rows, { hasLatest: false }], unregistered: 0 })).some((l) => /lists 6/.test(l)), 'a series without a latest value is on the board but not owed a card');
+  assert.deepEqual(judge(ribbon({ caption: '3 families from 6 series' }), board({ rows: board().rows, unregistered: 1 })), [], 'an unregistered series may or may not hold a latest value: both stand');
+  assert.deepEqual(judge(null), ['/market: no headline ribbon drawn']);
+  assert.ok(judge(ribbon({ caption: 'Headline series' }))[0].includes('line was not found'), 'no "N families from M series" line');
+  assert.ok(judge(ribbon(), null, false)[0].includes('no series board read'), 'no board: nothing to compare to, never a pass');
+  const nomarket = good();
+  nomarket.lists = nomarket.lists.filter((p) => p.path !== '/market');
+  assert.deepEqual(EVALUATORS['ribbon-complete'](nomarket), ['/market: no headline ribbon drawn']);
 });
 
 test('an assertion over pages that were never read does not pass vacuously', () => {
