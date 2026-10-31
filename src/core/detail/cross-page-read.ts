@@ -8,7 +8,7 @@ import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { surfaceHref, surfaceOf } from "@/core/routing";
 import { log } from "@/core/shared/log";
 import { buildIntersectionView, type ConnectionIn, type ResourceLookup } from "@/core/flywheel";
-import { type ItemExtras, readItemExtras, readLinkedBy } from "@/features/flywheel/radar/read";
+import { type ItemExtras, nameChips, readItemExtras, readLinkedBy } from "@/features/flywheel/radar/read";
 import { compareThemes, HORIZONS, inThemeScope, themeAnalysisView, themeChips, themeForItem, type BriefRow, type MemberRow, type ThemeAnalysisView, type ThemeEventRow, type ThemeRow } from "@/core/themes";
 
 import { readCustomerInferences, type InferenceView } from "./inference-view";
@@ -99,10 +99,10 @@ export async function readCrossPage(db: Db, itemUuid: string, surface: string, i
 /** The theme chips of a list page (`surface` null is the cross-page view the dashboard reads). Throws on a failed read; the caller says the strip did not load. */
 export async function readThemeChips(db: Db, opts: { surface: string | null; minPages?: number; max?: number }) {
   const [all, briefs] = await Promise.all([readThemes(db), readBriefs(db)]);
-  const key = (t: ThemeRow) => ({ hasBrief: briefs.some((b) => b.theme_id === t.id), surfaces: (t.surfaces ?? []).length, members: (t.member_ids ?? []).length, convergence: t.convergence ?? 0, id: t.id });
+  const key = (t: ThemeRow) => ({ hasBrief: briefs.some((b) => b.theme_id === t.id && !b.superseded_at), surfaces: (t.surfaces ?? []).length, members: (t.member_ids ?? []).length, convergence: t.convergence ?? 0, id: t.id });
   // the same scope and order themeChips applies, so the 25 read are the 25 it can show
   const themes = all.filter((t) => inThemeScope(key(t).members, key(t).surfaces) && (opts.surface ? (t.surfaces ?? []).includes(opts.surface) : key(t).surfaces >= (opts.minPages ?? 1))).sort((a, b) => compareThemes(key(a), key(b))).slice(0, 25);
   if (themes.length === 0) return [];
   const items = await readVerifiedItemsByIds(db, themes.flatMap((t) => t.member_ids ?? []));
-  return themeChips({ themes, items, briefs, surface: opts.surface, minPages: opts.minPages ?? 1, max: opts.max ?? 6 });
+  return nameChips(db, themeChips({ themes, items, briefs, surface: opts.surface, minPages: opts.minPages ?? 1, max: opts.max ?? 6 }), themes);
 }

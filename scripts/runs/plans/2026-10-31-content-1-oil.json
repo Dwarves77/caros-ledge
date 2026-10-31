@@ -1,0 +1,21 @@
+{
+  "ruling": "coordinator 2026-10-31 (CONTENT-1 Part C): author the six EU Weekly Oil Bulletin market signal briefs (4fae403a, 70869a22, 32783a47, 2d306cc6, 180b8163, 0ee667cc) through the item-briefs kit, the landing page as the source of what the bulletin is and the held market_series observations carried in trajectory_points; 0ee667cc is overwritten. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "content-1-oil-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-10-31-content-1-oil.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "content-1-oil-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-31-content-1-oil.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

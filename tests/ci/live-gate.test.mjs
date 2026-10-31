@@ -11,7 +11,7 @@ import { EVALUATORS, formatTable, gateResults, linksOf, loadAssertions } from '.
 import { storageStateOf } from '../../scripts/ci/live-session.mjs';
 
 /** Once armed, never disarmed. A lane that arms an assertion in its own PR adds the id here in the same PR. */
-const ARMED_FLOOR = ['signed-in', 'no-404', 'ribbon-complete', 'rows-have-why', 'connections-have-reason', 'radar-present'];
+const ARMED_FLOOR = ['signed-in', 'no-404', 'ribbon-complete', 'rows-have-why', 'connections-have-reason', 'radar-present', 'no-raw-ids'];
 
 const row = (over = {}) => ({ title: 'Regulation (EU) 2024/1157', why: 'Sets the rules for shipments of waste across borders.', href: '/regulations/a?list=regulations', ...over });
 const page = (path, facts = {}, over = {}) => ({ path, status: 200, finalUrl: `https://x.test${path}`, facts: { text: 'A page a reader sees', accountMenu: true, title: 'Regulation (EU) 2024/1157', rows: [row()], connections: [], triggers: [], radar: { links: 2, absence: false }, ribbon: null, board: null, ...facts }, ...over });
@@ -45,6 +45,7 @@ test('every assertion passes on good facts and trips on its own planted defect',
     'signed-in': (f) => { f.lists[1].finalUrl = 'https://x.test/login?next=/regulations'; },
     'no-404': (f) => { f.links.push({ href: '/regulations/gone', from: '/regulations', status: 404, finalUrl: 'https://x.test/regulations/gone' }); },
     'no-raw-ids': (f) => { f.details[0].facts.text = 'Linked by pattern_shared_scenario · 0.45 to 6666d5a0-82bb-4b17-b3ef-d47e8d0b7ee3 and fuel_gap'; },
+    'reasons-are-pairwise': (f) => { f.details[0].facts.connections = ['A', 'B', 'C'].map((title) => ({ label: 'References', title, reason: 'Kerosene-type jet fuel spot price fell 5.3% over the last week.' })); },
     'rows-have-why': (f) => { f.lists[2].facts.rows.push(row({ why: '' })); },
     'connections-have-reason': (f) => { f.details[0].facts.connections.push({ label: 'References', title: 'X', reason: 'shared source' }); },
     'no-pending-text': (f) => { f.details[0].facts.text = 'Narrative synthesis pending for this cluster.'; },
@@ -60,6 +61,19 @@ test('every assertion passes on good facts and trips on its own planted defect',
     plant[a.id](f);
     assert.ok(byId(gateResults(f, [{ ...a, armed: true }]), a.id).violations.length > 0, `${a.id} does not trip on its defect`);
   }
+});
+
+test('no-raw-ids reads a corridor token; reasons-are-pairwise passes two equal reasons and trips on three', () => {
+  const f = good();
+  f.lists[0].facts.text = 'Operations: CNSHA-ITGOA:ocean';
+  assert.match(EVALUATORS['no-raw-ids'](f)[0], /a corridor token: CNSHA-ITGOA:ocean/);
+  f.lists[0].facts.text = 'Operations: Shanghai (CN) → Genoa (IT), ocean';
+  assert.deepEqual(EVALUATORS['no-raw-ids'](f), []);
+  const same = (n) => Array.from({ length: n }, (_, i) => ({ label: 'References', title: `T${i}`, reason: 'Both apply to ocean bunkering operations.' }));
+  f.details[0].facts.connections = same(2);
+  assert.deepEqual(EVALUATORS['reasons-are-pairwise'](f), []);
+  f.details[0].facts.connections = same(3);
+  assert.equal(EVALUATORS['reasons-are-pairwise'](f).length, 1);
 });
 
 test('an own-mandates panel with a title that names no instrument number cannot show its triggers are its own; no panel passes', () => {
