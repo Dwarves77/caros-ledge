@@ -23,7 +23,6 @@ export interface BriefRow {
   brief_md: string | null;
   member_hash?: string | null;
   generated_at?: string | null;
-  generated_by?: string | null;
   sections?: Record<string, unknown> | null;
   member_ids?: string[] | null;
   [k: string]: unknown;
@@ -55,8 +54,7 @@ function briefHolds(theme: ThemeRow, brief: BriefRow | null, stale: boolean): br
 
 /** The brief stored under this theme's own id: a brief whose theme_id is absent from connection_themes, or that was retired (superseded), is never attached whatever its member overlap. Stale when its member hash no longer matches. */
 const briefOf = (theme: ThemeRow, briefs: readonly BriefRow[]): { brief: BriefRow | null; stale: boolean } => {
-  const brief = briefs.find((b) => b && b.theme_id === theme.id && !isSupersededBrief(b)) ?? null;
-  return { brief, stale: brief ? isBriefStale(brief.member_hash, theme.member_ids) : false };
+  const brief = briefs.find((b) => b && b.theme_id === theme.id && !isSupersededBrief(b)) ?? null; return { brief, stale: brief ? isBriefStale(brief.member_hash, theme.member_ids) : false };
 };
 
 /** The brief that explains the item's theme, and only while it still describes the theme (briefHolds). */

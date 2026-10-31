@@ -117,8 +117,7 @@ export function diffThemes(priorThemes: readonly ThemeLike[] | null | undefined,
   for (const n of news) if (!claimedNew.has(n.id)) appeared.push(n.id);
   dissolved.sort();
   appeared.sort();
-  const floored = normalize(opts.belowFloor);
-  const below_floor = dissolved.filter((id) => floored.some((f) => overlapCoefficient((priors.find((p) => p.id === id) as Norm).members, f.members) >= threshold));
+  const floored = normalize(opts.belowFloor); const below_floor = dissolved.filter((id) => floored.some((f) => overlapCoefficient((priors.find((p) => p.id === id) as Norm).members, f.members) >= threshold));
   persisted.sort((a, b) => cmpId(a.prior_id, b.prior_id));
   renamed.sort((a, b) => cmpId(a.prior_id, b.prior_id));
   split.sort((a, b) => cmpId(a.prior_id, b.prior_id));
@@ -164,12 +163,10 @@ export function computeMemberHash(memberIds: readonly string[] | null | undefine
 export const isBriefStale = (storedHash: string | null | undefined, memberIds: readonly string[] | null | undefined): boolean => computeMemberHash(memberIds) !== storedHash;
 
 /** theme_briefs has no status column: a brief retired by retire-orphan-theme-briefs carries this prefix in generated_by (the trigger of migration 0039 keeps the prior row), and a rewrite by apply_theme_brief replaces it. */
-export const SUPERSEDED_PREFIX = "superseded:";
-export const isSupersededBrief = (b: { generated_by?: string | null } | null | undefined): boolean => typeof b?.generated_by === "string" && b.generated_by.startsWith(SUPERSEDED_PREFIX);
+export const SUPERSEDED_PREFIX = "superseded:"; export const isSupersededBrief = (b: Record<string, unknown> | null | undefined): boolean => typeof b?.generated_by === "string" && b.generated_by.startsWith(SUPERSEDED_PREFIX);
 
 export interface BriefLike {
   theme_id: string;
-  generated_by?: string | null;
   member_hash?: string | null;
   member_ids?: readonly string[] | null;
   [k: string]: unknown;
