@@ -304,7 +304,7 @@ export function whyLines(links: readonly FactLink[], subject: string): string[] 
 }
 
 /** The rows that move with an item: each structured row tied to its entities as one line (the figure, its date or delta, and the entity it moves through), the strongest kind first. */
-export function movesRows(links: readonly FactLink[], limit = 8): { kind: string; line: string }[] {
+function movesRows(links: readonly FactLink[], limit = 8): { kind: string; line: string }[] {
   const seen = new Set<string>();
   const out: { kind: string; line: string }[] = [];
   for (const f of [...links].filter((l) => FACT_KIND[l.refTable] !== undefined).sort(byStrength(new Set()))) {

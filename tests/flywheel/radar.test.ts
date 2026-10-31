@@ -13,7 +13,7 @@ import type { FactLink } from "@/core/flywheel/facts-join";
 import { toListRowFields } from "@/core/lists/row-fields";
 import { themeAnalysisView } from "@/core/themes/theme-view";
 import { isOperationsFigure } from "@/features/operations/model/derived-view";
-import { movesRows, readLinkedBy, readFlywheelRadar, readWhyMatters, reasonFor, whyLines, type RadarView } from "@/features/flywheel/radar/read";
+import { readItemExtras, readLinkedBy, readFlywheelRadar, readWhyMatters, reasonFor, whyLines, type RadarView } from "@/features/flywheel/radar/read";
 import { DerivedFigures } from "@/features/operations/ui/Spec09Panels";
 import { CrossPageSection } from "@/ui/detail/CrossPageSection";
 import { ItemConnections } from "@/ui/detail/ItemConnections";
@@ -67,7 +67,7 @@ test("a reason states the causal chain from the facts of the two items, the read
   assert.deepEqual(buildSupersessionRows([{ old: "a", new: "self" }], "self", LOOKUP).map((r) => r.reason), ["Replaces prior statutory provisions."]);
 });
 
-test("INV-1: no surface the brief touches renders an edge score, a method id, a uuid or a raw token", () => {
+test("INV-1: no surface the brief touches renders an edge score, a method id, a uuid or a raw token", async () => {
   const rows = buildConnectionRows([edge("a", { basis: [SRC, SCN] }), edge("b", { basis: [ENT] }), edge("c", { basis: [{ signal: "intersection", detail: { scenarios: ["ocean-fuel-surcharge"], objects: ["eu-ets"], strength: 9, tier: "strong" } }] }), edge("d", { origin: "candidate", basis: { evidence: [SCN], missing: { surface: "research", truth: "a Research abatement-cost evaluation for methanol engines", patternFamily: "pattern_penalty_abatement" } } })], LOOKUP);
   const view: RadarView = {
     patterns: [{ key: "00000000-0000-4000-8000-000000000001", label: "Mandate vs. capacity collision", means: "A rule requires something by a date.", forming: false, groups: [{ surface: "regulations", label: "Regulations", href: "/regulations", items: [{ title: "FuelEU Maritime", href: "/regulations/x" }], names: [] }], watch: "Watch: confirmed while the evidence behind it keeps holding.", missingParts: [], next: null }],
@@ -78,7 +78,7 @@ test("INV-1: no surface the brief touches renders an edge score, a method id, a 
     connections: renderApp(createElement(ItemConnections, { rows })),
     radar: renderApp(createElement(FlywheelRadar, { view })),
     strip: renderApp(createElement(ThemeStrip, { chips: [], radar: view })),
-    cross: renderApp(createElement(CrossPageSection, { surfaceKey: "market", surfaceLabel: "Market Intel", crossPage: { theme, radar: view, moves: movesRows([HFO, ETS]) } as never })),
+    cross: renderApp(createElement(CrossPageSection, { surfaceKey: "market", surfaceLabel: "Market Intel", crossPage: { theme, radar: view, moves: (await readItemExtras(memoryDb({}).db, "i1", [], [HFO, ETS])).moves } as never })),
     figures: renderApp(createElement(DerivedFigures, { figures: [{ valueId: "00000000-0000-4000-8000-000000000009", title: "One-week movement · EUR/USD", value: 0.05, unit: "USD/EUR", currency: "USD", originClass: "Derived", lifecycle: "verified", confidence: 0.9, computedAt: "2026-10-15T12:00:00Z", previous: 0.03, inputs: [{ label: "EUR/USD", period: "2026-10-15", sourceName: "ECB", tier: 1 }], tier: 1, why: whyLines([ETS], "EUR/USD") }] })),
   };
   const banned: [string, RegExp][] = [["a uuid", /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i], ["a method id", /pattern_[a-z_]+/], ["an evidence kind", /\b(?:shared|coupled)_[a-z_]+/], ["a score", /(?:·|score|weight)\s*:?\s*0\.\d{2}\b/i], ["a kebab token", /\b[a-z]+-[a-z]+-[a-z]+\b/]];
@@ -212,8 +212,8 @@ test("Why this matters: two lines naming the regulation with its next date and p
   assert.match(textOf(renderApp(createElement(WhyMatters, { lines: whyLines([], "propane") }))), /^Why this matters No regulation/);
 });
 
-test("What moves with this: each structured row tied to the item's entities as one line, the strongest kind first", () => {
-  const rows = movesRows([HFO, ETS, link("oem_tech_roadmaps", { label: "Methanol dual-fuel engines", stage: "series_production" }, { hop: 1, entity: { id: "e3", kind: "technology", canonicalName: "Methanol" } })]);
+test("What moves with this: each structured row tied to the item's entities as one line, the strongest kind first", async () => {
+  const rows = (await readItemExtras(memoryDb({}).db, "i1", [], [HFO, ETS, link("oem_tech_roadmaps", { label: "Methanol dual-fuel engines", stage: "series_production" }, { hop: 1, entity: { id: "e3", kind: "technology", canonicalName: "Methanol" } })])).moves;
   assert.deepEqual(rows.map((r) => r.kind), ["Obligation", "Price or figure", "Technology"]);
   assert.equal(rows[2]?.line, "Methanol dual-fuel engines is at the series production stage. It reaches this item through Methanol.");
 });
