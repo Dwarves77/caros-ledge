@@ -110,7 +110,5 @@ export async function readThemeChips(db: Db, opts: { surface: string | null; min
   const themes = all.filter((t) => inThemeScope(key(t).members, key(t).surfaces) && (opts.surface ? (t.surfaces ?? []).includes(opts.surface) : key(t).surfaces >= (opts.minPages ?? 1))).sort((a, b) => compareThemes(key(a), key(b))).slice(0, 25);
   if (themes.length === 0) return [];
   const [lineage, items] = await Promise.all([readLineage(db), readVerifiedItemsByIds(db, themes.flatMap((t) => t.member_ids ?? []))]);
-  // a chip is named by what its edges are mostly about: read for the few chips drawn, never for the 25 considered
-  const chips = themeChips({ themes, items, briefs, lineage, surface: opts.surface, minPages: opts.minPages ?? 1, max: opts.max ?? 6 });
-  return nameChips(chips, new Map(await Promise.all(chips.map(async (c) => [c.themeId, await readLinkedBy(db, themes.find((t) => t.id === c.themeId)?.member_ids ?? [])] as const))));
+  return nameChips(db, themeChips({ themes, items, briefs, lineage, surface: opts.surface, minPages: opts.minPages ?? 1, max: opts.max ?? 6 }), themes);
 }

@@ -301,15 +301,16 @@ test("UI-RADAR-2 radar: five rows of one pattern joining the same members are ON
   assert.deepEqual((await readFlywheelRadar({ db: full, admin: full }, { kind: "corpus" })).patterns[0]?.missingParts, []);
 });
 
-test("UI-RADAR-2 chips: a theme with no brief is named by what its edges are linked by; two chips never read the same", () => {
+test("UI-RADAR-2 chips: a theme with no brief is named by what its edges are linked by; two chips never read the same", async () => {
   const mk = (n: number, prefix: string) => Array.from({ length: n }, (_, i) => ({ id: `${prefix}${i}`, legacy_id: null, title: "Same member title", item_type: i % 2 ? "market_signal" : "regulation", domain: i % 2 ? 4 : 1 }));
   const A = mk(4, "a"), B = mk(4, "b");
   const themes = [A, B].map((rows, i) => ({ id: `t${i}`, member_ids: rows.map((r) => r.id), surfaces: ["regulations", "market"], convergence: 0.5 - i / 10, pivots: [] }));
-  const linkedBy = new Map([["t0", ["Directive 2023/959", "Heavy fuel oil", "Shore power", "a fourth"]], ["t1", []]]);
+  const edge = (n: number, source: string, name: string) => ({ id: `x${n}`, source_item_id: source, target_item_id: `z${n}`, origin: "provenance_discovery", basis: { evidence: [{ signal: "shared_entity", tokens: { entities: [{ id: name, name }] } }] } });
+  const db = memoryDb({ item_cross_references: [...["Directive 2023/959", "Heavy fuel oil", "Shore power", "a fourth"].map((n, i) => edge(i, "a0", n)), edge(9, "a1", "Directive 2023/959"), edge(10, "a1", "Heavy fuel oil"), edge(11, "a2", "Shore power")] }).db;
   const base = themeChips({ themes: themes as never, items: [...A, ...B], surface: null, max: 6 });
-  const chips = nameChips(base, linkedBy);
-  assert.equal(chips[0]?.label, "Linked by Directive 2023/959, Heavy fuel oil and Shore power", "up to three names");
+  const chips = await nameChips(db, base, themes);
+  assert.equal(chips[0]?.label, "Linked by Directive 2023/959, Heavy fuel oil and Shore power", "up to three names, most frequent first");
   assert.deepEqual(chips[0]?.linkedBy, ["Directive 2023/959", "Heavy fuel oil", "Shore power"]);
   assert.match(chips[1]?.label ?? "", /^4 linked items across Regulations and Market Intel$/, "no name known: the count and the pages");
-  assert.equal(new Set(nameChips(base, new Map()).map((c) => c.label)).size, 2, "two chips with the same derived label are told apart");
+  assert.equal(new Set((await nameChips(memoryDb({}).db, base, themes)).map((c) => c.label)).size, 2, "two chips with the same derived label are told apart");
 });

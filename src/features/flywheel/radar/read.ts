@@ -347,15 +347,16 @@ export const readLinkedBy = async (db: Db, memberIds: readonly string[]): Promis
     return ((r.data ?? []) as { basis: EdgeBasis | null }[]).map((x) => x.basis);
   }, { chunk: 100, manyPerId: true }));
 
-/** A theme chip with its name: a theme no brief names is called by what its edges are mostly linked by (up to three), and two chips never read the same (a label already drawn takes the title of the member it opens). */
-export function nameChips<C extends { themeId: string; label: string; itemTitle: string; hasBrief: boolean }>(chips: readonly C[], linkedBy: ReadonlyMap<string, readonly string[]>): (C & { linkedBy: string[] })[] {
+/** The theme chips with their names: a theme no brief names is called by what its edges are mostly linked by (up to three; read for the few chips drawn, never for the 25 considered), and two chips never read the same (a label already drawn takes the title of the member it opens). */
+export async function nameChips<C extends { themeId: string; label: string; itemTitle: string; hasBrief: boolean }>(db: Db, chips: readonly C[], themes: readonly { id: string; member_ids: readonly string[] }[]): Promise<(C & { linkedBy: string[] })[]> {
   const drawn = new Set<string>();
-  return chips.map((c) => {
-    const by = [...(linkedBy.get(c.themeId) ?? [])].slice(0, 3);
-    const named = !c.hasBrief && by.length > 0 ? `Linked by ${joinLabels(by)}` : c.label;
+  const by = await Promise.all(chips.map((c) => readLinkedBy(db, themes.find((t) => t.id === c.themeId)?.member_ids ?? []).then((w) => w.slice(0, 3))));
+  return chips.map((c, i) => {
+    const linkedBy = by[i] ?? [];
+    const named = !c.hasBrief && linkedBy.length > 0 ? `Linked by ${joinLabels(linkedBy)}` : c.label;
     const label = drawn.has(named) ? `${named} · ${c.itemTitle}` : named;
     drawn.add(label);
-    return { ...c, label, linkedBy: by };
+    return { ...c, label, linkedBy };
   });
 }
 
