@@ -27,8 +27,8 @@ const SERIES: SeriesRow[] = [
   ...point("ecb-fx:eur-gbp", "EUR/GBP", 20, 0.84, { unit: "GBP/EUR", currency: "GBP", source_key: "ecb", source_ref: "ECB euro foreign exchange reference rates" }),
   ...Array.from({ length: 5 }, (_, i) => ({ id: `sbti-${i}`, series_key: `sbti:near-term-lead-time-sector-${i}`, label: `Sector ${i + 1}`, reference_period: day(0), as_at_date: day(0), value_numeric: 18 + i * 9, unit: "months", currency: null, derivation: "calculated", origin_class: "derived", source_key: "sbti_dashboard", n_observations: 40 + i })),
 ];
-const rating = (sourceKey: string, name: string, url: string, tier: number): [string, SourceRating] => [sourceKey, { sourceKey, name, url, licence: "Open licence", attribution: name, tier, via: "class" }];
-const RATINGS = Object.fromEntries([rating("ec_weekly_oil_bulletin", "European Commission, DG ENER", "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en", 2), rating("eia", "US Energy Information Administration", "https://www.eia.gov/opendata/", 2), rating("ecb", "European Central Bank", "https://www.ecb.europa.eu/", 2), rating("sbti_dashboard", "Science Based Targets initiative", "https://sciencebasedtargets.org/target-dashboard", 3)]);
+const rating = (sourceKey: string, name: string, url: string | null, tier: number): [string, SourceRating] => [sourceKey, { sourceKey, name, url, licence: "Open licence", attribution: name, tier, via: "class" }];
+const RATINGS = Object.fromEntries([rating("ec_weekly_oil_bulletin", "European Commission, DG ENER", "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en", 2), rating("eia", "US Energy Information Administration", "https://www.eia.gov/opendata/", 2), rating("ecb", "European Central Bank", "https://www.ecb.europa.eu/", 2), rating("sbti_dashboard", "Science Based Targets initiative", null, 3)]);
 const BANDS = ["CRITICAL", "HIGH", "HIGH", "HIGH", "MODERATE", "LOW", "LOW", "LOW"] as const;
 const KINDS = ["action_required", "cost_alert", "window_closing", "competitive_edge", "monitoring"];
 const ROWS: Resource[] = Array.from({ length: 36 }, (_, i) => ({
