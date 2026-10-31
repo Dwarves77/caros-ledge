@@ -81,12 +81,13 @@ test("INV-045/243: an apply writes only inside its own namespace, plans create o
   assert.equal(again.counts.updated, 0);
 });
 
-// FIX-EDGES-1 (ruled run 40152169626): production held an observation of every ecb-fx series from 2026-08-28; the new write was 2026-10-14 against a clock of 2026-10-15. The edge author read only the 21-day window, so the
-// prior observation (47 days back) was outside the read, the series looked like a first observation, and a run that wrote 4 rows authored 0 edges.
+// FIX-EDGES-1 (ruled run 40152169626): production held an observation of every ecb-fx series from 2026-08-28; the new write was 2026-10-14 against a clock of 2026-10-15. A one-week delta stands on a prior 5 to 9 days back
+// (OPS-FIX-1 item 9), so a 47-day-old prior is no prior: the series is counted as insufficient history and the run is not failed. A prior a week back authors the edge.
 const SPARSE_PRIORS = [
   { id: "ms-usd-aug", series_key: "ecb-fx:eur-usd", reference_period: "2026-08-28", as_at_date: "2026-08-28", value_numeric: 1.18, unit: "USD/EUR", currency: "USD", origin_class: "official" },
   { id: "ms-gbp-aug", series_key: "ecb-fx:eur-gbp", reference_period: "2026-08-28", as_at_date: "2026-08-28", value_numeric: 0.86, unit: "GBP/EUR", currency: "GBP", origin_class: "official" },
 ];
+const WEEK_PRIORS = SPARSE_PRIORS.map((p) => ({ ...p, id: p.id.replace("aug", "wk"), reference_period: "2026-10-07", as_at_date: "2026-10-07" }));
 const propagationDb = (rows: Record<string, unknown>[]) => {
   const mem = memoryDb({ market_series: rows.map((r) => ({ ...r })) });
   installPropagationRpcs(mem.mem);
@@ -97,17 +98,19 @@ const ecbRun = async (mem: ReturnType<typeof memoryDb>) => {
   return runProducer(withMarket(d.deps) as never, { spec: ON(ecbFx), dry: false, text: ECB });
 };
 
-test("FIX-EDGES-1: a series whose prior observation lies outside the 21-day window still authors its delta edge (one edge per written row)", async () => {
-  const mem = propagationDb(SPARSE_PRIORS);
+test("OPS-FIX-1 item 9: a series whose prior observation is 47 days back has no one-week edge: it is counted as insufficient history, the run is not failed; a prior a week back authors the edge", async () => {
+  const sparse = await ecbRun(propagationDb(SPARSE_PRIORS));
+  assert.equal(sparse.outcome, "ok", sparse.notes.join("|"));
+  assert.equal(sparse.counts.created, 2);
+  assert.equal(sparse.counts.edges_authored, 0, "a 47-day-old prior is not a one-week prior");
+  assert.equal(sparse.counts.edges_insufficient_history, 2);
+  const mem = propagationDb(WEEK_PRIORS);
   const r = await ecbRun(mem);
   assert.equal(r.outcome, "ok", r.notes.join("|"));
-  assert.equal(r.counts.created, 2);
-  assert.equal(r.counts.edges_authored, 2, "USD and GBP each author a delta against their 2026-08-28 observation");
-  assert.equal(r.counts.edges_insufficient_history, 0);
+  assert.equal(r.counts.edges_authored, 2, "USD and GBP each author a delta against their 2026-10-07 observation");
   const edges = mem.tables.derivation_edges ?? [];
   assert.equal(edges.length, 4, "two inputs (latest and prior) per authored value");
-  const priorIds = new Set(SPARSE_PRIORS.map((p) => p.id));
-  assert.ok([...priorIds].every((id) => edges.some((e) => e.from_pk === id)), "the old observation is an input of the edge");
+  assert.ok(WEEK_PRIORS.every((p) => edges.some((e) => e.from_pk === p.id)), "the week-old observation is an input of the edge");
 });
 
 test("FIX-EDGES-1: a re-run over rows that already exist writes 0 rows, and authors edges only where absent (INV-ARM-3)", async () => {
@@ -116,7 +119,7 @@ test("FIX-EDGES-1: a re-run over rows that already exist writes 0 rows, and auth
     { id: "ms-usd-oct", series_key: "ecb-fx:eur-usd", reference_period: "2026-10-14", as_at_date: "2026-10-14", value_numeric: 1.09, unit: "USD/EUR", currency: "USD", origin_class: "official", label: "EUR/USD — ECB euro foreign exchange reference rate (US dollar)", derivation: "observed", source_key: "ecb", source_ref: "ECB euro foreign exchange reference rates, 2026-10-14", n_observations: null, method_version: null },
     { id: "ms-gbp-oct", series_key: "ecb-fx:eur-gbp", reference_period: "2026-10-14", as_at_date: "2026-10-14", value_numeric: 0.87, unit: "GBP/EUR", currency: "GBP", origin_class: "official", label: "EUR/GBP — ECB euro foreign exchange reference rate (Pound sterling)", derivation: "observed", source_key: "ecb", source_ref: "ECB euro foreign exchange reference rates, 2026-10-14", n_observations: null, method_version: null },
   ];
-  const mem = propagationDb([...SPARSE_PRIORS, ...landed]);
+  const mem = propagationDb([...WEEK_PRIORS, ...landed]);
   const first = await ecbRun(mem);
   assert.equal(first.outcome, "ok", first.notes.join("|"));
   assert.equal(first.counts.created, 0);
@@ -132,13 +135,13 @@ test("FIX-EDGES-1: a re-run over rows that already exist writes 0 rows, and auth
   assert.equal(mem.tables.derivation_edges?.length, edges);
 });
 
-test("INV-045: rows landed but no edge authored fails the run CLOSED; an unwired downstream fails closed too", async () => {
+test("INV-045: rows landed with authorship that accounted for no series, or refused one, fails the run CLOSED; an unwired downstream fails closed too; a first observation is counted, not failed", async () => {
   const noHistory = mkMarket();
   noHistory.tables.market_series = [];
   const d = makeDeps({ db: noHistory, env: { MARKET_PRODUCER_ECB_FX_ENABLED: "1" } });
   const r = await runProducer(withMarket(d.deps) as never, { spec: ON(ecbFx), dry: false, text: ECB });
-  assert.equal(r.outcome, "failed");
-  assert.match(r.notes.join(" "), /authored 0 derivation_edges/);
+  assert.equal(r.outcome, "ok", r.notes.join("|"));
+  assert.equal(r.counts.edges_insufficient_history, 2, "a first observation has no prior: stated as a count");
   const unwired = await runProducer(makeDeps({ db: mkMarket(), env: { MARKET_PRODUCER_ECB_FX_ENABLED: "1" } }).deps, { spec: ON(ecbFx), dry: false, text: ECB });
   assert.equal(unwired.outcome, "failed");
   assert.match(unwired.notes.join(" "), /not wired/);

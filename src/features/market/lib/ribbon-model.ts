@@ -13,6 +13,8 @@ const DELTA_STATE_LABEL: Readonly<Record<DeltaAbsentState, string>> = { no_data_
 export type WindowKey = "1w" | "1m" | "YoY";
 const WINDOW_DAYS: Record<WindowKey, number> = { "1w": DELTA_WINDOWS.w1, "1m": DELTA_WINDOWS.m1, YoY: DELTA_WINDOWS.yoy };
 
+const PRIOR_AGE_WORDS: Record<WindowKey, string> = { "1w": "5 to 9 days", "1m": "25 to 35 days", YoY: "350 to 380 days" };
+
 export type DeltaCellModel =
   | { kind: "value"; window: WindowKey; arrow: string; magnitude: string; fromDate: string | undefined; text: string }
   | { kind: "absent"; window: WindowKey; lead: string; state: DeltaAbsentState; obsStatus: "H" | "L" | "Q" | "O"; label: string; detail: string };
@@ -28,7 +30,7 @@ export function deltaCellModel(deltas: SeriesDeltas | undefined, window: WindowK
   const needs = `Needs ${WINDOW_DAYS[window]} days of history for the ${window} change.`;
   if (!delta) return absentCell(window, "no_data_yet", deltas.count === 0 ? "No observations on record yet." : deltas.count === 1 ? `One observation on record${first ? `, ${first}` : ""}. ${needs}` : needs);
   if (delta.unitMismatch) return absentCell(window, "suppressed", `Unit or currency changed since ${delta.fromDate}. The ${window} change is withheld rather than compared across a unit change.`);
-  if (delta.insufficientHistory || typeof delta.value !== "number") return absentCell(window, "no_data_yet", `${needs}${first ? ` First observation ${first}.` : ""}`);
+  if (delta.insufficientHistory || typeof delta.value !== "number") return absentCell(window, "no_data_yet", `No ${window} prior: no observation sits ${PRIOR_AGE_WORDS[window]} before the latest, so no ${window} change is shown.${first ? ` First observation ${first}.` : ""}`);
   if (typeof delta.pct !== "number") return absentCell(window, "not_applicable", `A percent change is undefined: the value on ${delta.fromDate} was zero.`);
   // Direction is a glyph and magnitude is unsigned, so the sign formatDelta emits is dropped; the percent move is never percentage points.
   const arrow = delta.pct > 0 ? "▲" : delta.pct < 0 ? "▼" : "";

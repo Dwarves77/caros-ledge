@@ -222,3 +222,24 @@ test("a headline card carries its source ref and the rating's url (the baseline 
   assert.match(String(v2.envelope.sourceUrl), /^https:\/\//, "with no rating the producer's own source url applies");
 });
 
+
+test("OPS-FIX-1 item 9: a window's change stands only on a prior inside the window's tolerance: a 49-day-old prior is no 1w change, 5 to 9 days is, and the ribbon says there is no prior", () => {
+  const far = computeSeriesDeltas([obs("a:x", "2026-08-31", 535.77), obs("a:x", "2026-10-19", 668.65)]);
+  assert.deepEqual(far.delta1w, { insufficientHistory: true }, "49 days is not a week");
+  assert.equal(far.delta1m?.insufficientHistory, true, "nor a month");
+  const cell = deltaCellModel(far, "1w");
+  assert.equal(cell.kind, "absent");
+  assert.match(cell.kind === "absent" ? cell.detail : "", /^No 1w prior: no observation sits 5 to 9 days before the latest/);
+  const near = computeSeriesDeltas([obs("a:x", "2026-10-12", 100), obs("a:x", "2026-10-19", 110)]);
+  assert.equal(near.delta1w?.fromDate, "2026-10-12");
+  assert.equal(near.delta1w?.pct, 10);
+  assert.equal(computeSeriesDeltas([obs("a:x", "2026-10-10", 100), obs("a:x", "2026-10-19", 110)]).delta1w?.fromDate, "2026-10-10", "nine days back is inside the tolerance");
+  assert.equal(computeSeriesDeltas([obs("a:x", "2026-10-09", 100), obs("a:x", "2026-10-19", 110)]).delta1w?.insufficientHistory, true, "ten days back is not");
+  const pick = computeSeriesDeltas([obs("a:x", "2026-10-10", 90), obs("a:x", "2026-10-13", 100), obs("a:x", "2026-10-19", 110)]);
+  assert.equal(pick.delta1w?.fromDate, "2026-10-13", "the prior nearest the window start wins");
+  const month = computeSeriesDeltas([obs("a:x", "2026-09-19", 100), obs("a:x", "2026-10-19", 110)]);
+  assert.equal(month.delta1m?.fromDate, "2026-09-19");
+  const year = computeSeriesDeltas([obs("a:x", "2025-10-19", 100), obs("a:x", "2026-10-19", 110)]);
+  assert.equal(year.deltaYoY?.fromDate, "2025-10-19");
+  assert.equal(computeSeriesDeltas([obs("a:x", "2025-05-01", 100), obs("a:x", "2026-10-19", 110)]).deltaYoY?.insufficientHistory, true, "a 17-month-old prior is not a year-over-year change");
+});
