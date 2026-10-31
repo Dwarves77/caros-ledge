@@ -13,7 +13,7 @@ import type { FactLink } from "@/core/flywheel/facts-join";
 import { toListRowFields } from "@/core/lists/row-fields";
 import { themeAnalysisView } from "@/core/themes/theme-view";
 import { isOperationsFigure } from "@/features/operations/model/derived-view";
-import { linkedByWords, movesRows, readFlywheelRadar, readWhyMatters, reasonFor, whyLines, type RadarView } from "@/features/flywheel/radar/read";
+import { movesRows, readLinkedBy, readFlywheelRadar, readWhyMatters, reasonFor, whyLines, type RadarView } from "@/features/flywheel/radar/read";
 import { DerivedFigures } from "@/features/operations/ui/Spec09Panels";
 import { CrossPageSection } from "@/ui/detail/CrossPageSection";
 import { ItemConnections } from "@/ui/detail/ItemConnections";
@@ -159,7 +159,7 @@ const THEME = { id: "t1", member_ids: ["m1", "m2", "m3", "m4"], surfaces: ["regu
 const BRIEF = (member_ids: string[]) => ({ theme_id: "t1", title: "Ship-source pollution: the 2005 discharge-and-penalty pair", brief_md: "A two-member brief from August about discharge penalties.", member_hash: "old", member_ids, sections: null });
 const view = (member_ids: string[], linkedBy: string[] = []) => themeAnalysisView({ itemId: "m1", surface: "regulations", themes: [THEME], briefs: [BRIEF(member_ids)], members: MEMBERS, linkedBy, asOfIso: "2026-10-31T00:00:00Z" });
 
-test("INV-4: a stale brief with under half its members left is not drawn, the composed line is; one that passes the gate says it was written for an earlier membership", () => {
+test("INV-4: a stale brief with under half its members left is not drawn, the composed line is; one that passes the gate says it was written for an earlier membership", async () => {
   const gone = view(["x1", "x2", "m1"], ["Directive 2023/959", "Heavy fuel oil"]);
   assert.equal(gone?.hasBrief, false);
   const html = textOf(renderApp(createElement(CrossPageSection, { surfaceKey: "regulations", surfaceLabel: "Regulations", crossPage: { theme: gone } as never })));
@@ -171,7 +171,8 @@ test("INV-4: a stale brief with under half its members left is not drawn, the co
   assert.match(keptHtml, /discharge-and-penalty/);
   assert.match(keptHtml, /Written for an earlier membership/);
   assert.equal(view([])?.hasBrief, false, "a brief that names no members cannot be shown to describe this theme");
-  assert.deepEqual(linkedByWords([[SCN, SRC], [SCN], { evidence: [{ signal: "shared_entity", tokens: { entities: [{ id: "e1", name: "Methanol" }] } }] }]), ["ocean fuel surcharge", "Methanol"], "the same source is not a link; most frequent first");
+  const edgeRows = [[SCN, SRC], [SCN], { evidence: [{ signal: "shared_entity", tokens: { entities: [{ id: "e1", name: "Methanol" }] } }] }].map((basis, i) => ({ id: `x${i}`, source_item_id: "m1", target_item_id: `m${i + 2}`, origin: "provenance_discovery", basis }));
+  assert.deepEqual(await readLinkedBy(memoryDb({ item_cross_references: edgeRows }).db, ["m1"]), ["ocean fuel surcharge", "Methanol"], "the same source is not a link; most frequent first");
 });
 
 // -- INV-5: the second line of a row -------------------------------------------------------------------------------------------------------------------

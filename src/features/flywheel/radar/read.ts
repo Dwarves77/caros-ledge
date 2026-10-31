@@ -274,7 +274,7 @@ export function reasonFor(c: { basis: EdgeBasis | null | undefined; origin: stri
 }
 
 /** What a set of edges is mostly linked by, in words: the canonical names of the entities they share and the scenarios they touch, most frequent first. The same source is not a link. */
-export function linkedByWords(bases: readonly (EdgeBasis | null | undefined)[], top = 3): string[] {
+function linkedByWords(bases: readonly (EdgeBasis | null | undefined)[], top = 3): string[] {
   const tally = new Map<string, number>();
   for (const b of bases) {
     const words = new Set(asBasis(b).evidence.flatMap((e) => [...entityNames(e), ...(e.signal === "shared_scenario" ? tokensOf(e, "scenarios").map(labelForScenario) : [])]).filter(Boolean));
