@@ -479,7 +479,10 @@ jobs:
       - run: npm ci --no-audit --ignore-scripts
       - name: Playwright package matching the image (browsers come from the image)
         run: npm install --no-save playwright@1.61.1 --no-audit --no-fund --ignore-scripts
-      - name: Live checks (a missing secret on a run that can carry it is exit 1 and names the secret)
+      # LIVE-GATE-1: the signed-in DOM gate reads a session minted here, server side: the service role asks Supabase Auth for a magic link for LIVE_ADMIN_EMAIL, the token is exchanged and the cookies saved at scripts/tmp/live-session.json (gitignored). No password is typed. A missing name or a first navigation that still lands on /login is exit 1, so the live job is red and the check below never runs on a stale or absent session.
+      - name: Mint the signed-in session (exit 1 if it cannot be minted or lands on /login)
+        run: node scripts/ci/live-session.mjs --base "$LIVE_BASE_URL"
+      - name: Live checks (a missing secret on a run that can carry it is exit 1 and names the secret; signed-in-dom prints every assertion of tests/live/assertions.json and is red on an armed failure)
         env:
           LIVE_PHASE: ${{ github.event.inputs.live_phase }}
           LIVE_ONLY: ${{ github.event.inputs.live_checks }}
