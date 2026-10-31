@@ -3,8 +3,8 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { test } from "node:test";
 
 import { SOURCE_LICENCES, licenceGate, mayEmbedAsSeed } from "@/core/contracts/source-licence";
+import { licenceForbidsHost } from "@/core/fetch/licence-hosts";
 
-import { getDoc } from "./_docs.ts";
 import { DOWN_FILE, MIGRATION_FILE, R2G_KEYS, renderDown, renderMigration } from "./_migration.ts";
 import { DOCUMENTS, licenceClass } from "./load.ts";
 
@@ -45,18 +45,22 @@ test("INV-R2g-1 (static): every new entry is registered with the verdict its own
   }
 });
 
-test("INV-R2g-1 (live): every quoted sentence is on its terms URL today; a fetch failure is a skipped subtest, never a pass", async (t) => {
+/** The terms text as it was read (tests/fixtures/licence-terms.json, taken from each entry's terms URL on 2026-10-31): the unit suite never touches the network (TEST-FIX-1). */
+const TERMS = JSON.parse(readFileSync(new URL("../fixtures/licence-terms.json", import.meta.url), "utf8")) as Record<string, { readOn: string; excerpt: string }>;
+
+test("INV-R2g-1 (terms): every quoted sentence is in the terms text read from its URL; an entry with no stored text is one whose host the register or the publisher bars", () => {
+  const barredHosts = new Set(Object.values(DOCUMENTS).filter((d) => d.fetch === false).map((d) => new URL(d.url).host));
   for (const k of KEYS) {
     const e = SOURCE_LICENCES[k]!;
     const q = (e.quote ?? null);
     if (!q) continue;
-    await t.test(k, async (sub) => {
-      // A publisher whose terms forbid robots is not fetched, the terms page included: the hosts are those of the documents marked fetch: false.
-      if (new Set(Object.values(DOCUMENTS).filter((d) => d.fetch === false).map((d) => new URL(d.url).host)).has(new URL(e.url as string).host)) return sub.skip("publisher_forbids_robots: the quote was read on 2026-10-20 and is checked by hand");
-      const doc = await getDoc(e.url as string, "html");
-      if (!doc.ok) return sub.skip(`terms_unreadable: ${e.url} ${doc.reason}`);
-      assert.ok(fold(doc.pages.join(" ")).includes(fold(q)), `${k}: the quoted sentence is not on ${e.url}; the notice changed, re-read it and rewrite the entry`);
-    });
+    const url = new URL(e.url as string);
+    const stored = TERMS[e.url as string];
+    if (!stored) {
+      assert.ok(barredHosts.has(url.host) || licenceForbidsHost(url.hostname), `${k}: ${e.url} has no stored terms text and its host is not barred; add it to tests/fixtures/licence-terms.json`);
+      continue;
+    }
+    assert.ok(fold(stored.excerpt).includes(fold(q)), `${k}: the quoted sentence is not in the stored terms text of ${e.url}; re-read the notice, then update the entry and the fixture together`);
   }
 });
 
