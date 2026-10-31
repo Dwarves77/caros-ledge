@@ -1,4 +1,4 @@
-# Coordinator Status & Handoff Report (`2026-10-30`)
+# Coordinator Status & Handoff Report (`2026-10-30` late)
 
 This file is the canonical handoff status for the coordinator session. Whenever the operator types `coordinator` or `/coordinator`, read this file first alongside `git log -n 10 --oneline` and `git status -s`.
 
@@ -6,77 +6,60 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 
 ## 1. Current Repository State
 
-- **Branch:** `main` (clean working tree, synced with `origin/main`)
-- **LOC Status (`scripts/ci/loc.mjs`):**
-  - `src`: `66,268` / `66,291` ceiling (`23` lines of headroom)
-  - `src/core`: `20,421` / `20,428` ceiling (`7` lines of headroom)
-- **Fast CI Gates (`node scripts/ci/gates.mjs --profile fast`):** All 13 gates pass (`workflow-yaml`, `lint`, `typecheck`, `validator-report`, `tree-checks`, `ui-checks`, `loc`, `connections`, `columns`, `joinability`, `verify:citations`, `method-versions`, `migration-checks`).
+- **Branch:** `main` at `7ff2059f` (DRAIN-2F, PR 172). Its main push CI run (41152197719) concluded `success`; `ruled-runs` = success.
+- **LOC Status (`node scripts/ci/loc.mjs`, run 2026-10-30 late):** `src` 66,268; `src/core` 20,421 (all 2026-10-30 PRs were 0 net src lines; `loc.mjs` LIMITS unchanged at src 66,291 / src/core 20,428, re-read on main).
+- **Gates (`scripts/ci/gates.mjs`):** `workflow-yaml`, `lint`, `typecheck`, `build` (heavy), `test` (heavy), `validator-report`, `tree-checks`, `ui-checks`, `client-walk`, `loc`, `connections`, `columns`, `joinability`, `verify:citations`, `method-versions`, `migration-checks`, `edge-bundle` (scoped to the capture-worker), plus `schema:local` when `supabase/` changed.
+- **Branch protection now enforces for admins:** every change goes via PR; `ci` + `schema` are required checks (`enforce_admins=true`, set via `gh api` 2026-10-30).
+- **Pre-push hook runs the FULL profile** for src/tests/scripts/supabase/public/config changes (PR 167 HOOK-FULL-1, merged; ruling 43). Docs-only pushes run the fast profile.
 
 ---
 
-## 2. What Changed Since the Previous Coordinator Handoff (`2b813da` -> `0a96e18`)
+## 2. What Changed Since `0a96e18` / `e79ed02` (2026-10-30 coordinator session)
 
-### A. Editorial UI, Dossier Hierarchy & Layout Density (`970d2be`, `bd23272`, `2bd5b75`, `8d3b53a`, `4de0a9f`, `7bb8504`, `dfa33d1`)
-1. **Dossier Navigation & Statutory Breakdown Directory:**
-   - Restored display typography and compacted masthead, `src/ui/ActionCard.tsx`, and `src/ui/Timeline.tsx` vertical footprint.
-   - Added the `Full Statutory Breakdown Directory` in `src/features/regulations/RegulationDetail.tsx` when viewing in Summary mode, and moved `src/features/regulations/ObligationRegister.tsx` to a closed-by-default expandable disclosure at the foot of the regulation detail page with keyword and event-type filtering.
-2. **Eliminated Exposure Grid Dead Space (`dfa33d1`):**
-   - Moved the `Show more` / `Show less` toggle inline into `.cl-exposure-head` in `src/ui/ActionCard.tsx` and rebalanced `.cl-exposure-grid` column tracks (`minmax(100px, 0.75fr) minmax(170px, 1.35fr) minmax(90px, 0.55fr) minmax(220px, 1.75fr)`) in `src/ui/base.css`.
-3. **6-Color Semantic Section Headers & Permanent Explainer Bars (`8d3b53a`, `4de0a9f`, `7bb8504`):**
-   - Applied semantic section themes and permanent explainer headers across Regulations (`src/features/regulations/pages.tsx`, `src/features/regulations/RegulationDetail.tsx`), Market Intel (`src/features/market/ui/Spec09Panels.tsx`, `src/features/market/ui/MarketDetailView.tsx`), Operations (`src/features/operations/ui/RegionMatrix.tsx`, `src/features/operations/ui/OperationsDetail.tsx`), Research (`src/features/research/ui/ResearchDetail.tsx`, `src/features/research/ui/AssessmentRail.tsx`), and Dashboard (`src/features/dashboard/ui/DashboardBrief.tsx`).
+`git log e79ed02..main`, 10 commits, all merged PRs (verified with `gh pr view`: 163-172 all MERGED):
 
-### B. Sub-Second Page Navigation & Auth/Database Waterfall Elimination (`2c69eef`, `ca023f6`, `84824a7`, `dfa33d1`)
-1. **Zero Network Round-Trips on Warm Auth Reads (`src/core/auth/claims.ts`, `src/proxy.ts`):**
-   - Decoded verified session user claims directly from `getSession()` in `src/core/auth/claims.ts` with an LRU warm cache before falling back to GoTrue network calls.
-   - Excluded `/api` routes from `src/proxy.ts` matcher and avoided redundant cross-region `getUser()` calls in `src/proxy.ts`.
-2. **Eliminated Client Startup & Prefetch Floods (`src/ui/shell/bootstrap-store.ts`, `src/ui/shell/TopBar.tsx`, `src/ui/shell/AppShell.tsx`):**
-   - Consolidated shell bootstrap fetches into `src/ui/shell/bootstrap-store.ts`, gated on authenticated identity.
-   - Added instant hover/pointer-down route prefetching in `src/ui/shell/TopBar.tsx`, `src/ui/shell/NavCard.tsx`, and list row links (`src/ui/ListRow.tsx`).
-3. **Flattened Server-Component Query Waterfalls (`src/features/regulations/pages.tsx`, `src/features/lists/read.ts`, `src/core/impact/attach.ts`, `src/core/detail/load.ts`):**
-   - Parallelized profile, theme chip, denominator coverage, list page, and impact score reads with `Promise.all` across all primary list and detail routes.
+- **MAIN-RED-1 (PR 165, `122ed0aa`):** two tests were red since the direct pushes. SectionIndex text restored, structure-test regex fixed, timeline test pins the stage label, parity baselines refreshed to the redesign (ruling 41), compare slot fix, mobile timeline date wrap.
+- **SYNTH-APPLY-4 (PR 163, `efd1d788`):** two admin capital-radar answers on production: clusters `68275fe1d81735bb` (ex-3044) and `5d16d8d5fc4b3799` (ex-5dfc), gaps-and-signposts; 4 signposts + 5 gap flags written 22:07 UTC [not independently re-read].
+- **CLASSIFY-FIX-1 (PR 164, `48c21340`):** `LEGISLATIVE_BODY_RE` accepts "HAVE ADOPTED" and `&nbsp;`; 5 EUR-Lex captures flip.
+- **CI-TRIM-2 (PR 166, `bdc9b142`):** deployment-status browser checks run on production only; preview-parity removed (ruling 42).
+- **HOOK-FULL-1 (PR 167, `8017ca0f`):** pre-push runs the full profile on code, test and CI changes (ruling 43).
+- **PARITY-8 (PR 168, `f48d84f4`):** 17 unused approved-changes waivers deleted.
+- **CLASSIFY-FIX-2 (PR 169, `c727284b`):** `detectNumeric` folds HTML spaces; EUR-Lex shell test host-gated, callers pass url; 96 Commission-domain captures stop being discarded.
+- **DRAIN-2G (PR 170, `daf10c44`):** `947e08f3` IEA brief rewritten to the research contract, 21 FACT + 2 GAP [not independently re-read], verified 23:26 UTC. SELECT read: `provenance_status=verified`, severity `monitoring`, item_type `research_finding`.
+- **DRAIN-2E (PR 171, `9305b394`):** `ff95b385` AFIR re-ground, 28 omitted events. SELECT read: `provenance_status=verified`, severity `monitoring`, item_type `regulation`.
+- **DRAIN-2F (PR 172, `7ff2059f`):** `7a0ead55` FuelEU rewritten to the regulatory contract, 76 FACT [not independently re-read]. SELECT read: `provenance_status=verified`, severity `cost_alert`, priority `HIGH` (coordinator SELECT of the priority column, 00:51 UTC), item_type `regulation`.
 
-### C. Complete CI Ratchet Debt Burn-Down (`c750976`, `aeb5022`, `4b5bc54`, `da20332`, `e7d35b0`)
-1. **`INV-263` Silent-Read Findings (`c750976`):**
-   - Closed all 5 remaining silent-read findings across surface loaders so every failed read surfaces an explicit degraded/failure banner with Retry.
-2. **`scripts/ci/connections-allow.json` (`aeb5022`, `4b5bc54`):**
-   - **100% emptied (`0` entries)** across `"files"`, `"exports"`, `"deps"`, and `"runtimeEntries"`.
-3. **Static Joinability (`scripts/ci/data/joinability.json`, `aeb5022`):**
-   - Closed all 16 `J1:*` unmapped columns and `J3sevw:accepts` (`0` static joinability findings across `J1`, `J2`, `J3const`, `J3sevw`).
-4. **`tests/derived/customer-strings.json` (`aeb5022`):**
-   - Cleared `"owed": []` (`0` owed customer-visible string violations).
-5. **`scripts/ci/ui-checks-allow.json` (`aeb5022`, `4b5bc54`, `da20332`, `e7d35b0`):**
-   - **100% eliminated all 9 actionable UI debt categories:**
-     - `style-on-kit-part` (`0` remaining)
-     - `supabase-error-unhandled` (`0` remaining)
-     - `style-px` (`0` remaining across 13 files / 54 offences)
-     - `raw-form-control` (`0` remaining across 11 files / 17 offences; added `bare?: boolean` to `Input` and `Textarea` in `src/ui/FormField.tsx`)
-     - `http-error-message` (`0` remaining across 6 files)
-     - `css-px-scale` (`0` remaining across 18 CSS files / 826 offences; migrated to `--sp-*`, `--fs-*`, `--target`, and `rem`)
-     - `kit-fetch` (`0` remaining across 5 files / 14 offences)
-     - `wall-clock` (`0` remaining across 43 files / 61 offences; replaced with `performance.timeOrigin + performance.now()`)
-     - `kit-imports-feature` (`0` remaining across 6 files in `src/ui/shell/`; hosted `AuthContext` in `src/ui/shell/Providers.tsx` and inverted item-state hydration via `registerItemStateHydrator` in `src/ui/shell/bootstrap-store.ts`)
-   - Only the 4 permanent architectural declarations (`colour-built-at-runtime` ruling B, `class-undefined` non-CSS storage/id prefixes, `bare-fetch` low-level transport primitives, and `entity-in-string` Leaflet HTML attribution) remain in `scripts/ci/ui-checks-allow.json`.
-
-### D. Horizon Scan Stage Classification & Explicit Applicability Assumptions (`0a96e18`)
-1. **Statutory Stage Badges on Timeline Milestones (`src/ui/timeline-math.ts`, `src/ui/Timeline.tsx`):**
-   - Added `milestoneStageOf` in `src/ui/timeline-math.ts` to classify milestones into `Proposed / consultation`, `Entry into force`, `Rulemaking due`, `Phase-in`, `Review / report`, or `Enacted deadline` from `event_kind` or verbatim milestone clauses, and rendered the badge on track markers, expanded schedule rows, and the context drawer in `src/ui/Timeline.tsx`.
-2. **Explicit Applicability Assumptions (`src/core/detail/item-read.ts`, `src/ui/detail/action-card-props.ts`, `src/ui/detail/ItemConnections.tsx`, `src/features/regulations/RegulationDetail.tsx`):**
-   - Wired `operationalScenarioTags` and resolved `ItemRelevance` (`Matched: ... · In scope: ... · Scenarios: ...`) into `commonActionCardProps` (`Your lanes`) and surfaced `In scope because:` triggers and applicability reasons inside `RelevanceRailCard`.
+Prior handoff content (editorial UI, auth waterfall removal, CI ratchet burn-down to zero, horizon-scan stage badges) stands; see `git log 2b813da..0a96e18`.
 
 ---
 
-## 3. What Is Next (Prioritized Backlog for Coordinator / Claude Code)
+## 3. What Is Next
 
-1. **Admissible-Row Predicate in Community Post Route (`tests/derived/readers.json`):**
-   - `tests/derived/readers.json` has only **1 remaining `"owed"` entry** in the entire repository: `src/features/community/api/post.ts` (owned by `R2e`), which reads `intelligence_items` without `admitItems` (`src/core/derived/admissible.ts`). Routing that lookup through `admitItems` and removing the entry from `tests/derived/readers.json` will bring `tests/derived/readers.json` `"owed"` to `0`.
-2. **Database-Level Joinability Ratchet (`scripts/ci/joinability-allow.json`):**
-   - Static joinability (`J1`, `J2`, `J3const`, `J3sevw`) is at `0` findings.
-   - Schema/live-row joinability (`scripts/ci/joinability-allow.json`, verified via `npm run joinability:schema`) has 19 tracked entries across:
-     - `J3toknovocab` (`oem_tech_roadmaps.commercial_stage`, `research_assessments_current.horizon_band`, `research_assessments_current.horizon_kind`) and `J3tok` (`oem_tech_roadmaps.tech_category`)
-     - `J3unit` (`state_cost_facts.unit` `/hr` form)
-     - `J3sev` (`intelligence_items.severity` migration slice `SEV-1`)
-     - `J5` producer population slices (`derived_values.entity_id`, `market_series.entity_id`, `obligation_objects.first_deadline`, `obligation_objects.instrument_entity_id`, `obligation_objects.source_id`, `obligation_objects.statutory_maximum`, `oem_tech_roadmaps.target_year`, `regional_data_facts.as_at_date`, `regional_data_facts.source_id`, `regional_data_facts.unit`, `regional_data_facts.value_numeric`, `research_assessments_current.entity_id`, `research_assessments_current.technical_maturity_low`, `section_claim_provenance.source_id`, `section_claim_provenance.source_tier_at_grounding`).
-3. **Judgement Drain & Brief Authoring Batches (`.claude/commands/drain.md`):**
-   - Continue executing scheduled judgement drain batches (`item-briefs`, `theme-briefs`, `admin-opportunity-findings`, `ledger-verdicts`) via `/drain` when the drain switch is enabled.
-4. **Full CI Profile & Parity Baseline Verification (`node scripts/ci/gates.mjs --profile full`):**
-   - Run the full gate profile (`build`, `test`, `client-walk`, and `schema:local` when `supabase/` changes) to keep production parity green.
+### Carried from the prior backlog
+1. **Community post route admissible-row predicate:** `tests/derived/readers.json` has 1 `owed` entry, `src/features/community/api/post.ts` (reads `intelligence_items` without `admitItems`, `src/core/derived/admissible.ts`). Route it through `admitItems`, remove the entry.
+2. **Schema joinability:** `scripts/ci/joinability-allow.json` holds 19 entries (`npm run joinability:schema`): J3toknovocab/J3tok (oem_tech_roadmaps, research_assessments_current), J3unit (state_cost_facts.unit), J3sev (intelligence_items.severity, SEV-1), J5 producer population slices.
+3. **Judgement drain batches** via `/drain` (`item-briefs`, `theme-briefs`, `admin-opportunity-findings`, `ledger-verdicts`) when the drain switch is on.
+4. **Full profile verification:** `node scripts/ci/gates.mjs --profile full`.
+
+### Content owed
+- Visibility check on carosledge.com of the released items: research list shows `947e08f3`; regulations show `ff95b385` and `7a0ead55`.
+- Derive the obligation objects now their instruments are verified: 8 for `ff95b385`, 17 for `7a0ead55`.
+- Re-source `947e08f3`'s IEA figures when the scrape cadence returns (source `ab2c35c3`; stored captures are a Cloudflare page and a stub).
+- `15f63ea9` R33 versus growing supplied dates (design question).
+
+### Code window (after content runs; one home per mechanism, cite the owner)
+1. Obligation derive reads the item before the briefs apply flips it to verified, refusing `instrument_item_missing` for a quarantined-but-present instrument; the refusal label is also untruthful. Owner: `src/features/obligations/derive/derive-objects.ts` `deriveObligationObjects` + `buildObjectRow`.
+2. A stored wall-page capture over 200 chars counts as a usable capture and is never refetched. Owner: `src/features/mint/heal/run.ts` step 1 and `source.ts` `capturePage`.
+3. Gate A flags dates stated from DB source records (e.g. `sources.last_inaccessible`) as orphans because no capture span carries them, forcing year-less wording.
+4. `themeOf()` keyword fallback (`src/features/research/model/taxonomy.ts`) is a word list (ADR-053/054).
+5. `validate_item_provenance` criterion 5 word-matches `slot_key` in `claim_text`: replace with a typed `slot_key`.
+6. No transition log for `provenance_status` flips.
+7. NORMALISE-2: `jurisdiction_iso`, corridor, `value_numeric`, result, TRL in the reader contract.
+8. Derive files obligations under all 5 modes; `technologyEntityOf` null; velocity / crossModal / penaltyAbatement detectors at 0.
+
+### Rules in force (vault rulings 41-43 and the repo CLAUDE.md)
+- The redesign is the look and baselines follow it.
+- A lane pushes once after the full profile is green locally.
+- Content runs touch no src; repair, not reject.
+- One home per mechanism; no word lists.
+- Root cause, never re-run.
