@@ -191,8 +191,8 @@ test('conditional: a data-conditional control is compared when present on both s
 // PARITY-4 (main run 40222359593): the ruled runs wrote production while the parity job read it. Market lost two of its three absence-state buttons (oem_tech_roadmaps and reroute_events filled), and market-detail lost the
 // theme brief's own headings (the 18:43 theme recompute put the baseline item into a theme with no brief). Both are data the baseline predates; the committed config must cover them and nothing else.
 test('conditional: the production case of main run 40222359593 passes under the committed config, and a changed neighbour still fails', async () => {
-  // Recorded production cases (the baseline as of main run 40222359593 and PARITY-5), kept as fixtures: the engine tests pin these data conditions, and a look refresh of the baseline must not change them.
-  const read = async (name) => JSON.parse(await readFile(new URL(`./${name === 'market' ? 'baseline' : 'fixtures'}/${name}.1280x900.json`, import.meta.url), 'utf8'));
+  // Recorded production cases (the baseline as of main run 40222359593 and PARITY-5), kept as fixtures: the engine tests pin these data conditions, and a refresh of the baseline must not change them (the market record moved to fixtures when CONTENT-1 refreshed the market baseline, 2026-10-31).
+  const read = async (name) => JSON.parse(await readFile(new URL(`./fixtures/${name}.1280x900.json`, import.meta.url), 'utf8'));
   const run = (route, b, c) => compareRecord(route, '1280x900', b, c, [], config.dataNames ?? [], config.conditional ?? []).fails;
   const market = await read('market');
   const rc = market.controls.map((c, i) => (c.name === 'Request coverage' ? i : -1)).filter((i) => i >= 0);

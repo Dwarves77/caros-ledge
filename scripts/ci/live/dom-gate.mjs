@@ -36,6 +36,7 @@ const RAW = [
   ["a '· 0.xx' score", /·\s*0\.\d{2}\b/g],
   ["a pattern_ method id", /\bpattern_[a-z0-9_]+/gi],
   ["a _gap token", /\b[a-z0-9]+_gap\b/gi],
+  ["a corridor token", /\b[A-Z]{5}-[A-Z]{5}:[a-z]+\b/g],
 ];
 const PENDING = /Narrative synthesis pending|Stale: this synthesis/;
 const INSTRUMENT = /\b\d{1,4}\/\d{1,4}\b/;
@@ -64,6 +65,14 @@ export const EVALUATORS = {
     }),
   ],
   "connections-have-reason": (f) => [...unread(f.details, "detail page"), ...f.details.flatMap((p) => (p.facts?.connections ?? []).filter((c) => WORDS(c.reason) < 3).map((c) => `${p.path}: "${c.title.slice(0, 50)}" (${c.label || "connection"}) renders ${c.reason ? `"${c.reason}"` : "no reason"}`))],
+  "reasons-are-pairwise": (f) => [
+    ...unread(f.details, "detail page"),
+    ...f.details.flatMap((p) => {
+      const tally = new Map();
+      for (const c of p.facts?.connections ?? []) if (c.reason) tally.set(c.reason, (tally.get(c.reason) ?? 0) + 1);
+      return [...tally].filter(([, n]) => n >= 3).map(([reason, n]) => `${p.path}: ${n} connections carry the same reason "${reason.slice(0, 80)}"`);
+    }),
+  ],
   "no-pending-text": (f) => [...unread(f.lists, "list page"), ...unread(f.details, "detail page"), ...pages(f).filter((p) => PENDING.test(p.facts?.text ?? "")).map((p) => `${p.path}: shows ${PENDING.exec(p.facts.text)[0]}`)],
   "own-mandates": (f) => [
     ...unread(f.details, "detail page"),

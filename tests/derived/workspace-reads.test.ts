@@ -60,7 +60,7 @@ test("migrations 0095 and 0096 gate on the one item rule and assert membership; 
 });
 
 test("I7 the pre-contract brief scrubber removes a labelled statistic and leaves a figure the brief states: '1.250 EUR' was deleted with the weights", () => {
-  const theme = { memberCount: 1, pages: [], hasBrief: true, title: "Levy theme", stale: false, supersedesThemeId: null, briefMd: "The levy is 1.250 EUR per tonne (density 0.412) and the weight is 0.875 kg. Item scores 0.731.", sections: null, forwardOutlook: { horizons: [] }, membersByPage: [], cluster: null, ramificationsMissing: false };
+  const theme = { memberCount: 1, pages: [], hasBrief: true, title: "Levy theme", stale: false, briefMd: "The levy is 1.250 EUR per tonne (density 0.412) and the weight is 0.875 kg. Item scores 0.731.", sections: null, forwardOutlook: { horizons: [] }, membersByPage: [], cluster: null, ramificationsMissing: false };
   const out = textOf(renderApp(createElement(CrossPageSection, { surfaceKey: "regulations", surfaceLabel: "Regulations", crossPage: { theme } as never })));
   assert.match(out, /1\.250 EUR per tonne/);
   assert.match(out, /0\.875 kg/);

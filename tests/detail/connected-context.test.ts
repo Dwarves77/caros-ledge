@@ -43,9 +43,9 @@ test("themeAnalysisView: with no brief the cluster is structure (ids, surface ke
 });
 
 test("ItemConnections: each connection says why in one sentence, never a tag or a score", () => {
-  const row = { id: "r1", title: "Maritime Fuel Standard", priority: "HIGH", label: "References", surface: "market", href: "/market/r1", origin: "provenance_discovery", discovered: true, reason: "Shared operating context: ocean fuel surcharge." };
+  const row = { id: "r1", title: "Maritime Fuel Standard", priority: "HIGH", label: "References", surface: "market", href: "/market/r1", origin: "provenance_discovery", discovered: true, reason: "Both apply to ocean fuel surcharge operations." };
   const html1 = renderApp(createElement(ItemConnections, { rows: [row] as never }));
-  assert.match(html1, /Shared operating context: ocean fuel surcharge\./);
+  assert.match(html1, /Both apply to ocean fuel surcharge operations\./);
   assert.doesNotMatch(html1, /Bound by|shared_|0\.\d\d/);
   const html2 = renderApp(createElement(ItemConnections, { rows: [{ ...row, id: "r2", label: "Supersedes", surface: "regulations", href: "/regulations/r2", reason: "Replaces prior statutory provisions." }] as never }));
   assert.match(html2, /Replaces prior statutory provisions/);

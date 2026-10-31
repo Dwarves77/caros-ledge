@@ -15,6 +15,9 @@
     { "number": "0142", "slice": "PROV-TRIG-1", "status": "reserved", "reserved_on": "2026-10-26" },
     { "number": "0143", "slice": "ENGINE-CORE-FIX-1", "status": "reserved", "reserved_on": "2026-10-26" },
     { "number": "0144", "slice": "ENGINE-CORE-FIX-1", "status": "reserved", "reserved_on": "2026-10-26" },
-    { "number": "0145", "slice": "ENGINE-JOIN-1", "status": "reserved", "reserved_on": "2026-10-31" }
+    { "number": "0145", "slice": "ENGINE-JOIN-1", "status": "reserved", "reserved_on": "2026-10-31" },
+    { "number": "0146", "slice": "THEME-CODE-1", "status": "released", "reserved_on": "2026-10-31" },
+    { "number": "0147", "slice": "CONTENT-1b", "status": "reserved", "reserved_on": "2026-10-31" },
+    { "number": "0148", "slice": "THEME-CODE-1", "status": "reserved", "reserved_on": "2026-10-31" }
   ]
 }

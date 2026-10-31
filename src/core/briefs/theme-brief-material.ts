@@ -6,7 +6,7 @@ import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { isYearOnlyTarget } from "@/core/flywheel/clusters";
 import { CANDIDATE_ORIGIN, evidenceOf } from "@/core/flywheel/discover";
 import { detectGaps } from "@/core/flywheel/gaps";
-import { computeMemberHash, lineageFromThemeDelta, resolveBriefForTheme } from "@/core/flywheel/themes";
+import { computeMemberHash, resolveBriefForTheme } from "@/core/flywheel/themes";
 import { surfaceOf } from "@/core/routing";
 import { admissibleRows, type AdmissibleRows } from "@/core/derived/admissible";
 
@@ -18,14 +18,14 @@ export interface ThemeClaim { id: string; intelligence_item_id: string; claim_ki
 export interface ThemeEvent { id: string; intelligence_item_id: string; event_date: string; date_precision: string; event_kind: string; obligation_text: string; source_span: string | null; confidence: string | null }
 export interface ThemeEdge { source_item_id: string; target_item_id: string; relationship: string | null; origin: string | null; basis: unknown; score: number | null }
 export interface ThemeMaterial { items: MemberItem[]; claims: ThemeClaim[]; events: ThemeEvent[]; edges: ThemeEdge[]; jurisdictionWeights: Record<string, unknown> }
-export interface StoredBrief { theme_id: string; member_hash: string; member_count: number; title: string | null; generated_at: string | null; generated_by: string | null; member_ids: string[] | null }
+export interface StoredBrief { theme_id: string; member_hash: string; member_count: number; title: string | null; generated_at: string | null; generated_by: string | null; member_ids: string[] | null; superseded_at: string | null }
 
 const THEME_COLUMNS = "id, member_ids, dominant_signals, surfaces, density, convergence, pivots";
 const MEMBER_COLUMNS = "id, title, item_type, domain, jurisdiction_iso, priority, summary, added_date";
 const CLAIM_COLUMNS = "id, intelligence_item_id, claim_kind, claim_text, source_id, source_span";
 const EVENT_COLUMNS = "id, intelligence_item_id, event_date, date_precision, event_kind, obligation_text, source_span, confidence";
 const EDGE_COLUMNS = "source_item_id, target_item_id, relationship, origin, basis, score";
-const BRIEF_COLUMNS = "theme_id, member_hash, member_count, title, generated_at, generated_by, member_ids";
+const BRIEF_COLUMNS = "theme_id, member_hash, member_count, title, generated_at, generated_by, member_ids, superseded_at";
 
 /** Live themes, all of them or the named ids. */
 export async function loadThemes(sb: Db, themeIds: readonly string[] | null = null): Promise<ThemeRow[]> {
@@ -41,13 +41,6 @@ export async function loadThemes(sb: Db, themeIds: readonly string[] | null = nu
 
 /** Every stored theme brief (the structured columns exist: the probe the old reader needed is gone). */
 export const loadBriefs = (sb: Db): Promise<StoredBrief[]> => fetchAllRows<StoredBrief>((from, to) => sb.from("theme_briefs").select(BRIEF_COLUMNS).order("theme_id", { ascending: true }).range(from, to) as never, { cap: 50_000 });
-
-/** The prior-to-new theme id pairs of the latest finished corpus pass. */
-export async function loadLineage(sb: Db): Promise<{ prior_id: string; new_id: string }[]> {
-  const { data, error } = await sb.from("connection_theme_runs").select("id, started_at, theme_delta").eq("status", "ok").order("started_at", { ascending: false }).limit(1);
-  if (error) throw new Error(`connection_theme_runs read failed: ${error.message}`);
-  return lineageFromThemeDelta((data?.[0] as { theme_delta?: never } | undefined)?.theme_delta ?? null);
-}
 
 const byIds = <T>(sb: Db, table: string, columns: string, ids: readonly string[], idColumn: string, order: string): Promise<T[]> =>
   fetchAllByIdChunks(ids, async (slice) => {
@@ -135,15 +128,14 @@ export function buildValidationContext(themes: readonly ThemeRow[], material: Th
   return { themesById, membersById, groundedText, comparator: seams.comparator, ...(gapsByTheme ? { gapsByTheme } : {}), basisTokensByTheme };
 }
 
-export interface ThemeNeed { theme: ThemeRow; reason: "no_brief" | "stale" | "superseded"; prior: StoredBrief | null; supersedes_theme_id: string | null }
+export interface ThemeNeed { theme: ThemeRow; reason: "no_brief" | "stale"; prior: StoredBrief | null }
 /** Which themes need a brief, and why: skipped only when a brief stored under the theme's own id is current. Order: convergence descending, then id. */
-export function themesNeedingBrief(themes: readonly ThemeRow[], briefs: readonly StoredBrief[], opts: { lineage?: readonly { prior_id: string; new_id: string }[] } = {}): ThemeNeed[] {
-  const liveThemeIds = new Set(themes.map((t) => t.id));
+export function themesNeedingBrief(themes: readonly ThemeRow[], briefs: readonly StoredBrief[]): ThemeNeed[] {
   const out: ThemeNeed[] = [];
   for (const theme of themes) {
-    const r = resolveBriefForTheme({ id: theme.id, member_ids: theme.member_ids ?? [] } as never, briefs as never, { liveThemeIds, ...(opts.lineage ? { lineage: opts.lineage } : {}) });
-    if (r.match === "exact" && !r.stale) continue;
-    out.push({ theme, reason: r.match === "exact" ? "stale" : r.match === null ? "no_brief" : "superseded", prior: r.brief as StoredBrief | null, supersedes_theme_id: r.supersedes_theme_id });
+    const r = resolveBriefForTheme({ id: theme.id, member_ids: theme.member_ids ?? [] }, briefs);
+    if (r.brief && !r.stale) continue;
+    out.push({ theme, reason: r.brief ? "stale" : "no_brief", prior: r.brief });
   }
   return out.sort((a, b) => (b.theme.convergence ?? 0) - (a.theme.convergence ?? 0) || (a.theme.id < b.theme.id ? -1 : 1));
 }
@@ -156,7 +148,7 @@ const push = <K, V>(m: Map<K, V[]>, k: K, v: V): void => void m.set(k, [...(m.ge
  * summary, grounded claims and forward events. A member that does not fit whole is cut claim by claim; a member whose bare record does not fit is omitted. Every cut is counted in `truncation`.
  */
 export function buildThemeBundle(need: ThemeNeed, material: ThemeMaterial, gaps: readonly unknown[] | undefined, opts: { charBudget: number }) {
-  const { theme, reason, prior, supersedes_theme_id } = need;
+  const { theme, reason, prior } = need;
   const memberIds = theme.member_ids ?? [];
   const memberSet = new Set(memberIds);
   const itemById = new Map(material.items.map((i) => [i.id, i]));
@@ -166,7 +158,7 @@ export function buildThemeBundle(need: ThemeNeed, material: ThemeMaterial, gaps:
   for (const e of material.events) if (memberSet.has(e.intelligence_item_id)) push(eventsBy, e.intelligence_item_id, e);
   const allEdges = material.edges.filter((e) => memberSet.has(e.source_item_id) && memberSet.has(e.target_item_id)).sort((a, b) => (b.score ?? 0) - (a.score ?? 0) || `${a.source_item_id}${a.target_item_id}`.localeCompare(`${b.source_item_id}${b.target_item_id}`));
   const head = {
-    theme_id: theme.id, member_hash: computeMemberHash(memberIds), needs: reason, supersedes_theme_id: supersedes_theme_id ?? null,
+    theme_id: theme.id, member_hash: computeMemberHash(memberIds), needs: reason,
     prior_brief: prior ? { theme_id: prior.theme_id, title: prior.title ?? null, generated_at: prior.generated_at ?? null } : null,
     member_count: memberIds.length, surfaces: theme.surfaces ?? [], convergence: theme.convergence ?? null, pivots: theme.pivots ?? [], dominant_signals: theme.dominant_signals ?? [], gaps: gaps ?? [],
   };

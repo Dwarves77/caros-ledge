@@ -26,6 +26,8 @@ const schema = z.object({
   convergenceBands: z.object({ high: num, medium: num }),
   cluster: z.object({ maxRounds: z.number().int().positive(), pivotK: z.number().int().positive() }),
   themeOverlapThreshold: num,
+  /** Ruling 58: a connection theme is written only at convergence >= minConvergence; a cluster below it writes no theme and its members stay unthemed. */
+  theme: z.object({ minConvergence: num }),
 });
 export const CONFIG = schema.parse(raw);
 export const ROLE_TAGS: ReadonlySet<string> = new Set(CONFIG.roleTags);

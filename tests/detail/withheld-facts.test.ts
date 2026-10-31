@@ -52,7 +52,7 @@ test("the Dissent and Signposts cards are level-2 headings", () => {
 
 test("a connection row reads label then the surface it links to (as the old card did); a discovered edge keeps its mark off the visible name", async () => {
   const { ItemConnections } = await import("@/ui/detail");
-  const row = { id: "x", title: "T", priority: "MODERATE", label: "References", surface: "research", href: "/research/x", origin: "provenance_discovery", discovered: true, reason: "Shared operating context: ocean fuel surcharge." };
+  const row = { id: "x", title: "T", priority: "MODERATE", label: "References", surface: "research", href: "/research/x", origin: "provenance_discovery", discovered: true, reason: "Both apply to ocean fuel surcharge operations." };
   const html = renderApp(createElement(ItemConnections, { rows: [row] as never }));
   assert.match(textOf(html), /References · research T/);
   assert.doesNotMatch(textOf(html), /discovered/);

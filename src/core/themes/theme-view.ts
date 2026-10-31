@@ -1,5 +1,5 @@
 // Ported from old_repo/src/lib/research/theme-brief.mjs (lines 1-303)
-// The cross-page theme view (research-ops.md): which theme an item belongs to, the brief that explains it (current or stale, by member hash and lineage), the analysis a detail page
+// The cross-page theme view (research-ops.md): which theme an item belongs to, the brief that explains it (current or stale, by member hash), the analysis a detail page
 // draws (members grouped by page, the sections of the brief, what is missing said in words) and the chips a list page draws. Pure: the rows come in already read. The detail page is
 // the first consumer; the dashboard and the shell read the same views later.
 import { SURFACE_HEADING, parseRamifications } from "@/core/briefs/theme-brief-contract";
@@ -38,8 +38,6 @@ export interface MemberRow {
   compliance_deadline?: string | null;
 }
 
-type Lineage = { prior_id: string; new_id: string }[];
-
 const MAX_MEMBERS_PER_PAGE = 6;
 const MAX_CHIP_MEMBER_LINKS = 3;
 const MAX_THEME_LABEL_CHARS = 56;
@@ -54,13 +52,12 @@ function briefHolds(theme: ThemeRow, brief: BriefRow | null, stale: boolean): br
   return !!brief && (!stale || (was.length > 0 && was.filter((id) => theme.member_ids.includes(id)).length / was.length >= 0.5));
 }
 
-/** The brief that explains the item's theme: exact, or inherited from a dissolved theme (always stale), and only while it still describes the theme (briefHolds). */
-function briefForItem(itemId: string, themes: readonly ThemeRow[], briefs: readonly BriefRow[], lineage: Lineage) {
+/** The brief that explains the item's theme, and only while it still describes the theme (briefHolds). */
+function briefForItem(itemId: string, themes: readonly ThemeRow[], briefs: readonly BriefRow[]) {
   const theme = themeForItem(themes, itemId);
   if (!theme) return null;
-  const resolved = resolveBriefForTheme(theme, briefs, { liveThemeIds: new Set(themes.map((t) => t.id)), lineage });
-  const b = resolved.brief as BriefRow | null;
-  return briefHolds(theme, b, resolved.stale) ? { title: b.title, briefMd: b.brief_md, generatedAt: b.generated_at ?? null, stale: resolved.stale, supersedesThemeId: resolved.supersedes_theme_id, sections: b.sections && typeof b.sections === "object" && !Array.isArray(b.sections) ? b.sections : null } : null;
+  const { brief: b, stale } = resolveBriefForTheme(theme, briefs);
+  return briefHolds(theme, b, stale) ? { title: b.title, briefMd: b.brief_md, generatedAt: b.generated_at ?? null, stale, sections: b.sections && typeof b.sections === "object" && !Array.isArray(b.sections) ? b.sections : null } : null;
 }
 
 /** What a theme with no usable brief is made of, as data: the member and pivot ids, the surface keys it spans, the words it is mostly linked by (the canonical names and scenarios of its edges) and the counts. The page words it (ADR-050). */
@@ -84,11 +81,11 @@ const clusterOf = (theme: ThemeRow, pages: ReadonlyArray<{ surface: string }>, l
 });
 
 /** The theme analysis of one item on one surface: members by page (other pages first), the brief's sections, and the cluster's structure when there is no brief. */
-export function themeAnalysisView(input: { itemId: string; surface: string; themes: readonly ThemeRow[]; briefs: readonly BriefRow[]; lineage?: Lineage; members?: readonly MemberRow[]; events?: readonly ThemeEventRow[]; linkedBy?: readonly string[]; asOfIso: string }) {
-  const { itemId, surface, themes, briefs, lineage = [], members = [], events = [], linkedBy = [], asOfIso } = input;
+export function themeAnalysisView(input: { itemId: string; surface: string; themes: readonly ThemeRow[]; briefs: readonly BriefRow[]; members?: readonly MemberRow[]; events?: readonly ThemeEventRow[]; linkedBy?: readonly string[]; asOfIso: string }) {
+  const { itemId, surface, themes, briefs, members = [], events = [], linkedBy = [], asOfIso } = input;
   const theme = themeForItem(themes, itemId);
   if (!theme) return null;
-  const brief = briefForItem(itemId, themes, briefs, lineage);
+  const brief = briefForItem(itemId, themes, briefs);
   const pivotRank = new Map((theme.pivots ?? []).map((p, i) => [p?.id, i]));
   const rows: Array<{ id: string; title: string; href: string; surface: string }> = [];
   for (const m of members) {
@@ -124,7 +121,6 @@ export function themeAnalysisView(input: { itemId: string; surface: string; them
     memberCount: theme.member_ids.length,
     density: typeof theme.density === "number" ? theme.density : null,
     stale: brief ? brief.stale : false,
-    supersedesThemeId: brief ? brief.supersedesThemeId : null,
     hasBrief: Boolean(brief),
     cluster: brief ? null : clusterOf(theme, pages, linkedBy),
     sections,
@@ -159,11 +155,10 @@ export const inThemeScope = (memberCount: number, surfaceCount: number): boolean
 export const compareThemes = (a: { hasBrief: boolean; surfaces: number; members: number; convergence: number; id: string }, b: typeof a): number => Number(b.hasBrief) - Number(a.hasBrief) || b.surfaces - a.surfaces || b.members - a.members || b.convergence - a.convergence || (a.id < b.id ? -1 : 1);
 
 /** The theme chips of a list page: the themes in scope that touch the surface (or span `minPages`), ranked by compareThemes, each linking to a member on this surface. */
-export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly MemberRow[]; briefs?: readonly BriefRow[]; lineage?: Lineage; surface?: string | null; minPages?: number; max?: number }) {
-  const { themes, items, briefs = [], lineage = [], surface = null, minPages = 1, max = 6 } = input;
+export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly MemberRow[]; briefs?: readonly BriefRow[]; surface?: string | null; minPages?: number; max?: number }) {
+  const { themes, items, briefs = [], surface = null, minPages = 1, max = 6 } = input;
   const byId = new Map(items.filter((it) => it && trim(it.title)).map((it) => [it.id, it]));
   const live = themes.filter((t) => t && typeof t.id === "string" && Array.isArray(t.member_ids));
-  const liveThemeIds = new Set(live.map((t) => t.id));
   const out: Array<{ themeId: string; convergence: number; href: string; label: string; itemTitle: string; briefTitle: string | null; meaning: string | null; memberCount: number; pages: Array<{ surface: string; label: string }>; hasBrief: boolean; stale: boolean; links: Array<{ title: string; href: string }> }> = [];
   for (const t of live) {
     const pivotRank = new Map((t.pivots ?? []).map((p, i) => [p?.id, i]));
@@ -177,8 +172,8 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
     if (pageSet.size < minPages || !inThemeScope(t.member_ids.length, pageSet.size)) continue;
     const target = surface ? members.find((m) => m.surface === surface) : members[0];
     if (!target) continue;
-    const resolved = resolveBriefForTheme(t, briefs, { liveThemeIds, lineage });
-    const brief = briefHolds(t, resolved.brief as BriefRow | null, resolved.stale) ? (resolved.brief as BriefRow) : null;
+    const found = resolveBriefForTheme(t, briefs);
+    const brief = briefHolds(t, found.brief, found.stale) ? found.brief : null;
     const others = members.filter((m) => m.id !== target.id);
     const pages = SURFACE_ORDER.filter((s) => pageSet.has(s)).map((s) => ({ surface: s, label: label(s) as string }));
     const briefTitle = brief ? trim(brief.title) : null;
@@ -192,7 +187,7 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
       memberCount: t.member_ids.length,
       pages,
       hasBrief: Boolean(brief),
-      stale: brief ? resolved.stale : false,
+      stale: brief ? found.stale : false,
       links: [...others.filter((m) => m.surface !== target.surface), ...others.filter((m) => m.surface === target.surface)].slice(0, MAX_CHIP_MEMBER_LINKS).map(({ title, href }) => ({ title, href })),
     });
   }

@@ -11,9 +11,9 @@ import { createElement } from "react";
 import { buildConnectionRows, buildSupersessionRows, type ConnectionIn } from "@/core/flywheel/view-model";
 import type { FactLink } from "@/core/flywheel/facts-join";
 import { toListRowFields } from "@/core/lists/row-fields";
-import { themeAnalysisView } from "@/core/themes/theme-view";
+import { themeAnalysisView, themeChips } from "@/core/themes/theme-view";
 import { isOperationsFigure } from "@/features/operations/model/derived-view";
-import { readItemExtras, readLinkedBy, readFlywheelRadar, readWhyMatters, reasonFor, whyLines, type RadarView } from "@/features/flywheel/radar/read";
+import { readItemExtras, readLinkedBy, readFlywheelRadar, readWhyMatters, nameChips, reasonFor, whyLines, type RadarView } from "@/features/flywheel/radar/read";
 import { DerivedFigures } from "@/features/operations/ui/Spec09Panels";
 import { CrossPageSection } from "@/ui/detail/CrossPageSection";
 import { ItemConnections } from "@/ui/detail/ItemConnections";
@@ -40,7 +40,7 @@ test("INV-2: every rendered connection carries a plain reason, whatever the basi
   assert.equal(rows.length, 5);
   for (const r of rows) assert.ok(r.reason.trim().length > 10, `${r.id}: ${r.reason}`);
   const by = Object.fromEntries(rows.map((r) => [r.id, r.reason]));
-  assert.equal(by.a, "Shared operating context: ocean fuel surcharge.", "the tag-level sentence is the last fallback, in words");
+  assert.equal(by.a, "Both apply to ocean fuel surcharge operations.", "the tag-level sentence is the last fallback, in words");
   assert.equal(by.b, "Both concern 2023/959.", "an entity beats the same source");
   assert.equal(by.c, "Methanol fuels Container shipping, so a change in one reaches the other.");
   assert.equal(by.d, "Replaces prior statutory provisions.");
@@ -59,9 +59,11 @@ test("a same-source-only edge is not a connection, and a candidate edge is not i
 });
 
 test("a reason states the causal chain from the facts of the two items, the reader's rationale first", () => {
-  const withFacts = buildConnectionRows([edge("a", { basis: [SCN] })], LOOKUP, { self: [ETS], facts: new Map([["uuid-a", [HFO]]]) });
-  assert.equal(withFacts[0]?.reason, "Directive 2023/959 states 100 EUR/t (as of Oct 30, 2026). Heavy fuel oil 3.5%S rose 24.8% over the last week.");
-  const authored = buildConnectionRows([edge("a", { basis: { evidence: [SCN], rationale: { text: "Both costs land on the same voyage and reach forwarders as surcharge.", authoredBy: "run-1", at: "2026-10-31" } } })], LOOKUP, { self: [ETS], facts: new Map([["uuid-a", [HFO]]]) });
+  // the chain is the facts tied to an entity BOTH items reach: the obligation and the price move filed under the same fuel
+  const ETS_ON_FUEL = { ...ETS, entity: HFO.entity };
+  const withFacts = buildConnectionRows([edge("a", { basis: [SCN] })], LOOKUP, { self: [ETS_ON_FUEL, HFO], facts: new Map([["uuid-a", [HFO]]]) });
+  assert.equal(withFacts[0]?.reason, "Both apply to ocean fuel surcharge operations. Directive 2023/959 states 100 EUR/t (as of Oct 30, 2026). Heavy fuel oil 3.5%S rose 24.8% over the last week.");
+  const authored = buildConnectionRows([edge("a", { basis: { evidence: [SCN], rationale: { text: "Both costs land on the same voyage and reach forwarders as surcharge.", authoredBy: "run-1", at: "2026-10-31" } } })], LOOKUP, { self: [ETS_ON_FUEL], facts: new Map([["uuid-a", [HFO]]]) });
   assert.equal(authored[0]?.reason, "Both costs land on the same voyage and reach forwarders as surcharge.");
   assert.equal(reasonFor({ basis: null, origin: "manual", label: "Related" }), null, "a reason is never invented");
   assert.deepEqual(buildSupersessionRows([{ old: "a", new: "self" }], "self", LOOKUP).map((r) => r.reason), ["Replaces prior statutory provisions."]);
@@ -71,9 +73,9 @@ test("INV-1: no surface the brief touches renders an edge score, a method id, a 
   const rows = buildConnectionRows([edge("a", { basis: [SRC, SCN] }), edge("b", { basis: [ENT] }), edge("c", { basis: [{ signal: "intersection", detail: { scenarios: ["ocean-fuel-surcharge"], objects: ["eu-ets"], strength: 9, tier: "strong" } }] }), edge("d", { origin: "candidate", basis: { evidence: [SCN], missing: { surface: "research", truth: "a Research abatement-cost evaluation for methanol engines", patternFamily: "pattern_penalty_abatement" } } })], LOOKUP);
   const view: RadarView = {
     patterns: [{ key: "00000000-0000-4000-8000-000000000001", label: "Mandate vs. capacity collision", means: "A rule requires something by a date.", forming: false, groups: [{ surface: "regulations", label: "Regulations", href: "/regulations", items: [{ title: "FuelEU Maritime", href: "/regulations/x" }], names: [] }], watch: "Watch: confirmed while the evidence behind it keeps holding.", missingParts: [], next: null }],
-    forming: [{ key: "f", family: "Economic/abatement crossover forming", chain: [{ title: "Item A", href: "/market/a", surface: "market" }], reason: "Shared operating context: ocean fuel surcharge.", next: null }],
+    forming: [{ key: "f", family: "Economic/abatement crossover forming", chain: [{ title: "Item A", href: "/market/a", surface: "market" }], reason: "Both apply to ocean fuel surcharge operations.", next: null }],
   };
-  const theme = { memberCount: 3, pages: [{ surface: "market", label: "Market Intel" }], hasBrief: false, title: null, stale: false, supersedesThemeId: null, briefMd: null, sections: null, forwardOutlook: { horizons: [] }, membersByPage: [], cluster: { memberIds: [], pivotIds: [], surfaces: ["market"], linkedBy: ["Directive 2023/959"], memberCount: 3, surfaceCount: 1, density: 0.82 }, ramificationsMissing: false };
+  const theme = { memberCount: 3, pages: [{ surface: "market", label: "Market Intel" }], hasBrief: false, title: null, stale: false, briefMd: null, sections: null, forwardOutlook: { horizons: [] }, membersByPage: [], cluster: { memberIds: [], pivotIds: [], surfaces: ["market"], linkedBy: ["Directive 2023/959"], memberCount: 3, surfaceCount: 1, density: 0.82 }, ramificationsMissing: false };
   const surfaces: Record<string, string> = {
     connections: renderApp(createElement(ItemConnections, { rows })),
     radar: renderApp(createElement(FlywheelRadar, { view })),
@@ -123,14 +125,14 @@ test("INV-3: the radar draws N patterns from N emerging rows, and none, with the
 test("the radar adds the signpost that confirms a pattern and the missing part an open need names, and scopes to a surface and an item", async () => {
   const db = worldOf(2, {
     signposts: [{ entity_id: "s1", watches: "anchor1", predicate: { op: "date_passed", pattern: "mandateCapacity:k1", key_date: "2027-01-01" }, outcome: null }, { entity_id: "s2", watches: "anchor2", predicate: { pattern: "mandateCapacity:k2" }, outcome: "refuted" }],
-    integrity_flags: [{ id: "f1", subject_ref: "pattern:mandateCapacity:k1:far", description: "Pattern x names y to far.", recommended_actions: [{ action: "missing", surface: "market", truth: "a Market Intel price series for far", entity: "far" }], created_by: "flywheel-gap:pattern_hop_gap", status: "open" }, { id: "f3", subject_ref: "pattern:mandateCapacity:k2:other", description: "Pattern x names y to other. Surface operations; entities other.", recommended_actions: [], created_by: "flywheel-gap:pattern_hop_gap", status: "open" }, { id: "f2", subject_ref: "pattern:mandateCapacity:k2:far", description: "Surface market;", created_by: "flywheel-gap:pattern_hop_gap", status: "resolved" }],
+    integrity_flags: [{ id: "f1", subject_ref: "pattern:mandateCapacity:k1:far", description: "Pattern x names y to far.", recommended_actions: [{ action: "missing", surface: "market", truth: "a Market Intel price series for far", entity: "far" }], created_by: "flywheel-gap:pattern_hop_gap", status: "open" }, { id: "f3", subject_ref: "pattern:mandateCapacity:k2:other", description: "Pattern x names y to other. Surface research; entities other.", recommended_actions: [], created_by: "flywheel-gap:pattern_hop_gap", status: "open" }, { id: "f2", subject_ref: "pattern:mandateCapacity:k2:far", description: "Surface market;", created_by: "flywheel-gap:pattern_hop_gap", status: "resolved" }],
   });
   const view = await readFlywheelRadar({ db, admin: db }, { kind: "corpus" });
   const [p1, p2] = view.patterns.sort((a, b) => a.key.localeCompare(b.key));
-  assert.equal(p1?.watch, "Watch: confirmed if the dated step still stands on 2027-01-01.");
+  assert.equal(p1?.watch, "Watch: confirmed if the dated step still stands on Jan 1, 2027.");
   assert.equal(p2?.watch, null, "a scored signpost is not a thing to watch");
   assert.deepEqual(p1?.missingParts, ["Missing part: no Market Intel item yet; the chain is incomplete until one appears."]);
-  assert.deepEqual(p2?.missingParts, ["Missing part: no Operations item yet; the chain is incomplete until one appears."], "a flag written before the typed action still names its surface; a resolved need is not shown");
+  assert.deepEqual(p2?.missingParts, ["Missing part: no Research item yet; the chain is incomplete until one appears."], "a flag written before the typed action still names its surface; a resolved need is not shown");
   assert.equal((await readFlywheelRadar({ db, admin: db }, { kind: "surface", surface: "market" })).patterns.length, 0, "no pattern on the market page has a row there");
   assert.equal((await readFlywheelRadar({ db, admin: db }, { kind: "item", itemUuid: "i2", memberIds: [] })).patterns.length, 1, "an item sees the patterns it rests on");
   await assert.rejects(readFlywheelRadar({ db: memoryDb({}, { failures: [{ table: "derived_values_admissible", op: "select", message: "boom" }] }).db, admin: db }, { kind: "corpus" }), /boom/);
@@ -230,4 +232,82 @@ test("INV-6: the radar's links and cards keep the 44 px target of law 2", () => 
   assert.match(css, /\.cl-detail-link \{[^}]*min-height: 44px/);
   const html = renderApp(createElement(FlywheelRadar, { view: { patterns: [{ key: "k", label: "L", means: "M", forming: false, groups: [{ surface: "regulations", label: "Regulations", href: "/regulations", items: [{ title: "A", href: "/regulations/a" }], names: [] }], watch: null, missingParts: [], next: null }], forming: [] } }));
   assert.match(html, /class="cl-detail-link-tap"/);
+});
+
+// -- UI-RADAR-2 (2026-10-31): the reason is about the PAIR, a pattern is one card, a theme chip has a name ------------------------------------------------------------------
+const SERIES_ONLY = link("market_series", { label: "Kerosene-type jet fuel spot price — NA", delta: { week: -0.053 } }, { entity: { id: "e-jet", kind: "material", canonicalName: "Jet fuel" } });
+const SHARED_FUEL = link("market_series", { label: "Heavy fuel oil 3.5%S", delta: { week: 0.248 } }, { entity: { id: "e-hfo", kind: "material", canonicalName: "Heavy fuel oil" } });
+
+test("UI-RADAR-2 reasons: a fact that belongs to the source item alone is never the reason for any of its pairs; two targets with different evidence read differently", () => {
+  const SG = { signal: "shared_jurisdiction_topic", detail: "both in sg on fuels/emissions", weight: 0.2 };
+  const rows = buildConnectionRows(
+    [edge("a", { basis: [{ signal: "shared_entity", tokens: { entities: [{ id: "e-hfo", name: "Heavy fuel oil" }] } }] }), edge("b", { basis: [{ signal: "shared_scenario", detail: "both touch ocean-bunkering", tokens: { scenarios: ["ocean-bunkering"] } }, SG] }), edge("c", { basis: [SCN] })],
+    LOOKUP,
+    { self: [SERIES_ONLY, SHARED_FUEL], facts: new Map([["uuid-a", [SHARED_FUEL]], ["uuid-b", []], ["uuid-c", []]]) },
+  );
+  const by = Object.fromEntries(rows.map((r) => [r.id, r.reason]));
+  assert.equal(by.a, "Both concern Heavy fuel oil. Heavy fuel oil 3.5%S rose 24.8% over the last week.", "a fact tied to the entity both reach is the chain");
+  assert.equal(by.b, "Both apply to ocean bunkering operations in SG on fuels and emissions.", "scenario and place in words, nothing about the source item's own series");
+  assert.equal(by.c, "Both apply to ocean fuel surcharge operations.");
+  assert.equal(new Set(Object.values(by)).size, 3, "three targets, three different pairs, three sentences");
+  for (const r of rows) assert.doesNotMatch(r.reason, /jet fuel|5\.3%/i, `${r.id} quotes the source-only series`);
+});
+
+test("UI-RADAR-2 reasons: the strongest legacy evidence (a shared regulation identifier, shared names in the titles) states the pair; the same source still does not", () => {
+  const rows = buildConnectionRows([edge("a", { basis: [SRC, { signal: "shared_regulation_identifier", detail: 'both name regulation identifier(s) "2099/2002" in their titles', weight: 0.85 }] }), edge("b", { basis: [{ signal: "shared_title_entity", detail: 'both name named entit(y/ies) "Council Decision", "European Union" in their titles', weight: 0.7 }] }), edge("c", { basis: [SRC] })], LOOKUP);
+  assert.deepEqual(rows.map((r) => [r.id, r.reason]), [["a", "Both name regulation 2099/2002 in their titles."], ["b", "Both name Council Decision and European Union in their titles."]]);
+});
+
+test("UI-RADAR-2 detail: a detail with no forming connection says so in words", () => {
+  const rows = buildConnectionRows([edge("a", { basis: [SCN] })], LOOKUP);
+  assert.match(textOf(renderApp(createElement(ItemConnections, { rows }))), /Developing No connection is forming for this item yet\./);
+});
+
+const LEAD_LAG = (n: number, inputs: unknown[]) => ({
+  value_id: `v${n}`, entity_id: "cl:corridor:c1", method_id: "pattern_lead_lag", method_version: "1.4.0", lifecycle: "emerging", computed_by: `pattern_lead_lag@1.4.0:ev${n}`, computed_at: `2026-10-0${n}T00:00:00Z`, admissibility: "calculation_ok", inputs,
+});
+const TWO_SURFACES = [{ table: "obligation_objects", pk: "ob1", kind: "key", surface: "regulations", entities: ["e1"] }, { table: "reroute_events", pk: "rr1", kind: "evidence", surface: "operations", entities: ["cl:corridor:c1"] }];
+test("UI-RADAR-2 radar: five rows of one pattern joining the same members are ONE card listing every watch date; the corridor reads as the route; a surface the card holds is not 'missing'", async () => {
+  const dates = ["2027-01-01", "2028-01-01", "2028-01-31", "2028-09-30", "2029-01-01"];
+  const longTitle = "Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003 establishing a scheme for greenhouse gas emission allowance trading within the Community and amending Council Directive 96/61/EC (Text with EEA relevance)";
+  const db = memoryDb({
+    derived_values: dates.map((_d, i) => LEAD_LAG(i + 1, TWO_SURFACES)),
+    obligation_objects: [{ obligation_id: "ob1", instrument_item_id: "i1" }],
+    intelligence_items: [ITEM("i1", longTitle)],
+    entities: [{ entity_id: "e1", canonical_name: "2003/87" }, { entity_id: "cl:corridor:c1", kind: "corridor", canonical_name: "CNSHA-ITGOA:ocean", display_name: "Shanghai (CN) → Genoa (IT), ocean" }],
+    signposts: dates.map((d, i) => ({ entity_id: `s${i}`, watches: "cl:corridor:c1", predicate: { pattern: `leadLag:ev${i + 1}`, key_date: d }, outcome: null })),
+    integrity_flags: [
+      { id: "f1", subject_ref: "pattern:leadLag:ev1:far", description: "Surface regulations;", recommended_actions: [{ action: "missing", surface: "regulations" }], created_by: "flywheel-gap:pattern_trigger_gap", status: "open" },
+      { id: "f2", subject_ref: "pattern:leadLag:ev2:far", description: "x", recommended_actions: [{ action: "missing", surface: "research" }], created_by: "flywheel-gap:pattern_trigger_gap", status: "open" },
+    ],
+  }).db;
+  const view = await readFlywheelRadar({ db, admin: db }, { kind: "corpus" });
+  assert.equal(view.patterns.length, 1, "five watch dates, one pattern, one card");
+  const p = view.patterns[0] as RadarView["patterns"][number];
+  assert.equal(p.watch, "Watch: confirmed if the dated steps still stand on Jan 1, 2027, Jan 1, 2028, Jan 31, 2028, Sep 30, 2028 and Jan 1, 2029.");
+  assert.deepEqual(p.missingParts, ["Missing part: no Research item yet; the chain is incomplete until one appears."], "Regulations is on the card, so it is not missing; Research is");
+  const text = textOf(renderApp(createElement(FlywheelRadar, { view })));
+  assert.match(text, /Operations ?: Shanghai \(CN\) → Genoa \(IT\), ocean/);
+  assert.doesNotMatch(text, /CNSHA-ITGOA/);
+  const regs = p.groups.find((g) => g.surface === "regulations")?.items[0]?.title ?? "";
+  assert.ok(regs.length <= 91 && regs.endsWith("…") && longTitle.startsWith(regs.slice(0, -1)) && /\s/.test(longTitle[regs.length - 1] ?? " "), `a title over 90 characters is cut at a whole word: ${regs}`);
+  assert.equal(p.groups.find((g) => g.surface === "regulations")?.items[0]?.href.startsWith("/regulations/"), true);
+  // all four surfaces on the card: a need that names any of them is not drawn
+  const four = [...TWO_SURFACES, { table: "market_series", pk: "m", kind: "member", surface: "market" }, { table: "emission_factors", pk: "r", kind: "member", surface: "research" }];
+  const full = memoryDb({ derived_values: [LEAD_LAG(1, four)], integrity_flags: [{ id: "f9", subject_ref: "pattern:leadLag:ev1:far", description: "x", recommended_actions: [{ action: "missing", surface: "market" }], created_by: "flywheel-gap:pattern_trigger_gap", status: "open" }] }).db;
+  assert.deepEqual((await readFlywheelRadar({ db: full, admin: full }, { kind: "corpus" })).patterns[0]?.missingParts, []);
+});
+
+test("UI-RADAR-2 chips: a theme with no brief is named by what its edges are linked by; two chips never read the same", async () => {
+  const mk = (n: number, prefix: string) => Array.from({ length: n }, (_, i) => ({ id: `${prefix}${i}`, legacy_id: null, title: "Same member title", item_type: i % 2 ? "market_signal" : "regulation", domain: i % 2 ? 4 : 1 }));
+  const A = mk(4, "a"), B = mk(4, "b");
+  const themes = [A, B].map((rows, i) => ({ id: `t${i}`, member_ids: rows.map((r) => r.id), surfaces: ["regulations", "market"], convergence: 0.5 - i / 10, pivots: [] }));
+  const edge = (n: number, source: string, name: string) => ({ id: `x${n}`, source_item_id: source, target_item_id: `z${n}`, origin: "provenance_discovery", basis: { evidence: [{ signal: "shared_entity", tokens: { entities: [{ id: name, name }] } }] } });
+  const db = memoryDb({ item_cross_references: [...["Directive 2023/959", "Heavy fuel oil", "Shore power", "a fourth"].map((n, i) => edge(i, "a0", n)), edge(9, "a1", "Directive 2023/959"), edge(10, "a1", "Heavy fuel oil"), edge(11, "a2", "Shore power")] }).db;
+  const base = themeChips({ themes: themes as never, items: [...A, ...B], surface: null, max: 6 });
+  const chips = await nameChips(db, base, themes);
+  assert.equal(chips[0]?.label, "Linked by Directive 2023/959, Heavy fuel oil and Shore power", "up to three names, most frequent first");
+  assert.deepEqual(chips[0]?.linkedBy, ["Directive 2023/959", "Heavy fuel oil", "Shore power"]);
+  assert.match(chips[1]?.label ?? "", /^4 linked items across Regulations and Market Intel$/, "no name known: the count and the pages");
+  assert.equal(new Set((await nameChips(memoryDb({}).db, base, themes)).map((c) => c.label)).size, 2, "two chips with the same derived label are told apart");
 });
