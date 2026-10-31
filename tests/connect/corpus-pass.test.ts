@@ -69,19 +69,6 @@ test("a failed item read rejects; it is never an empty corpus that dissolves eve
   assert.equal(m.writes.filter((w) => w.op !== "select").length, 0);
 });
 
-test("shared-entity edges: two items naming one regulation identifier, no edge between them, get both directions", async () => {
-  const items = [item("a", { title: "Regulation (EU) 2023/1805 on fuels" }), item("b", { title: "Guidance on 2023/1805" }), item("c", { title: "Unrelated" })];
-  const sharedOf = (m: ReturnType<typeof world>) => (m.tables.item_cross_references as Row[]).filter((e) => (e.basis as { signal?: string }[] | null)?.[0]?.signal === "shared_entity");
-  const m = memoryDb({ intelligence_items: items, workspace_settings: [{ jurisdiction_weights: {} }] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] } });
-  const out = await corpusPass({ sb: m.db, now: () => NOW }, { dry: false });
-  assert.equal(out.counts.shared_entity_edges, 2);
-  assert.deepEqual(sharedOf(m).map((e) => `${e.source_item_id}>${e.target_item_id}`).sort(), ["a>b", "b>a"]);
-  assert.equal((sharedOf(m)[0]?.basis as { weight?: number }[])[0]?.weight, 0.85);
-  const held = memoryDb({ intelligence_items: items, workspace_settings: [{ jurisdiction_weights: {} }], item_cross_references: [{ id: "x1", source_item_id: "b", target_item_id: "a", relationship: "related", origin: "provenance_discovery", score: 0.3, basis: [] }] }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] } });
-  const suppressed = await corpusPass({ sb: held.db, now: () => NOW }, { dry: false });
-  assert.equal(suppressed.counts.shared_entity_edges, 0, "an existing edge in either direction suppresses it");
-});
-
 test("IMP-047: the pass's run id reaches the default snapshot sink: the prior edge rows are in edge_snapshots under that run, taken before the refresh", async () => {
   const RUN = "99999999-9999-4999-8999-999999999999";
   const m = world({ item_cross_references: [{ id: "x1", source_item_id: "a", target_item_id: "b", relationship: "related", origin: "provenance_discovery", score: 0.3, basis: [] }] });
@@ -94,4 +81,18 @@ test("IMP-047: the pass's run id reaches the default snapshot sink: the prior ed
   const dry = world({ item_cross_references: [{ id: "x1", source_item_id: "a", target_item_id: "b", relationship: "related", origin: "provenance_discovery", score: 0.3, basis: [] }] });
   await corpusPass({ sb: dry.db, now: () => NOW, runId: RUN }, { dry: true });
   assert.equal(dry.tables.edge_snapshots, undefined, "a dry run snapshots nothing");
+});
+
+test("ENGINE-JOIN-1: the pass clusters over the edges that connect: same-source edges and developing connections form no theme,", async () => {
+  const edge = (id: string, a: string, b: string, origin: string, basis: unknown, score: number): Row => ({ id, source_item_id: a, target_item_id: b, relationship: "related", origin, score, basis });
+  const m = memoryDb({
+    intelligence_items: ["a", "b", "c", "d"].map((id) => item(id)),
+    workspace_settings: [{ jurisdiction_weights: {} }],
+    item_cross_references: [edge("e1", "a", "b", "provenance_discovery", [{ signal: "shared_source", weight: 0.4 }], 0.4), edge("e2", "c", "d", "candidate", { evidence: [{ signal: "shared_entity", weight: 0.85 }], missing: null }, 0.22)],
+  }, { unique: { item_cross_references: ["source_item_id", "target_item_id"] } });
+  const out = await corpusPass({ sb: m.db, now: () => NOW }, { dry: false });
+  assert.equal(out.outcome, "ok", out.notes.join("; "));
+  assert.equal(out.counts.themes, 0);
+  assert.equal((m.tables.connection_themes as Row[] | undefined ?? []).length, 0);
+  assert.equal(out.counts.edges_used, 0);
 });

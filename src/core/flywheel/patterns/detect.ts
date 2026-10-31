@@ -29,7 +29,7 @@ const collapseCopies = (fs: readonly Fact[]): { fact: Fact; members: number }[] 
   return [...by.values()].map((g) => ({ fact: [...g].sort((a, b) => a.pk.localeCompare(b.pk))[0] as Fact, members: g.length }));
 };
 /** The first specific entity (not a bare mode, jurisdiction or organisation) two rows meet at: an entity the second row is filed under that the first row's reach holds (the entities it is filed under and the entities one relation away from them). A jurisdiction or an organisation reaches nothing; a mode reaches only its lane corridors (genericReach), so the rows of a lane meet the rows filed under its mode, but the fuels of a mode are not reached from it; the mode itself is never the point two rows meet at. */
-const meet = (i: PatternInput, from: readonly string[], to: readonly string[], memo: Map<string, Set<string>>): string | undefined => {
+export const meet = (i: PatternInput, from: readonly string[], to: readonly string[], memo: Map<string, Set<string>>): string | undefined => {
   const k = [...from].sort().join();
   let r = memo.get(k);
   if (!r) {

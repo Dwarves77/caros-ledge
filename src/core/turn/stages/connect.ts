@@ -32,7 +32,7 @@ export function shapeConnect(ids: readonly string[], parts: { bind?: RunResult |
   const outcome = worst("ok", ...list.map((p) => p.outcome));
   const counts: Record<string, number> = {
     slice: ids.length, bound: parts.bind?.counts.bound ?? 0, unbound: parts.bind?.counts.unbound ?? 0, connected: outcome === "failed" ? 0 : ids.length, tag_items_written: parts.tag?.counts.items_written ?? 0,
-    edges_written: (parts.discovery?.counts.written ?? 0) + (parts.corpus?.counts.intersection_inserted ?? 0) + (parts.corpus?.counts.shared_entity_written ?? 0),
+    edges_written: (parts.discovery?.counts.written ?? 0) + (parts.corpus?.counts.intersection_inserted ?? 0),
     term_writes: parts.term ? sumWritten(parts.term.counts) : 0, themes: parts.corpus?.counts.themes ?? 0, ...(parts.couplings?.counts ?? {}), ...(parts.patterns?.counts ?? {}), ...(parts.scan?.counts ?? {}), ...Object.fromEntries(Object.entries(parts.triggers?.counts ?? {}).map(([k, n]) => [`triggers_${k}`, n])),
   };
   return { ...runResult(outcome, counts, leadWithFailures(list)), data: { ids: { connected_item_ids: outcome === "failed" ? [] : [...ids], scanned_item_ids: parts.scan?.data?.ids.scanned_item_ids ?? [] } } };
