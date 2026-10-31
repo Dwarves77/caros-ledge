@@ -3,7 +3,7 @@
 // draws (members grouped by page, the sections of the brief, what is missing said in words) and the chips a list page draws. Pure: the rows come in already read. The detail page is
 // the first consumer; the dashboard and the shell read the same views later.
 import { SURFACE_HEADING, parseRamifications } from "@/core/briefs/theme-brief-contract";
-import { isBriefStale, isSupersededBrief } from "@/core/flywheel";
+import { resolveBriefForTheme } from "@/core/flywheel";
 import { SURFACE_LABELS, SURFACE_ORDER, surfaceOf } from "@/core/routing";
 
 import { deriveThemeForwardOutlook, type ThemeEventRow } from "./forward-outlook";
@@ -52,16 +52,11 @@ function briefHolds(theme: ThemeRow, brief: BriefRow | null, stale: boolean): br
   return !!brief && (!stale || (was.length > 0 && was.filter((id) => theme.member_ids.includes(id)).length / was.length >= 0.5));
 }
 
-/** The brief stored under this theme's own id: a brief whose theme_id is absent from connection_themes, or that was retired (superseded), is never attached whatever its member overlap. Stale when its member hash no longer matches. */
-const briefOf = (theme: ThemeRow, briefs: readonly BriefRow[]): { brief: BriefRow | null; stale: boolean } => {
-  const brief = briefs.find((b) => b && b.theme_id === theme.id && !isSupersededBrief(b)) ?? null; return { brief, stale: brief ? isBriefStale(brief.member_hash, theme.member_ids) : false };
-};
-
 /** The brief that explains the item's theme, and only while it still describes the theme (briefHolds). */
 function briefForItem(itemId: string, themes: readonly ThemeRow[], briefs: readonly BriefRow[]) {
   const theme = themeForItem(themes, itemId);
   if (!theme) return null;
-  const { brief: b, stale } = briefOf(theme, briefs);
+  const { brief: b, stale } = resolveBriefForTheme(theme, briefs);
   return briefHolds(theme, b, stale) ? { title: b.title, briefMd: b.brief_md, generatedAt: b.generated_at ?? null, stale, sections: b.sections && typeof b.sections === "object" && !Array.isArray(b.sections) ? b.sections : null } : null;
 }
 
@@ -177,7 +172,7 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
     if (pageSet.size < minPages || !inThemeScope(t.member_ids.length, pageSet.size)) continue;
     const target = surface ? members.find((m) => m.surface === surface) : members[0];
     if (!target) continue;
-    const found = briefOf(t, briefs);
+    const found = resolveBriefForTheme(t, briefs);
     const brief = briefHolds(t, found.brief, found.stale) ? found.brief : null;
     const others = members.filter((m) => m.id !== target.id);
     const pages = SURFACE_ORDER.filter((s) => pageSet.has(s)).map((s) => ({ surface: s, label: label(s) as string }));

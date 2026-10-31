@@ -14,7 +14,7 @@ export { buildIntersectionEntry, detectIntersections, detectIntersections as com
 export type { IntersectionItem, IntersectionPair } from "./intersections";
 export { loadObligationKeys, loadSignatures, SIGNATURE_COLUMNS, withEntityGraph } from "./signature";
 export type { Signature } from "./signature";
-export { computeMemberHash, computeThemeStats, convergenceBand, diffThemes, isBriefStale, isSupersededBrief, lineageFromThemeDelta, resolveBriefForTheme, SUPERSEDED_PREFIX } from "./themes";
+export { computeMemberHash, computeThemeStats, convergenceBand, diffThemes, isBriefStale, resolveBriefForTheme } from "./themes";
 export type { ThemeDelta } from "./themes";
 export { buildConnectionRows, buildIntersectionView, buildResourceLookup, buildSupersessionRows } from "./view-model";
 export type { ConnectionIn, ConnectionRow, FactsByItem, ResourceLookup } from "./view-model";

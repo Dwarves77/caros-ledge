@@ -7,7 +7,7 @@
 import { computeMemberHash } from "@/core/flywheel/themes";
 import { parseFrontmatter } from "@/core/briefs/frontmatter";
 import { parseThemeBriefEntry, type ThemeContext, type ValidThemeBrief } from "@/core/briefs/theme-brief-contract";
-import { buildThemeBundle, buildValidationContext, computeThemeGaps, loadBriefs, loadLineage, loadThemeMaterial, loadThemes, themesNeedingBrief, type ThemeRow } from "@/core/briefs/theme-brief-material";
+import { buildThemeBundle, buildValidationContext, computeThemeGaps, loadBriefs, loadThemeMaterial, loadThemes, themesNeedingBrief, type ThemeRow } from "@/core/briefs/theme-brief-material";
 import type { Db } from "@/core/db";
 import { packetReader, type Packet, type PacketReader } from "@/core/digest/packets-client";
 import { applyThemeBrief } from "@/features/flywheel";
@@ -111,8 +111,8 @@ export type ThemeBundle = ReturnType<typeof buildThemeBundle> & { packets: Packe
 export function themeBriefsExporter(sb: Db, o: { charBudget?: number; packets?: PacketReader } = {}) {
   return async ({ limit, ids }: { limit: number; ids?: readonly string[] }): Promise<BatchExport> => {
     try {
-      const [themes, briefs, lineage] = [await loadThemes(sb), await loadBriefs(sb), await loadLineage(sb)];
-      const needs = themesNeedingBrief(themes, briefs, { lineage });
+      const [themes, briefs] = [await loadThemes(sb), await loadBriefs(sb)];
+      const needs = themesNeedingBrief(themes, briefs);
       const chosen = (ids?.length ? needs.filter((n) => ids.includes(n.theme.id)) : needs).slice(0, limit);
       const material = await loadThemeMaterial(sb, chosen.map((n) => n.theme));
       const gaps = computeThemeGaps(chosen.map((n) => n.theme), material);

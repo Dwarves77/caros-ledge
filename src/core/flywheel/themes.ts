@@ -128,15 +128,6 @@ export function diffThemes(priorThemes: readonly ThemeLike[] | null | undefined,
   };
 }
 
-/** prior-to-new theme id pairs a delta implies (renamed, split daughters, merged parents), for the surfaces that follow a theme across runs. */
-export function lineageFromThemeDelta(delta: Partial<ThemeDelta> | null | undefined): { prior_id: string; new_id: string }[] {
-  const out: { prior_id: string; new_id: string }[] = [];
-  for (const r of delta?.renamed ?? []) if (r?.prior_id && r.new_id) out.push({ prior_id: r.prior_id, new_id: r.new_id });
-  for (const s of delta?.split ?? []) for (const n of s?.new_ids ?? []) if (s.prior_id && n) out.push({ prior_id: s.prior_id, new_id: n });
-  for (const m of delta?.merged ?? []) for (const p of m?.prior_ids ?? []) if (m.new_id && p) out.push({ prior_id: p, new_id: m.new_id });
-  return out;
-}
-
 export function computeThemeStats(themes: readonly ThemeLike[] | null | undefined): { total: number; avg_convergence: number; cross_surface_count: number; single_surface_count: number } {
   const list = themes ?? [];
   let sum = 0;
@@ -162,35 +153,14 @@ export function computeMemberHash(memberIds: readonly string[] | null | undefine
 }
 export const isBriefStale = (storedHash: string | null | undefined, memberIds: readonly string[] | null | undefined): boolean => computeMemberHash(memberIds) !== storedHash;
 
-/** theme_briefs has no status column: a brief retired by retire-orphan-theme-briefs carries this prefix in generated_by (the trigger of migration 0039 keeps the prior row), and a rewrite by apply_theme_brief replaces it. */
-export const SUPERSEDED_PREFIX = "superseded:"; export const isSupersededBrief = (b: Record<string, unknown> | null | undefined): boolean => typeof b?.generated_by === "string" && b.generated_by.startsWith(SUPERSEDED_PREFIX);
-
 export interface BriefLike {
   theme_id: string;
   member_hash?: string | null;
   member_ids?: readonly string[] | null;
-  [k: string]: unknown;
+  superseded_at?: string | null;
 }
-/** The brief for a theme: exact id match, else (when the theme id moved) the dissolved theme's brief by member overlap or recorded lineage, always stale. */
-export function resolveBriefForTheme<B extends BriefLike>(theme: ThemeLike | null | undefined, briefs: readonly B[] | null | undefined, opts: { liveThemeIds?: Set<string>; overlapThreshold?: number; lineage?: readonly { prior_id: string; new_id: string }[] } = {}): { brief: B | null; match: "exact" | "overlap" | "lineage" | null; stale: boolean; supersedes_theme_id: string | null } {
-  const none = { brief: null, match: null, stale: false, supersedes_theme_id: null };
-  if (!theme || typeof theme.id !== "string") return none;
-  const live = theme.member_ids ?? [];
-  const list = (briefs ?? []).filter((b) => b && typeof b.theme_id === "string" && !isSupersededBrief(b));
-  const exact = list.find((b) => b.theme_id === theme.id);
-  if (exact) return { brief: exact, match: "exact", stale: isBriefStale(exact.member_hash, live), supersedes_theme_id: null };
-  const liveIds = opts.liveThemeIds ?? new Set<string>();
-  const threshold = opts.overlapThreshold ?? OVERLAP_THRESHOLD;
-  const lineageFor = new Set((opts.lineage ?? []).filter((p) => p && p.new_id === theme.id).map((p) => p.prior_id));
-  type Cand = { b: B; coef: number; match: "overlap" | "lineage" };
-  const cands: Cand[] = [];
-  for (const b of list) {
-    if (liveIds.has(b.theme_id)) continue;
-    if (Array.isArray(b.member_ids) && b.member_ids.length > 0) {
-      const coef = overlapCoefficient(b.member_ids, live);
-      if (coef >= threshold) cands.push({ b, coef, match: "overlap" });
-    } else if (lineageFor.has(b.theme_id)) cands.push({ b, coef: 0, match: "lineage" });
-  }
-  const best = cands.reduce<Cand | null>((acc, cand) => (!acc || cand.coef > acc.coef || (cand.coef === acc.coef && cand.b.theme_id < acc.b.theme_id) ? cand : acc), null);
-  return best ? { brief: best.b, match: best.match, stale: true, supersedes_theme_id: best.b.theme_id } : none;
+/** The brief for a theme: the one stored under the theme's own id and not retired (superseded_at null), stale when its member hash no longer matches. A brief of another theme id is never attached, whatever its member overlap; a theme without one needs a brief. */
+export function resolveBriefForTheme<B extends BriefLike>(theme: ThemeLike | null | undefined, briefs: readonly B[] | null | undefined): { brief: B | null; stale: boolean } {
+  const brief = theme ? ((briefs ?? []).find((b) => b && b.theme_id === theme.id && !b.superseded_at) ?? null) : null;
+  return { brief, stale: brief ? isBriefStale(brief.member_hash, theme?.member_ids ?? theme?.members) : false };
 }

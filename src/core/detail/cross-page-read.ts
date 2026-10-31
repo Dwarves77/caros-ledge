@@ -14,7 +14,7 @@ import { compareThemes, HORIZONS, inThemeScope, themeAnalysisView, themeChips, t
 import { readCustomerInferences, type InferenceView } from "./inference-view";
 
 const THEME_COLUMNS = "id, member_ids, dominant_signals, density, convergence, surfaces, pivots";
-const BRIEF_COLUMNS = "theme_id, title, brief_md, member_hash, generated_at, generated_by, sections, member_ids";
+const BRIEF_COLUMNS = "theme_id, title, brief_md, member_hash, generated_at, superseded_at, sections, member_ids";
 const CAP = 5000;
 
 export interface CrossPage extends ItemExtras {

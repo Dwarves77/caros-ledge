@@ -7,7 +7,6 @@
 // kept by the theme_brief_versions trigger in the same transaction. No model is called here.
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
-import { isSupersededBrief, SUPERSEDED_PREFIX } from "@/core/flywheel/themes";
 import { isValidThemeBrief, type ValidThemeBrief } from "@/core/briefs/theme-brief-contract";
 import type { RunResult } from "@/core/sources/run-result";
 
@@ -26,19 +25,18 @@ export async function applyThemeBrief(deps: SeamDeps, input: { brief: ValidTheme
   return { counts: { written: 1, members: res?.member_count ?? 0 }, outcome: "ok", notes: [] };
 }
 
-/** retire-orphan-theme-briefs: a theme_briefs row whose theme_id is absent from connection_themes describes a theme the corpus pass dissolved. It is marked superseded (generated_by gains SUPERSEDED_PREFIX; theme_briefs has no status column) by UPDATE, so the migration 0039 trigger keeps the prior row. Idempotent: a marked row is not touched again. Dry reports the ids. */
+/** retire-orphan-theme-briefs: a theme_briefs row whose theme_id is absent from connection_themes describes a theme the corpus pass dissolved. It gets superseded_at = now by UPDATE (migration 0146; the 0039 trigger keeps the prior row) and no reader attaches it again. Idempotent: only rows with superseded_at NULL are touched. Dry reports the ids. */
 export async function retireOrphanThemeBriefs(deps: SeamDeps, input: { dry: boolean }): Promise<RunResult> {
   const live = new Set((await fetchAllRows<{ id: string }>((from, to) => deps.sb.from("connection_themes").select("id").order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 })).map((t) => t.id));
-  const briefs = await fetchAllRows<{ theme_id: string; generated_by: string }>((from, to) => deps.sb.from("theme_briefs").select("theme_id, generated_by").order("theme_id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
-  const orphans = briefs.filter((b) => !live.has(b.theme_id) && !isSupersededBrief(b));
-  const ids = orphans.map((b) => b.theme_id);
-  const counts = { orphans: orphans.length, already_superseded: briefs.filter((b) => !live.has(b.theme_id) && isSupersededBrief(b)).length };
-  if (input.dry || !orphans.length) return { counts, outcome: "ok", notes: [input.dry ? `dry: ${orphans.length} orphan brief(s) would be superseded: ${ids.join(", ")}` : "no orphan briefs"] };
+  const open = await fetchAllRows<{ theme_id: string }>((from, to) => deps.sb.from("theme_briefs").select("theme_id").is("superseded_at", null).order("theme_id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
+  const ids = open.map((b) => b.theme_id).filter((id) => !live.has(id));
+  const counts = { orphans: ids.length };
+  if (input.dry || !ids.length) return { counts, outcome: "ok", notes: [input.dry ? `dry: ${ids.length} orphan brief(s) would be superseded: ${ids.join(", ")}` : "no orphan briefs"] };
   let retired = 0;
-  for (const b of orphans) {
-    const up = await deps.sb.from("theme_briefs").update({ generated_by: `${SUPERSEDED_PREFIX}${b.generated_by}` }).eq("theme_id", b.theme_id).eq("generated_by", b.generated_by).select("theme_id");
-    if (up.error) return { counts: { ...counts, retired }, outcome: "failed", notes: [`theme_briefs update failed for ${b.theme_id}: ${up.error.message}`] };
+  for (let i = 0; i < ids.length; i += 100) {
+    const up = await deps.sb.from("theme_briefs").update({ superseded_at: deps.now().toISOString() }).in("theme_id", ids.slice(i, i + 100)).is("superseded_at", null).select("theme_id");
+    if (up.error) return { counts: { ...counts, retired }, outcome: "failed", notes: [`theme_briefs update failed: ${up.error.message}`] };
     retired += up.data?.length ?? 0;
   }
-  return { counts: { ...counts, retired }, outcome: retired === orphans.length ? "ok" : "partial", notes: [`${retired} of ${orphans.length} orphan brief(s) superseded: ${ids.join(", ")}`] };
+  return { counts: { ...counts, retired }, outcome: retired === ids.length ? "ok" : "partial", notes: [`${retired} of ${ids.length} orphan brief(s) superseded: ${ids.join(", ")}`] };
 }
