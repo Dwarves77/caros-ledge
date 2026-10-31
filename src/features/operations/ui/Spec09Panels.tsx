@@ -7,6 +7,7 @@
 // recomputed from Operations inputs, each with its inputs and the weakest source rating. A figure that cannot be drawn names the data it needs; a failed read says so with Retry.
 import { formatDate, formatFigure } from "@/core/shared";
 import { RequestableCoverageState } from "@/features/coverage";
+import { WhyMatters } from "@/ui/flywheel/FlywheelRadar";
 import { ABSENCE_DASH, CoverageState, MoreBelowDisclosure, RailCard, TierChip } from "@/ui";
 
 import { auxiliaryEnergy } from "../calc/auxiliary-energy";
@@ -97,6 +98,7 @@ const drawFigure = (f: DerivedFigure) => (
     <span className={styles.derivedValue}>{money(f)}</span>
     {f.previous !== null && <span className={styles.derivedMeta}> (was {formatFigure(f.previous)})</span>}
     <p className={styles.derivedMeta}>{f.tier !== null ? <TierChip tier={f.tier} size="square" /> : <span aria-label="Source not rated" title="Source not rated">{ABSENCE_DASH}</span>} {[f.originClass, `recomputed ${formatDate(f.computedAt.slice(0, 10))}`].filter(Boolean).join(" · ")}</p>
+    <WhyMatters lines={f.why} />
     <p className={styles.derivedMeta}>From {f.inputs.length} {f.inputs.length === 1 ? "input" : "inputs"}: {f.inputs.map((i) => [i.label, i.period, i.sourceName].filter(Boolean).join(", ")).join("; ")}</p>
   </li>
 );

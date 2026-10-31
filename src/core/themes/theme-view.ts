@@ -6,7 +6,6 @@ import { SURFACE_HEADING, parseRamifications } from "@/core/briefs/theme-brief-c
 import { resolveBriefForTheme } from "@/core/flywheel";
 import { SURFACE_LABELS, SURFACE_ORDER, surfaceOf } from "@/core/routing";
 
-import signalLabels from "./data/signal-labels.json";
 import { deriveThemeForwardOutlook, type ThemeEventRow } from "./forward-outlook";
 
 export interface ThemeRow {
@@ -44,44 +43,53 @@ type Lineage = { prior_id: string; new_id: string }[];
 const MAX_MEMBERS_PER_PAGE = 6;
 const MAX_CHIP_MEMBER_LINKS = 3;
 const MAX_THEME_LABEL_CHARS = 56;
-const SIGNAL_PHRASES: Record<string, string> = signalLabels;
 const trim = (x: unknown): string | null => (typeof x === "string" && x.trim() ? x.trim() : null);
 const label = (s: string): string | undefined => SURFACE_LABELS[s];
 
 export const themeForItem = (themes: readonly ThemeRow[] | null | undefined, itemId: string | null | undefined): ThemeRow | null => (itemId && themes ? (themes.find((t) => t && Array.isArray(t.member_ids) && t.member_ids.includes(itemId)) ?? null) : null);
 
-/** The brief that explains the item's theme: exact, or inherited from a dissolved theme (always stale). */
+const MIN_BRIEF_OVERLAP = 0.5;
+/** A brief explains a theme while its member hash still matches, or while at least half of the members it was written about are still in the theme; a brief that fails both describes a different group and is not shown under this one. */
+function briefHolds(theme: ThemeRow, brief: BriefRow | null, stale: boolean): brief is BriefRow {
+  if (!brief) return false;
+  if (!stale) return true;
+  const was = Array.isArray(brief.member_ids) ? brief.member_ids : [];
+  const now = new Set(theme.member_ids);
+  return was.length > 0 && was.filter((id) => now.has(id)).length / was.length >= MIN_BRIEF_OVERLAP;
+}
+
+/** The brief that explains the item's theme: exact, or inherited from a dissolved theme (always stale), and only while it still describes the theme (briefHolds). */
 function briefForItem(itemId: string, themes: readonly ThemeRow[], briefs: readonly BriefRow[], lineage: Lineage) {
   const theme = themeForItem(themes, itemId);
   if (!theme) return null;
   const resolved = resolveBriefForTheme(theme, briefs, { liveThemeIds: new Set(themes.map((t) => t.id)), lineage });
   const b = resolved.brief as BriefRow | null;
-  return b ? { title: b.title, briefMd: b.brief_md, generatedAt: b.generated_at ?? null, stale: resolved.stale, supersedesThemeId: resolved.supersedes_theme_id, sections: b.sections && typeof b.sections === "object" && !Array.isArray(b.sections) ? b.sections : null } : null;
+  return briefHolds(theme, b, resolved.stale) ? { title: b.title, briefMd: b.brief_md, generatedAt: b.generated_at ?? null, stale: resolved.stale, supersedesThemeId: resolved.supersedes_theme_id, sections: b.sections && typeof b.sections === "object" && !Array.isArray(b.sections) ? b.sections : null } : null;
 }
 
-/** What a theme with no brief is made of, as data: the member and pivot ids, the surface keys it spans, the signal tokens and the counts. The page words it; no sentence is composed here (ADR-050). */
+/** What a theme with no usable brief is made of, as data: the member and pivot ids, the surface keys it spans, the words it is mostly linked by (the canonical names and scenarios of its edges) and the counts. The page words it (ADR-050). */
 export interface ClusterSummary {
   memberIds: string[];
   pivotIds: string[];
   surfaces: string[];
-  signals: string[];
+  linkedBy: string[];
   memberCount: number;
   surfaceCount: number;
   density: number | null;
 }
-const clusterOf = (theme: ThemeRow, pages: ReadonlyArray<{ surface: string }>): ClusterSummary => ({
+const clusterOf = (theme: ThemeRow, pages: ReadonlyArray<{ surface: string }>, linkedBy: readonly string[]): ClusterSummary => ({
   memberIds: theme.member_ids,
   pivotIds: (theme.pivots ?? []).map((p) => p?.id).filter((id): id is string => typeof id === "string"),
   surfaces: pages.map((p) => p.surface),
-  signals: (theme.dominant_signals ?? []).map((x) => x?.signal).filter((x): x is string => typeof x === "string" && x.trim() !== ""),
+  linkedBy: [...linkedBy],
   memberCount: theme.member_ids.length,
   surfaceCount: pages.length,
   density: typeof theme.density === "number" ? theme.density : null,
 });
 
 /** The theme analysis of one item on one surface: members by page (other pages first), the brief's sections, and the cluster's structure when there is no brief. */
-export function themeAnalysisView(input: { itemId: string; surface: string; themes: readonly ThemeRow[]; briefs: readonly BriefRow[]; lineage?: Lineage; members?: readonly MemberRow[]; events?: readonly ThemeEventRow[]; asOfIso: string }) {
-  const { itemId, surface, themes, briefs, lineage = [], members = [], events = [], asOfIso } = input;
+export function themeAnalysisView(input: { itemId: string; surface: string; themes: readonly ThemeRow[]; briefs: readonly BriefRow[]; lineage?: Lineage; members?: readonly MemberRow[]; events?: readonly ThemeEventRow[]; linkedBy?: readonly string[]; asOfIso: string }) {
+  const { itemId, surface, themes, briefs, lineage = [], members = [], events = [], linkedBy = [], asOfIso } = input;
   const theme = themeForItem(themes, itemId);
   if (!theme) return null;
   const brief = briefForItem(itemId, themes, briefs, lineage);
@@ -121,7 +129,7 @@ export function themeAnalysisView(input: { itemId: string; surface: string; them
     stale: brief ? brief.stale : false,
     supersedesThemeId: brief ? brief.supersedesThemeId : null,
     hasBrief: Boolean(brief),
-    cluster: brief ? null : clusterOf(theme, pages),
+    cluster: brief ? null : clusterOf(theme, pages, linkedBy),
     sections,
     ramificationsMissing,
     pages,
@@ -132,17 +140,10 @@ export function themeAnalysisView(input: { itemId: string; surface: string; them
 export type ThemeAnalysisView = NonNullable<ReturnType<typeof themeAnalysisView>>;
 
 const joinNames = (names: string[]): string => (names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`);
-function signalPhrase(signal: unknown): string | null {
-  if (typeof signal !== "string" || !signal.trim()) return null;
-  const words = signal.trim().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
-  return SIGNAL_PHRASES[signal.trim()] ?? words.charAt(0).toUpperCase() + words.slice(1);
-}
-
-/** A theme's label when no brief names it: its strongest signal, where it spans, shortened to 56 characters. */
-function deriveThemeLabel(input: { signals?: ThemeRow["dominant_signals"]; pages?: Array<{ label?: string }>; memberCount?: number } = {}): string {
-  const ranked = (input.signals ?? []).filter((x) => x && typeof x.signal === "string" && x.signal.trim()).sort((a, b) => (Number(b.weight) || 0) - (Number(a.weight) || 0));
+/** A theme's label when no brief names it: how many items it links and where it spans, shortened to 56 characters. */
+function deriveThemeLabel(input: { pages?: Array<{ label?: string }>; memberCount?: number } = {}): string {
   const n = input.memberCount && input.memberCount > 0 ? Math.floor(input.memberCount) : 0;
-  const lead = (ranked[0] ? signalPhrase(ranked[0].signal) : null) ?? (n > 0 ? `${n} linked ${n === 1 ? "item" : "items"}` : "Linked items");
+  const lead = n > 0 ? `${n} linked ${n === 1 ? "item" : "items"}` : "Linked items";
   const names = (input.pages ?? []).map((p) => p?.label).filter((l): l is string => typeof l === "string" && !!l.trim());
   let out = `${lead}${names.length === 0 ? "" : names.length === 1 ? ` on ${names[0]}` : ` across ${joinNames(names)}`}`;
   if (out.length > MAX_THEME_LABEL_CHARS && names.length > 1) out = `${lead} across ${names.length} pages`;
@@ -174,7 +175,7 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
     const target = surface ? members.find((m) => m.surface === surface) : members[0];
     if (!target) continue;
     const resolved = resolveBriefForTheme(t, briefs, { liveThemeIds, lineage });
-    const brief = resolved.brief as BriefRow | null;
+    const brief = briefHolds(t, resolved.brief as BriefRow | null, resolved.stale) ? (resolved.brief as BriefRow) : null;
     const others = members.filter((m) => m.id !== target.id);
     const pages = SURFACE_ORDER.filter((s) => pageSet.has(s)).map((s) => ({ surface: s, label: label(s) as string }));
     const briefTitle = brief ? trim(brief.title) : null;
@@ -182,7 +183,7 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
       themeId: t.id,
       convergence: typeof t.convergence === "number" ? t.convergence : 0,
       href: target.href,
-      label: briefTitle ?? deriveThemeLabel({ signals: t.dominant_signals, pages, memberCount: t.member_ids.length }),
+      label: briefTitle ?? deriveThemeLabel({ pages, memberCount: t.member_ids.length }),
       itemTitle: target.title,
       briefTitle: brief?.title ?? null, meaning: (surface && brief?.sections && SURFACE_HEADING[surface] ? trim(parseRamifications(String(brief.sections.ramifications ?? "")).subs.get(SURFACE_HEADING[surface] ?? "")) : null) ?? trim(brief?.sections?.meaning) ?? trim(brief?.sections?.connection) ?? trim((brief?.brief_md ?? "").split(/\r?\n\r?\n/).map((p) => p.trim()).find((p) => p.length > 40 && !p.startsWith("#") && !p.startsWith("**") && !p.startsWith("|"))?.replace(/\*\*|`/g, "").slice(0, 220)) ?? null,
       memberCount: t.member_ids.length,

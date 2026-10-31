@@ -7,6 +7,10 @@ import type { MatrixFact } from "@/ui";
 
 export type Freshness = "current" | "ageing" | "stale" | "frozen" | "unknown";
 export interface OperationsFact {
+  /** regional_data_facts.id, the key of the facts join. */
+  id?: string;
+  /** The two "Why this matters" lines; absent when the facts join was not available. */
+  why?: readonly string[];
   regionCode: string;
   dimension: string;
   factLabel: string;
@@ -85,7 +89,7 @@ export function toMatrixFact(f: OperationsFact, base: OperationsFact | null): Ma
   const words = [originClassLabel(f.originClass), derivationLabel(f.derivation), f.freshness === "ageing" || f.freshness === "stale" || f.freshness === "frozen" ? f.freshness : null].filter(Boolean).join(" · ");
   const rest = description.trim().split(/\s+/).slice(6).join(" ");
   return {
-    figure, headline: description || prose || "", claim: figure ? description : rest, prose, indexVsBase: base ? indexAgainstBase(f, base) : null,
+    figure, headline: description || prose || "", claim: figure ? description : rest, prose, indexVsBase: base ? indexAgainstBase(f, base) : null, why: f.why ?? [],
     sourceName: f.sourceName ?? sourceNameFromNote(f.sourceNote), sourceUrl: f.sourceUrl ?? sourceUrlFromNote(f.sourceNote), sourceTier: f.sourceTier,
     period: f.referencePeriod || (f.asAtDate ? f.asAtDate.slice(0, 7) : null), provenance: words, written: f.lastUpdated ? f.lastUpdated.slice(0, 10) : null,
   };

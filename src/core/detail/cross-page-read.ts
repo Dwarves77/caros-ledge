@@ -5,7 +5,9 @@ import { admitItems } from "@/core/derived/admissible";
 import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
-import { buildIntersectionView, lineageFromThemeDelta, type ConnectionIn, type ResourceLookup } from "@/core/flywheel";
+import { buildIntersectionView, lineageFromThemeDelta, type ConnectionIn, type FactLink, type ResourceLookup } from "@/core/flywheel";
+import { linkedByWords, movesRows } from "@/core/flywheel/view-model";
+import { radarClients, readFlywheelRadar, type RadarView } from "@/features/flywheel/radar/read";
 import { HORIZONS, themeAnalysisView, themeChips, themeForItem, type BriefRow, type MemberRow, type ThemeAnalysisView, type ThemeEventRow, type ThemeRow } from "@/core/themes";
 
 import { readCustomerInferences, type InferenceView } from "./inference-view";
@@ -18,6 +20,10 @@ export interface CrossPage {
   intersections: ReturnType<typeof buildIntersectionView>;
   intersectionSummary: string | null;
   theme: ThemeAnalysisView | null;
+  /** The cross-surface patterns that rest on this item or its theme; null when that read failed (the panel says so with Retry). */
+  radar: RadarView | null;
+  /** The structured rows tied to this item's entities, one line each. */
+  moves: { kind: string; line: string }[];
   inferences: InferenceView | null;
   /** The blocks whose read failed this request ("themes", "inferences"): the page offers Retry and does not call them empty. */
   degraded: string[];
@@ -60,26 +66,39 @@ async function readMemberEvents(db: Db, ids: readonly string[], fromIso: string)
   );
 }
 
+/** The bases of a sample of the theme's edges (the first 200 members' edges, candidates left out): enough to say what links it, bounded for a theme of hundreds. */
+const readThemeEdgeBases = (db: Db, memberIds: readonly string[]): Promise<ConnectionIn["basis"][]> =>
+  fetchAllByIdChunks(memberIds.slice(0, 200), async (slice) => {
+    const r = await db.from("item_cross_references").select("basis").in("source_item_id", slice).neq("origin", "candidate").limit(300);
+    if (r.error) throw new Error(`item_cross_references read failed: ${r.error.message}`);
+    return ((r.data ?? []) as { basis: ConnectionIn["basis"] }[]).map((x) => x.basis);
+  }, { chunk: 100, manyPerId: true });
+
 /** The theme block of one item: null when the item belongs to no theme. Throws on a failed read. */
-async function readTheme(db: Db, itemUuid: string, surface: string, asOfIso: string): Promise<ThemeAnalysisView | null> {
+async function readTheme(db: Db, itemUuid: string, surface: string, asOfIso: string): Promise<{ view: ThemeAnalysisView | null; memberIds: string[] }> {
   const themes = await readThemes(db);
   const theme = themeForItem(themes, itemUuid);
-  if (!theme) return null;
+  if (!theme) return { view: null, memberIds: [] };
   const [briefs, lineage, members, events] = await Promise.all([readBriefs(db), readLineage(db), readVerifiedItemsByIds(db, theme.member_ids), readMemberEvents(db, theme.member_ids, asOfIso.slice(0, 10))]);
-  return themeAnalysisView({ itemId: itemUuid, surface, themes, briefs, lineage, members, events, asOfIso });
+  const input = { itemId: itemUuid, surface, themes, briefs, lineage, members, events, asOfIso };
+  const view = themeAnalysisView(input);
+  // a theme with no usable brief says what its edges are mostly about (their entities and scenarios); the edges are read only then
+  const linkedBy = view?.cluster ? linkedByWords(await readThemeEdgeBases(db, theme.member_ids)) : [];
+  return { view: linkedBy.length ? themeAnalysisView({ ...input, linkedBy }) : view, memberIds: theme.member_ids };
 }
 
 /** The inferences a customer may read for an item, per request. */
 const readFreshInferences = (db: Db, itemUuid: string): Promise<InferenceView | null> => readCustomerInferences(db, itemUuid);
 
-/** The cross-page analysis of one item: each block read on its own, so one failing block does not take the others down. */
-export async function readCrossPage(db: Db, itemUuid: string, surface: string, intersectionSummary: string | null, connections: readonly ConnectionIn[], lookup: ResourceLookup | Promise<ResourceLookup>, asOfIso: string): Promise<CrossPage> {
+/** The cross-page analysis of one item: each block read on its own, so one failing block does not take the others down. `facts` are the item's own structured rows (the join of its entities). */
+export async function readCrossPage(db: Db, itemUuid: string, surface: string, intersectionSummary: string | null, connections: readonly ConnectionIn[], lookup: ResourceLookup | Promise<ResourceLookup>, asOfIso: string, facts: readonly FactLink[] = []): Promise<CrossPage> {
   const degraded: string[] = [];
-  const [theme, inferences] = await Promise.all([
-    readTheme(db, itemUuid, surface, asOfIso).catch(() => (degraded.push("themes"), null)),
+  const [themeRead, inferences] = await Promise.all([
+    readTheme(db, itemUuid, surface, asOfIso).catch(() => (degraded.push("themes"), { view: null, memberIds: [] as string[] })),
     readFreshInferences(db, itemUuid).catch(() => (degraded.push("inferences"), null)),
   ]);
-  return { intersections: buildIntersectionView(connections, await lookup, { currentSurface: surface, summary: intersectionSummary }), intersectionSummary, theme, inferences, degraded };
+  const radar = await readFlywheelRadar(radarClients(db), { kind: "item", itemUuid, memberIds: themeRead.memberIds }).catch(() => null);
+  return { intersections: buildIntersectionView(connections, await lookup, { currentSurface: surface, summary: intersectionSummary }), intersectionSummary, theme: themeRead.view, radar, moves: movesRows(facts), inferences, degraded };
 }
 
 /** The theme chips of a list page (`surface` null is the cross-page view the dashboard reads). Throws on a failed read; the caller says the strip did not load. */

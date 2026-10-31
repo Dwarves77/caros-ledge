@@ -66,31 +66,10 @@ test("nextMilestoneClause strips duplicate ISO date prefixes from milestone labe
   assert.equal(clause, "Entry into force · 1 Jun 2026 · in 18 days");
 });
 
-test("ItemConnections deduplicates repeated basis signal labels", () => {
-  const html = renderToStaticMarkup(
-    createElement(ItemConnections, {
-      rows: [
-        {
-          id: "c1",
-          title: "Connected Regulation",
-          href: "/regulations/c1",
-          label: "References",
-          surface: "regulations",
-          priority: null,
-          origin: "editorial",
-          score: 0.8,
-          discovered: false,
-          basisSummary: [
-            { signal: "shared_scenario" },
-            { signal: "shared_scenario" },
-            { signal: "shared_scenario" },
-          ],
-        },
-      ],
-    }),
-  );
-  assert.ok(html.includes("Bound by shared scenario"), "Expected deduplicated basis signal");
-  assert.ok(!html.includes("shared scenario, shared scenario"), "Expected duplicate basis signals to be collapsed");
+test("ItemConnections draws the reason sentence under the title, not the basis", () => {
+  const html = renderToStaticMarkup(createElement(ItemConnections, { rows: [{ id: "c1", title: "Connected Regulation", href: "/regulations/c1", label: "References", surface: "regulations", priority: null, origin: "editorial", discovered: false, reason: "Both concern Directive 2023/959." }] }));
+  assert.ok(html.includes("Both concern Directive 2023/959."), "Expected the reason sentence");
+  assert.ok(!html.includes("Bound by"), "Expected no basis tokens");
 });
 
 test("DetailLayout with rail={null} renders full-width .cl-detail-layout--solo without an empty rail track", () => {

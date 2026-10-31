@@ -5,6 +5,7 @@
 import Link from "next/link";
 
 import { TierChip } from "@/ui";
+import { WhyMatters } from "@/ui/flywheel/FlywheelRadar";
 import { SectionCard } from "@/ui/SectionCard";
 
 import { boardFreshnessSummary } from "../lib/freshness";
@@ -82,15 +83,16 @@ function RibbonCard({ v }: { v: HeadlineCardView }) {
         <FreshnessBadge freshness={v.freshness} showAsOf={false} />
         {v.tier != null ? <TierChip tier={v.tier} /> : <span className="cl-absence">Unrated</span>}
       </div>
+      <WhyMatters lines={v.why} />
     </div>
   );
 }
 
-export function HeadlineSeries({ board, ratings, nowIso }: { board: SeriesBoard; ratings: Record<string, SourceRating>; nowIso: string }) {
+export function HeadlineSeries({ board, ratings, nowIso, why = null }: { board: SeriesBoard; ratings: Record<string, SourceRating>; nowIso: string; why?: Record<string, string[]> | null }) {
   const selection = selectHeadlineSeries(board);
   if (selection.visible.length === 0) return null;
   // One row: the first five on the visible track, the rest reachable by scrolling it sideways. The cap is not applied again here.
-  const views = selection.cards.map((c) => headlineCardView(c, { ratings, nowIso }));
+  const views = selection.cards.map((c) => headlineCardView(c, { ratings, nowIso, why }));
   return (
     <SectionCard dataAudit="headline-series" dataAttributes={{ "data-sec-theme": "summary" }}>
       <div className={`${styles.hHead} cl-sec-head`}>

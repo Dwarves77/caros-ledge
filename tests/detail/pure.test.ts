@@ -150,7 +150,7 @@ test("theme views: the item's theme, the chips of a surface, the analysis when n
   const items = [{ id: "a", legacy_id: "g1", title: "Reg A", item_type: "regulation", domain: 1 }, { id: "b", legacy_id: null, title: "Mkt B", item_type: "market_signal", domain: 4 }];
   const chips = themeChips({ themes: themes as never, items, surface: "regulations", max: 6 });
   assert.deepEqual(chips.map((c) => [c.themeId, c.href, c.hasBrief]), [["t1", "/regulations/g1", false]]);
-  assert.match(chips[0]?.label ?? "", /^Shared source across /);
+  assert.match(chips[0]?.label ?? "", /^2 linked items across /);
   const view = themeAnalysisView({ itemId: "a", surface: "regulations", themes: themes as never, briefs: [], members: items, asOfIso: "2026-10-24T00:00:00Z" });
   assert.equal(view?.hasBrief, false);
   assert.deepEqual([view?.cluster?.memberCount, view?.cluster?.surfaces], [2, ["regulations", "market"]]);

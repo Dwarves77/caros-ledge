@@ -8,10 +8,11 @@ import { pickVisibleInferences, type InferenceView } from "@/core/detail/inferen
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
 import type { buildIntersectionView } from "@/core/flywheel/view-model";
 import type { ThemeAnalysisView } from "@/core/themes";
-import signalLabels from "@/core/themes/data/signal-labels.json";
+import type { RadarView } from "@/features/flywheel/radar/read";
 
 import { GfmSection } from "../GfmSection";
 import { DetailSubSection, MoreBelowDisclosure } from "../ItemGroup";
+import { FlywheelRadar, MovesWith } from "../flywheel/FlywheelRadar";
 import { StateNote } from "../StateNote";
 
 import { DetailSection } from "./DetailShell";
@@ -21,6 +22,10 @@ export interface CrossPageData {
   /** The intersection view, computed once by the loader from the item's connections (this part imports no server module). */
   intersections?: IntersectionView | null;
   theme?: ThemeAnalysisView | null;
+  /** The cross-surface patterns that rest on this item or its theme; null: that read failed. Absent: none was read (a fixture). */
+  radar?: RadarView | null;
+  /** The structured rows tied to this item's entities, one line each. */
+  moves?: ReadonlyArray<{ kind: string; line: string }>;
   inferences?: InferenceView | null;
   /** The blocks whose read failed this request: the section says so and the page offers Retry. */
   degraded?: string[];
@@ -45,12 +50,10 @@ function cleanPreContractBriefText(md: string): string {
     .trim();
 }
 
-/** One short label per horizon token (the token's own words; no sentence about an item). */
-/** The cluster's structure drawn as labels and numbers; every word here is the page's own, none is a claim about the items. */
-const SIGNAL_LABEL: Readonly<Record<string, string>> = signalLabels;
-function clusterLine(c: NonNullable<ThemeAnalysisView["cluster"]>): string {
-  const by = c.signals.slice(0, 3).map((x) => SIGNAL_LABEL[x] ?? x.replace(/_/g, " ")).join(", ");
-  return `Narrative synthesis pending for this cluster.${by ? ` Items below are linked by ${by.toLowerCase()}.` : ""}`;
+/** A theme with no usable brief, in one composed line: how many items, on which pages, and what links them mostly (the canonical names and scenarios of its edges). No model wrote it; a synthesis is queued. */
+function clusterLine(c: NonNullable<ThemeAnalysisView["cluster"]>, pageNames: string): string {
+  const by = c.linkedBy.slice(0, 3).join(", ");
+  return `${c.memberCount} ${c.memberCount === 1 ? "item" : "items"}${pageNames ? ` across ${pageNames}` : ""}${by ? `, linked mostly by ${by}` : ""}. A written synthesis is queued.`;
 }
 const HORIZON_LABEL: Readonly<Record<string, string>> = { "0-6m": "Within 6 months", "6-18m": "6 to 18 months", "18-36m": "18 to 36 months", NOW: "Within 2 years", "3-5y": "3 to 5 years", NEAR: "2 to 5 years", "5-10y": "5 to 10 years", MID: "5 to 10 years", ">10y": "Beyond 10 years", FAR: "Beyond 10 years", unplaced: "Ongoing / no fixed date" };
 
@@ -106,7 +109,7 @@ function GroupList({ groups }: { groups: Group[] }) {
 function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisView; surfaceLabel: string; first: boolean }) {
   const pageNames = theme.pages.map((p) => p.label).join(", ");
   const s = theme.sections;
-  const staleNote = theme.supersedesThemeId ? "Stale: this synthesis was written for an earlier version of this theme and its membership has changed since." : "Stale: this theme's membership has changed since the synthesis was written.";
+  const staleNote = "Written for an earlier membership of this theme; the items below are today's.";
   return (
     <DetailSubSection title="Theme analysis" subtitle={`${theme.memberCount} ${theme.memberCount === 1 ? "item" : "items"}${pageNames ? ` across ${pageNames}` : ""}`} first={first}>
       {theme.hasBrief && theme.title && (
@@ -150,7 +153,7 @@ function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisVie
       ) : null}
       {!theme.hasBrief && theme.cluster && (
         <div className="cl-detail-block">
-          <StateNote>{clusterLine(theme.cluster)}</StateNote>
+          <StateNote>{clusterLine(theme.cluster, pageNames)}</StateNote>
         </div>
       )}
       {theme.forwardOutlook.horizons.length > 0 && (
@@ -208,7 +211,7 @@ function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisVie
 
 /** Which of the two cross-page sections this item has (the section index lists only those). */
 export function crossPagePresence(crossPage?: CrossPageData | null): { connected: boolean; inferences: boolean } {
-  return { connected: !!crossPage?.intersections || !!crossPage?.theme || (crossPage?.degraded?.includes("themes") ?? false), inferences: (crossPage?.degraded?.includes("inferences") ?? false) || pickVisibleInferences(crossPage?.inferences?.claims ?? [], admissibleForDisplay).length > 0 };
+  return { connected: !!crossPage?.intersections || !!crossPage?.theme || (crossPage?.moves?.length ?? 0) > 0 || !!crossPage?.radar?.patterns.length || (crossPage?.degraded?.includes("themes") ?? false), inferences: (crossPage?.degraded?.includes("inferences") ?? false) || pickVisibleInferences(crossPage?.inferences?.claims ?? [], admissibleForDisplay).length > 0 };
 }
 
 /** "Connected intelligence" (intersections and the theme analysis) and the Inferences section; the view is computed once here from the rows the page read. */
@@ -217,13 +220,17 @@ export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry 
   const theme = crossPage?.theme ?? null;
   const themesFailed = crossPage?.degraded?.includes("themes") ?? false;
   const inferences = <InferenceSection inferences={crossPage?.inferences} index={crossPageOrd(surfaceKey, INFERENCES_SECTION_ID)} failed={crossPage?.degraded?.includes("inferences") ?? false} onRetry={onRetry} />;
-  if (!view && !theme && !themesFailed) return inferences;
+  const moves = crossPage?.moves ?? [];
+  const radarShown = crossPage?.radar === null || !!crossPage?.radar?.patterns.length;
+  if (!view && !theme && !themesFailed && moves.length === 0 && !radarShown) return inferences;
   return (
     <>
       <DetailSection id={CONNECTED_SECTION_ID} title="Connected intelligence" aside="Intersections and theme analysis" index={crossPageOrd(surfaceKey, CONNECTED_SECTION_ID)}>
         <div data-guard-container="cross-page">
+          {radarShown && <FlywheelRadar view={crossPage?.radar ?? null} variant="inline" quiet />}
+          <MovesWith rows={moves} first={!view && !theme && !radarShown} />
           {view && (
-            <DetailSubSection title="Intersections" subtitle="Items that share an operational scenario and a compliance object with this one" first>
+            <DetailSubSection title="Intersections" subtitle="Items that share an operational scenario and a compliance object with this one" first={moves.length === 0 && !radarShown}>
               {view.summary && (
                 <div>
                   <Label>Stated coupling</Label>
@@ -240,7 +247,7 @@ export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry 
               )}
             </DetailSubSection>
           )}
-          {theme && <ThemeAnalysis theme={theme} surfaceLabel={surfaceLabel} first={!view} />}
+          {theme && <ThemeAnalysis theme={theme} surfaceLabel={surfaceLabel} first={!view && moves.length === 0 && !radarShown} />}
           {themesFailed && (
             <div className="cl-detail-block">
               <StateNote tone="error" {...(onRetry ? { action: { label: "Retry", onClick: onRetry } } : {})}>

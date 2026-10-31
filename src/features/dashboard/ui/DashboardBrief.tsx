@@ -8,6 +8,8 @@ import { refusalSentence } from "@/core/http/failure";
 import { BAND_ORDER, bandFromPriority } from "@/core/lists";
 import { formatDate, formatNumber } from "@/core/shared";
 import { CardFoot, ListRow, ListRowHeader, RailCard, SectionCard, SectionHead, SkeletonBandTile, StatBlock, StateNote, BandTile, BandTileRow } from "@/ui";
+import type { RadarView } from "@/features/flywheel/radar/read";
+import { FlywheelRadar } from "@/ui/flywheel/FlywheelRadar";
 import { LegendRailCard, type ThemeChip } from "@/ui/list-surface";
 import { PARAM } from "@/ui/list-surface/url-state";
 import { PageFrame } from "@/ui/shell";
@@ -40,6 +42,8 @@ export interface DashboardBriefProps {
   watchlist: WatchlistItem[] | null;
   /** The cross-page theme chips; null when the read failed (the strip says so with Retry, never an empty strip). */
   themes: ThemeChip[] | null;
+  /** The cross-surface patterns across the corpus; null when that read failed; absent when the caller reads none (a fixture). */
+  radar?: RadarView | null | undefined;
   /** null when the source coverage read failed; absent when the caller reads none (a fixture), and then no coverage card is drawn. */
   coverage?: SourceCoverage | null;
 }
@@ -95,6 +99,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
                   {refusalSentence("themes_unavailable")}
                 </StateNote>
               )}
+              {p.radar !== undefined && <FlywheelRadar view={p.radar} variant="inline" />}
               {p.themes !== null && p.themes.length > 0 && (
                 <div className={styles.themes}>
                   <p className={styles.eyebrow}>Connected across pages</p>

@@ -15,6 +15,7 @@ import { pageSession } from "@/features/account/server/page-session";
 import { loadSurfaceDenominator } from "@/features/coverage/server";
 import { buildRegisterQuerySpec, defaultJurisdictionFilter, fetchObligationRegisterPage, fetchRegisterFacetOptions, KIND_LABELS, readUpcoming } from "@/features/obligations";
 import { readThemeChips } from "@/core/detail";
+import { radarClients, readFlywheelRadar } from "@/features/flywheel/radar/read";
 import { Masthead, RailCard } from "@/ui";
 import { PageFailure } from "@/ui/shell/PageFailure";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
@@ -41,17 +42,18 @@ export async function RegulationsIndex() {
   const today = session.nowIso.slice(0, 10);
   const data = await attempt("the list", async () => {
     const profileP = readWorkspaceProfile(db, session.orgId).catch((e) => warn("profile", e));
-    const [profileRead, chips, coverage, first, upcoming] = await Promise.all([
+    const [profileRead, chips, radar, coverage, first, upcoming] = await Promise.all([
       profileP,
       readThemeChips(db, { surface: "regulations" }).catch((e) => warn("themes", e)),
+      readFlywheelRadar(radarClients(db), { kind: "surface", surface: "regulations" }).catch((e) => warn("radar", e)),
       loadSurfaceDenominator("regulations", { db: () => db }).catch((e) => warn("coverage", e)),
       readRegulationsFirstPage(db, session.orgId, profileP.then((p) => (p && !p.failed ? p.profile : null))),
       profileP.then((p) => readUpcoming(db, { limit: 8, jurisdictionFilter: defaultJurisdictionFilter(p?.profile?.jurisdictions) }, today).catch((e) => warn("upcoming obligations", e))),
     ]);
-    return { first, chips, upcoming, coverage, profileFailed: profileRead === null || profileRead.failed };
+    return { first, chips, radar, upcoming, coverage, profileFailed: profileRead === null || profileRead.failed };
   });
   if (!data || data.first.failed) return <PageFailure what="Regulations" />;
-  const { first, chips, upcoming, coverage, profileFailed } = data;
+  const { first, chips, radar, upcoming, coverage, profileFailed } = data;
   const degraded = [
     ...(profileFailed ? ["Your workspace profile did not load, so the obligations rail is not narrowed to your jurisdictions."] : []),
     ...(first.timelineFailures > 0 ? ["Milestone dates did not load for some rows, so their timelines are blank."] : []),
@@ -65,6 +67,7 @@ export async function RegulationsIndex() {
         hasMore={first.hasMore}
         nowIso={session.nowIso}
         chips={chips}
+        radar={radar}
         degraded={degraded}
         rail={<ObligationsRailCard events={upcoming?.events ?? []} failed={upcoming === null} nowIso={session.nowIso} />}
         below={<CoverageLine denominator={coverage?.denominator ?? null} failed={coverage === null || coverage.error !== null} surface="regulations" />}

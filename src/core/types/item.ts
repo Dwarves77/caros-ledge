@@ -1,5 +1,6 @@
 // Ported from old_repo/src/types/resource.ts (lines 1-311)
 // The shared item type every surface imports. TabId, FocusView, NavEntry and Cluster are not carried over (no importer).
+import type { EdgeBasisIn } from "@/core/flywheel/view-model";
 
 export interface TimelineEntry {
   date: string;
@@ -56,9 +57,12 @@ export interface ItemConnection {
   direction: "outgoing" | "incoming";
   relationship: string;
   origin: string;
-  basis: Array<{ signal: string; detail: string; weight: number }> | null;
+  /** The stored basis: a list of {signal, detail, weight}, or the typed EdgeBasis ENGINE-JOIN-1 writes. */
+  basis: EdgeBasisIn | null;
   score: number | null;
   surface: string;
+  /** intelligence_items.id of the other end, the key of the facts join. */
+  uuid?: string;
 }
 
 export interface OperationalImpact {

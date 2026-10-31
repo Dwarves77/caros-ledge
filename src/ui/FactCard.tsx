@@ -9,6 +9,7 @@ import { hostOf } from "@/core/shared";
 
 import { Absence } from "./Absence";
 import { TierChip } from "./Chips";
+import { WhyMatters } from "./flywheel/FlywheelRadar";
 import { sixWordHeadline, sourceNameWrapsToTwoLines, withClaimTiers, type ClaimNode, type ClaimTierMap, type FactCardModel, type FactCardProvenance, type MatrixFact } from "./claim-tier";
 import { SourceLink } from "./SmallParts";
 
@@ -98,6 +99,7 @@ function MatrixBody({ fact: f }: { fact: MatrixFact }) {
         {f.period && f.period.replace(/^[·|\-–—\s]+|[·|\-–—\s]+$/g, "").trim() ? ` · ${f.period.replace(/^[·|\-–—\s]+|[·|\-–—\s]+$/g, "").trim()}` : ""}
         {f.provenance ? ` · ${f.provenance}` : f.written ? ` · row written ${f.written}` : " · no date on row"}
       </div>
+      <WhyMatters lines={f.why ?? []} />
     </div>
   );
 }

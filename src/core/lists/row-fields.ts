@@ -24,8 +24,8 @@ export interface ListRowFields {
   title: string;
   /** The stored item_type; the row picks its row type and its type chip from it. */
   type: string | null;
-  /** intelligence_items.what_is_it, the stored reader text, or null. */
-  summary: string | null;
+  /** The second line of the row (see rowSummary): the first sentence of the stored reader text, never blank. */
+  summary: string;
   due: { label: string; days: string } | null;
   tier: number | null;
   watchType: ListWatchType;
@@ -52,6 +52,21 @@ export function dueInfo(r: Resource, now: Date): DueInfo | null {
   return { label: formatDate(new Date(best).toISOString().slice(0, 10)), days: `${diff} day${diff === 1 ? "" : "s"}`, daysNum: diff };
 }
 
+const ABBREVIATION = /\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i;
+/** The first sentence of a stored text, cut at its end (not at "No." or "Art."); null when there is none. */
+function firstSentence(text: string | null | undefined): string | null {
+  const t = (text ?? "").replace(/\s+/g, " ").trim();
+  if (!t) return null;
+  const end = /[.!?](?=\s+[A-Z("“]|$)/g;
+  for (let m = end.exec(t); m; m = end.exec(t)) if (!ABBREVIATION.test(t.slice(0, m.index + 1))) return t.slice(0, m.index + 1);
+  return t;
+}
+
+/** The row's second line, never blank: why it matters to the reader, else what it changes, else what the record is, else a line composed from its jurisdiction and next date. */
+function rowSummary(r: Resource, juris: string, due: DueInfo | null): string {
+  return firstSentence(r.whyMatters) ?? firstSentence(r.whatItChanges) ?? firstSentence(r.whatIsIt) ?? firstSentence(r.note) ?? `${juris ? `Applies in ${juris}` : "Applies across jurisdictions"}${due ? `; next date ${due.label}` : ""}.`;
+}
+
 export function toListRowFields(r: Resource, now: Date): ListRowFields {
   const due = dueInfo(r, now);
   return {
@@ -61,7 +76,7 @@ export function toListRowFields(r: Resource, now: Date): ListRowFields {
     jurisdiction: jurisdictionCode(r),
     title: r.title,
     type: r.type ?? null,
-    summary: r.whatIsIt?.trim() || r.whyMatters?.trim() || r.whatItChanges?.trim() || r.note?.trim() || null,
+    summary: rowSummary(r, jurisdictionCode(r), due),
     due: due ? { label: due.label, days: due.days } : null,
     tier: r.sourceTier ?? null,
     watchType: watchTypeForItem(r),

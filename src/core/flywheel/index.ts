@@ -15,4 +15,4 @@ export type { Signature } from "./signature";
 export { computeMemberHash, computeThemeStats, convergenceBand, diffThemes, isBriefStale, lineageFromThemeDelta, resolveBriefForTheme } from "./themes";
 export type { ThemeDelta } from "./themes";
 export { buildConnectionRows, buildIntersectionView, buildResourceLookup, buildSupersessionRows } from "./view-model";
-export type { ConnectionIn, ConnectionRow, ResourceLookup, Selection } from "./view-model";
+export type { ConnectionIn, ConnectionRow, EdgeBasisIn, FactLink, FactsByItem, ResourceLookup } from "./view-model";

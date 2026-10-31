@@ -171,7 +171,7 @@ export async function readDetailItem(db: Db, urlId: string): Promise<DetailRead 
     const otherId = uiIdOf(other);
     const o = one(other);
     if (!otherId || !o) continue;
-    connections.push({ id: otherId, direction: outgoing ? "outgoing" : "incoming", relationship: x.relationship || "related", origin: x.origin || "manual", basis: x.basis ?? null, score: typeof x.score === "number" ? x.score : null, surface: surfaceOf(o.item_type ?? undefined, o.domain ?? undefined) });
+    connections.push({ id: otherId, uuid: o.id, direction: outgoing ? "outgoing" : "incoming", relationship: x.relationship || "related", origin: x.origin || "manual", basis: x.basis ?? null, score: typeof x.score === "number" ? x.score : null, surface: surfaceOf(o.item_type ?? undefined, o.domain ?? undefined) });
   }
   const supersessions: Supersession[] = sups.flatMap((s) => {
     const oldId = uiIdOf(s.old);

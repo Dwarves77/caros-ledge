@@ -7,6 +7,7 @@
 // a failure is never an empty matrix, a zero or "no coverage" (INV-263). The old tree selected severity (a dead field), read the source fetch status and dropped every error: all gone.
 import { admitItems } from "@/core/derived/admissible";
 import { boundedRead, fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
+import { FACTS_JOIN, readWhyMatters } from "@/features/flywheel/radar/read";
 import { stalenessOf } from "@/core/contracts";
 import { surfaceOf } from "@/core/routing";
 import { hostOf } from "@/core/shared";
@@ -97,7 +98,7 @@ async function readFacts(db: Db, rosterP: readonly OperationsRegion[] | Promise<
     const asAt = (text("as_at_date") ?? last)?.slice(0, 10) ?? null;
     const fresh = cadence && asAt && nowIso ? stalenessOf({ as_of: { event_date: asAt, source_published_at: asAt }, expected_refresh: cadence }, nowIso.slice(0, 10)) : "unknown";
     return {
-      regionCode: byId.get(r.region_id) as string, dimension: r.dimension as string, factLabel: r.fact_label as string, value: String(r.value ?? ""), status: text("status"), trend: ["up", "down", "flat"].includes(String(r.trend)) ? (r.trend as "up" | "down" | "flat") : null,
+      id: r.id, regionCode: byId.get(r.region_id) as string, dimension: r.dimension as string, factLabel: r.fact_label as string, value: String(r.value ?? ""), status: text("status"), trend: ["up", "down", "flat"].includes(String(r.trend)) ? (r.trend as "up" | "down" | "flat") : null,
       sourceName: src?.name ?? null, sourceUrl: src?.url ?? null, sourceTier: customerTierOf(src), sourceNote: text("source_note"), lastUpdated: last, freshness: (FRESH.has(fresh) ? fresh : "unknown") as Freshness,
       valueNumeric: num(r.value_numeric), unit: text("unit"), currency: text("currency"), derivation: text("derivation"), originClass: text("origin_class"), sourceKey: text("source_key"), sourceRef: text("source_ref"),
       nObservations: num(r.n_observations), methodVersion: text("method_version"), asAtDate: text("as_at_date"), referencePeriod: text("reference_period"),
@@ -168,7 +169,15 @@ export async function readDerivedFigures(db: Db, limit = 8): Promise<DerivedFigu
     return { label: "an input that is no longer held", period: null, sourceName: null, tier: null };
   };
   const before = new Map(supersededRows.map((v) => [v.value_id, num(v.value)] as const));
-  return rows.map((r) => toDerivedFigure(r, inputRefs(r.inputs).filter((i) => OPERATIONS_INPUT_TABLES.includes(i.table)).map(resolve), r.supersedes ? (before.get(r.supersedes) ?? null) : null));
+  const figures = rows.map((r) => toDerivedFigure(r, inputRefs(r.inputs).filter((i) => OPERATIONS_INPUT_TABLES.includes(i.table)).map(resolve), r.supersedes ? (before.get(r.supersedes) ?? null) : null));
+  // "Why this matters" for each figure: the items tied to its first input row (one join per input table)
+  const first = rows.map((r) => inputRefs(r.inputs).find((i) => OPERATIONS_INPUT_TABLES.includes(i.table)));
+  const why = new Map<string, string[]>();
+  for (const table of OPERATIONS_INPUT_TABLES) {
+    const asked = figures.flatMap((f, n) => (first[n]?.table === table ? [{ id: first[n]?.pk as string, subject: f.inputs[0]?.label ?? f.title }] : []));
+    for (const [pk, lines] of (await readWhyMatters(db, FACTS_JOIN, table, asked)) ?? []) why.set(`${table}/${pk}`, lines);
+  }
+  return figures.map((f, n) => ({ ...f, why: why.get(`${first[n]?.table}/${first[n]?.pk}`) ?? [] }));
 }
 
 export interface OperationsPageData {
@@ -191,7 +200,8 @@ export async function readOperationsPage(db: Db, nowIso: string, orgId: string |
     settle("coverage", () => readCoverage(db, rosterP)), settle("facts", () => readFacts(db, rosterP, nowIso)),
     settle("state cost facts", () => readStateCosts(db)), settle("linked regulations", () => readLinkedRegulations(db, rosterP)), settle("recomputed figures", () => readDerivedFigures(db)),
   ]);
-  return { rows: category.resources, rowsFailed: category.failed, aggregates, roster, coverage, facts, stateCosts, linkedRegulations, derived };
+  const why = facts ? await readWhyMatters(db, FACTS_JOIN, "regional_data_facts", facts.flatMap((f) => (f.id ? [{ id: f.id, subject: f.factLabel }] : []))) : null;
+  return { rows: category.resources, rowsFailed: category.failed, aggregates, roster, coverage, facts: why ? (facts as OperationsFact[]).map((f) => ({ ...f, why: why.get(f.id ?? "") ?? [] })) : facts, stateCosts, linkedRegulations, derived };
 }
 
 /** The S3/S4 gate for one profile: the roster and the sourced coverage over the item's whole jurisdiction list; either read failing closes the gate and says why (INV-233). */

@@ -267,6 +267,81 @@
       "viewport": "375x812",
       "maxDiff": 0.03,
       "ruling": "operator look ruling 2026-10-26 (BTN-1): button gradient, four-layer shadow, pressed state (src/ui/base.css .cl-btn, tokens in src/ui/theme.css). Controls: the masthead Ask button (secondary) and the command bar, 46 px tall for law 2. Same-machine old-versus-new capture of this route at 375x812 differs by 0.33% from the button look alone (baseline diff before this change under the 2% threshold); the ceiling is that sum with margin, so any other change to the route still fails."
+    },
+    {
+     "id": "ui-radar-1-regulations",
+     "route": "regulations",
+     "kind": [
+      "heading",
+      "control"
+     ],
+     "match": "^(2:Cross-surface patterns|link:)",
+     "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: the cross-surface radar sits under the theme strip: the patterns the engine found across the four surfaces, each item and each surface a link, with the signpost and the missing part in words. The baseline predates the panel; the rows themselves are unchanged apart from their second line, which compare does not read. Retire when the baseline is recaptured from production after the merge."
+    },
+    {
+     "id": "ui-radar-1-market",
+     "route": "market",
+     "kind": [
+      "heading",
+      "control"
+     ],
+     "match": "^(2:Cross-surface patterns|link:)",
+     "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: the cross-surface radar sits under the theme strip: the patterns the engine found across the four surfaces, each item and each surface a link, with the signpost and the missing part in words. The baseline predates the panel; the rows themselves are unchanged apart from their second line, which compare does not read. Retire when the baseline is recaptured from production after the merge."
+    },
+    {
+     "id": "ui-radar-1-research",
+     "route": "research",
+     "kind": [
+      "heading",
+      "control"
+     ],
+     "match": "^(2:Cross-surface patterns|link:)",
+     "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: the cross-surface radar sits under the theme strip: the patterns the engine found across the four surfaces, each item and each surface a link, with the signpost and the missing part in words. The baseline predates the panel; the rows themselves are unchanged apart from their second line, which compare does not read. Retire when the baseline is recaptured from production after the merge."
+    },
+    {
+     "id": "ui-radar-1-operations",
+     "route": "operations",
+     "kind": [
+      "heading",
+      "control"
+     ],
+     "match": "^(2:Cross-surface patterns|link:)",
+     "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: the cross-surface radar sits under the theme strip: the patterns the engine found across the four surfaces, each item and each surface a link, with the signpost and the missing part in words. The baseline predates the panel; the rows themselves are unchanged apart from their second line, which compare does not read. Retire when the baseline is recaptured from production after the merge."
+    },
+    {
+     "id": "ui-radar-1-dashboard",
+     "route": "dashboard",
+     "kind": "control",
+     "match": "^link:",
+     "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: the cross-surface radar sits in the rail above Connected across pages (links to the items and surfaces a pattern joins), and the Due next and What changed rows now draw a second line. Retire when the baseline is recaptured from production after the merge."
+    },
+    {
+     "id": "ui-radar-1-regulation-detail",
+     "route": "regulation-detail",
+     "kind": "control",
+     "match": "^link:",
+     "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: the connections now state why in a sentence, and Connected intelligence carries the cross-surface patterns and What moves with this (links to the items and surfaces they join). Retire when the baseline is recaptured from production after the merge."
+    },
+    {
+     "id": "ui-radar-1-market-detail",
+     "route": "market-detail",
+     "kind": "control",
+     "match": "^link:",
+     "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: the connections now state why in a sentence, and Connected intelligence carries the cross-surface patterns and What moves with this (links to the items and surfaces they join). Retire when the baseline is recaptured from production after the merge."
+    },
+    {
+     "id": "ui-radar-1-research-detail",
+     "route": "research-detail",
+     "kind": "control",
+     "match": "^link:",
+     "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: the connections now state why in a sentence, and Connected intelligence carries the cross-surface patterns and What moves with this (links to the items and surfaces they join). Retire when the baseline is recaptured from production after the merge."
+    },
+    {
+     "id": "ui-radar-1-operations-detail",
+     "route": "operations-detail",
+     "kind": "control",
+     "match": "^link:",
+     "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: the connections now state why in a sentence, and Connected intelligence carries the cross-surface patterns and What moves with this (links to the items and surfaces they join). Retire when the baseline is recaptured from production after the merge."
     }
   ]
 }
