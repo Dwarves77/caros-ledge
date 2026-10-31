@@ -129,16 +129,16 @@ export async function readFlywheelRadar(clients: { db: Db; admin: Db }, scope: R
     const forming = r.lifecycle === "forming";
     const seed = forming ? "" : seedOf(r);
     const ins = inputsOf(r);
-    const groups: (RadarGroup & { key: string })[] = SURFACE_ORDER.flatMap((surface) => {
+    const groups: RadarGroup[] = SURFACE_ORDER.flatMap((surface) => {
       const here = ins.filter((i) => i.surface === surface);
       const found = [...new Map(here.flatMap((i) => { const it = items.get(ownerOf.get(`${i.table}/${i.pk}`) ?? ""); return it ? [[it.id, { id: it.id, title: shortTitle(it.title), href: surfaceHref(surfaceOf(it.item_type, it.domain), it.legacy_id || it.id) as string }] as const] : []; })).values()].sort((x, y) => x.id.localeCompare(y.id));
       const who = [...new Set(here.flatMap((i) => (i.entities ?? []).map((e) => names.get(e)).filter((n): n is string => !!n)))].sort();
-      return here.length ? [{ surface, label: SURFACE_LABELS[surface] as string, href: SURFACE_PATH[surface] as string, items: found.map(({ title, href }) => ({ title, href })), names: who, key: `${surface}:${found.map((f) => f.id).join(",")}:${found.length ? "" : who.join(",")}` }] : [];
+      return here.length ? [{ surface, label: SURFACE_LABELS[surface] as string, href: SURFACE_PATH[surface] as string, items: found.map(({ title, href }) => ({ title, href })), names: who }] : [];
     });
     const keys = new Set(ins.map((i) => buildSubjectRef("trigger", i.table, i.pk)));
     const parts = flags.filter((f) => (seed && f.subject_ref.startsWith(`pattern:${seed}:`)) || keys.has(f.subject_ref)).map(gapSurface).filter((s): s is string => !!s);
-    const id = `${forming ? "forming" : "emerging"}|${copyKey(r.method_id)}|${groups.map((g) => g.key).join("|")}`;
-    const card = cards.get(id) ?? { key: r.value_id, label: forming ? copy.forming : copy.label, means: forming ? "The chain is not complete yet; the reading below is what is linked so far." : copy.means, forming, groups: groups.map(({ key: _k, ...g }) => g), watch: null, missingParts: [], next: forming ? (r.missing?.truth?.trim() || null) : null, dates: [], watching: false, absent: [] };
+    const id = JSON.stringify([forming, copyKey(r.method_id), groups.map((g) => [g.surface, g.items.map((it) => it.href), g.items.length ? [] : g.names])]);
+    const card = cards.get(id) ?? { key: r.value_id, label: forming ? copy.forming : copy.label, means: forming ? "The chain is not complete yet; the reading below is what is linked so far." : copy.means, forming, groups, watch: null, missingParts: [], next: forming ? (r.missing?.truth?.trim() || null) : null, dates: [], watching: false, absent: [] };
     if (watchOf.has(seed)) {
       card.watching = true;
       const date = watchOf.get(seed);
