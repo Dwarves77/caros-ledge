@@ -1,0 +1,21 @@
+{
+  "ruling": "coordinator 2026-10-30 (DRAIN-2G r1): item 947e08f3 (IEA Electricity Mid-Year Update 2025) rewritten to the current research_summary contract: every figure is bound to a verbatim span in a stored capture of the item, the 15 Gate A orphan figures that no stored capture states stay out, and the primary-source note states the truth (reachable, not captured under the build-mode hold). No review block is authored here; the second reader judges next. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "drain-2g-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-10-30-drain-2g.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "drain-2g-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-30-drain-2g.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
