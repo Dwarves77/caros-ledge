@@ -116,7 +116,7 @@ export function WhyMatters({ lines }: { lines: readonly string[] }) {
   if (lines.length === 0) return null;
   return (
     <div data-part="why-matters">
-      <p className="cl-detail-label" style={{ margin: 0 }}>Why this matters</p>
+      <p className="cl-detail-link-note" style={{ margin: 0, fontWeight: 700 }}>Why this matters</p>
       {lines.map((l) => (
         <p key={l} className="cl-detail-link-note">{l}</p>
       ))}
