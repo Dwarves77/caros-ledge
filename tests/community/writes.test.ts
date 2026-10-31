@@ -22,7 +22,7 @@ import { deriveOrganisationKey, resolveOrganisationSalt } from "@/features/commu
 
 import { scripted } from "../_support/fake-clients.ts";
 
-import { call, clientFor, ENTITY, ENTITY_2, EXTRA, HIDDEN, INVITE, ITEM_LIVE, ITEM_SUPERSEDED, PRIV, PUB, REPORT, SIGNOFF, STRANGER, T_HIDDEN, T_PUB, USER, world, type Persona, type World } from "./_world.ts";
+import { call, clientFor, ENTITY, ENTITY_2, EXTRA, HIDDEN, INVITE, ITEM_LIVE, PRIV, PUB, REPORT, SIGNOFF, STRANGER, T_HIDDEN, T_PUB, USER, world, type Persona, type World } from "./_world.ts";
 
 // A free-mail provider, assembled so the tree check for personal mail addresses (scripts/ci/tree-checks.mjs) does not read the fixture as an address.
 const FREE_MAIL_DOMAIN = ["out", "look"].join("") + ".com";
@@ -441,6 +441,8 @@ test("INV-240/241/238 together: the round trip's refusals leave no trace (an EXT
 
 test("INV-AD-1: a verified item that another item replaces is refused with a 404, and the thread is not changed", async () => {
   const db = world();
+  const ITEM_SUPERSEDED = "aaaaaaaa-0000-4000-8000-000000000003";
+  db.seed("intelligence_items", [{ id: ITEM_SUPERSEDED, title: "Superseded rule", provenance_status: "verified", is_archived: false, replaced_by: ITEM_LIVE, jurisdiction_iso: ["EU"] }]);
   const res = await call(POST_CITE, "member", "POST", `/api/community/posts/${T_PUB}/cite`, { item_id: ITEM_SUPERSEDED }, { id: T_PUB });
   assert.equal(res.status, 404);
   assert.equal(writesTo(db, "community_posts").length, 0);
