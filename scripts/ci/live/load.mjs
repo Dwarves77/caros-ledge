@@ -39,8 +39,8 @@ export async function loadWithRetry(visit, { stats = newStats(), sleep = sleepFo
   return visit();
 }
 
-/** One load in a Playwright context: the page's same-origin /api/ responses with status >= 400, and the typed failure elements in the DOM once the network is idle. */
-export async function visitOnce(context, base, path) {
+/** One load in a Playwright context: the page's same-origin /api/ responses with status >= 400, and the typed failure elements in the DOM once the network is idle. `extract`, when given, is a function run in the page once it settled; its answer is returned as `facts` (the signed-in DOM gate, scripts/ci/live/dom-gate.mjs). */
+export async function visitOnce(context, base, path, extract) {
   const origin = new URL(base).origin;
   const page = await context.newPage();
   try {
@@ -58,16 +58,16 @@ export async function visitOnce(context, base, path) {
       (els, chars) => els.map((e) => ({ marker: e.getAttribute("data-part") ?? (e.getAttribute("data-list-state") ? `data-list-state=${e.getAttribute("data-list-state")}` : e.id || e.tagName.toLowerCase()), text: (e.innerText || e.textContent || "").replace(/\s+/g, " ").trim().slice(0, chars) })),
       DIAGNOSTIC_CHARS,
     );
-    return { status: res?.status() ?? 0, finalUrl: page.url(), uiFailures, apiFailures, sectionHeads, itemId };
+    return { status: res?.status() ?? 0, finalUrl: page.url(), uiFailures, apiFailures, sectionHeads, itemId, ...(extract ? { facts: await page.evaluate(extract) } : {}) };
   } finally {
     await page.close();
   }
 }
 
-/** The page load the live checks use: visitOnce with the one 429 reload. A browser error is an { error } answer, never a throw. */
-export async function loadPage(context, base, path, opts = {}) {
+/** The page load the live checks use: visitOnce with the one 429 reload. A browser error is an { error } answer, never a throw. `opts.extract` is passed to visitOnce. */
+export async function loadPage(context, base, path, { extract, ...opts } = {}) {
   try {
-    return await loadWithRetry(() => visitOnce(context, base, path), { ...opts, label: path });
+    return await loadWithRetry(() => visitOnce(context, base, path, extract), { ...opts, label: path });
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e) };
   }
