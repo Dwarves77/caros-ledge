@@ -13,7 +13,7 @@ import { classifyHost } from "@/core/intake";
 import { capture, FetchHoldError } from "@/core/fetch";
 import { isVerbatim } from "@/core/contracts/verbatim";
 import { fetchAllRows, type Db } from "@/core/db";
-import { authorityFloorFor, buildGateARow, derivedCoveredTokens, readRequiredSlots, scanGateA, upsertGateAState } from "@/core/grounding";
+import { authorityFloorFor, buildGateARow, captureWallClass, derivedCoveredTokens, isUsableCapture, readRequiredSlots, scanGateA, upsertGateAState } from "@/core/grounding";
 import { applyLedgerOpsChunked, reattributeClaim, sourceForCapture, type AttributionCtx, type LedgerOp } from "@/core/grounding/ledger";
 import { runResult, type RunResult } from "@/core/intake/result";
 import { buildResolver, registerAndRate, type SourceRow } from "@/core/sources";
@@ -92,7 +92,9 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
     };
 
     // 1. capture, when the item has no usable capture of its own
-    if (!captures.some((c) => c.result_content.trim().length > 200)) {
+    if (!captures.some(isUsableCapture)) {
+      const wall = captures.map(captureWallClass).find((w) => w !== null);
+      if (wall) steps.stored_wall = `stored_wall:${wall}`;
       const url = item.source_url ?? (item.source_id ? idx.byId.get(item.source_id)?.url ?? null : null);
       if (!url) steps.capture = "held:no_source_url";
       else if (dry) steps.capture = "would_fetch";
@@ -145,7 +147,7 @@ export async function healItem(deps: HealDeps, input: HealItemInput): Promise<He
 
     // 3. required slots no claim covers yet
     const required = (await readRequiredSlots(sb, item.item_type)).map((s) => s.slot_key);
-    const best = captures.filter((c) => c.result_content.trim().length > 200).sort((a, b) => b.result_content.length - a.result_content.length)[0];
+    const best = captures.filter(isUsableCapture).sort((a, b) => b.result_content.length - a.result_content.length)[0];
     const covered = (k: string) => claims.some((c) => (c.claim_kind === "FACT" || c.claim_kind === "GAP") && indexOfInsensitive(c.claim_text, k) !== null);
     for (const slot of required.filter((k) => !covered(k))) {
       if (!best) { bump("slots_held_no_capture"); continue; }

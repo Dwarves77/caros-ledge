@@ -5,8 +5,10 @@ import { test } from "node:test";
 
 import { normalizeNumeric } from "@/core/contracts/numbers";
 import { classTierForHost } from "@/core/sources";
+import { captureWallClass, isUsableCapture, usableCaptures } from "@/core/grounding";
 import { healItem, healQuarantined, rederiveStale } from "@/features/mint";
 import { buildBuckets, buildSourcesIndex, claimNeedsResource, locateSpan, planGrounding, planResource, type Capture, type HealClaim } from "@/features/mint/heal/ground";
+import { capturePage } from "@/features/mint/heal/source";
 import { planBriefHonest } from "@/features/mint/heal/brief-honest";
 import { planReclassify, planRelabelFromFullBrief, planRelabelModal, planRelabelParagraph } from "@/features/mint/heal/label";
 
@@ -451,4 +453,38 @@ test("rederiveStale touches only the record items the function says verify now; 
   const done = await rederiveStale(h, { dry: false });
   assert.equal(done.counts.touched, 1);
   assert.deepEqual(db.writes("intelligence_items", "update").map((w) => Object.keys(w.payload as object)), [["updated_at"]]);
+});
+
+// HEAL-WALL-1: a stored wall page is not a usable capture (INV-178's one owner decides, at the stored side as at fetch time).
+const WALL = `Just a moment... Checking your browser before accessing the site. Cloudflare Ray ID 8a1b2c3d. Please enable JavaScript and cookies to continue. ${"Performance and security by Cloudflare. ".repeat(4)}`;
+
+test("INV-HW-1: a 300-char Cloudflare interstitial is not a usable capture; a 300-char real body is", () => {
+  assert.ok(WALL.length > 200 && WALL.length < 400);
+  assert.equal(isUsableCapture({ result_content: WALL, result_url: CELEX_URL }), false);
+  assert.equal(captureWallClass({ result_content: WALL, result_url: CELEX_URL }), "js_shell");
+  assert.equal(isUsableCapture({ result_content: CAPTURE, result_url: CELEX_URL }), true);
+  assert.equal(isUsableCapture({ result_content: "short", result_url: CELEX_URL }), false);
+});
+
+test("INV-HW-2: heal step 1 with only a wall capture stored plans a fetch and says why; with a real capture it records already_captured", async () => {
+  const walled = await heal(healWorld({ captureText: WALL }), { dry: true });
+  assert.equal(walled.steps.capture, "would_fetch");
+  assert.equal(walled.steps.stored_wall, "stored_wall:js_shell");
+  const real = await heal(healWorld(), { dry: true });
+  assert.equal(real.steps.capture, "already_captured");
+  assert.equal(real.steps.stored_wall, undefined);
+});
+
+test("INV-HW-4: usableCaptures excludes wall rows (the grounding pool)", () => {
+  const rows = [{ id: "w", url: CELEX_URL, text: WALL, index: 0 }, { id: "r", url: CELEX_URL, text: CAPTURE, index: 1 }];
+  assert.deepEqual(usableCaptures(rows).map((r) => r.id), ["r"]);
+});
+
+test("INV-HW-3: capturePage never returns a stored wall row (it goes to the fetch, which the hold stops), and still returns a stored real one", async () => {
+  const db = healWorld();
+  const base = { sb: makeDeps(db).deps.sb, fetch: makeDeps(db).deps.fetch, itemId: ITEM, nowIso: "2026-10-15T12:00:00.000Z", capCache: new Map() };
+  const real = await capturePage({ ...base, captures: [{ id: "r", result_url: CELEX_URL, result_content: CAPTURE }] } as never, CELEX_URL);
+  assert.equal(real?.id, "r");
+  const got = await capturePage({ ...base, captures: [{ id: "w", result_url: CELEX_URL, result_content: WALL }] } as never, CELEX_URL).catch((e: unknown) => e);
+  assert.notEqual((got as { id?: string } | null)?.id, "w", "the stored wall is not offered");
 });

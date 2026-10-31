@@ -11,7 +11,7 @@ export { groundBrief } from "./ground";
 export type { GroundDeps, GroundInput, GroundResult, GroundSources, TargetIdentity, TargetMatch } from "./ground";
 export { applyLedgerDiff, diffLedger, eraseClaimWithProof, groundRetryPlan, ledgerRegression, summarizeLedger } from "./ledger";
 export type { ClaimRow } from "./ledger";
-export { authorityFloorFor, floorPool, poolHash, readAllPoolRows, readPool, reattributeToFloor, usableCaptures } from "./pool";
+export { authorityFloorFor, captureWallClass, floorPool, isUsableCapture, poolHash, readAllPoolRows, readPool, reattributeToFloor, usableCaptures } from "./pool";
 export type { PoolRow, TierSource } from "./pool";
 export { decideSlotClaim, nominateForSlot, readRequiredSlots, uncoveredSlots } from "./slots";
 export type { Nomination, SlotDecision, SlotRow } from "./slots";
