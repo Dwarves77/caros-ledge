@@ -74,9 +74,6 @@ async function readTheme(db: Db, itemUuid: string, surface: string, asOfIso: str
   return view?.cluster ? themeAnalysisView({ ...input, linkedBy: await readLinkedBy(db, theme.member_ids) }) : view;
 }
 
-/** The inferences a customer may read for an item, per request. */
-const readFreshInferences = (db: Db, itemUuid: string): Promise<InferenceView | null> => readCustomerInferences(db, itemUuid);
-
 const BRACKET_ID = /\s*\[([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/gi;
 /** A stated summary with its bracketed item ids read as links to the items' titles; an id no admissible item holds (or that cannot be read) is dropped from the text shown. The stored summary is untouched. */
 async function resolveBracketedIds(db: Db, text: string | null): Promise<string | null> {
@@ -99,7 +96,7 @@ export async function readCrossPage(db: Db, itemUuid: string, surface: string, i
   const degraded: string[] = [];
   const [theme, inferences, summary] = await Promise.all([
     readTheme(db, itemUuid, surface, asOfIso).catch(() => (degraded.push("themes"), null)),
-    readFreshInferences(db, itemUuid).catch(() => (degraded.push("inferences"), null)),
+    readCustomerInferences(db, itemUuid).catch(() => (degraded.push("inferences"), null)),
     resolveBracketedIds(db, intersectionSummary),
   ]);
   return { intersections: buildIntersectionView(connections, await lookup, { currentSurface: surface, summary }), theme, ...(await readItemExtras(db, itemUuid, theme?.memberIds ?? [], facts)), inferences, degraded };
@@ -108,8 +105,7 @@ export async function readCrossPage(db: Db, itemUuid: string, surface: string, i
 /** The theme chips of a list page (`surface` null is the cross-page view the dashboard reads). Throws on a failed read; the caller says the strip did not load. */
 export async function readThemeChips(db: Db, opts: { surface: string | null; minPages?: number; max?: number }) {
   const [all, briefs] = await Promise.all([readThemes(db), readBriefs(db)]);
-  const briefed = new Set(briefs.map((b) => b.theme_id));
-  const key = (t: ThemeRow) => ({ hasBrief: briefed.has(t.id), surfaces: (t.surfaces ?? []).length, members: (t.member_ids ?? []).length, convergence: t.convergence ?? 0, id: t.id });
+  const key = (t: ThemeRow) => ({ hasBrief: briefs.some((b) => b.theme_id === t.id), surfaces: (t.surfaces ?? []).length, members: (t.member_ids ?? []).length, convergence: t.convergence ?? 0, id: t.id });
   // the same scope and order themeChips applies, so the 25 read are the 25 it can show
   const themes = all.filter((t) => inThemeScope(key(t).members, key(t).surfaces) && (opts.surface ? (t.surfaces ?? []).includes(opts.surface) : key(t).surfaces >= (opts.minPages ?? 1))).sort((a, b) => compareThemes(key(a), key(b))).slice(0, 25);
   if (themes.length === 0) return [];

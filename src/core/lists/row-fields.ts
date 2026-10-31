@@ -53,10 +53,7 @@ export function dueInfo(r: Resource, now: Date): DueInfo | null {
 }
 
 /** The first sentence of a stored text, cut at its end (not at "No." or "Art."); null when there is none. */
-const firstSentence = (text: string | null | undefined): string | null => {
-  const t = (text ?? "").replace(/\s+/g, " ").trim();
-  return t ? t.slice(0, [...t.matchAll(/[.!?](?=\s+[A-Z("“]|$)/g)].map((m) => m.index + 1).find((n) => !/\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i.test(t.slice(0, n)))) : null;
-};
+const firstSentence = (text: string | null | undefined, t = (text ?? "").replace(/\s+/g, " ").trim()): string | null => (t ? t.slice(0, [...t.matchAll(/[.!?](?=\s+[A-Z("“]|$)/g)].map((m) => m.index + 1).find((n) => !/\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i.test(t.slice(0, n)))) : null);
 
 export function toListRowFields(r: Resource, now: Date): ListRowFields {
   const due = dueInfo(r, now);

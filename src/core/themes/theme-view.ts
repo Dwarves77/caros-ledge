@@ -156,8 +156,7 @@ function deriveThemeLabel(input: { pages?: Array<{ label?: string }>; memberCoun
 export const inThemeScope = (memberCount: number, surfaceCount: number): boolean => memberCount >= 3 || surfaceCount >= 2;
 
 /** The one ranking of themes: a fresh brief first, then the surfaces spanned, then the member count, then convergence, the id breaking ties. */
-export const compareThemes = (a: { hasBrief: boolean; surfaces: number; members: number; convergence: number; id: string }, b: typeof a): number =>
-  Number(b.hasBrief) - Number(a.hasBrief) || b.surfaces - a.surfaces || b.members - a.members || b.convergence - a.convergence || (a.id < b.id ? -1 : 1);
+export const compareThemes = (a: { hasBrief: boolean; surfaces: number; members: number; convergence: number; id: string }, b: typeof a): number => Number(b.hasBrief) - Number(a.hasBrief) || b.surfaces - a.surfaces || b.members - a.members || b.convergence - a.convergence || (a.id < b.id ? -1 : 1);
 
 /** The theme chips of a list page: the themes in scope that touch the surface (or span `minPages`), ranked by compareThemes, each linking to a member on this surface. */
 export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly MemberRow[]; briefs?: readonly BriefRow[]; lineage?: Lineage; surface?: string | null; minPages?: number; max?: number }) {
