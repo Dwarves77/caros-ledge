@@ -96,7 +96,7 @@ test("INV-DIG-5: the entry applies end to end: the blocks reach their tables wit
   assert.equal(w.db.rows("entity_refs").length - seededRefs + w.db.rows("obligation_objects").length + w.db.rows("entity_relations").length + w.db.rows("vocabulary_terms").length, 0, "a dry run wrote nothing");
   const r = await apply(w, e);
   assert.equal(r.counts.applied, 1, r.notes.join("\n"));
-  assert.equal((r.data as { downstream: { counts: Record<string, number> } }).downstream.counts.flywheel_passes, 3, "the tag, term and corpus passes ran after the batch");
+  assert.equal((r.data as { downstream: { counts: Record<string, number> } }).downstream.counts.flywheel_passes, 5, "the tag, discovery, term, corpus and pattern passes ran after the batch");
   const reader = (row: Record<string, unknown>) => row.method_version === READER_METHOD;
   // entities and the objects' entities and the event's entity and mode, each a typed ref carrying the quote
   const refs = w.db.rows("entity_refs").filter((x) => x.asserted_by === "reader");
