@@ -1,6 +1,5 @@
 // New in UI-RADAR-1 (scripts/ci/new-files/ui-radar-1.txt): what the flywheel radar draws, read for one scope. The panel is the customer face of the engine's cross-surface findings: the patterns the pattern step recorded as derived values (emerging or still forming),
-// the items and entities each one joins by surface, the signpost that would confirm it, the open needs that say which part of the chain is missing, and the connections still developing. This module reads and composes; it writes nothing, and no method id, uuid or score leaves it.
-// The structured-fact joins (src/core/flywheel/facts-join.ts) are read here for the two-line "Why this matters" of a figure and the facts of an item.
+// the items and entities each one joins by surface, the signpost that would confirm it, the open needs that say which part of the chain is missing, and the connections still developing. This module reads and composes; it writes nothing, and no method id, uuid or score leaves it. The structured-fact joins (src/core/flywheel/facts-join.ts) give the two-line "Why this matters" of a figure and the facts of an item; the entity names are resolved here (displayName).
 import { allRows, boundedRead, fetchAllByIdChunks, isServiceConfigured, rowsByIds, serviceClient, type Db } from "@/core/db";
 import { admitItems } from "@/core/derived/admissible";
 import { type BasisEntry, CANDIDATE_ORIGIN, type EdgeBasis, evidenceOf } from "@/core/flywheel/discover";
@@ -18,12 +17,9 @@ import { SURFACE_LABELS, SURFACE_ORDER, SURFACE_PATH, surfaceHref, surfaceOf } f
 import { JURISDICTIONS } from "@/core/workspace/vocabulary";
 import { PATTERN_COPY } from "@/features/operations/model/derived-view";
 import type { RadarForming, RadarGroup, RadarPattern, RadarView } from "@/ui/flywheel/FlywheelRadar";
-
 export type { RadarForming, RadarGroup, RadarPattern, RadarView };
-
 /** The reader's own client and the platform's: the signposts and the open needs sit behind the platform role; without it the radar draws what the reader's client can read. */
 export const radarClients = (db: Db): { db: Db; admin: Db } => ({ db, admin: isServiceConfigured() ? serviceClient() : db });
-
 export type RadarScope = { kind: "corpus" } | { kind: "surface"; surface: string } | { kind: "item"; itemUuid: string; memberIds: readonly string[] };
 interface PatternRow {
   value_id: string;
@@ -48,6 +44,7 @@ interface ItemRow {
   title: string;
   item_type: string | null;
   domain: number | null;
+  instrument_entity_id: string | null;
 }
 const KIND_OF_METHOD: Readonly<Record<string, string>> = Object.fromEntries(Object.entries(PATTERN_METHODS).map(([kind, m]) => [m.id, kind]));
 const METHOD_IDS = Object.values(PATTERN_METHODS).map((m) => m.id);
@@ -57,7 +54,6 @@ const copyKey = (methodId: string): string => (methodId.startsWith("forming_") ?
 const SHOWN_PATTERNS = 5;
 const SHOWN_FORMING = 3;
 const OPEN = ["open", "in_review"];
-
 const inputsOf = (r: PatternRow): Input[] => (Array.isArray(r.inputs) ? (r.inputs as Input[]).filter((i) => i && typeof i.table === "string" && i.pk !== undefined && i.pk !== null) : []);
 /** The seed a pattern and its signpost are filed under: the detector kind and the pattern key (computed_by is `method@version:key`). */
 const seedOf = (r: PatternRow): string => `${KIND_OF_METHOD[r.method_id]}:${r.computed_by.slice(r.computed_by.indexOf(":") + 1)}`;
@@ -67,52 +63,40 @@ const gapSurface = (f: { description: string; recommended_actions: unknown }): s
   const key = typed ?? /\bSurface (\w+);/.exec(f.description)?.[1];
   return key && SURFACE_LABELS[key] ? key : null;
 };
-
-/** The admissible items among `ids` (verified, not archived, not replaced), by uuid. */
-async function readItems(db: Db, ids: readonly string[]): Promise<Map<string, ItemRow>> {
+/** The admissible items among `ids` (verified, not archived, not replaced), by uuid, or by the instrument entity they are filed under (`by`; the lowest id wins when several are). */
+async function readItems(db: Db, ids: readonly string[], by: "id" | "instrument_entity_id" = "id"): Promise<Map<string, ItemRow>> {
   const rows = await fetchAllByIdChunks<ItemRow>(ids, async (slice) => {
-    const { data, error } = await admitItems(db.from("intelligence_items").select("id, legacy_id, title, item_type, domain")).in("id", slice);
+    const { data, error } = await admitItems(db.from("intelligence_items").select("id, legacy_id, title, item_type, domain, instrument_entity_id")).in(by, slice).order("id", { ascending: true });
     if (error) throw new Error(error.message);
     return (data ?? []) as ItemRow[];
-  }, { chunk: 100 });
-  return new Map(rows.map((r) => [r.id, r]));
+  }, { chunk: 100, manyPerId: by !== "id" });
+  return new Map([...rows].reverse().map((r) => [r[by] as string, r]));
 }
-
-// -- the name of an entity: what a reader reads, never a token ---------------------------------------------------------------------------------------
 /** A token, not a name: a snake_case metric ("ghg_intensity"), a CELEX number ("32023R1542"), an all-capital code ("GLOBAL"). */
 const RAW_TOKEN = /^(?:[A-Za-z0-9]+(?:_[A-Za-z0-9]+)+|\d{5}[A-Z]\d{4}|[A-Z][A-Z0-9]+)$/;
-const CELEX_KIND: Readonly<Record<string, string>> = { R: "regulation", L: "directive", D: "decision" };
 /**
- * The ONE owner of an entity's name on a customer page (entityRefs hands over entities.display_name, else canonical_name). A name that is already words stands. A token resolves by kind: an instrument to the verified item filed under it (`titles`), else its CELEX in words;
- * a jurisdiction to its place name ("GLOBAL" to "Global"); a metric or method token to the vocabulary's label; else the canonical name split into words with the kind in parentheses.
+ * The ONE owner of an entity's name on a customer page (entityRefs hands over display_name, else canonical_name). A name already in words stands. A token resolves by kind: an instrument to the verified item filed under it (`titles`), else its CELEX in words;
+ * a jurisdiction to its place name ("GLOBAL" to "Global"); a metric or method token to the vocabulary's label; else the canonical name with the kind in parentheses.
  */
-function displayName(e: EntityRef, titles: ReadonlyMap<string, string> = new Map()): string {
+function displayName(e: EntityRef, titles: ReadonlyMap<string, string>): string {
   const name = e.canonicalName.trim();
+  const celex = /^3(\d{4})([RLD])(\d{4})$/.exec(name);
   if (!RAW_TOKEN.test(name)) return name;
   if (e.kind === "instrument" && titles.has(e.id)) return shortTitle(titles.get(e.id) as string);
   if (e.kind === "jurisdiction") return placeWords(name);
-  const celex = /^3(\d{4})([RLD])(\d{4})$/.exec(name);
-  if (e.kind === "instrument" && celex) return `EU ${CELEX_KIND[celex[2] as string]} ${celex[1]}/${Number(celex[3])}`;
+  if (e.kind === "instrument" && celex) return `EU ${{ R: "regulation", L: "directive", D: "decision" }[celex[2] as string]} ${celex[1]}/${Number(celex[3])}`;
   return `${name.includes("_") ? labelForComplianceObject(name.replace(/_/g, "-")) : name} (${e.kind})`;
 }
 /** The names of entities in words, by id: one batched read of the verified item filed under each instrument that carries only a token. */
 async function nameEntities(db: Db, refs: readonly EntityRef[]): Promise<Map<string, string>> {
-  const bare = refs.filter((r) => r.kind === "instrument" && RAW_TOKEN.test(r.canonicalName.trim())).map((r) => r.id);
-  const titles = new Map<string, string>();
-  const rows = await fetchAllByIdChunks<{ title: string; instrument_entity_id: string }>(bare, async (slice) => {
-    const { data, error } = await admitItems(db.from("intelligence_items").select("id, title, instrument_entity_id")).in("instrument_entity_id", slice).order("id", { ascending: true });
-    if (error) throw new Error(error.message);
-    return (data ?? []) as { title: string; instrument_entity_id: string }[];
-  }, { chunk: 100, manyPerId: true });
-  for (const r of rows) if (!titles.has(r.instrument_entity_id)) titles.set(r.instrument_entity_id, r.title);
-  return new Map(refs.map((r) => [r.id, displayName(r, titles)]));
+  const titles = await readItems(db, refs.filter((r) => r.kind === "instrument" && RAW_TOKEN.test(r.canonicalName.trim())).map((r) => r.id), "instrument_entity_id");
+  return new Map(refs.map((r) => [r.id, displayName(r, new Map([...titles].map(([k, v]) => [k, v.title])))]));
 }
 /** The facts of each key with the entity each link names in words (a series' entity, the instrument a rule is filed under). */
 async function nameLinks<K>(db: Db, byKey: ReadonlyMap<K, readonly FactLink[]>): Promise<Map<K, FactLink[]>> {
   const words = await nameEntities(db, [...new Map([...byKey.values()].flat().map((l) => [l.entity.id, l.entity])).values()]);
   return new Map([...byKey].map(([k, ls]) => [k, ls.map((l) => ({ ...l, entity: { ...l.entity, canonicalName: words.get(l.entity.id) ?? l.entity.canonicalName } }))]));
 }
-
 /** The items the patterns rest on, by the owner column the fact specs name (`owner`, else `item`) (a table with none, such as a price series, joins through its entities). */
 async function itemsOfInputs(db: Db, inputs: readonly Input[]): Promise<Map<string, string>> {
   const out = new Map<string, string>();
@@ -129,7 +113,6 @@ async function itemsOfInputs(db: Db, inputs: readonly Input[]): Promise<Map<stri
   );
   return out;
 }
-
 /**
  * The radar for one scope. `db` is the reader's own client (RLS); `admin` reads the signposts and the open needs, which the platform keeps behind its own role. A failed read throws (the page says so with Retry);
  * so does a failed read of a part that adds to a pattern (signposts, needs, entity names): the panel never passes for empty.
@@ -195,7 +178,6 @@ export async function readFlywheelRadar(clients: { db: Db; admin: Db }, scope: R
   }));
   return { patterns, forming: scope.kind === "item" ? [] : await readForming(db, scope) };
 }
-
 /** The connections still developing: candidate edges, each as the two items already linked, why, and the next link to watch. */
 async function readForming(db: Db, scope: RadarScope): Promise<RadarForming[]> {
   const edges = await boundedRead<{ source_item_id: string; target_item_id: string; basis: Parameters<typeof reasonFor>[0]["basis"]; score: number | null }>((n) => db.from("item_cross_references").select("source_item_id, target_item_id, basis, score").eq("origin", CANDIDATE_ORIGIN).order("score", { ascending: false }).limit(n) as never, { limit: 60 });
@@ -213,7 +195,6 @@ async function readForming(db: Db, scope: RadarScope): Promise<RadarForming[]> {
   }
   return shown;
 }
-
 /** The two "Why this matters" lines of structured rows (a series, a fact), per row id: the regulation tied to the figure's entity with its next dated obligation and penalty, and the operations, market or research item tied to it. */
 export async function readWhyMatters(db: Db, refTable: string, rows: readonly { id: string; subject: string }[], nowIso: string): Promise<Map<string, string[]>> {
   if (rows.length === 0) return new Map();
@@ -226,7 +207,6 @@ export const asBasis = (b: EdgeBasis | null | undefined): { evidence: BasisEntry
   const o = b && !Array.isArray(b) ? b : null;
   return { evidence: evidenceOf(b), missing: o?.missing ?? null, rationale: o?.rationale?.text.trim() || null };
 };
-
 // the evidence kinds, strongest first
 const KIND_ORDER = ["shared_entity", "shared_regulation_identifier", "shared_title_entity", "coupled_entity"] as const;
 /** A relation token in words, for "{A} {relation} {B}" (the closed RELATIONS of the coupling ontology). */
@@ -234,7 +214,6 @@ const RELATION_WORDS: Readonly<Record<(typeof RELATIONS)[number], string>> = { f
 /** The reason an explicit relationship states by itself (the legal edges, which need no evidence) and what a plain citation says. */
 const RELATION_REASON: Readonly<Record<string, string>> = { Supersedes: "Replaces prior statutory provisions.", "Superseded by": "Succeeded by newer legislation.", Implements: "Technical execution of the parent framework.", "Implemented by": "Carried out by implementing legislation.", Amends: "Modifies the text or scope of the other.", "Amended by": "Updated by a later amendment.", "Conflicts with": "Its requirements conflict with this one.", "Depends on": "This depends on it being in force." };
 const CITATION_REASON: Readonly<Record<string, string>> = { References: "Cited directly in the source text.", "Referenced by": "Cites this item directly in its source text." };
-
 /** The entities an evidence entry names: the typed canonical names, or the stored detail ("both name reg:x, y"). */
 const entityNames = (e: BasisEntry, names: ReadonlyMap<string, string> = new Map()): string[] => {
   const typed = (e.tokens?.entities ?? []).map((x) => names.get(x.id) ?? x.name?.trim() ?? "").filter(Boolean);
@@ -260,7 +239,6 @@ const placeOf = (e: BasisEntry): { where: string[]; topics: string[] } => {
 };
 /** The quoted names of a stored detail (`both name regulation identifier(s) "2099/2002" in their titles`). */
 const quoted = (e: BasisEntry): string[] => (typeof e.detail === "string" ? [...e.detail.matchAll(/"([^"]+)"/g)].map((m) => m[1] as string) : []);
-
 /** One sentence about the PAIR from the strongest typed evidence the basis holds, in words; null when the basis holds none that states anything (an entry of the same source alone is corroboration, not a connection). */
 function evidenceSentence(evidence: readonly BasisEntry[], ctx: ReasonContext): string | null {
   for (const k of KIND_ORDER) {
@@ -294,30 +272,20 @@ function evidenceSentence(evidence: readonly BasisEntry[], ctx: ReasonContext): 
   const parts = [apply, objs.length ? `address ${joinLabels(objs)}` : ""].filter(Boolean);
   return parts.length ? `Both ${parts.join(" and ")}.` : null;
 }
-
 /** What the sentence of a connection reads besides its basis: the obligations the two items share (who each binds, the date, the instrument) and the names of the entities its evidence cites. */
-interface ObligationFact {
-  holders: string[];
-  date: string | null;
-  instrument: string | null;
-}
 export interface ReasonContext {
-  obligations?: ReadonlyMap<string, ObligationFact> | undefined;
+  obligations?: ReadonlyMap<string, { holders: string[]; date: string | null; instrument: string | null }> | undefined;
   names?: ReadonlyMap<string, string> | undefined;
 }
 /** A duty-holder class token as a plural in words ("importer_of_record" is "importers of record"). */
 const holderWords = (token: string): string => token.replace(/_/g, " ").replace(/^(.+?)( of .+)?$/, (_m, head: string, tail?: string) => `${head.replace(/s?$/, "s")}${tail ?? ""}`);
-
-/**
- * Everything a detail page reads once for its connections: the structured facts tied to the item and to its neighbours (the entity of each in words), the obligations their edges share, and the names of the entities their evidence cites.
- * One batched read of obligation_objects and one of the instruments' items per page render, never one per edge.
- */
+/** Everything a detail page reads once for its connections: the structured facts tied to the item and to its neighbours (the entity of each in words), the obligations their edges share, and the names of the entities their evidence cites. One batched read of obligation_objects and one of the instruments' items per page render, never one per edge. */
 export async function readConnectionFacts(db: Db, uuid: string, connections: readonly { uuid?: string | undefined; basis?: EdgeBasis | null | undefined }[]): Promise<{ facts: Map<string, FactLink[]>; also: ReasonContext }> {
   const facts = await nameLinks(db, await readEntityFacts(db, [uuid, ...connections.flatMap((c) => (c.uuid ? [c.uuid] : []))]));
   const evidence = connections.flatMap((c) => evidenceOf(c.basis));
   const rows = await rowsByIds<Record<string, unknown>>(db, "obligation_objects", "obligation_id, instrument_item_id, duty_holder_class, due_date, first_deadline, date_of_application", evidence.flatMap((e) => e.tokens?.obligations ?? []), "obligation_id", "obligation_id");
   const items = await readItems(db, rows.map((r) => String(r.instrument_item_id)));
-  const obligations = new Map(rows.map((o): [string, ObligationFact] => [String(o.obligation_id), { holders: [...new Set((Array.isArray(o.duty_holder_class) ? (o.duty_holder_class as string[]) : []).map(holderWords))], date: dueOf(o) ?? null, instrument: shortTitle(items.get(String(o.instrument_item_id))?.title ?? "", 70) || null }]));
+  const obligations = new Map(rows.map((o) => [String(o.obligation_id), { holders: [...new Set((Array.isArray(o.duty_holder_class) ? (o.duty_holder_class as string[]) : []).map(holderWords))], date: dueOf(o) ?? null, instrument: shortTitle(items.get(String(o.instrument_item_id))?.title ?? "", 70) || null }]));
   const cited = evidence.flatMap((e) => [...(e.tokens?.entities ?? []), ...(e.tokens?.coupled ?? []).flatMap((x) => [x.parent, x.child])].map((t) => t.id));
   return { facts, also: { obligations, names: await nameEntities(db, [...(await entityRefs(db, cited)).values()]) } };
 }
@@ -353,7 +321,6 @@ function chainOf(a: readonly FactLink[], b: readonly FactLink[]): string | null 
   }
   return lines.length ? lines.join(" ") : null;
 }
-
 /**
  * Why two items are connected, as one short passage about the PAIR that a reader without a sustainability background can act on: the reader's own rationale first, then what an explicit relationship says, then what the typed evidence states
  * (the shared entity, the coupled relation, the shared operating context) followed by the facts tied to an entity both items reach. Null for an edge whose only evidence is the same source (it corroborates; it never connects).
@@ -363,7 +330,6 @@ export function reasonFor(c: { basis: EdgeBasis | null | undefined; origin: stri
   const pair = [evidenceSentence(evidence, facts), chainOf(facts.self ?? [], facts.other ?? [])].filter(Boolean).join(" ");
   return rationale ?? RELATION_REASON[c.label] ?? (pair || null) ?? (evidence.length > 0 && c.origin === DISCOVERY_ORIGIN ? null : (CITATION_REASON[c.label] ?? null));
 }
-
 /** What a set of edges is mostly linked by, in words: the canonical names of the entities they share and the scenarios they touch, most frequent first. The same source is not a link. */
 function linkedByWords(bases: readonly (EdgeBasis | null | undefined)[], top = 3): string[] {
   const tally = new Map<string, number>();
@@ -373,7 +339,6 @@ function linkedByWords(bases: readonly (EdgeBasis | null | undefined)[], top = 3
   }
   return [...tally].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0])).slice(0, top).map(([w]) => w);
 }
-
 /** The family a forming chain is called, from the detector kind (or the method id) the typed `patternFamily` names. */
 export const familyWords = (family: string | undefined | null): string | null => (family ? (PATTERN_COPY[PATTERN_METHODS[family as keyof typeof PATTERN_METHODS]?.id ?? family]?.forming ?? null) : null);
 
@@ -393,7 +358,6 @@ export function whyLines(links: readonly FactLink[], subject: string): string[] 
   const second = other ? `Also tied: ${other.summary.label ?? other.entity.canonicalName} (${surfaceName(other.surface)})${others.length > 1 ? `, and ${others.length - 1} more` : ""}.` : `No operations, market or research item is tied to ${subject} yet.`;
   return [first, second];
 }
-
 /** The rows that move with an item: each structured row tied to its entities as one line (the figure, its date or delta, and the entity it moves through), the strongest kind first. */
 function movesRows(links: readonly FactLink[], limit = 8): { kind: string; line: string }[] {
   const seen = new Set<string>();
@@ -409,7 +373,6 @@ function movesRows(links: readonly FactLink[], limit = 8): { kind: string; line:
   }
   return out;
 }
-
 /** What a theme with no usable brief is mostly linked by, in words: read from the bases of a sample of its edges (the first 200 members' edges, candidates left out), bounded for a theme of hundreds. */
 export const readLinkedBy = async (db: Db, memberIds: readonly string[]): Promise<string[]> =>
   linkedByWords(await fetchAllByIdChunks(memberIds.slice(0, 200), async (slice) => {
@@ -417,7 +380,6 @@ export const readLinkedBy = async (db: Db, memberIds: readonly string[]): Promis
     if (r.error) throw new Error(`item_cross_references read failed: ${r.error.message}`);
     return ((r.data ?? []) as { basis: EdgeBasis | null }[]).map((x) => x.basis);
   }, { chunk: 100, manyPerId: true }));
-
 /** The theme chips with their names: a theme no brief names is called by what its edges are mostly linked by (up to three; read for the few chips drawn, never for the 25 considered), and two chips never read the same (a label already drawn takes the title of the member it opens). */
 export async function nameChips<C extends { themeId: string; label: string; itemTitle: string; hasBrief: boolean }>(db: Db, chips: readonly C[], themes: readonly { id: string; member_ids: readonly string[] }[]): Promise<(C & { linkedBy: string[] })[]> {
   const drawn = new Set<string>();
@@ -430,7 +392,6 @@ export async function nameChips<C extends { themeId: string; label: string; item
     return { ...c, label, linkedBy };
   });
 }
-
 /** What a detail page adds under Connected intelligence: the patterns resting on the item or its theme (null: that read failed), and the structured rows tied to its entities. */
 export const readItemExtras = async (db: Db, itemUuid: string, memberIds: readonly string[], facts: readonly FactLink[]) => ({ radar: await readFlywheelRadar(radarClients(db), { kind: "item", itemUuid, memberIds }).catch(() => null), moves: movesRows(facts) });
 export type ItemExtras = Awaited<ReturnType<typeof readItemExtras>>;
