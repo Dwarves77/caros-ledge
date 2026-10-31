@@ -25,7 +25,7 @@ export async function applyThemeBrief(deps: SeamDeps, input: { brief: ValidTheme
   return { counts: { written: 1, members: res?.member_count ?? 0 }, outcome: "ok", notes: [] };
 }
 
-/** retire-orphan-theme-briefs: a theme_briefs row whose theme_id is absent from connection_themes describes a theme the corpus pass dissolved. It gets superseded_at = now by UPDATE (migration 0146; the 0039 trigger keeps the prior row) and no reader attaches it again. Idempotent: only rows with superseded_at NULL are touched. Dry reports the ids. */
+/** retire-orphan-theme-briefs: a theme_briefs row whose theme_id is absent from connection_themes describes a theme the corpus pass dissolved. It gets superseded_at = now by UPDATE (migration 0148; the 0039 trigger keeps the prior row) and no reader attaches it again. Idempotent: only rows with superseded_at NULL are touched. Dry reports the ids. */
 export async function retireOrphanThemeBriefs(deps: SeamDeps, input: { dry: boolean }): Promise<RunResult> {
   const live = new Set((await fetchAllRows<{ id: string }>((from, to) => deps.sb.from("connection_themes").select("id").order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 })).map((t) => t.id));
   const open = await fetchAllRows<{ theme_id: string }>((from, to) => deps.sb.from("theme_briefs").select("theme_id").is("superseded_at", null).order("theme_id", { ascending: true }).range(from, to) as never, { cap: 100_000 });

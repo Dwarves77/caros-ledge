@@ -1,4 +1,4 @@
--- Down for 0146_theme_briefs_superseded_at: apply_theme_brief returns to its 0075 body and the column (with every retirement date) goes.
+-- Down for 0148_theme_briefs_superseded_at: apply_theme_brief returns to its 0075 body and the column (with every retirement date) goes.
 CREATE OR REPLACE FUNCTION public.apply_theme_brief(p_theme_id uuid, p_member_hash text, p_title text, p_brief_md text, p_sections jsonb, p_claims jsonb, p_generated_by text, p_now timestamptz) RETURNS jsonb
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public', 'pg_temp'

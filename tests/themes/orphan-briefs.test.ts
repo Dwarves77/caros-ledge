@@ -1,5 +1,5 @@
 // THEME-CODE-1: a theme brief whose theme_id is no longer in connection_themes describes a dissolved theme. The readers (the page view and the export) never attach it, whatever the member overlap, and the retire-orphan-theme-briefs
-// op sets its superseded_at by UPDATE (migration 0146; the 0039 trigger keeps the prior row), dry or apply, idempotent. A retired row is not attached either, and a theme with no brief under its own id needs one.
+// op sets its superseded_at by UPDATE (migration 0148; the 0039 trigger keeps the prior row), dry or apply, idempotent. A retired row is not attached either, and a theme with no brief under its own id needs one.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
