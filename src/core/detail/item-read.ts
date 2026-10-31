@@ -4,7 +4,6 @@
 // relationship reads, the sections by uuid, and the mapper for every field the four detail surfaces render (including the columns the old mapper never read: recommended actions, the
 // instrument identifier and the last-verified date). The reader is the caller's client: RLS decides what is visible, a failed read throws (never "not found", never an empty block).
 import { admitItems } from "@/core/derived/admissible";
-import { CANDIDATE_ORIGIN, evidenceOf } from "@/core/flywheel/discover";
 import { isInstrumentMilestone, timelineDateOf } from "@/core/brief/timeline";
 import type { Db } from "@/core/db";
 import { boundedRead } from "@/core/db/query";
@@ -97,7 +96,7 @@ export async function readDetailItem(db: Db, urlId: string): Promise<DetailRead 
     bounded<{ source_item_id: string; target_item_id: string; relationship: string | null; origin: string | null; basis: ItemConnection["basis"]; score: number | null; source: Embedded | Embedded[] | null; target: Embedded | Embedded[] | null }>(
       "item_cross_references",
       BOUND.crossRefs,
-      (n) => db.from("item_cross_references").select("source_item_id, target_item_id, relationship, origin, basis, score, source:intelligence_items!source_item_id(id, legacy_id, item_type, domain), target:intelligence_items!target_item_id(id, legacy_id, item_type, domain)").or(`source_item_id.eq.${uuid},target_item_id.eq.${uuid}`).neq("origin", CANDIDATE_ORIGIN).limit(n) as never,
+      (n) => db.from("item_cross_references").select("source_item_id, target_item_id, relationship, origin, basis, score, source:intelligence_items!source_item_id(id, legacy_id, item_type, domain), target:intelligence_items!target_item_id(id, legacy_id, item_type, domain)").or(`source_item_id.eq.${uuid},target_item_id.eq.${uuid}`).limit(n) as never,
     ),
     bounded<{ supersession_date: string; severity: string; note: string | null; old: Embedded | Embedded[] | null; new: Embedded | Embedded[] | null }>(
       "item_supersessions",
@@ -172,7 +171,7 @@ export async function readDetailItem(db: Db, urlId: string): Promise<DetailRead 
     const otherId = uiIdOf(other);
     const o = one(other);
     if (!otherId || !o) continue;
-    connections.push({ id: otherId, direction: outgoing ? "outgoing" : "incoming", relationship: x.relationship || "related", origin: x.origin || "manual", basis: evidenceOf(x.basis) as ItemConnection["basis"], score: typeof x.score === "number" ? x.score : null, surface: surfaceOf(o.item_type ?? undefined, o.domain ?? undefined) });
+    connections.push({ id: otherId, uuid: o.id, direction: outgoing ? "outgoing" : "incoming", relationship: x.relationship || "related", origin: x.origin || "manual", basis: x.basis ?? null, score: typeof x.score === "number" ? x.score : null, surface: surfaceOf(o.item_type ?? undefined, o.domain ?? undefined) });
   }
   const supersessions: Supersession[] = sups.flatMap((s) => {
     const oldId = uiIdOf(s.old);

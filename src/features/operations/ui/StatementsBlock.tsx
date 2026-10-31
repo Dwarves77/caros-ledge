@@ -2,6 +2,7 @@
 // The industry statements under the matrix: one sentence per (dimension, label) that two or more regions hold a sourced figure for, the components listed beneath so the sentence is checkable. It states what wages and
 // costs are, sourced, and says nothing about what to do with them (ADR-043). A label the verdict screen refused is counted in the foot, not hidden. With no statements and none refused the block draws nothing.
 import { ABSENCE_DASH, SectionCard, SectionHead, SourceLink, TierChip } from "@/ui";
+import { WhyMatters } from "@/ui/flywheel/FlywheelRadar";
 
 import type { Statement, StatementComponent } from "../model/statements";
 
@@ -47,6 +48,7 @@ export function StatementsBlock({ statements, droppedVerdicts, dimensionNames = 
           <p data-audit="ops-statement-absence" className={styles.noteText}><span data-absence="needs" data-part="absence" className="cl-absence">{s.absence}</span></p>
         </>
       )}
+      <WhyMatters lines={s.why ?? []} />
       <ul className={styles.components}>
         {s.components.map((c) => (
           <Component key={c.regionCode} c={c} />

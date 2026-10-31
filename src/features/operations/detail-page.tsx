@@ -26,7 +26,7 @@ const loadProfile = (orgId: string | null, today: string) => async ({ db, uuid }
     readMatrixEligibility(db, item, roster),
     relatedItems(db, { id: uuid, sourceId: item.sourceId }, item.jurisdictions && item.jurisdictions.length > 0 ? (q) => q.contains("jurisdictions", [...item.jurisdictions as string[]]).eq("item_type", "regional_data") : null),
     readSpec09(db, orgId, scope),
-    readDerivedFigures(db, scope).catch((e) => (log.warn("[operations] recomputed figures did not load:", e instanceof Error ? e.message : String(e)), null)),
+    readDerivedFigures(db, scope, 8, `${today}T00:00:00.000Z`).catch((e) => (log.warn("[operations] recomputed figures did not load:", e instanceof Error ? e.message : String(e)), null)),
   ]);
   return { eligibility, related, spec09, derived, events };
 };

@@ -7,6 +7,7 @@
 // a failure is never an empty matrix, a zero or "no coverage" (INV-263). The old tree selected severity (a dead field), read the source fetch status and dropped every error: all gone.
 import { admitItems } from "@/core/derived/admissible";
 import { boundedRead, fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
+import { readWhyMatters } from "@/features/flywheel/radar/read";
 import { stalenessOf } from "@/core/contracts";
 import { canonicalJurisdictionCode, entityId } from "@/core/entities";
 import { surfaceOf } from "@/core/routing";
@@ -83,6 +84,12 @@ async function readCoverage(db: Db, rosterP: readonly OperationsRegion[] | Promi
   return roster ? rows.filter((r) => byId.has(r.region_id)).map((r) => ({ regionCode: byId.get(r.region_id) as string, dimension: r.dimension, state: r.state, factCount: r.fact_count, notes: r.notes })) : (null as never);
 }
 
+/** Each fact with its two "Why this matters" lines: the regulation tied to its entity with the next dated obligation and penalty, and the item tied to it (the facts join). */
+async function withWhy(db: Db, facts: OperationsFact[], nowIso: string): Promise<OperationsFact[]> {
+  const why = await readWhyMatters(db, "regional_data_facts", facts.flatMap((f) => (f.id ? [{ id: f.id, subject: f.factLabel }] : [])), nowIso);
+  return facts.map((f) => ({ ...f, why: why.get(f.id ?? "") ?? [] }));
+}
+
 /** Every regional fact the producers wrote, with the registered source's customer tier and freshness derived from the row's own date against `nowIso` (no instant, no judgement: freshness is unknown). */
 async function readFacts(db: Db, rosterP: readonly OperationsRegion[] | Promise<readonly OperationsRegion[] | null>, nowIso?: string): Promise<OperationsFact[]> {
   type Row = Record<string, unknown> & { id: string; region_id: string; sources: SourceEmbed | SourceEmbed[] | null };
@@ -98,7 +105,7 @@ async function readFacts(db: Db, rosterP: readonly OperationsRegion[] | Promise<
     const asAt = (text("as_at_date") ?? last)?.slice(0, 10) ?? null;
     const fresh = cadence && asAt && nowIso ? stalenessOf({ as_of: { event_date: asAt, source_published_at: asAt }, expected_refresh: cadence }, nowIso.slice(0, 10)) : "unknown";
     return {
-      regionCode: byId.get(r.region_id) as string, dimension: r.dimension as string, factLabel: r.fact_label as string, value: String(r.value ?? ""), status: text("status"), trend: ["up", "down", "flat"].includes(String(r.trend)) ? (r.trend as "up" | "down" | "flat") : null,
+      id: r.id, regionCode: byId.get(r.region_id) as string, dimension: r.dimension as string, factLabel: r.fact_label as string, value: String(r.value ?? ""), status: text("status"), trend: ["up", "down", "flat"].includes(String(r.trend)) ? (r.trend as "up" | "down" | "flat") : null,
       sourceName: src?.name ?? null, sourceUrl: src?.url ?? null, sourceTier: customerTierOf(src), sourceNote: text("source_note"), lastUpdated: last, freshness: (FRESH.has(fresh) ? fresh : "unknown") as Freshness,
       valueNumeric: num(r.value_numeric), unit: text("unit"), currency: text("currency"), derivation: text("derivation"), originClass: text("origin_class"), sourceKey: text("source_key"), sourceRef: text("source_ref"),
       nObservations: num(r.n_observations), methodVersion: text("method_version"), asAtDate: text("as_at_date"), referencePeriod: text("reference_period"),
@@ -141,7 +148,7 @@ export function profileScope(item: ItemJurisdictions, roster: readonly Operation
  * jurisdictioned inputs are all its own (a series' entity, a factor's jurisdiction, a fact's region); a figure none of whose inputs names a jurisdiction is global and shows everywhere; the list (`scope` null) spans all regions. A recalculation
  * that came out equal to the value it replaced is not a notice.
  */
-export async function readDerivedFigures(db: Db, scope: ProfileScope | null, limit = 8): Promise<DerivedFigure[]> {
+export async function readDerivedFigures(db: Db, scope: ProfileScope | null, limit = 8, nowIso?: string): Promise<DerivedFigure[]> {
   const read = await boundedRead<DerivedRow>((n) => db.from("derived_values_admissible").select("value_id, method_id, value, unit, currency, origin_class, lifecycle, base_confidence, computed_at, supersedes, inputs").order("computed_at", { ascending: false }).order("value_id", { ascending: true }).limit(n) as never, { limit: 200 });
   if (read.error) throw new Error(read.error.message);
   const rows = read.data.filter(isOperationsFigure);
@@ -192,11 +199,18 @@ export async function readDerivedFigures(db: Db, scope: ProfileScope | null, lim
     return null;
   };
   const before = new Map(supersededRows.map((v) => [v.value_id, num(v.value)] as const));
-  return rows.flatMap((r) => {
+  const kept = rows.flatMap((r) => {
     const refs = inputRefs(r.inputs).filter((i) => OPERATIONS_INPUT_TABLES.includes(i.table));
     const figure = toDerivedFigure(r, refs.map(resolve), r.supersedes ? (before.get(r.supersedes) ?? null) : null);
-    return refs.every((i) => own(i) !== false) && !(figure.previous !== null && figure.previous === figure.value) ? [figure] : [];
+    return refs.every((i) => own(i) !== false) && !(figure.previous !== null && figure.previous === figure.value) ? [{ figure, first: refs[0] }] : [];
   }).slice(0, limit);
+  // "Why this matters" for each figure: the items tied to its first input row (one join per input table)
+  const why = new Map<string, string[]>();
+  for (const table of OPERATIONS_INPUT_TABLES) {
+    const asked = kept.flatMap((k) => (k.first?.table === table ? [{ id: k.first.pk, subject: k.figure.inputs[0]?.label ?? k.figure.title }] : []));
+    if (nowIso) for (const [pk, lines] of await readWhyMatters(db, table, asked, nowIso)) why.set(`${table}/${pk}`, lines);
+  }
+  return kept.map(({ figure, first }) => ({ ...figure, why: why.get(`${first?.table}/${first?.pk}`) ?? [] }));
 }
 
 export interface OperationsPageData {
@@ -216,8 +230,8 @@ export async function readOperationsPage(db: Db, nowIso: string, orgId: string |
   const rosterP = settle("the region roster", () => readRoster(db));
   const [roster, category, aggregates, coverage, facts, stateCosts, linkedRegulations, derived] = await Promise.all([
     rosterP, readCategory(db, orgId ? "get_operations_items" : "get_operations_items_public", orgId), readSurfaceCounts(db, orgId, "operations"),
-    settle("coverage", () => readCoverage(db, rosterP)), settle("facts", () => readFacts(db, rosterP, nowIso)),
-    settle("state cost facts", () => readStateCosts(db)), settle("linked regulations", () => readLinkedRegulations(db, rosterP)), settle("recomputed figures", () => readDerivedFigures(db, null)),
+    settle("coverage", () => readCoverage(db, rosterP)), settle("facts", () => readFacts(db, rosterP, nowIso).then((facts) => withWhy(db, facts, nowIso))),
+    settle("state cost facts", () => readStateCosts(db)), settle("linked regulations", () => readLinkedRegulations(db, rosterP)), settle("recomputed figures", () => readDerivedFigures(db, null, 8, nowIso)),
   ]);
   return { rows: category.resources, rowsFailed: category.failed, aggregates, roster, coverage, facts, stateCosts, linkedRegulations, derived };
 }

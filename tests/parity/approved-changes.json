@@ -86,6 +86,11 @@
   "conditional": [
     {
       "route": "operations-detail",
+      "match": "^button:Show more$",
+      "reason": "OPS-FIX-1, 2026-10-31: grid queue scoped to the profile's jurisdiction; the US profile has no rows to expand"
+    },
+    {
+      "route": "operations-detail",
       "match": "^button:Request coverage$",
       "reason": "coordinator 2026-10-25: a panel's Request coverage action is its absence state (auxiliary energy loads, grid connection queue) and exists only while the panel has no data; ARM-1 populated grid_connection_queues, so the grid panel draws rows and its button is gone. Compared when present on both sides, ignored when absent on either; design unchanged"
     },
@@ -145,11 +150,11 @@
   ],
   "approved": [
     {
-      "id": "r2d-period-start-order-regulations",
-      "route": "regulations",
-      "kind": "order",
-      "match": "^link:(California SB # — Climate Corporate Data Accountability Act|EU Emissions Trading System \\(ETS\\) Extension to Maritime Transport|Brazil National Policy on Alternative Fuels \\(PNCA\\))$",
-      "ruling": "Register F:12 and migration 0094: the due-date sort (dueInfo, stated days only) puts rows with a stated day ahead of the four rows above and brings Iowa DNR, EU ETS for Shipping, Japan's GX League and IMO MARPOL Annex VI into the first 20 rows; the three named rows keep their relative order and only their neighbours change. Covers a reordered line for these three controls only. Retire when the baseline is recaptured from production after the R2d merge."
+      "id": "ui-radar-1-research-detail-connected-intelligence",
+      "route": "research-detail",
+      "kind": "heading",
+      "match": "^2:Connected intelligence$",
+      "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: Connected intelligence is drawn only while the item has a theme, a connection that states a reason, a structured row tied to its entities or a pattern (src/ui/detail/CrossPageSection.tsx). THEME-1a (#187, re-cluster to 100 themes) left the baseline research item (Tyndall Centre, UK climate adaptation) in no theme, and its one edge is a provenance_discovery edge, which is source-only and never rendered as a connection. Data, not design: retire when the baseline is recaptured from production or the item joins a theme."
     },
     {
       "id": "r2d-lead-time-not-drawn",

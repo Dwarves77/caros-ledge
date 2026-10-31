@@ -24,8 +24,8 @@ export interface ListRowFields {
   title: string;
   /** The stored item_type; the row picks its row type and its type chip from it. */
   type: string | null;
-  /** intelligence_items.what_is_it, the stored reader text, or null. */
-  summary: string | null;
+  /** The second line of the row (see rowSummary): the first sentence of the stored reader text, never blank. */
+  summary: string;
   due: { label: string; days: string } | null;
   tier: number | null;
   watchType: ListWatchType;
@@ -52,6 +52,9 @@ export function dueInfo(r: Resource, now: Date): DueInfo | null {
   return { label: formatDate(new Date(best).toISOString().slice(0, 10)), days: `${diff} day${diff === 1 ? "" : "s"}`, daysNum: diff };
 }
 
+/** The first sentence of a stored text, cut at its end (not at "No." or "Art."); null when there is none. */
+const firstSentence = (text: string | null | undefined, t = (text ?? "").replace(/\s+/g, " ").trim()): string | null => (t ? t.slice(0, [...t.matchAll(/[.!?](?=\s+[A-Z("“]|$)/g)].map((m) => m.index + 1).find((n) => !/\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i.test(t.slice(0, n)))) : null);
+
 export function toListRowFields(r: Resource, now: Date): ListRowFields {
   const due = dueInfo(r, now);
   return {
@@ -61,7 +64,8 @@ export function toListRowFields(r: Resource, now: Date): ListRowFields {
     jurisdiction: jurisdictionCode(r),
     title: r.title,
     type: r.type ?? null,
-    summary: r.whatIsIt?.trim() || r.whyMatters?.trim() || r.whatItChanges?.trim() || r.note?.trim() || null,
+    // the second line, never blank: why it matters, else what it changes, else what the record is, else a line composed from its jurisdiction and next date
+    summary: firstSentence(r.whyMatters) ?? firstSentence(r.whatItChanges) ?? firstSentence(r.whatIsIt) ?? firstSentence(r.note) ?? `${jurisdictionCode(r) ? `Applies in ${jurisdictionCode(r)}` : "Applies across jurisdictions"}${due ? `; next date ${due.label}` : ""}.`,
     due: due ? { label: due.label, days: due.days } : null,
     tier: r.sourceTier ?? null,
     watchType: watchTypeForItem(r),

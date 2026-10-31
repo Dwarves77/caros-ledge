@@ -39,6 +39,8 @@ export interface MatrixFact {
   claim: string;
   prose: string | null;
   indexVsBase: number | null;
+  /** The two "Why this matters" lines under the figure; empty when none was read. */
+  why?: readonly string[] | undefined;
   sourceName: string | null;
   sourceUrl: string | null;
   sourceTier: number | null;

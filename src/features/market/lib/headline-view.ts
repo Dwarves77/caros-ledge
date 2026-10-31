@@ -23,9 +23,11 @@ export interface HeadlineCardView {
   rating: SourceRating | null;
   tier: number | null;
   envelope: FigureEnvelope;
+  /** The two "Why this matters" lines; none when the facts join was not available. */
+  why: readonly string[];
 }
 
-export function headlineCardView(card: HeadlineCard, o: { ratings: Record<string, SourceRating>; nowIso: string }): HeadlineCardView {
+export function headlineCardView(card: HeadlineCard, o: { ratings: Record<string, SourceRating>; nowIso: string; why?: Record<string, string[]> | null }): HeadlineCardView {
   const { row } = card;
   const d = row.deltas;
   const producer = card.group ? (producerFor(card.group.keyPrefix) ?? null) : null;
@@ -48,5 +50,6 @@ export function headlineCardView(card: HeadlineCard, o: { ratings: Record<string
     rating,
     tier: rating?.tier ?? null,
     envelope: envelopeFromSeriesRow(row, producer, rating),
+    why: o.why?.[card.familyKey] ?? [],
   };
 }

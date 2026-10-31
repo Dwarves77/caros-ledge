@@ -10,6 +10,7 @@ import { Fragment, useMemo, useState, type ReactNode } from "react";
 import type { UrgencyBandKey } from "@/core/lists";
 import { formatLocaleDate, formatNumber } from "@/core/shared";
 import { ErrorState, RailCard, StateNote } from "@/ui";
+import type { RadarView } from "@/features/flywheel/radar/read";
 import { filterRows, LegendRailCard, liveFacetCounts, ListSurface, ThemeStrip, useListUrlState, type FacetGroup, type ThemeChip } from "@/ui/list-surface";
 import { ShellCommandBar } from "@/ui/shell/CommandBar";
 import { DenominatorLine } from "@/features/coverage";
@@ -33,11 +34,13 @@ export interface OperationsListProps {
   data: OperationsPageData;
   nowIso: string;
   chips: ThemeChip[];
+  /** The cross-surface patterns of this page; null: that read failed; absent: none was read. */
+  radar?: RadarView | null | undefined;
   denominator: Parameters<typeof DenominatorLine>[0];
   chipsFailed?: boolean;
 }
 
-export function OperationsList({ data, nowIso, chips, denominator, chipsFailed = false }: OperationsListProps) {
+export function OperationsList({ data, nowIso, chips, radar, denominator, chipsFailed = false }: OperationsListProps) {
   const router = useRouter();
   const url = useListUrlState(["dimension"]);
   const { filter } = url;
@@ -124,7 +127,7 @@ export function OperationsList({ data, nowIso, chips, denominator, chipsFailed =
       onExpandBand={(key) => setExpanded((s) => new Set(s).add(key))}
       belowRows={
         <div className={styles.detail}>
-          {chipsFailed ? <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>The theme strip did not load.</StateNote> : <ThemeStrip chips={chips} />}
+          {chipsFailed ? <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>The theme strip did not load.</StateNote> : <ThemeStrip chips={chips} radar={radar} />}
           <DenominatorLine {...denominator} />
         </div>
       }
