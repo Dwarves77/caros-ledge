@@ -9,6 +9,8 @@ export interface ThemeChip {
   href: string;
   label: string;
   itemTitle: string; meaning?: string | null;
+  /** What the theme's edges are mostly about, by name (up to three); empty when none is known. */
+  linkedBy?: string[];
   memberCount: number;
   pages: Array<{ surface: string; label: string }>;
   hasBrief: boolean;
@@ -50,6 +52,7 @@ export function ThemeStrip({ chips, radar }: { chips: ThemeChip[]; radar?: Radar
               ))}
               {c.hasBrief && <span className={`cl-theme-brief${c.stale ? " cl-theme-brief--stale" : ""}`}>{c.stale ? "Written for an earlier membership" : "Brief"}</span>}
             </div>
+            {c.hasBrief && !!c.linkedBy?.length && <p className="cl-detail-link-note">Linked by {c.linkedBy.join(", ")}</p>}
             {c.meaning && <p className="cl-detail-link-note">{c.meaning}</p>}
             {c.links.length > 0 && (
               <div className="cl-theme-links">

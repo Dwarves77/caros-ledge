@@ -76,10 +76,10 @@ export async function relationsAround(sb: Db, entityIds: Iterable<string>): Prom
   const all = [...(await side("parent_entity_id")), ...(await side("child_entity_id"))];
   return [...new Map(all.map((r) => [`${r.parent_entity_id}|${r.relation}|${r.child_entity_id}`, r])).values()];
 }
-/** The kind and canonical name of entities. */
+/** The kind and name of entities: the name a reader reads (display_name where the graph holds one, as a corridor's "Shanghai (CN) → Genoa (IT), ocean"), else the canonical name. */
 export async function entityRefs(sb: Db, ids: Iterable<string>): Promise<Map<string, EntityRef>> {
-  const rows = await chunked<{ entity_id: string; kind: string; canonical_name: string }>(ids, (s) => (from, to) => qb(sb.from("entities").select("entity_id, kind, canonical_name")).in("entity_id", s).order("entity_id").range(from, to));
-  return new Map(rows.map((r) => [r.entity_id, { id: r.entity_id, kind: r.kind, canonicalName: r.canonical_name }]));
+  const rows = await chunked<{ entity_id: string; kind: string; canonical_name: string; display_name?: string | null }>(ids, (s) => (from, to) => qb(sb.from("entities").select("entity_id, kind, canonical_name, display_name")).in("entity_id", s).order("entity_id").range(from, to));
+  return new Map(rows.map((r) => [r.entity_id, { id: r.entity_id, kind: r.kind, canonicalName: r.display_name?.trim() || r.canonical_name }]));
 }
 
 export const classOfRole = (role: string): string => (role.startsWith("cites_") ? role.slice(6) : role);

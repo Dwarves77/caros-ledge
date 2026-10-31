@@ -108,7 +108,7 @@ export function DashboardBrief(p: DashboardBriefProps) {
                       <span data-guard-title className={styles.themeLabel}>
                         {t.label}
                       </span>
-                      <span className={styles.themePages}>{t.pages.map((pg) => pg.label).join(" · ")}</span>{t.meaning && <span className={styles.note} style={{ display: "block" }}>{t.meaning}</span>}
+                      <span className={styles.themePages}>{[`${t.memberCount} ${t.memberCount === 1 ? "item" : "items"}`, ...t.pages.map((pg) => pg.label)].join(" · ")}</span>{t.hasBrief && !!t.linkedBy?.length && <span className={styles.note} style={{ display: "block" }}>Linked by {t.linkedBy.join(", ")}</span>}{t.meaning && <span className={styles.note} style={{ display: "block" }}>{t.meaning}</span>}
                     </Link>
                   ))}
                 </div>

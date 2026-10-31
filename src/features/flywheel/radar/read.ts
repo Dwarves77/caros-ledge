@@ -5,7 +5,7 @@ import { allRows, boundedRead, fetchAllByIdChunks, isServiceConfigured, rowsById
 import { admitItems } from "@/core/derived/admissible";
 import { type BasisEntry, CANDIDATE_ORIGIN, type EdgeBasis, evidenceOf } from "@/core/flywheel/discover";
 import { DISCOVERY_ORIGIN } from "@/core/flywheel/edges";
-import { type FactLink, type FactSummary, readFactItems, type Missing } from "@/core/flywheel/facts-join";
+import { entityRefs, type FactLink, type FactSummary, readFactItems, type Missing } from "@/core/flywheel/facts-join";
 import type { IntersectionDetail } from "@/core/flywheel/intersections";
 import { buildSubjectRef, createdBy, GAP_NAMESPACE } from "@/core/flywheel/flags";
 import { FACT_SPECS } from "@/core/flywheel/patterns/config";
@@ -14,6 +14,7 @@ import { PATTERN_METHODS } from "@/core/propagation/methods";
 import { formatDate, formatFigure } from "@/core/shared";
 import { joinLabels, labelForComplianceObject, labelForScenario } from "@/core/tags/vocabulary";
 import { SURFACE_LABELS, SURFACE_ORDER, SURFACE_PATH, surfaceHref, surfaceOf } from "@/core/routing";
+import { JURISDICTIONS } from "@/core/workspace/vocabulary";
 import { PATTERN_COPY } from "@/features/operations/model/derived-view";
 import type { RadarForming, RadarGroup, RadarPattern, RadarView } from "@/ui/flywheel/FlywheelRadar";
 
@@ -108,47 +109,50 @@ export async function readFlywheelRadar(clients: { db: Db; admin: Db }, scope: R
   let rows = [...read.data, ...formingRead.data].filter((r) => copyKey(r.method_id) in PATTERN_COPY);
   if (scope.kind === "surface") rows = rows.filter((r) => surfaceOfRow(r).has(scope.surface));
   // a pattern that spans surfaces is the finding; the widest first, an emerging one before one still forming
-  rows = rows.sort((a, b) => surfaceOfRow(b).size - surfaceOfRow(a).size || Number(a.lifecycle === "forming") - Number(b.lifecycle === "forming")).slice(0, scope.kind === "item" ? 40 : SHOWN_PATTERNS * 3);
+  rows = rows.sort((a, b) => surfaceOfRow(b).size - surfaceOfRow(a).size || Number(a.lifecycle === "forming") - Number(b.lifecycle === "forming")).slice(0, scope.kind === "item" ? 40 : 80);
   const allInputs = rows.flatMap(inputsOf);
   const ownerOf = await itemsOfInputs(db, allInputs);
   if (scope.kind === "item") {
     const mine = new Set([scope.itemUuid, ...scope.memberIds]);
     rows = rows.filter((r) => inputsOf(r).some((i) => mine.has(ownerOf.get(`${i.table}/${i.pk}`) ?? "")));
   }
-  rows = rows.slice(0, SHOWN_PATTERNS);
   const items = await readItems(db, [...new Set(rows.flatMap((r) => inputsOf(r).map((i) => ownerOf.get(`${i.table}/${i.pk}`)).filter((x): x is string => !!x)))]);
-  const entityIds = [...new Set(rows.flatMap((r) => inputsOf(r).flatMap((i) => i.entities ?? [])))];
-  const names = new Map((await rowsByIds<{ entity_id: string; canonical_name: string }>(db, "entities", "entity_id,canonical_name", entityIds, "entity_id", "entity_id")).map((e) => [e.entity_id, e.canonical_name]));
+  const names = new Map([...(await entityRefs(db, new Set(rows.flatMap((r) => inputsOf(r).flatMap((i) => i.entities ?? []))))).values()].map((e) => [e.id, e.canonicalName]));
   const seeds = rows.filter((r) => r.lifecycle === "emerging").map(seedOf);
   const posts = await rowsByIds<{ predicate: { pattern?: string; key_date?: string } | null; outcome: string | null; watches: string }>(admin, "signposts", "predicate,outcome,watches", rows.map((r) => r.entity_id), "watches", "entity_id");
   const watchOf = new Map(posts.filter((p) => !p.outcome && p.predicate?.pattern && seeds.includes(p.predicate.pattern)).map((p) => [p.predicate?.pattern as string, p.predicate?.key_date ?? null]));
   const flags = await allRows<{ id: string; subject_ref: string; description: string; recommended_actions: unknown }>(admin, "integrity_flags", "id,subject_ref,description,recommended_actions", { cap: 5_000, where: (q) => q.like("created_by", `${createdBy(GAP_NAMESPACE, "pattern_")}%`).in("status", OPEN) });
-  const patterns = rows.map((r): RadarPattern => {
+  // one card per pattern: rows of one method that join the same members (the same items and entities on each surface) differ only in the date they watch, so they are one card listing every date
+  const cards = new Map<string, RadarPattern & { dates: string[]; watching: boolean; absent: string[] }>();
+  for (const r of rows) {
     const copy = PATTERN_COPY[copyKey(r.method_id)] as (typeof PATTERN_COPY)[string];
     const forming = r.lifecycle === "forming";
     const seed = forming ? "" : seedOf(r);
     const ins = inputsOf(r);
-    const groups: RadarGroup[] = SURFACE_ORDER.flatMap((surface) => {
+    const groups: (RadarGroup & { key: string })[] = SURFACE_ORDER.flatMap((surface) => {
       const here = ins.filter((i) => i.surface === surface);
-      const found = [...new Map(here.flatMap((i) => { const it = items.get(ownerOf.get(`${i.table}/${i.pk}`) ?? ""); return it ? [[it.id, { title: it.title, href: surfaceHref(surfaceOf(it.item_type, it.domain), it.legacy_id || it.id) as string }] as const] : []; })).values()];
-      const who = [...new Set(here.flatMap((i) => (i.entities ?? []).map((e) => names.get(e)).filter((n): n is string => !!n)))];
-      return here.length ? [{ surface, label: SURFACE_LABELS[surface] as string, href: SURFACE_PATH[surface] as string, items: found, names: who }] : [];
+      const found = [...new Map(here.flatMap((i) => { const it = items.get(ownerOf.get(`${i.table}/${i.pk}`) ?? ""); return it ? [[it.id, { id: it.id, title: shortTitle(it.title), href: surfaceHref(surfaceOf(it.item_type, it.domain), it.legacy_id || it.id) as string }] as const] : []; })).values()].sort((x, y) => x.id.localeCompare(y.id));
+      const who = [...new Set(here.flatMap((i) => (i.entities ?? []).map((e) => names.get(e)).filter((n): n is string => !!n)))].sort();
+      return here.length ? [{ surface, label: SURFACE_LABELS[surface] as string, href: SURFACE_PATH[surface] as string, items: found.map(({ title, href }) => ({ title, href })), names: who, key: `${surface}:${found.map((f) => f.id).join(",")}:${found.length ? "" : who.join(",")}` }] : [];
     });
     const keys = new Set(ins.map((i) => buildSubjectRef("trigger", i.table, i.pk)));
     const parts = flags.filter((f) => (seed && f.subject_ref.startsWith(`pattern:${seed}:`)) || keys.has(f.subject_ref)).map(gapSurface).filter((s): s is string => !!s);
-    const date = watchOf.get(seed);
-    const missing = forming ? (r.missing ?? null) : null;
-    return {
-      key: r.value_id,
-      label: forming ? copy.forming : copy.label,
-      means: forming ? "The chain is not complete yet; the reading below is what is linked so far." : copy.means,
-      forming,
-      groups,
-      watch: watchOf.has(seed) ? (date ? `Watch: confirmed if the dated step still stands on ${date}.` : "Watch: confirmed while the evidence behind it keeps holding.") : null,
-      missingParts: [...new Set(parts)].map((s) => `Missing part: no ${SURFACE_LABELS[s]} item yet; the chain is incomplete until one appears.`),
-      next: missing?.truth?.trim() || null,
-    };
-  });
+    const id = `${forming ? "forming" : "emerging"}|${copyKey(r.method_id)}|${groups.map((g) => g.key).join("|")}`;
+    const card = cards.get(id) ?? { key: r.value_id, label: forming ? copy.forming : copy.label, means: forming ? "The chain is not complete yet; the reading below is what is linked so far." : copy.means, forming, groups: groups.map(({ key: _k, ...g }) => g), watch: null, missingParts: [], next: forming ? (r.missing?.truth?.trim() || null) : null, dates: [], watching: false, absent: [] };
+    if (watchOf.has(seed)) {
+      card.watching = true;
+      const date = watchOf.get(seed);
+      if (date && !card.dates.includes(date)) card.dates.push(date);
+    }
+    // a missing part names a surface the card does not hold: a surface it holds is not missing
+    card.absent.push(...parts.filter((s) => !groups.some((g) => g.surface === s)));
+    cards.set(id, card);
+  }
+  const patterns = [...cards.values()].slice(0, SHOWN_PATTERNS).map(({ dates, watching, absent, ...card }): RadarPattern => ({
+    ...card,
+    watch: !watching ? null : dates.length === 0 ? "Watch: confirmed while the evidence behind it keeps holding." : `Watch: confirmed if the dated ${dates.length === 1 ? "step still stands" : "steps still stand"} on ${joinLabels([...dates].sort().map(dateWords))}.`,
+    missingParts: [...new Set(absent)].map((s) => `Missing part: no ${SURFACE_LABELS[s]} item yet; the chain is incomplete until one appears.`),
+  }));
   return { patterns, forming: scope.kind === "item" ? [] : await readForming(db, scope) };
 }
 
@@ -184,7 +188,7 @@ export const asBasis = (b: EdgeBasis | null | undefined): { evidence: BasisEntry
 };
 
 // the evidence kinds, strongest first
-const KIND_ORDER = ["shared_entity", "coupled_entity", "intersection", "shared_scenario", "shared_compliance_object", "shared_jurisdiction_topic"] as const;
+const KIND_ORDER = ["shared_entity", "shared_regulation_identifier", "shared_title_entity", "coupled_entity"] as const;
 /** A relation token in words, for "{A} {relation} {B}" (the closed RELATIONS of the coupling ontology). */
 const RELATION_WORDS: Readonly<Record<(typeof RELATIONS)[number], string>> = { feedstock_of: "is a feedstock of", fuel_for_mode: "fuels", competes_for_feedstock: "competes for feedstock with", shares_grid_zone: "shares a grid zone with", serves_hub: "serves", corridor_links: "links to", implements: "implements", amends: "amends", consignment_wide: "applies across the same consignment as" };
 /** The reason an explicit relationship states by itself (the legal edges, which need no evidence) and what a plain citation says. */
@@ -205,8 +209,19 @@ const tokensOf = (e: BasisEntry, kind: "scenarios" | "objects"): string[] => {
   return (d && typeof d === "object" ? (d as IntersectionDetail)[kind] : undefined) ?? [];
 };
 const dateWords = (iso: string): string => (/^\d{4}-\d{2}-\d{2}/.test(iso) ? formatDate(iso.slice(0, 10)) : iso);
+/** An item's title as a card shows it: as written up to 90 characters, else cut at the last whole word with an ellipsis (the title stays whole on the item's page and in the link's title). */
+export const shortTitle = (title: string, max = 90): string => (title.length <= max ? title : `${title.slice(0, max).replace(/\s+\S*$/, "").replace(/[\s,;:(–—-]+$/, "")}…`);
+/** A jurisdiction token in words: the workspace vocabulary's label, else a short code in capitals. */
+const placeWords = (token: string): string => JURISDICTIONS.find((j) => j.id === token.toLowerCase())?.label ?? (token.length <= 3 ? token.toUpperCase() : token);
+/** The jurisdictions and topics of a jurisdiction-and-topic entry: the typed tokens, or the stored detail ("both in sg/us on fuels/emissions"). */
+const placeOf = (e: BasisEntry): { where: string[]; topics: string[] } => {
+  const d = typeof e.detail === "string" ? /^both in (.+?) on (.+)$/.exec(e.detail) : null;
+  return { where: e.tokens?.jurisdictions ?? d?.[1]?.split("/") ?? [], topics: e.tokens?.topics ?? d?.[2]?.split("/") ?? [] };
+};
+/** The quoted names of a stored detail (`both name regulation identifier(s) "2099/2002" in their titles`). */
+const quoted = (e: BasisEntry): string[] => (typeof e.detail === "string" ? [...e.detail.matchAll(/"([^"]+)"/g)].map((m) => m[1] as string) : []);
 
-/** One sentence from the strongest evidence the basis holds, in words; null when the basis holds none that states anything (an entry of the same source alone is corroboration, not a connection). */
+/** One sentence about the PAIR from the strongest typed evidence the basis holds, in words; null when the basis holds none that states anything (an entry of the same source alone is corroboration, not a connection). */
 function evidenceSentence(evidence: readonly BasisEntry[]): string | null {
   for (const k of KIND_ORDER) {
     const hits = evidence.filter((e) => e.signal === k);
@@ -215,24 +230,28 @@ function evidenceSentence(evidence: readonly BasisEntry[]): string | null {
     if (k === "shared_entity") {
       const n = [...new Set(hits.flatMap(entityNames))];
       if (n.length) return `Both concern ${joinLabels(n)}.`;
-    } else if (k === "coupled_entity") {
+    } else if (k === "shared_title_entity" || k === "shared_regulation_identifier") {
+      const n = [...new Set(hits.flatMap(quoted))];
+      if (n.length) return `Both name ${k === "shared_regulation_identifier" ? "regulation " : ""}${joinLabels(n)} in their titles.`;
+    } else {
       const c = first.tokens?.coupled?.[0];
       const rel = RELATION_WORDS[c?.relation as (typeof RELATIONS)[number]];
       if (c?.parent.name && c.child.name && rel) return `${c.parent.name} ${rel} ${c.child.name}, so a change in one reaches the other.`;
-    } else if (k === "shared_jurisdiction_topic") {
-      const where = first.tokens?.jurisdictions ?? (typeof first.detail === "string" ? /^both in (.+?) on /.exec(first.detail)?.[1]?.split("/") : undefined);
-      if (where?.length) return `Both apply to ${joinLabels(where)} operations.`;
-    } else {
-      const scn = [...new Set(hits.flatMap((e) => tokensOf(e, "scenarios")).map(labelForScenario).filter(Boolean))];
-      const obj = [...new Set(hits.flatMap((e) => tokensOf(e, "objects")).map(labelForComplianceObject).filter(Boolean))];
-      const words = scn.length ? scn : obj;
-      if (words.length) return `Shared operating context: ${joinLabels(words)}.`;
     }
   }
-  return null;
+  // tag level: the operating context the two share, every typed kind of it in words (the scenarios, the place and topic, the party addressed)
+  const of = (signals: readonly string[], kind: "scenarios" | "objects"): string[] => evidence.filter((e) => signals.includes(e.signal)).flatMap((e) => tokensOf(e, kind));
+  const scn = [...new Set(of(["shared_scenario", "intersection"], "scenarios").map(labelForScenario).filter(Boolean))];
+  const objs = [...new Set(of(["shared_compliance_object", "intersection"], "objects").map(labelForComplianceObject).filter(Boolean))];
+  const place = evidence.filter((e) => e.signal === "shared_jurisdiction_topic").map(placeOf);
+  const where = [...new Set(place.flatMap((p) => p.where).map(placeWords))];
+  const topics = [...new Set(place.flatMap((p) => p.topics).map(labelForScenario))];
+  const apply = scn.length || where.length ? `apply to ${scn.length ? `${joinLabels(scn)} operations` : "operations"}${where.length ? ` in ${joinLabels(where)}` : ""}${topics.length ? ` on ${joinLabels(topics)}` : ""}` : "";
+  const parts = [apply, objs.length ? `address ${joinLabels(objs)}` : ""].filter(Boolean);
+  return parts.length ? `Both ${parts.join(" and ")}.` : null;
 }
 
-// -- the causal chain: the facts of the two items, strongest kind first --------------------------------------------------------------------------
+// -- the causal chain: the facts both items are tied to, strongest kind first ----------------------------------------------------------------------
 const FACT_KIND: Readonly<Record<string, number>> = { statutory_computations: 0, market_series: 1, reroute_events: 2, grid_connection_queues: 2, emission_factors: 2, regional_data_facts: 2, state_cost_facts: 2, oem_tech_roadmaps: 3 };
 const figureWords = (s: FactSummary): string => (s.value === undefined ? "" : `${formatFigure(s.value)}${s.unit ? ` ${s.unit}` : ""}`);
 /** One fact as one plain sentence, from the typed fields it holds; null when the link states nothing a reader could use. */
@@ -252,10 +271,10 @@ function factSentence(f: FactLink): string | null {
   }
 }
 const byStrength = (both: ReadonlySet<string>) => (x: FactLink, y: FactLink): number => (FACT_KIND[x.refTable] ?? 9) - (FACT_KIND[y.refTable] ?? 9) || Number(both.has(y.entity.id)) - Number(both.has(x.entity.id)) || x.hop - y.hop;
-/** The chain two items share: at most one sentence per kind (obligation, figure, operational constraint, technology), a fact on an entity both sides hold first. */
+/** The chain the two items share: only facts tied to an entity BOTH reach (a fact that belongs to one side alone says nothing about the pair), at most one sentence per kind (obligation, figure, operational constraint, technology). */
 function chainOf(a: readonly FactLink[], b: readonly FactLink[]): string | null {
   const both = new Set(a.map((f) => f.entity.id).filter((id) => b.some((g) => g.entity.id === id)));
-  const ranked = [...a, ...b].filter((f) => FACT_KIND[f.refTable] !== undefined).sort(byStrength(both));
+  const ranked = [...a, ...b].filter((f) => FACT_KIND[f.refTable] !== undefined && both.has(f.entity.id)).sort(byStrength(both));
   const lines: string[] = [];
   for (const kind of [0, 1, 2, 3]) {
     const line = ranked.filter((f) => FACT_KIND[f.refTable] === kind).map(factSentence).find((x): x is string => !!x);
@@ -265,19 +284,20 @@ function chainOf(a: readonly FactLink[], b: readonly FactLink[]): string | null 
 }
 
 /**
- * Why two items are connected, as one short passage a reader without a sustainability background can act on: the reader's own rationale first, then what an explicit relationship says, then the chain of
- * facts the two share, then the evidence in words, and last the shared operating context. Null for an edge whose only evidence is the same source (it corroborates; it never connects).
+ * Why two items are connected, as one short passage about the PAIR that a reader without a sustainability background can act on: the reader's own rationale first, then what an explicit relationship says, then what the typed evidence states
+ * (the shared entity, the coupled relation, the shared operating context) followed by the facts tied to an entity both items reach. Null for an edge whose only evidence is the same source (it corroborates; it never connects).
  */
 export function reasonFor(c: { basis: EdgeBasis | null | undefined; origin: string; label: string }, facts: { self?: readonly FactLink[]; other?: readonly FactLink[] } = {}): string | null {
   const { evidence, rationale } = asBasis(c.basis);
-  return rationale ?? RELATION_REASON[c.label] ?? chainOf(facts.self ?? [], facts.other ?? []) ?? evidenceSentence(evidence) ?? (evidence.length > 0 && c.origin === DISCOVERY_ORIGIN ? null : (CITATION_REASON[c.label] ?? null));
+  const pair = [evidenceSentence(evidence), chainOf(facts.self ?? [], facts.other ?? [])].filter(Boolean).join(" ");
+  return rationale ?? RELATION_REASON[c.label] ?? (pair || null) ?? (evidence.length > 0 && c.origin === DISCOVERY_ORIGIN ? null : (CITATION_REASON[c.label] ?? null));
 }
 
 /** What a set of edges is mostly linked by, in words: the canonical names of the entities they share and the scenarios they touch, most frequent first. The same source is not a link. */
 function linkedByWords(bases: readonly (EdgeBasis | null | undefined)[], top = 3): string[] {
   const tally = new Map<string, number>();
   for (const b of bases) {
-    const words = new Set(asBasis(b).evidence.flatMap((e) => [...entityNames(e), ...(e.signal === "shared_scenario" ? tokensOf(e, "scenarios").map(labelForScenario) : [])]).filter(Boolean));
+    const words = new Set(asBasis(b).evidence.flatMap((e) => [...entityNames(e), ...(e.signal === "shared_title_entity" || e.signal === "shared_regulation_identifier" ? quoted(e) : []), ...(e.signal === "shared_scenario" ? tokensOf(e, "scenarios").map(labelForScenario) : [])]).filter(Boolean));
     for (const w of words) tally.set(w, (tally.get(w) ?? 0) + 1);
   }
   return [...tally].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0])).slice(0, top).map(([w]) => w);
@@ -326,6 +346,18 @@ export const readLinkedBy = async (db: Db, memberIds: readonly string[]): Promis
     if (r.error) throw new Error(`item_cross_references read failed: ${r.error.message}`);
     return ((r.data ?? []) as { basis: EdgeBasis | null }[]).map((x) => x.basis);
   }, { chunk: 100, manyPerId: true }));
+
+/** A theme chip with its name: a theme no brief names is called by what its edges are mostly linked by (up to three), and two chips never read the same (a label already drawn takes the title of the member it opens). */
+export function nameChips<C extends { themeId: string; label: string; itemTitle: string; hasBrief: boolean }>(chips: readonly C[], linkedBy: ReadonlyMap<string, readonly string[]>): (C & { linkedBy: string[] })[] {
+  const drawn = new Set<string>();
+  return chips.map((c) => {
+    const by = [...(linkedBy.get(c.themeId) ?? [])].slice(0, 3);
+    const named = !c.hasBrief && by.length > 0 ? `Linked by ${joinLabels(by)}` : c.label;
+    const label = drawn.has(named) ? `${named} · ${c.itemTitle}` : named;
+    drawn.add(label);
+    return { ...c, label, linkedBy: by };
+  });
+}
 
 /** What a detail page adds under Connected intelligence: the patterns resting on the item or its theme (null: that read failed), and the structured rows tied to its entities. */
 export const readItemExtras = async (db: Db, itemUuid: string, memberIds: readonly string[], facts: readonly FactLink[]) => ({ radar: await readFlywheelRadar(radarClients(db), { kind: "item", itemUuid, memberIds }).catch(() => null), moves: movesRows(facts) });
