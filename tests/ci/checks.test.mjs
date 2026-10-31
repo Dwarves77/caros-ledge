@@ -2,9 +2,9 @@
 // the machine that runs the pre-push hook) are the first two cases and fail on the code as it was.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 
 import { createLinter } from 'actionlint';
@@ -12,7 +12,7 @@ import { createLinter } from 'actionlint';
 import { bundleExports, bundleProblems, declaredNames, sourceExports } from '../../scripts/ci/edge-bundle.mjs';
 import { codeLines, LIMITS, limitProblems, totalsOf } from '../../scripts/ci/loc.mjs';
 import { scopeOf } from '../../scripts/ci/changes.mjs';
-import { PROFILES, STEPS, profileFrom, stepsFor } from '../../scripts/ci/gates.mjs';
+import { PROFILES, STEPS, memoSkip, profileFrom, stepsFor, testFilesFor } from '../../scripts/ci/gates.mjs';
 import { dependencyProblems, engineDataFiles, engineDataPins, engineDataProblems, frozenAllowProblems, headerRangeProblems, identifierProblems, NEW_FILES_FROZEN, OVERRIDE_MARKER, pushGateProblems, sourceOriginProblems } from '../../scripts/ci/tree-checks.mjs';
 import { textProblems } from '../../scripts/ci/workflow-yaml.mjs';
 
@@ -206,15 +206,16 @@ test('every step of `npm run gates` is a real npm script, so a failure line name
 });
 
 // ---- gate profiles (GATES-FAST-1) ----
-test('the fast profile is a strict subset of full; build, the test suite and schema:local are full-only; full is every step', () => {
+test('the fast profile is a strict subset of full; build, the test suite and schema:local are full-only, the client walk is in both; full is every step', () => {
   const full = stepsFor('full').map((s) => s.cmd);
   const fast = stepsFor('fast').map((s) => s.cmd);
   assert.deepEqual(full, STEPS.map((s) => s.cmd));
   assert.ok(fast.length > 0 && fast.length < full.length, 'strict subset');
   for (const cmd of fast) assert.ok(full.includes(cmd), cmd);
   assert.deepEqual(fast, full.filter((c) => fast.includes(c)), 'fast keeps the full order');
-  for (const cmd of ['build', 'test', 'client-walk', 'schema:local']) assert.ok(!fast.includes(cmd), `${cmd} is full-only`);
-  assert.deepEqual(stepsFor('fast').filter((s) => s.heavy), [], 'the lock applies to full only: no heavy step in fast');
+  for (const cmd of ['build', 'test', 'schema:local']) assert.ok(!fast.includes(cmd), `${cmd} is full-only`);
+  assert.ok(fast.includes('client-walk'), 'GATES-FIX-1: the client bundle walk (under 10 s) runs in the fast profile');
+  assert.deepEqual(stepsFor('fast').filter((s) => s.heavy), [], 'no heavy step in fast: the hook never builds or runs the whole suite');
   assert.ok(STEPS.filter((s) => s.heavy).every((s) => !s.fast));
   assert.throws(() => stepsFor('quick'), /unknown gates profile/);
 });
@@ -228,19 +229,79 @@ test('--profile is read from argv in both spellings, defaults to full, and refus
   assert.throws(() => profileFrom(['--profile=quick']), /unknown gates profile/);
 });
 
-test('the pre-push hook hands the pushed ranges to gates (which picks the profile) and ci.yml runs the full one explicitly', () => {
+test('GATES-FIX-1: the pre-push hook runs the fast profile with the memo and the pushed ranges, never the full profile; ci.yml runs the full one explicitly', async () => {
   const read = (rel) => readFileSync(rel, 'utf8');
-  assert.match(read('.githooks/pre-push'), /node scripts\/ci\/gates\.mjs \$ranges/);
-  assert.match(read('.githooks/pre-push'), /--profile full/);
+  const hook = read('.githooks/pre-push');
+  assert.match(hook, /exec node scripts\/ci\/gates\.mjs --memo --profile fast \$ranges/);
+  assert.doesNotMatch(hook.replace(/^#.*$/gm, ''), /--profile full|--profile=full/, 'the hook never selects full');
+  assert.match(hook, /\[skip ci\]/, 'the [skip ci] refusal stays');
   assert.match(read('.github/workflows/ci.yml'), /run: npm run gates -- --profile full\s*$/m);
+  const gates = await import('../../scripts/ci/gates.mjs');
+  for (const gone of ['pickProfile', 'fullTrigger', 'FULL_PREFIXES', 'FULL_FILES']) assert.ok(!(gone in gates), `${gone} (the HOOK-FULL-1 selection) is removed`);
 });
 
-test('HOOK-FULL-1: code, test, CI, schema and package paths pick the full profile; docs and root notes pick fast', async () => {
-  const { pickProfile, fullTrigger } = await import('../../scripts/ci/gates.mjs');
-  for (const f of ['src/core/x.ts', 'tests/ci/a.test.mjs', 'tests/parity/capture.mjs', 'scripts/ci/gates.mjs', 'scripts/runs/plans/p.json', 'supabase/migrations/0001.sql', 'package.json', 'package-lock.json', 'next.config.ts']) {
-    assert.equal(pickProfile(['docs/a.md', f]).profile, 'full', f);
-  }
-  for (const f of ['docs/PROGRAM-BOARD.md', 'README.md', '.claude/commands/drain.md']) assert.equal(pickProfile([f]).profile, 'fast', f);
-  assert.equal(fullTrigger([]), null);
-  assert.match(pickProfile(['src/a.ts']).line, /^pre-push: profile full, src\/a\.ts /);
+test('GATES-FIX-1: the changed paths of a push map to the test files that cover them', () => {
+  const tracked = ['tests/ci/a.test.mjs', 'tests/ci/b.test.ts', 'tests/ci/_helper.mjs', 'tests/urgency/u.test.ts', 'tests/core/urgency/c.test.ts', 'tests/core/auth.test.ts', 'tests/core/authz/x.test.ts', 'tests/dashboard/d.test.ts', 'tests/lists/l.test.ts', 'tests/misc/m.test.ts'];
+  const of = (...files) => testFilesFor(files, tracked);
+  assert.deepEqual(of('src/core/urgency/score.ts'), ['tests/core/urgency/c.test.ts', 'tests/urgency/u.test.ts'], 'src/core/<x> -> tests/<x> and tests/core/<x>');
+  assert.deepEqual(of('src/core/auth/guard.ts'), ['tests/core/auth.test.ts'], 'src/core/<x> -> tests/core/<x>.test.*, and not tests/core/authz');
+  assert.deepEqual(of('src/features/dashboard/Row.tsx'), ['tests/dashboard/d.test.ts'], 'src/features/<x> -> tests/<x>');
+  assert.deepEqual(of('scripts/ci/gates.mjs'), ['tests/ci/a.test.mjs', 'tests/ci/b.test.ts'], 'scripts/ci -> tests/ci (test files only)');
+  assert.deepEqual(of('tests/misc/m.test.ts'), ['tests/misc/m.test.ts'], 'a changed test file runs itself');
+  assert.deepEqual(of('tests/misc/deleted.test.ts', 'tests/ci/_helper.mjs'), [], 'a deleted test file and a non-test helper select nothing');
+  assert.deepEqual(of('src/core/urgency/a.ts', 'src/core/urgency/b.ts', 'tests/urgency/u.test.ts'), ['tests/core/urgency/c.test.ts', 'tests/urgency/u.test.ts'], 'de-duplicated, sorted');
+  assert.deepEqual(of('docs/a.md', 'supabase/migrations/0001.sql', 'src/app/page.tsx', 'package.json'), [], 'migrations are the schema:local step; docs and uncovered src select no test');
+});
+
+const rec = { sha: 'a'.repeat(40), profile: 'fast', at: '2026-10-31T10:00:00.000Z', seconds: 90, targeted: true };
+const ctx = { head: 'a'.repeat(40), profile: 'fast', clean: true, ci: false, targeted: true };
+test('GATES-FIX-1: a recorded pass is skipped only for the same HEAD, a covering profile, a clean tree, outside CI', () => {
+  assert.match(memoSkip(rec, ctx), /^gates: HEAD aaaaaaaaaaaa already passed fast at 2026-10-31T10:00:00\.000Z; skipping$/);
+  assert.ok(memoSkip({ ...rec, profile: 'full' }, ctx), 'full covers fast');
+  assert.equal(memoSkip(rec, { ...ctx, clean: false }), null, 'dirty tree');
+  assert.equal(memoSkip(rec, { ...ctx, head: 'b'.repeat(40) }), null, 'different sha');
+  assert.equal(memoSkip(rec, { ...ctx, profile: 'full' }), null, 'fast does not cover full');
+  assert.equal(memoSkip(rec, { ...ctx, ci: true }), null, 'CI never skips');
+  assert.equal(memoSkip({ ...rec, targeted: false }, ctx), null, "a pass that did not run the changed modules' tests does not cover a push that must");
+  assert.ok(memoSkip({ ...rec, targeted: false }, { ...ctx, targeted: false }));
+  assert.equal(memoSkip(null, ctx), null, 'no record');
+});
+
+test('GATES-FIX-1: gates.mjs records a pass in the git-dir on a clean tree and skips under --memo until the tree or HEAD changes (run as a program in a throwaway repo)', () => {
+  const repo = tmp('gates-memo-');
+  const script = resolve('scripts/ci/gates.mjs');
+  const sh = (cmd, args, env = {}) => spawnSync(cmd, args, { cwd: repo, encoding: 'utf8', env: { ...process.env, CI: '', GITHUB_ACTIONS: '', ...env } });
+  const gates = (args, env) => sh(process.execPath, [script, ...args], env);
+  // every script passes, except the first step, which fails when GATES_T_FAIL is set: a run that was not skipped is a red one-second run, so only two runs here go through every step
+  const scripts = Object.fromEntries([...stepsFor('fast').map((s) => s.cmd), 'schema:local'].map((c) => [c, 'node -e 0']));
+  scripts[stepsFor('fast')[0].cmd] = 'node -e "process.exit(process.env.GATES_T_FAIL ? 1 : 0)"';
+  writeFileSync(join(repo, 'package.json'), JSON.stringify({ scripts }));
+  const commit = (...extra) => sh('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', ...extra]);
+  assert.equal(sh('git', ['init', '-q']).status, 0);
+  assert.equal(sh('git', ['add', '.']).status, 0);
+  assert.equal(commit('-m', 'one').status, 0);
+  const head = sh('git', ['rev-parse', 'HEAD']).stdout.trim();
+  const file = join(repo, '.git', 'gates-last-pass.json');
+  const ran = (r) => r.stdout.includes('== ');
+  const FAIL = { GATES_T_FAIL: '1' };
+
+  const first = gates(['--profile', 'fast']);
+  assert.equal(first.status, 0, first.stdout + first.stderr);
+  const recorded = JSON.parse(readFileSync(file, 'utf8'));
+  assert.deepEqual([recorded.sha, recorded.profile, recorded.targeted], [head, 'fast', false]);
+
+  const skipped = gates(['--memo', '--profile', 'fast']);
+  assert.equal(skipped.status, 0);
+  assert.match(skipped.stdout, /^gates: HEAD [0-9a-f]{12} already passed fast at /);
+  assert.ok(!ran(skipped), 'no step ran');
+  assert.ok(ran(gates(['--profile', 'fast'], FAIL)), 'without --memo it always runs');
+  assert.ok(ran(gates(['--memo', '--profile', 'fast'], { ...FAIL, CI: 'true' })), 'CI never skips');
+  assert.ok(ran(gates(['--memo', '--profile', 'fast', '--range', 'HEAD..HEAD'], FAIL)), 'a pass without the changed-module tests does not cover the hook');
+
+  writeFileSync(join(repo, 'dirty.txt'), 'x');
+  assert.ok(ran(gates(['--memo', '--profile', 'fast'])), 'a dirty tree runs');
+  assert.equal(JSON.parse(readFileSync(file, 'utf8')).sha, head, 'and, passing, records nothing: the tree is not the commit');
+  rmSync(join(repo, 'dirty.txt'));
+  assert.equal(commit('--allow-empty', '-m', 'two').status, 0);
+  assert.ok(ran(gates(['--memo', '--profile', 'fast'], FAIL)), 'a new HEAD runs');
 });
