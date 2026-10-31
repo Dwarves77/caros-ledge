@@ -258,7 +258,7 @@ try {
   });
   await check('client reads dashboard', () => checkClientReads(run, browser, sweepSpec('dashboard', 'dashboard', async (page) => {
     await page.getByRole('button', { name: 'Actions for ReFuelEU Aviation: sustainable aviation fuel supply mandate' }).click();
-    await page.getByRole('button', { name: /Watch/ }).first().waitFor();
+    await page.getByRole('button', { name: /Watch|Retry/ }).first().waitFor();
   })));
   // The watchlist and search fixtures make no client read (their data arrives as props), so there is nothing to refuse there.
 

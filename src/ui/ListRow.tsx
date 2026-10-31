@@ -70,7 +70,7 @@ function field(key: string, p: ListRowProps): ReactNode {
 
 export function ListRow(p: ListRowProps) {
   const type = FIELDS.rowTypes[rowTypeOf(p.itemType)]!;
-  const name = type.name === "act_short_name" ? displayTitle(p.title, true) : p.title;
+  const name = displayTitle(p.title, true);
   return (
     <div className="cl-list-row" data-part="list-row" data-part-variant="list" style={{ ["--row-band" as string]: p.band.cssVar }}>
       <span className="cl-row-spine" aria-hidden="true" style={{ background: p.band.cssVar }} />

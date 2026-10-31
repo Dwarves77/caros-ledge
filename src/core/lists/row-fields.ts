@@ -53,7 +53,7 @@ export function dueInfo(r: Resource, now: Date): DueInfo | null {
 }
 
 /** The first sentence of a stored text, cut at its end (not at "No." or "Art."); null when there is none. */
-const firstSentence = (text: string | null | undefined, t = (text ?? "").replace(/\s+/g, " ").trim()): string | null => (t ? t.slice(0, [...t.matchAll(/[.!?](?=\s+[A-Z("“]|$)/g)].map((m) => m.index + 1).find((n) => !/\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i.test(t.slice(0, n)))) : null);
+const firstSentence = (text: string | null | undefined, t = (text ?? "").replace(/\s+/g, " ").trim()): string | null => (!t || /\bOF THE (?:EUROPEAN PARLIAMENT|COUNCIL)\b|\bANNEX\s+[IVX0-9]/i.test(t) ? null : t.slice(0, [...t.matchAll(/[.!?](?=\s+[A-Z("“]|$)/g)].map((m) => m.index + 1).find((n) => !/\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i.test(t.slice(0, n)))));
 
 export function toListRowFields(r: Resource, now: Date): ListRowFields {
   const due = dueInfo(r, now);
