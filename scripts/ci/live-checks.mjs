@@ -6,6 +6,7 @@
 // --phase before is the run made BEFORE the cutover window (the first live check, IMP-116): an object a pending migration adds is reported as a warning naming the migration. The default (after) fails it.
 // A missing credential follows the one exit-code contract (src/core/harness/exit.ts): exit 2 (a skip) only where the event cannot carry secrets, a pull request from a fork; on a deployment, a dispatch, a check named with --only and every other
 // CI event it is exit 1, and the message and the job summary list the environment NAMES that are missing, never a value. Exit 1 also when a check failed or a row could not be recorded.
+// The signed-in-dom check (LIVE-GATE-1) reads the storage state scripts/ci/live-session.mjs saved at scripts/tmp/live-session.json (LIVE_SESSION_FILE overrides): a missing file fails the check; tests/live/assertions.json says which assertions are armed.
 // Environment names: LIVE_BASE_URL (or --base), NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, LIVE_SMOKE_EMAIL, LIVE_SMOKE_PASSWORD, LIVE_ADMIN_EMAIL, LIVE_ADMIN_PASSWORD,
 // VERCEL_AUTOMATION_BYPASS_SECRET (sent as x-vercel-protection-bypass, to the target origin only, when the preview is behind Vercel deployment protection), LIVE_ADMIN_PAGES ("off" skips admin-pages: the workflow sets it on a branch preview), and for invitation-email RESEND_API_KEY and INVITATION_FROM_EMAIL. LIVE_CODE_SHA is the deployed commit (data: the
 // scripts run are the default branch's), written on every ledger row as its code_sha.
@@ -18,6 +19,7 @@ import { pathToFileURL } from "node:url";
 import { bypassHeaders, installBypass } from "./live/bypass.mjs";
 import { CHECKS, DEFAULT_CHECKS, missingNames, NEEDS, RUNNERS } from "./live/checks.mjs";
 import { loadPage, newStats } from "./live/load.mjs";
+import { SESSION_FILE } from "./live-session.mjs";
 
 /** The checks that need the signed-in member. */
 const MEMBER_CHECKS = new Set(["applied-items-render", "member-reads", "sign-in", "pages", "notification-drain", "invitation-email"]);
@@ -148,6 +150,22 @@ async function main() {
         member = { db, userId: data.user.id };
       }
       return member;
+    },
+    // LIVE-GATE-1: the storage state scripts/ci/live-session.mjs saved (LIVE_SESSION_FILE overrides the path); a missing file throws, which the runner turns into a failed check, never a skip.
+    bypass,
+    async sessionContext() {
+      const file = env.LIVE_SESSION_FILE || SESSION_FILE;
+      let state;
+      try {
+        state = JSON.parse(readFileSync(file, "utf8"));
+      } catch {
+        throw new Error(`no readable session file at ${file}: run scripts/ci/live-session.mjs --base ${base} first`);
+      }
+      const { chromium } = await import("playwright");
+      browser ??= await chromium.launch();
+      contexts.session = await browser.newContext({ storageState: state });
+      await installBypass(contexts.session, base, env);
+      return contexts.session;
     },
     async signInMember() {
       try {
