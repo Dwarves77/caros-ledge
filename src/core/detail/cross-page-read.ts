@@ -75,7 +75,7 @@ const readFreshInferences = (db: Db, itemUuid: string): Promise<InferenceView | 
 
 const BRACKET_ID = /\s*\[([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/gi;
 /** A stated summary with its bracketed item ids read as links to the items' titles; an id no admissible item holds (or that cannot be read) is dropped from the text shown. The stored summary is untouched. */
-export async function resolveBracketedIds(db: Db, text: string | null): Promise<string | null> {
+async function resolveBracketedIds(db: Db, text: string | null): Promise<string | null> {
   const ids = [...new Set([...(text ?? "").matchAll(BRACKET_ID)].map((m) => (m[1] as string).toLowerCase()))];
   if (!text || ids.length === 0) return text;
   const link = new Map<string, string>();

@@ -8,7 +8,6 @@ import { createElement } from "react";
 import { extractBackfill, fetchForwardEventCount, fetchObligationRegisterPage, fetchRegisterFacetOptions, readUpcoming, buildRegisterQuerySpec } from "@/features/obligations";
 import { syncComplianceDeadline } from "@/features/obligations/derive/compliance-deadline";
 import { deriveObligationObjects } from "@/features/obligations/derive/derive-objects";
-
 import { PendingTriggers, pendingTriggers } from "@/ui/detail";
 
 import { memoryDb, type Row } from "../_support/memory-db.ts";

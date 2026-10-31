@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { createElement } from "react";
 
-import { resolveBracketedIds } from "@/core/detail/cross-page-read";
+import { readCrossPage } from "@/core/detail/cross-page-read";
 import { themeAnalysisView } from "@/core/themes/theme-view";
 import { ItemConnections } from "@/ui/detail/ItemConnections";
 
@@ -79,10 +79,11 @@ test("OPS-FIX-1 item 5: a bracketed item id in the stated coupling is read as th
   const gone = "00000000-bae8-4620-a6ac-6fa9846b1eb5";
   const stored = `Both bind the same carrier duty [${known}], and the earlier order [${gone}] sets the date.`;
   const db = memoryDb({ intelligence_items: [{ id: known, legacy_id: "us-zev-order", title: "US Zero-Emission Vehicle Order", item_type: "regulation", domain: 1, is_archived: false, provenance_status: "verified" }] }).db;
-  const shown = await resolveBracketedIds(db, stored);
+  const read = (summary: string | null) => readCrossPage(db, "00000000-0000-4000-8000-0000000000aa", "operations", summary, [], {}, "2026-10-31T00:00:00Z").then((c) => c.intersections?.summary ?? null);
+  const shown = await read(stored);
   assert.equal(shown, "Both bind the same carrier duty [US Zero-Emission Vehicle Order](/regulations/us-zev-order), and the earlier order sets the date.");
   assert.doesNotMatch(shown ?? "", /[0-9a-f]{8}-[0-9a-f]{4}-/, "no raw id reaches the page");
   assert.match(stored, new RegExp(known), "the stored text is untouched");
-  assert.equal(await resolveBracketedIds(db, "No ids here."), "No ids here.");
-  assert.equal(await resolveBracketedIds(db, null), null);
+  assert.equal(await read("No ids here."), "No ids here.");
+  assert.equal(await read(null), null);
 });
