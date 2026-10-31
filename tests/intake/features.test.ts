@@ -111,6 +111,7 @@ test("proof 3: a mint and a substantive update share ONE step list; a failing st
   const w = makeWorld();
   const mint = await runParticipation({ sb: w.deps.sb, connect: w.deps.connect, now: () => new Date() }, { itemId: ITEM, context: "mint", mint: { title: "Regulation", sourceUrl: OFFICIAL_URL } });
   const mintSteps = w.rec.connects.map((x) => x.split(":")[0]);
+  assert.ok(mintSteps.indexOf("entities") >= 0 && mintSteps.indexOf("entities") < mintSteps.indexOf("connect"), "ENGINE-ORDER-1: the item's entity refs exist before its own discovery runs");
   w.rec.connects.length = 0;
   await runParticipation({ sb: w.deps.sb, connect: w.deps.connect, now: () => new Date() }, { itemId: ITEM, context: "update", changed: ["jurisdiction_iso"] });
   const updSteps = w.rec.connects.map((x) => x.split(":")[0]);

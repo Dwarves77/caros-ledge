@@ -94,6 +94,11 @@ export async function runParticipation(deps: ParticipationDeps, input: Participa
     if (error) throw new Error(`item_cross_references upsert failed: ${error.message}`);
     flags.push("lineage:1");
   });
+  // ENGINE-ORDER-1: the item's entity refs exist before its own discovery runs
+  await step("entities", isMint || (input.changed ?? []).some((c) => UPDATE_RELINK.has(c)), async () => {
+    const r = await connect.linkEntities(itemId);
+    if (r.refs > 0 || r.instrumentEntityId) flags.push(`entities:${r.refs}${r.instrumentEntityId ? "+instrument" : ""}`);
+  });
   await step("discovery", true, async () => {
     const { written } = await connect.connect(itemId);
     if (written > 0) flags.push(`discovery:${written}`);
@@ -111,10 +116,6 @@ export async function runParticipation(deps: ParticipationDeps, input: Participa
   await step("obligations", true, async () => {
     const r = await connect.deriveObligations(itemId);
     if (r.derived > 0) flags.push(`obligations:${r.derived}`);
-  });
-  await step("entities", isMint || (input.changed ?? []).some((c) => UPDATE_RELINK.has(c)), async () => {
-    const r = await connect.linkEntities(itemId);
-    if (r.refs > 0 || r.instrumentEntityId) flags.push(`entities:${r.refs}${r.instrumentEntityId ? "+instrument" : ""}`);
   });
   // ADR-030: a record item born without a timeline row gets the title-derived row, verified verbatim against the item's own capture.
   // Usually a no-op at mint (captures arrive later); never fabricates.

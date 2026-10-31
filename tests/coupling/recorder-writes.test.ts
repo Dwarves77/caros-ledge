@@ -33,9 +33,9 @@ test("a stage that only superseded or retired patterns, synced a deadline, or re
   for (const key of ["patterns_superseded", "patterns_obsolete", "deadlines_synced", "triggers_resolved"]) assert.equal(outcomeOf("corpus-turn", { [key]: 1 }), "success", key);
 });
 
-test("propagate: a coupling run that seeded and mined and drained nothing is success (run a09ec94a counts), and so is a seed-page capture alone", () => {
-  assert.equal(outcomeOf("propagation", { drained: 0, seed_entities_written: 37, seed_aliases_written: 147, seed_relations_written: 48, refs_written: 14305 }), "success");
-  for (const key of ["seed_entities_written", "seed_aliases_written", "seed_relations_written", "refs_written", "seed_capture_captured", "producers_capture_captured"]) assert.equal(outcomeOf("propagation", { [key]: 1 }), "success", key);
+test("connect: a run that only mined refs is success (ENGINE-ORDER-1: the mining is the connect stage's); propagate: a cited-page capture alone is success", () => {
+  assert.equal(outcomeOf("corpus-turn", { refs_written: 14305 }), "success");
+  assert.equal(outcomeOf("propagation", { producers_capture_captured: 1 }), "success");
 });
 
 test("brief-apply: the retokenise pass rewrote items and lines and is success, not the noop 16 production rows recorded", () => {
