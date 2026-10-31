@@ -69,6 +69,10 @@ test('no-raw-ids reads a corridor token; reasons-are-pairwise passes two equal r
   assert.match(EVALUATORS['no-raw-ids'](f)[0], /a corridor token: CNSHA-ITGOA:ocean/);
   f.lists[0].facts.text = 'Operations: Shanghai (CN) → Genoa (IT), ocean';
   assert.deepEqual(EVALUATORS['no-raw-ids'](f), []);
+  f.lists[0].facts.radar = { text: 'Research: Bio-methanol · ghg_intensity', links: 2, absence: false };
+  assert.match(EVALUATORS['no-raw-ids'](f)[0], /the radar shows a snake_case token: ghg_intensity/);
+  f.lists[0].facts.radar = { text: 'Research: Bio-methanol · GHG intensity (method)', links: 2, absence: false };
+  assert.deepEqual(EVALUATORS['no-raw-ids'](f), []);
   const same = (n) => Array.from({ length: n }, (_, i) => ({ label: 'References', title: `T${i}`, reason: 'Both apply to ocean bunkering operations.' }));
   f.details[0].facts.connections = same(2);
   assert.deepEqual(EVALUATORS['reasons-are-pairwise'](f), []);
