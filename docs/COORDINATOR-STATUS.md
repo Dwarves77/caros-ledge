@@ -1,4 +1,4 @@
-# Coordinator Status & Handoff Report (`2026-10-30` late)
+# Coordinator Status & Handoff Report (`2026-10-31` close of the customer-context wave)
 
 This file is the canonical handoff status for the coordinator session. Whenever the operator types `coordinator` or `/coordinator`, read this file first alongside `git log -n 10 --oneline` and `git status -s`.
 
@@ -6,34 +6,70 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 
 ## 1. Current Repository State
 
-- **Branch:** `main` at `7ff2059f` (DRAIN-2F, PR 172). Its main push CI run (41152197719) concluded `success`; `ruled-runs` = success.
-- **LOC Status (`node scripts/ci/loc.mjs`, run 2026-10-30 late):** `src` 66,268; `src/core` 20,421 (all 2026-10-30 PRs were 0 net src lines; `loc.mjs` LIMITS unchanged at src 66,291 / src/core 20,428, re-read on main).
-- **Gates (`scripts/ci/gates.mjs`):** `workflow-yaml`, `lint`, `typecheck`, `build` (heavy), `test` (heavy), `validator-report`, `tree-checks`, `ui-checks`, `client-walk`, `loc`, `connections`, `columns`, `joinability`, `verify:citations`, `method-versions`, `migration-checks`, `edge-bundle` (scoped to the capture-worker), plus `schema:local` when `supabase/` changed.
-- **Branch protection now enforces for admins:** every change goes via PR; `ci` + `schema` are required checks (`enforce_admins=true`, set via `gh api` 2026-10-30).
-- **Pre-push hook runs the FULL profile** for src/tests/scripts/supabase/public/config changes (PR 167 HOOK-FULL-1, merged; ruling 43). Docs-only pushes run the fast profile.
+- **Branch:** `main` at `55991423` (PR 196 UI-RADAR-3) at the time of writing, plus later docs/lock PRs; verify with `git log -n 10`.
+- **Branch protection:** `enforce_admins=true`; every change via PR; `ci` + `schema` required.
+- **Local gates:** pre-push runs the fast profile plus tests mapped from changed modules, once; the passing HEAD is remembered in the git-dir (ruling 55, PR 180). The full matrix runs in GitHub Actions only.
+- **Scrape cadence:** `off` (build mode, rule 16). Migrations 0145-0148 applied.
+
+## 2. Merged since 2026-10-30 (PRs 176-197, all MERGED)
+
+- 176 TEST-FIX-1 (f340d401): licence-register golden runs without network.
+- 177 LIVE-GATE-1 (9ebfa220): signed-in production DOM gate with armed assertions.
+- 178 ENGINE-ORDER-1 (6de7d64a): obligations, events, refs before discovery and patterns.
+- 179 LOC-REPIN-1 (422447cf): LIMITS raised for the wave.
+- 180 GATES-FIX-1 (e29fb513): local gate remembers its pass; fast + targeted locally.
+- 181 OPS-FIX-1 (28051b42): scoped grid queue, own-item mandates (shipped the /market ribbon regression).
+- 182 OPS-FIX-2 (0b2151ae): headline series render without an in-window prior.
+- 183 ENGINE-JOIN-1 (320294f6): discovery joins on the typed graph; migration 0145.
+- 184 LIVE-GATE-2 (ff3267cd): ribbon-complete assertion.
+- 185 POOL-FIX-1 (361c605d): extraction pool excludes foreign capture-cited captures.
+- 186 UI-RADAR-1 (cd230947): reasons on connections; Flywheel radar.
+- 187 THEME-1a (b333f736): re-cluster on the typed graph (ruled run).
+- 188 ETS-CLEAN-1 (4dfc2bb8): rescan ff4064ab and 40c05a1e (ruled run; its run went red unnoticed, header overflow).
+- 189 JOIN-CHUNK-1 (6d871a58): facts-join chunks 200 ids.
+- 190 ETS-CLEAN-2 (0f117135): re-run connect after orphan clean-up (ruled run).
+- 191 THEME-CODE-1 (9fe26d04): convergence floor 0.10; retire-orphan-theme-briefs op; migration 0148 applied (ex-0146).
+- 192 UI-RADAR-2 (34d5bd7e): pairwise reasons, grouped patterns, named theme chips.
+- 193 CONTENT-1 (89505065): Weekly Oil Bulletin briefs, applied.
+- 194 (cccbcba7): UI fix, cut-off cards, table overflow, raw ALL-CAPS statute titles.
+- 195 CONTENT-1b (39f34ca4): ff4064ab replaced_by 15f63ea9, migration 0147 applied.
+- 196 UI-RADAR-3 (55991423): entity display names, instrument titles, obligation evidence.
+- 197 THEME-1b (a200dd07): 5 cross-surface theme briefs with sections, 3 orphans superseded.
+
+## 3. Production facts (coordinator reads, 2026-10-31)
+
+- Production theme_briefs 12/5/3/0 (per THEME-1b closing state).
+- Patterns grouped and named; pairwise reasons; developing empty state; what-moves block; Oil Bulletin rows with why text.
+- Orphan clean-up (1,272 entity_refs on deleted events, 600 refs on 67 deleted obligation_objects, 67 orphan obligation entities) staged at `C:/tmp/fa1-scratch/ets-clean-2.sql`, NOT run (harness refuses agent deletions). Read-only count: entity_refs 52,062, entities 5,540, unchanged.
+
+## 4. Live gate assertions
+
+- Armed (signed in): no-404, ribbon-complete, rows-have-why, connections-have-reason, radar-present, no-raw-ids.
+- Unarmed: no-pending-text, own-mandates, scoped-grid, reasons-are-pairwise.
+
+## 5. Follow-ups queued
+
+- DRAIN-THEMES-1: drain-authored theme briefs on membership change (ADR-050), when cadence returns.
+- REG-BACKFILL-1: 985 regulations with blank what/why/changes, produced by the turn.
+- PRODUCER-CAPTURE-1: Oil Bulletin producer files each week as a capture so prose can quote values.
+- Arm own-mandates, scoped-grid, no-pending-text after a production pass; reasons-are-pairwise once shared_obligation evidence appears.
+- Orphan refs clean-up (operator-run); remove the 0146 migration_log orphan row.
+- Typecheck "cached" skip under the gates memo (trace).
+- LOCK-NO-BLOAT-2 re-pin (in flight).
+- Items below under "Carried backlog" still stand.
+
+## 6. Standing rules learned 2026-10-31
+
+- Local gates are fast; the full matrix runs in CI only (ruling 55).
+- Watch every PR to green and merged; a parked PR is a miss.
+- An independent judge reads every authored brief; self-judging is not evidence (ruling 60).
+- Rule 3: schema DDL applies via CLI before the dependent code commits; migration numbers are allocated in landing order (ruling 62).
+- One vault PR at wave close.
+- No content merge between a theme-brief push and its run (ruling 61).
 
 ---
 
-## 2. What Changed Since `0a96e18` / `e79ed02` (2026-10-30 coordinator session)
-
-`git log e79ed02..main`, 10 commits, all merged PRs (verified with `gh pr view`: 163-172 all MERGED):
-
-- **MAIN-RED-1 (PR 165, `122ed0aa`):** two tests were red since the direct pushes. SectionIndex text restored, structure-test regex fixed, timeline test pins the stage label, parity baselines refreshed to the redesign (ruling 41), compare slot fix, mobile timeline date wrap.
-- **SYNTH-APPLY-4 (PR 163, `efd1d788`):** two admin capital-radar answers on production: clusters `68275fe1d81735bb` (ex-3044) and `5d16d8d5fc4b3799` (ex-5dfc), gaps-and-signposts; 4 signposts + 5 gap flags written 22:07 UTC [not independently re-read].
-- **CLASSIFY-FIX-1 (PR 164, `48c21340`):** `LEGISLATIVE_BODY_RE` accepts "HAVE ADOPTED" and `&nbsp;`; 5 EUR-Lex captures flip.
-- **CI-TRIM-2 (PR 166, `bdc9b142`):** deployment-status browser checks run on production only; preview-parity removed (ruling 42).
-- **HOOK-FULL-1 (PR 167, `8017ca0f`):** pre-push runs the full profile on code, test and CI changes (ruling 43).
-- **PARITY-8 (PR 168, `f48d84f4`):** 17 unused approved-changes waivers deleted.
-- **CLASSIFY-FIX-2 (PR 169, `c727284b`):** `detectNumeric` folds HTML spaces; EUR-Lex shell test host-gated, callers pass url; 96 Commission-domain captures stop being discarded.
-- **DRAIN-2G (PR 170, `daf10c44`):** `947e08f3` IEA brief rewritten to the research contract, 21 FACT + 2 GAP [not independently re-read], verified 23:26 UTC. SELECT read: `provenance_status=verified`, severity `monitoring`, item_type `research_finding`.
-- **DRAIN-2E (PR 171, `9305b394`):** `ff95b385` AFIR re-ground, 28 omitted events. SELECT read: `provenance_status=verified`, severity `monitoring`, item_type `regulation`.
-- **DRAIN-2F (PR 172, `7ff2059f`):** `7a0ead55` FuelEU rewritten to the regulatory contract, 76 FACT [not independently re-read]. SELECT read: `provenance_status=verified`, severity `cost_alert`, priority `HIGH` (coordinator SELECT of the priority column, 00:51 UTC), item_type `regulation`.
-
-Prior handoff content (editorial UI, auth waterfall removal, CI ratchet burn-down to zero, horizon-scan stage badges) stands; see `git log 2b813da..0a96e18`.
-
----
-
-## 3. What Is Next
+## 7. Carried backlog (from 2026-10-30)
 
 ### Carried from the prior backlog
 1. **Community post route admissible-row predicate:** `tests/derived/readers.json` has 1 `owed` entry, `src/features/community/api/post.ts` (reads `intelligence_items` without `admitItems`, `src/core/derived/admissible.ts`). Route it through `admitItems`, remove the entry.
