@@ -9,7 +9,6 @@ import type { MarketRead } from "@/features/market/read";
 import { MarketView } from "@/features/market/ui/MarketView";
 import type { Resource } from "@/core/types";
 
-import { RADAR_FX, WHY_FX } from "../surfaces/SurfaceFixtures";
 
 // The UX smoke mounts the Market page here (tests/ux/market-smoke.mjs) from fixed data, `?state=failed` with every part's read failed. A 404 unless the env flag is set (the CI parity job and the local smoke run only); under /privacy so the
 // proxy treats it as a public path. The data is generic fixture data, not a customer's.
@@ -57,7 +56,7 @@ function readFor(state: string): MarketRead {
   if (state === "failed") return { signals: bad, series: bad, corridors: bad, carbon: bad, panels: { oem: bad, reroute: bad, indexation: bad } };
   return {
     signals: ok({ rows: ROWS, aggregates: { totalItems: ROWS.length, byPriority: { CRITICAL: 5, HIGH: 14, MODERATE: 5, LOW: 12 }, byStatus: {}, byJurisdiction: { GLOBAL: 12, EU: 12, US: 12 }, totalJurisdictions: 3, lastUpdatedAt: null } }),
-    series: ok({ board: buildSeriesBoard(SERIES), leadTime: SERIES.filter((s) => s.series_key.startsWith("sbti")), ratings: RATINGS, lineage: null, why: Object.fromEntries(selectHeadlineSeries(buildSeriesBoard(SERIES)).cards.map((c, i) => [c.familyKey, i === 0 ? [...WHY_FX] : whyLines([], c.label)])) }),
+    series: ok({ board: buildSeriesBoard(SERIES), leadTime: SERIES.filter((s) => s.series_key.startsWith("sbti")), ratings: RATINGS, lineage: null, why: Object.fromEntries(selectHeadlineSeries(buildSeriesBoard(SERIES)).cards.map((c, i) => [c.familyKey, whyLines(i === 0 ? [{ refTable: "intelligence_items", refId: "i", entity: { id: "e", kind: "instrument", canonicalName: "Directive 2023/959" }, hop: 0, surface: "regulations", summary: { title: "Directive 2023/959", date: "2027-01-01", penalty: "EUR 100/t excess emissions" } }] : [], c.label)])) }),
     corridors: ok(CORRIDORS.flatMap((c) => (c.parsed ? [{ entityId: c.entityId, label: c.label, parsed: c.parsed }] : []))),
     carbon: ok(CARBON),
     panels: {
@@ -72,5 +71,5 @@ export default async function MarketFixturesPage({ searchParams }: { searchParam
   if (process.env.UI_FIXTURES !== "1") notFound();
   const state = (await searchParams).state ?? "ok";
   const chips = state === "failed" ? null : [{ themeId: "t1", href: "/research/t1", label: "Fixture theme across the corpus", itemTitle: "Fixture theme", memberCount: 6, pages: [{ surface: "market", label: "Market" }], hasBrief: true, stale: false, links: [] }];
-  return <div data-fx="market"><MarketView read={readFor(state)} nowIso={NOW} coverage={state === "failed" ? { denominator: null, error: "fixture: read failed" } : { denominator: { surface: "market_intel", label: "market", numerator: 30, denominator: 54, verifiedBriefs: 54, href: "/dashboard/coverage?data_class=market_intel" }, error: null }} chips={chips} radar={state === "failed" ? null : RADAR_FX} /></div>;
+  return <div data-fx="market"><MarketView read={readFor(state)} nowIso={NOW} coverage={state === "failed" ? { denominator: null, error: "fixture: read failed" } : { denominator: { surface: "market_intel", label: "market", numerator: 30, denominator: 54, verifiedBriefs: 54, href: "/dashboard/coverage?data_class=market_intel" }, error: null }} chips={chips} radar={state === "failed" ? null : { patterns: [], forming: [] }} /></div>;
 }
