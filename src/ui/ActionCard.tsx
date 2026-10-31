@@ -24,6 +24,8 @@ interface ActionCardProps {
   nowIso: string; extraChips?: ReactNode; tier?: number | null | undefined; biasTags?: BiasTagInput[] | null | undefined; meta?: string | null | undefined; tags?: string[] | null | undefined;
   tagPopover?: ReactNode; onExport: () => void; onShare: () => void; watch: ReactNode; onTag?: (() => void) | undefined; exportDisabled?: boolean | undefined; overflow?: ReactNode;
   viewer?: boolean; where: Exposure; whoPays: Exposure; yourLanes: Exposure; timeline?: TimelineEntry[] | null | undefined;
+  /** Replaces the generic pending absence in the Next milestone cell when no dated binding milestone is held. */
+  noMilestoneNote?: string;
   onFullSchedule?: () => void; fullScheduleHref?: string; moreMarkersHref?: string; bare?: boolean;
 }
 
@@ -56,7 +58,7 @@ function ExposureCell({ label, cell }: { label: string; cell: Exposure }) {
 }
 
 /** The one detail action card: unified pill + bias + action bar, compact exposure strip, and streamlined timeline. */
-export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags, meta, tags, tagPopover, onExport, onShare, watch, onTag, exportDisabled, overflow, viewer, where, whoPays, yourLanes, timeline, onFullSchedule, fullScheduleHref, moreMarkersHref, bare = false }: ActionCardProps) {
+export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags, meta, tags, tagPopover, onExport, onShare, watch, onTag, exportDisabled, overflow, viewer, where, whoPays, yourLanes, timeline, noMilestoneNote, onFullSchedule, fullScheduleHref, moreMarkersHref, bare = false }: ActionCardProps) {
   const nextClause = nextMilestoneClause(classifyMilestones(timeline ?? []), nowIso);
   const hasTags = !!tags && tags.length > 0;
   const content = (
@@ -81,7 +83,7 @@ export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags
         <ExposureCell label="Where" cell={where} />
         <ExposureCell label="Who pays" cell={whoPays} />
         <ExposureCell label="Your lanes" cell={yourLanes} />
-        <ExposureCell label="Next milestone" cell={nextClause ? { value: nextClause } : { value: null, absenceReason: "pending" }} />
+        <ExposureCell label="Next milestone" cell={nextClause ? { value: nextClause } : noMilestoneNote ? { value: noMilestoneNote } : { value: null, absenceReason: "pending" }} />
       </div>
       <div className="cl-ac-rule" aria-hidden="true" />
       <Timeline entries={timeline} band={band} nowIso={nowIso} {...(onFullSchedule ? { onFullSchedule } : {})} {...(fullScheduleHref ? { fullScheduleHref } : {})} {...(moreMarkersHref ? { moreMarkersHref } : {})} />

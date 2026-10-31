@@ -296,8 +296,8 @@ class Query {
   contains(c: string, v: unknown[]) { return this.f("contains", c, v, (r) => Array.isArray(col(r, c)) && v.every((x) => (col(r, c) as unknown[]).includes(x))); }
   overlaps(c: string, v: unknown[]) { return this.f("overlaps", c, v, (r) => Array.isArray(col(r, c)) && (col(r, c) as unknown[]).some((x) => v.includes(x))); }
   or(expr: string) {
-    const tests = expr.split(/,(?=[a-z_.]+\.(?:eq|neq|is|ilike|like|lt|lte|gt|gte)\.)/).map((p) => {
-      const m = /^([a-z_.]+)\.(eq|neq|is|ilike|like|lt|lte|gt|gte)\.(.*)$/.exec(p);
+    const tests = expr.split(/,(?=[a-z0-9_.]+\.(?:eq|neq|is|ilike|like|lt|lte|gt|gte)\.)/).map((p) => {
+      const m = /^([a-z0-9_.]+)\.(eq|neq|is|ilike|like|lt|lte|gt|gte)\.(.*)$/.exec(p);
       return (r: Row): boolean => {
         if (!m) return false;
         const [, c = "", kind = "", v = ""] = m;

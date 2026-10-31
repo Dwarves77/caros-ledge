@@ -1,6 +1,7 @@
 {
   "horizonDays": 365,
   "nonBinding": ["monitoring_only"],
+  "costSeverities": ["cost_alert"],
   "dueFields": ["first_deadline", "date_of_application"],
   "inForceFields": ["entry_into_force"],
   "operationalRoles": ["forwarder", "carrier"],

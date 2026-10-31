@@ -190,7 +190,7 @@ test("P4: the derived value the turn propagated reads on the Operations panel wi
   const r = await runTurn({ stage: "all", mode: "apply", input: { intake: { census: { limit: 5 }, verdicts: { [RESEARCH_URL]: RESEARCH_VERDICT }, maxPromote: 5 }, propagate: { producers: { only: "ecb-fx" } } } }, { d: f.d, env: {}, now: () => NOW });
   assert.equal(r.exit, 0);
 
-  const figures = await readDerivedFigures(f.db.client);
+  const figures = await readDerivedFigures(f.db.client, null);
   const delta = figures.find((x) => x.title.includes("EUR"));
   assert.ok(delta, "the propagated figure reads on the panel");
   assert.ok(Math.abs(Number(delta.value) - 0.05) < 1e-9 && delta.previous !== null && delta.inputs.length >= 1);

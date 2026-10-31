@@ -5,6 +5,8 @@ import { admitItems } from "@/core/derived/admissible";
 import { notInList, suppressedEventIds } from "@/core/derived/suppressed-events";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
+import { surfaceHref, surfaceOf } from "@/core/routing";
+import { log } from "@/core/shared/log";
 import { buildIntersectionView, lineageFromThemeDelta, type ConnectionIn, type ResourceLookup } from "@/core/flywheel";
 import { HORIZONS, themeAnalysisView, themeChips, themeForItem, type BriefRow, type MemberRow, type ThemeAnalysisView, type ThemeEventRow, type ThemeRow } from "@/core/themes";
 
@@ -16,7 +18,6 @@ const CAP = 5000;
 
 export interface CrossPage {
   intersections: ReturnType<typeof buildIntersectionView>;
-  intersectionSummary: string | null;
   theme: ThemeAnalysisView | null;
   inferences: InferenceView | null;
   /** The blocks whose read failed this request ("themes", "inferences"): the page offers Retry and does not call them empty. */
@@ -72,14 +73,32 @@ async function readTheme(db: Db, itemUuid: string, surface: string, asOfIso: str
 /** The inferences a customer may read for an item, per request. */
 const readFreshInferences = (db: Db, itemUuid: string): Promise<InferenceView | null> => readCustomerInferences(db, itemUuid);
 
+const BRACKET_ID = /\s*\[([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]/gi;
+/** A stated summary with its bracketed item ids read as links to the items' titles; an id no admissible item holds (or that cannot be read) is dropped from the text shown. The stored summary is untouched. */
+export async function resolveBracketedIds(db: Db, text: string | null): Promise<string | null> {
+  const ids = [...new Set([...(text ?? "").matchAll(BRACKET_ID)].map((m) => (m[1] as string).toLowerCase()))];
+  if (!text || ids.length === 0) return text;
+  const link = new Map<string, string>();
+  try {
+    for (const r of await readVerifiedItemsByIds(db, ids)) {
+      const href = surfaceHref(surfaceOf(r.item_type, r.domain), r.legacy_id || r.id);
+      if (href && r.title) link.set(r.id, ` [${r.title.replace(/[[\]]/g, "")}](${href})`);
+    }
+  } catch (e) {
+    log.warn("[cross-page] summary ids did not resolve:", e instanceof Error ? e.message : String(e));
+  }
+  return text.replace(BRACKET_ID, (_m, id: string) => link.get(id.toLowerCase()) ?? "").trim();
+}
+
 /** The cross-page analysis of one item: each block read on its own, so one failing block does not take the others down. */
 export async function readCrossPage(db: Db, itemUuid: string, surface: string, intersectionSummary: string | null, connections: readonly ConnectionIn[], lookup: ResourceLookup | Promise<ResourceLookup>, asOfIso: string): Promise<CrossPage> {
   const degraded: string[] = [];
-  const [theme, inferences] = await Promise.all([
+  const [theme, inferences, summary] = await Promise.all([
     readTheme(db, itemUuid, surface, asOfIso).catch(() => (degraded.push("themes"), null)),
     readFreshInferences(db, itemUuid).catch(() => (degraded.push("inferences"), null)),
+    resolveBracketedIds(db, intersectionSummary),
   ]);
-  return { intersections: buildIntersectionView(connections, await lookup, { currentSurface: surface, summary: intersectionSummary }), intersectionSummary, theme, inferences, degraded };
+  return { intersections: buildIntersectionView(connections, await lookup, { currentSurface: surface, summary }), theme, inferences, degraded };
 }
 
 /** The theme chips of a list page (`surface` null is the cross-page view the dashboard reads). Throws on a failed read; the caller says the strip did not load. */

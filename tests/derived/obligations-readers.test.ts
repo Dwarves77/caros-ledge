@@ -3,11 +3,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { createElement } from "react";
+
 import { extractBackfill, fetchForwardEventCount, fetchObligationRegisterPage, fetchRegisterFacetOptions, readUpcoming, buildRegisterQuerySpec } from "@/features/obligations";
 import { syncComplianceDeadline } from "@/features/obligations/derive/compliance-deadline";
 import { deriveObligationObjects } from "@/features/obligations/derive/derive-objects";
 
+import { PendingTriggers, pendingTriggers } from "@/ui/detail";
+
 import { memoryDb, type Row } from "../_support/memory-db.ts";
+import { renderApp, textOf } from "../_support/render.ts";
 
 const TODAY = "2026-10-19";
 const LIVE = "10000000-0000-4000-8000-000000000001";
@@ -109,4 +114,24 @@ test("flywheel:23: no obligation object is derived for an unverified item, nor f
   assert.equal(unverified.counts.candidates, 0);
   const suppressed = await deriveObligationObjects(base({}, [suppress(C1, LIVE, claimText)]).db, { dry: true, itemIds: [LIVE] });
   assert.equal(suppressed.counts.candidates, 0);
+});
+
+test("OPS-FIX-1 item 3: two items of one jurisdiction and theme, each page's pending triggers are that item's own events, never the other's (the read is item-scoped; a foreign event shows only when it is stored under this item)", async () => {
+  const ETS = item(LIVE, { title: "EU ETS extension to maritime transport", jurisdiction_iso: ["EU"] });
+  const PPWR = item(OTHER, { title: "EU Packaging and Packaging Waste Regulation", jurisdiction_iso: ["EU"] });
+  const m = memoryDb({
+    intelligence_items: [ETS, PPWR],
+    item_forward_events: [
+      event("e0000000-0000-4000-8000-0000000000a1", LIVE, null, { event_kind: "implementing_act_due", obligation_text: "The Commission shall adopt implementing acts on the surrender of ETS allowances by shipping companies." }),
+      event("e0000000-0000-4000-8000-0000000000a2", OTHER, null, { event_kind: "implementing_act_due", obligation_text: "The Commission shall adopt implementing acts on the methodology for recycled content in packaging." }),
+      event("e0000000-0000-4000-8000-0000000000a3", OTHER, null, { event_kind: "delegated_act_due", obligation_text: "Rules on penalties applicable to infringements of this Regulation by 12 February 2027." }),
+    ],
+    fact_suppressions: [],
+  });
+  const own = (await readUpcoming(m.db, { itemId: LIVE, limit: 20 }, TODAY)).events;
+  assert.deepEqual(own.map((e) => e.intelligence_item_id), [LIVE]);
+  const text = textOf(renderApp(createElement(PendingTriggers, { events: pendingTriggers(own), kindLabels: {} })));
+  assert.match(text, /1 mandate/);
+  assert.match(text, /surrender of ETS allowances/);
+  assert.doesNotMatch(text, /recycled content|penalties applicable/, "no mandate of the other instrument");
 });

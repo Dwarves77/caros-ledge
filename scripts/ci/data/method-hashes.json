@@ -28,5 +28,6 @@
   "derived_values:pattern_velocity_burst@1.4.0": "35d2bf1b767c056e3415580462a5325fa9f2b0aec24e310a8e18204ab1a0cdd9",
   "inference_records:infer-from-question@v1": "c65c7c98ceaaa14e7b98a4dbc25a391b650d61797ca324df279f1ee5e3988b74",
   "inference_records:infer-from-question@v2": "9d0cb9324b5b8de7b6a5adfe97b1c8745bdb28b441110ba9342b1761a6ef6612",
-  "item_impact_scores:impact_scores@1.0.0": "635761351b96270963bce323a71b6d7a413b34a927854af2669f3bd0e5b9d2da"
+  "item_impact_scores:impact_scores@1.0.0": "635761351b96270963bce323a71b6d7a413b34a927854af2669f3bd0e5b9d2da",
+  "item_impact_scores:impact_scores@1.1.0": "9bbb3db5d2b59b999fcf89c851482eb8b3b9d99c69c7aecb9710232588388c5a"
 }

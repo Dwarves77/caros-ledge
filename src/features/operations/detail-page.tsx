@@ -8,9 +8,7 @@ import { PageFailure } from "@/ui/shell";
 import { relatedItems } from "@/features/research/read/related-items";
 import { KIND_LABELS, readUpcoming } from "@/features/obligations";
 
-import { readDerivedFigures, readItemRegionInputs, readMatrixEligibility, readSpec09 } from "./read/operations-reads";
-import { regionsForItem } from "./model/region-resolve";
-import { readRoster } from "./read/operations-reads";
+import { profileScope, readDerivedFigures, readItemRegionInputs, readMatrixEligibility, readRoster, readSpec09 } from "./read/operations-reads";
 import { OperationsDetail } from "./ui/OperationsDetail";
 
 /**
@@ -18,17 +16,17 @@ import { OperationsDetail } from "./ui/OperationsDetail";
  * grid queue, and the figures the flywheel recomputed. Each reports its own failure; none is dropped.
  */
 const loadProfile = (orgId: string | null, today: string) => async ({ db, uuid }: ItemScopedCtx) => {
-  const [item, roster, events, derived] = await Promise.all([
+  const [item, roster, events] = await Promise.all([
     readItemRegionInputs(db, uuid),
     readRoster(db),
     readUpcoming(db, { itemId: uuid, limit: 20 }, today).catch((e: unknown) => (log.warn("[operations] obligation events read failed:", e instanceof Error ? e.message : String(e)), null)),
-    readDerivedFigures(db).catch((e) => (log.warn("[operations] recomputed figures did not load:", e instanceof Error ? e.message : String(e)), null)),
   ]);
-  const regionCodes = regionsForItem(roster.map((r) => ({ code: r.code, isoCodes: r.isoCodes })), item);
-  const [eligibility, related, spec09] = await Promise.all([
+  const scope = profileScope(item, roster);
+  const [eligibility, related, spec09, derived] = await Promise.all([
     readMatrixEligibility(db, item, roster),
     relatedItems(db, { id: uuid, sourceId: item.sourceId }, item.jurisdictions && item.jurisdictions.length > 0 ? (q) => q.contains("jurisdictions", [...item.jurisdictions as string[]]).eq("item_type", "regional_data") : null),
-    readSpec09(db, orgId, regionCodes, roster),
+    readSpec09(db, orgId, scope),
+    readDerivedFigures(db, scope).catch((e) => (log.warn("[operations] recomputed figures did not load:", e instanceof Error ? e.message : String(e)), null)),
   ]);
   return { eligibility, related, spec09, derived, events };
 };

@@ -1,4 +1,4 @@
-// The impact score method (IMPACT-1, INV-IMP-2 and INV-IMP-3): impact_scores@1.0.0 is pure, its output on a fixture item equals the rules table's expected scores, and a dimension whose input has not been read is NULL with the input named, never 0.
+// The impact score method (IMPACT-1, INV-IMP-2 and INV-IMP-3): impact_scores@1.1.0 is pure, its output on a fixture item equals the rules table's expected scores, and a dimension whose input has not been read is NULL with the input named, never 0.
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
@@ -10,7 +10,7 @@ const object = (id: string, over: Partial<ImpactObject> = {}): ImpactObject => (
 const input = (over: Partial<Omit<ImpactInput, "item">> & { item?: Partial<ImpactInput["item"]> } = {}): ImpactInput => ({
   today: TODAY, examined: true, objects: [], computations: [], sourceTier: 1, floorTier: 2,
   holderRoles: { carrier: ["carrier"], forwarder: ["forwarder"], nvocc: ["forwarder"], shipper: ["shipper"], member_state: [] },
-  ...over, item: { transport_modes: [], operational_scenario_tags: [], cost_mechanism: null, penalty_range: null, ...over.item },
+  ...over, item: { transport_modes: [], operational_scenario_tags: [], cost_mechanism: null, penalty_range: null, severity: null, ...over.item },
 });
 const dims = (i: ImpactInput) => {
   const s = scoreImpact(i);
@@ -31,6 +31,15 @@ test("INV-IMP-2 compliance: 0 no duty stated in a source that was read, 1 every 
   assert.equal(dims(input({ objects: [object("a", { binding_position: "monitoring_only", first_deadline: "2026-11-01" }), object("b", { first_deadline: "2026-12-01" })] }))[0], 3, "one binding duty due soon among several");
   const s = scoreImpact(input({ objects: [object("a", { binding_position: "monitoring_only" }), object("b", { first_deadline: "2026-12-01" })] }));
   assert.deepEqual(s.basis.compliance, { obligations: ["a", "b"], binding: ["b"], due: ["b"], horizon: "2027-10-15" }, "the basis names the obligations it was computed from");
+});
+
+test("OPS-FIX-1 item 6: a cost-alert severity the brief states is a cost signal (1) where no figure or mechanism is stored, never 0; another severity is none; a figure still outranks it", () => {
+  assert.equal(dims(input({ item: { severity: "cost_alert" } }))[1], 1, "the ETS maritime shape: cost_alert, no cost_mechanism, no penalty_range, a read source");
+  assert.equal(dims(input({ item: { severity: "monitoring" } }))[1], 0);
+  assert.equal(dims(input({ item: { severity: "action_required" } }))[1], 0);
+  assert.equal(dims(input({ examined: false, item: { severity: "cost_alert" } }))[1], 1, "the alert is stated whether or not the source was read for duties");
+  assert.equal(dims(input({ item: { severity: "cost_alert", penalty_range: "up to EUR 50 000" } }))[1], 3, "a figure outranks the severity");
+  assert.deepEqual(scoreImpact(input({ item: { severity: "cost_alert" } })).basis.cost.signals, ["intelligence_items.severity"], "the basis names the column");
 });
 
 test("INV-IMP-2 cost: 1 a mechanism or a sanction class with no figure, 2 a figure from a source below the type's floor, 3 a figure from a source at or above it", () => {
@@ -71,13 +80,13 @@ test("INV-IMP-3: a dimension whose input has not been read is NULL and the score
   for (const s of [unread, read, partly]) for (const [k, v] of [["obligations", s.compliance], ["cost", s.cost], ["operational", s.operational]] as const) assert.equal(s.missing.includes(k), v === null, `${k}: NULL exactly when it is named`);
 });
 
-test("INV-IMP-2: the method is pure and registered under its version: the same input gives the same score without touching the input, and the registry holds impact_scores@1.0.0", () => {
+test("INV-IMP-2: the method is pure and registered under its version: the same input gives the same score without touching the input, and the registry holds impact_scores@1.1.0", () => {
   const i = input({ objects: [object("a", { first_deadline: "2026-12-01" })], item: { transport_modes: ["ocean"], cost_mechanism: "m" } });
   const before = JSON.stringify(i);
   assert.deepEqual(scoreImpact(i), scoreImpact(i));
   assert.equal(JSON.stringify(i), before);
   const registry = createMethodRegistry();
-  assert.equal(registry.get("item_impact_scores", "impact_scores", "1.0.0"), scoreImpact);
-  assert.deepEqual(registry.keys("item_impact_scores"), ["impact_scores@1.0.0"]);
-  assert.throws(() => registry.register("item_impact_scores", "impact_scores", "1.0.0", scoreImpact), /already registered/);
+  assert.equal(registry.get("item_impact_scores", "impact_scores", "1.1.0"), scoreImpact);
+  assert.deepEqual(registry.keys("item_impact_scores"), ["impact_scores@1.1.0"]);
+  assert.throws(() => registry.register("item_impact_scores", "impact_scores", "1.1.0", scoreImpact), /already registered/);
 });
