@@ -85,12 +85,6 @@
   ],
   "conditional": [
     {
-      "route": "research-detail",
-      "kind": "heading",
-      "match": "^2:Connected intelligence$",
-      "reason": "UI-RADAR-1, 2026-10-31, ruling 41: Connected intelligence is drawn only while the item has a theme, a connection that states a reason, a structured row tied to its entities or a pattern. THEME-1a (#187, re-cluster, 100 themes) left the baseline research item (Tyndall Centre, UK climate adaptation) in no theme; its one edge is a provenance_discovery edge, which is a source-only edge and is never rendered as a connection. Compared when present on both sides, ignored when absent on either; design unchanged"
-    },
-    {
       "route": "operations-detail",
       "match": "^button:Show more$",
       "reason": "OPS-FIX-1, 2026-10-31: grid queue scoped to the profile's jurisdiction; the US profile has no rows to expand"
@@ -155,6 +149,13 @@
     "CARBON-1 (2026-10-20): the Carbon cost per FEU section is drawn again (a gap in data is a production fault, so the section stays and states what it waits for), which retires r2d-carbon-cost-not-drawn: its heading now matches the baseline's."
   ],
   "approved": [
+    {
+      "id": "ui-radar-1-research-detail-connected-intelligence",
+      "route": "research-detail",
+      "kind": "heading",
+      "match": "^2:Connected intelligence$",
+      "ruling": "UI-RADAR-1, 2026-10-31, ruling 41: Connected intelligence is drawn only while the item has a theme, a connection that states a reason, a structured row tied to its entities or a pattern (src/ui/detail/CrossPageSection.tsx). THEME-1a (#187, re-cluster to 100 themes) left the baseline research item (Tyndall Centre, UK climate adaptation) in no theme, and its one edge is a provenance_discovery edge, which is source-only and never rendered as a connection. Data, not design: retire when the baseline is recaptured from production or the item joins a theme."
+    },
     {
       "id": "r2d-lead-time-not-drawn",
       "route": "market",
