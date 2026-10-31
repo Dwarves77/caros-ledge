@@ -152,7 +152,14 @@ function deriveThemeLabel(input: { pages?: Array<{ label?: string }>; memberCoun
   return out;
 }
 
-/** The theme chips of a list page: the themes that touch the surface (or span `minPages`), strongest convergence first, each linking to a member on this surface. */
+/** Ruling 59's theme scope: a theme is three or more items or spans two or more surfaces; a pair on one surface is not a theme across the corpus. */
+export const inThemeScope = (memberCount: number, surfaceCount: number): boolean => memberCount >= 3 || surfaceCount >= 2;
+
+/** The one ranking of themes: a fresh brief first, then the surfaces spanned, then the member count, then convergence, the id breaking ties. */
+export const compareThemes = (a: { hasBrief: boolean; surfaces: number; members: number; convergence: number; id: string }, b: typeof a): number =>
+  Number(b.hasBrief) - Number(a.hasBrief) || b.surfaces - a.surfaces || b.members - a.members || b.convergence - a.convergence || (a.id < b.id ? -1 : 1);
+
+/** The theme chips of a list page: the themes in scope that touch the surface (or span `minPages`), ranked by compareThemes, each linking to a member on this surface. */
 export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly MemberRow[]; briefs?: readonly BriefRow[]; lineage?: Lineage; surface?: string | null; minPages?: number; max?: number }) {
   const { themes, items, briefs = [], lineage = [], surface = null, minPages = 1, max = 6 } = input;
   const byId = new Map(items.filter((it) => it && trim(it.title)).map((it) => [it.id, it]));
@@ -168,7 +175,7 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
     });
     members.sort((a, b) => (pivotRank.get(a.id) ?? 1e9) - (pivotRank.get(b.id) ?? 1e9) || a.title.localeCompare(b.title));
     const pageSet = new Set(members.map((m) => m.surface));
-    if (pageSet.size < minPages) continue;
+    if (pageSet.size < minPages || !inThemeScope(t.member_ids.length, pageSet.size)) continue;
     const target = surface ? members.find((m) => m.surface === surface) : members[0];
     if (!target) continue;
     const resolved = resolveBriefForTheme(t, briefs, { liveThemeIds, lineage });
@@ -190,6 +197,6 @@ export function themeChips(input: { themes: readonly ThemeRow[]; items: readonly
       links: [...others.filter((m) => m.surface !== target.surface), ...others.filter((m) => m.surface === target.surface)].slice(0, MAX_CHIP_MEMBER_LINKS).map(({ title, href }) => ({ title, href })),
     });
   }
-  out.sort((a, b) => (b.hasBrief ? 1 : 0) - (a.hasBrief ? 1 : 0) || b.convergence - a.convergence || (a.themeId < b.themeId ? -1 : 1));
+  out.sort((a, b) => compareThemes({ hasBrief: a.hasBrief, surfaces: a.pages.length, members: a.memberCount, convergence: a.convergence, id: a.themeId }, { hasBrief: b.hasBrief, surfaces: b.pages.length, members: b.memberCount, convergence: b.convergence, id: b.themeId }));
   return out.slice(0, Math.max(0, max)).map((c) => ({ themeId: c.themeId, href: c.href, label: c.label, itemTitle: c.itemTitle, meaning: c.meaning, memberCount: c.memberCount, pages: c.pages, hasBrief: c.hasBrief, stale: c.stale, links: c.links }));
 }
