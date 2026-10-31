@@ -11,7 +11,7 @@ import type { CaptureResult } from "@/core/fetch";
 import { fetchAllByIdChunks } from "@/core/db";
 import { resolveDocumentIdentity } from "@/core/intake";
 import { runResult, type RunResult } from "@/core/intake/result";
-import { readRequiredSlots } from "@/core/grounding";
+import { isUsableCapture, readRequiredSlots } from "@/core/grounding";
 import { DWELL_BOUND_DAYS } from "@/features/intake/quarantine/planner";
 
 import { applyPayload, holdRow, reconcileRow } from "./apply";
@@ -35,11 +35,11 @@ const SOURCE_COLUMNS = "id, url, name, base_tier, tier_override, status, institu
 const DAY_MS = 86_400_000;
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-/** The stored capture for a URL (the DB cache), the longest over 200 characters. A read error throws: the row is then deferred, never fetched blind. */
+/** The stored capture for a URL (the DB cache), the longest that is a usable capture (over the floor, not a wall page). A read error throws: the row is then deferred, never fetched blind. */
 async function storedCapture(deps: MintRunDeps, url: string): Promise<string | null> {
-  const r = await deps.sb.from("agent_run_searches").select("result_content").eq("result_url", url).limit(20);
+  const r = await deps.sb.from("agent_run_searches").select("result_content, result_url").eq("result_url", url).limit(20);
   if (r.error) throw new Error(`stored capture read failed for ${url}: ${r.error.message}`);
-  const best = ((r.data ?? []) as { result_content: string | null }[]).map((x) => x.result_content ?? "").filter((t) => t.trim().length > 200).sort((a, b) => b.length - a.length)[0];
+  const best = ((r.data ?? []) as { result_content: string | null; result_url: string | null }[]).filter(isUsableCapture).map((x) => x.result_content ?? "").sort((a, b) => b.length - a.length)[0];
   return best ?? null;
 }
 async function frDocType(num: string, deps: MintRunDeps): Promise<string | null> {

@@ -265,3 +265,12 @@ test("error-body gate: a stored capture that is a failed fetch is excluded from 
   assert.ok(flag, "the failed fetch is surfaced");
   assert.match(String(flag?.description), /failed fetches/);
 });
+
+test("INV-HW-5: groundBrief (the owner under groundInjectedLedger) does not ground a span against a stored Cloudflare interstitial", async () => {
+  const claimOnlyInWall = "The interstitial claims a rebate of EUR 77 applies to every operator at all times.";
+  const w = makeWorld({ itemType: "regulation", pool: [{ url: "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32023R9999", text: OFFICIAL_TEXT }, { url: "https://example-news.test/cf", text: `Just a moment... Checking your browser. Enable JavaScript and cookies to continue. Cloudflare Ray ID 8a1b2c3d. ${claimOnlyInWall}` }] });
+  w.db.seed("intelligence_item_sections", [{ item_id: ITEM, section_key: "1", section_order: 1, content_md: "Body." }]);
+  const run = await groundBrief({ sb: w.deps.sb, sources: w.deps.sources, now: () => new Date("2026-10-15T00:00:00Z") }, { itemId: ITEM, ledger: [{ ...factClaim(claimOnlyInWall), search_result_id: null }] as never });
+  assert.equal(run.dropped, 1);
+  assert.ok(!w.db.rows("section_claim_provenance").some((c) => String(c.source_span).includes("rebate")));
+});
