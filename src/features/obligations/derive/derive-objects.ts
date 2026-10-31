@@ -14,6 +14,7 @@ import { admissibleClaims, admitItems } from "@/core/derived/admissible";
 import { isVerbatim, locateSpan } from "@/core/contracts/verbatim";
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks } from "@/core/db";
+import { isForeignCapture } from "@/core/fetch";
 import { entityId } from "@/core/entities/id";
 import type { RunResult } from "@/core/sources/run-result";
 import { currentObligationObjects } from "@/core/workspace";
@@ -88,9 +89,9 @@ export interface Candidate {
   /** The objects (by id, or `candidate:<pinpoint>` in the same batch) whose duty holders this candidate inherits because its own span names none. */
   holder_basis?: string[];
 }
-export interface CaptureRow { id: string; intelligence_item_id: string; result_content: string | null; searched_at?: string | null; }
+export interface CaptureRow { id: string; intelligence_item_id: string; result_content: string | null; searched_at?: string | null; result_url?: string | null; search_query?: string | null; }
 export interface ExistingObject { obligation_id: string; instrument_item_id: string; pinpoint_citation: string; verbatim_text: string; version: number; supersedes?: string | null; duty_holder_class?: string[] | null; method_version?: string | null; basis?: Record<string, unknown> | null; }
-export interface ObjectItem extends ItemForClassification { id: string; is_archived?: boolean | null; }
+export interface ObjectItem extends ItemForClassification { id: string; is_archived?: boolean | null; source_url?: string | null; }
 
 export type BuildResult = { ok: true; row: Record<string, unknown>; bindingSource: string } | { ok: false; reason: string };
 
@@ -321,7 +322,7 @@ function candidatesFromFueleuTargets(item: ObjectItem, captures: readonly Captur
 export async function deriveObligationObjects(sb: Db, input: { dry: boolean; itemIds: readonly string[]; extraCandidates?: readonly Candidate[] }): Promise<RunResult<{ plan: ObjectPlan }>> {
   const ids = [...new Set([...input.itemIds, ...(input.extraCandidates ?? []).map((c) => c.instrument_item_id)])];
   const items = await fetchAllByIdChunks<ObjectItem & { id: string }>(ids, async (slice) => {
-    const { data, error } = await admitItems(sb.from("intelligence_items").select("id, title, is_archived, jurisdiction_iso, instrument_identifier, canonical_instrument_key").in("id", slice));
+    const { data, error } = await admitItems(sb.from("intelligence_items").select("id, title, is_archived, jurisdiction_iso, instrument_identifier, canonical_instrument_key, source_url").in("id", slice));
     if (error) throw new Error(`derive-objects: intelligence_items read failed: ${error.message}`);
     return data ?? [];
   });
@@ -341,11 +342,12 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
     return data ?? [];
   }, { manyPerId: true });
   // The item's captures (its primary text) are read once, in small chunks (a capture is a whole document): the duty windows and the FuelEU quotes are found in them, and a claim's capture is already in hand.
-  const captures = await fetchAllByIdChunks<CaptureRow>([...itemsById.keys()], async (slice) => {
-    const { data, error } = await sb.from("agent_run_searches").select("id, intelligence_item_id, result_content, searched_at").not("result_content", "is", null).in("intelligence_item_id", slice);
+  // Its own instrument only: the heal filed other instruments' captures under the items that cited them (POOL-FIX-1), and their clauses are not this item's duties.
+  const captures = (await fetchAllByIdChunks<CaptureRow>([...itemsById.keys()], async (slice) => {
+    const { data, error } = await sb.from("agent_run_searches").select("id, intelligence_item_id, result_content, searched_at, result_url, search_query").not("result_content", "is", null).in("intelligence_item_id", slice);
     if (error) throw new Error(`derive-objects: agent_run_searches read failed: ${error.message}`);
     return data ?? [];
-  }, { chunk: 10, manyPerId: true });
+  }, { chunk: 10, manyPerId: true })).filter((c) => { const it = itemsById.get(c.intelligence_item_id); return !it || !isForeignCapture(c, it); });
   const candidates: Candidate[] = [...(input.extraCandidates ?? [])];
   for (const item of itemsById.values()) {
     const own = events.filter((e) => e.intelligence_item_id === item.id);

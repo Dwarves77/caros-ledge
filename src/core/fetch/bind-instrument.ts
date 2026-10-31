@@ -6,10 +6,11 @@ import { fetchAllRows, type Db } from "@/core/db";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult } from "@/core/types/run-result";
 
-export interface BindItem { id: string; canonical_instrument_key: string | null; instrument_identifier: string | null; source_url: string | null }
+export interface InstrumentIdentity { canonical_instrument_key?: string | null; instrument_identifier?: string | null; source_url?: string | null }
+export interface BindItem extends InstrumentIdentity { id: string; canonical_instrument_key: string | null; instrument_identifier: string | null; source_url: string | null }
 
 const ELI_TYPE: Readonly<Record<string, string>> = { reg: "R", reg_impl: "R", reg_del: "R", dir: "L", dir_impl: "L", dir_del: "L", dec: "D", dec_impl: "D", dec_del: "D" };
-const CELEX_RE = /[?&]uri=CELEX(?::|%3A)([\w()-]+)/i;
+const CELEX_RE = /(?:[?&]uri=CELEX(?::|%3A)|\/resource\/celex\/)([\w()-]+)/i;
 const ELI_RE = /\/eli\/([a-z_]+)\/(\d{4})\/(\d+)(?:\/|$)/i;
 const plain = (url: string): string => url.trim().replace(/#.*$/, "").replace(/\/+$/, "").toLowerCase();
 
@@ -22,17 +23,29 @@ function instrumentKeysOf(url: string): { celex: string | null; short: string | 
   return { celex: celex ?? `3${eli[2]}${letter}${(eli[3] as string).padStart(4, "0")}`, short: `${eli[2]}/${Number(eli[3])}` };
 }
 
+/** Whether a URL is this item's own page: it names the item's CELEX or ELI short form, or it is the item's source URL. */
+function namesItem(url: string, i: InstrumentIdentity, ids: { celex: string | null; short: string | null }): boolean {
+  const { celex, short } = ids;
+  const key = i.canonical_instrument_key?.toUpperCase() ?? null;
+  const ident = i.instrument_identifier?.replace(/^CELEX:/i, "").toUpperCase() ?? null;
+  return (!!celex && (key === celex || ident === celex)) || (!!short && ident === short && (key === null || key === celex)) || (!!i.source_url && plain(i.source_url) === plain(url));
+}
+
 /** The one live item a URL belongs to, or the reason it belongs to none. Pure. */
 function boundItem(url: string, items: readonly BindItem[]): { itemId: string } | { reason: "no_key" | "no_item" | "ambiguous" } {
-  const { celex, short } = instrumentKeysOf(url);
-  const own = plain(url);
-  const hits = items.filter((i) => {
-    const key = i.canonical_instrument_key?.toUpperCase() ?? null;
-    const ident = i.instrument_identifier?.replace(/^CELEX:/i, "").toUpperCase() ?? null;
-    return (!!celex && (key === celex || ident === celex)) || (!!short && ident === short && (key === null || key === celex)) || (!!i.source_url && plain(i.source_url) === own);
-  });
+  const ids = instrumentKeysOf(url);
+  const hits = items.filter((i) => namesItem(url, i, ids));
   if (hits.length === 1) return { itemId: (hits[0] as BindItem).id };
-  return { reason: hits.length ? "ambiguous" : celex || short ? "no_item" : "no_key" };
+  return { reason: hits.length ? "ambiguous" : ids.celex || ids.short ? "no_item" : "no_key" };
+}
+
+/** The search_query the provenance heal stamped on a capture it filed under the item that cited it. */
+const CAPTURE_CITED_QUERY = "heal-provenance:capture-cited";
+/** A capture the heal filed under an item that cited it, of an instrument that is not the item's own (its URL names another CELEX or ELI). The extractors read an item's own instrument only: another instrument's clauses are not this item's mandates. A page that names no instrument is not foreign. */
+export function isForeignCapture(capture: { search_query?: string | null | undefined; result_url?: string | null | undefined }, item: InstrumentIdentity): boolean {
+  if (capture.search_query !== CAPTURE_CITED_QUERY || !capture.result_url) return false;
+  const ids = instrumentKeysOf(capture.result_url);
+  return (!!ids.celex || !!ids.short) && !namesItem(capture.result_url, item, ids);
 }
 
 const COLUMNS = "id, canonical_instrument_key, instrument_identifier, source_url";
