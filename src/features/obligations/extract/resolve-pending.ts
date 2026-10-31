@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { allRows, rowsByIds, type Db } from "@/core/db";
 import { isVerbatim } from "@/core/contracts/verbatim";
+import { isForeignCapture, type InstrumentIdentity } from "@/core/fetch";
 import type { RunResult } from "@/core/types/run-result";
 import { runResult } from "@/core/types/run-result";
 
@@ -16,7 +17,7 @@ const RULES = rules.rules.map((r) => ({ kind: r.kind, re: new RegExp(r.re.source
 const PENDING_KINDS: readonly string[] = RULES.map((r) => r.kind);
 
 interface Pending { id: string; intelligence_item_id: string; event_kind: string; created_at: string; source_capture_id: string | null }
-interface Capture { id: string; intelligence_item_id: string; result_content: string | null; searched_at: string | null }
+interface Capture { id: string; intelligence_item_id: string; result_content: string | null; searched_at: string | null; result_url: string | null; search_query: string | null }
 
 /** The first statement in `text` that a rule of this kind finds and no text in `already` contains; null when none. Pure. */
 function statementOf(kind: string, text: string, already: readonly string[], taken: ReadonlySet<string>): string | null {
@@ -43,7 +44,9 @@ export async function resolvePendingTriggers(deps: { sb: Db; now(): Date }, inpu
   const c = { pending: all.length, items_checked: chosen.size, items_left: items.length - chosen.size, resolved: 0, still_pending: 0, write_failures: 0 };
   const notes: string[] = [];
   const resolved: string[] = [];
-  const captures = chosen.size ? await rowsByIds<Capture>(sb, "agent_run_searches", "id, intelligence_item_id, result_content, searched_at", [...chosen], "intelligence_item_id") : [];
+  // The item's own instrument only: the heal filed other instruments' captures under the items that cited them (POOL-FIX-1), and one of them states no act of this item's.
+  const identity = new Map((await rowsByIds<InstrumentIdentity & { id: string }>(sb, "intelligence_items", "id, canonical_instrument_key, instrument_identifier, source_url", chosen)).map((i) => [i.id, i]));
+  const captures = (chosen.size ? await rowsByIds<Capture>(sb, "agent_run_searches", "id, intelligence_item_id, result_content, searched_at, result_url, search_query", [...chosen], "intelligence_item_id") : []).filter((c) => !isForeignCapture(c, identity.get(c.intelligence_item_id) ?? {}));
   const taken = new Map<string, Set<string>>();
   for (const ev of events) {
     const own = captures.filter((c) => c.intelligence_item_id === ev.intelligence_item_id && c.result_content);
