@@ -3,7 +3,8 @@ import { appendFileSync, readFileSync } from "node:fs";
 
 import { isMain, walk } from "../lib/fs.mjs";
 
-export const LIMITS = { src: 66291, "src/core": 20428, "src/core/brief": 1336, "src/core/digest": 270, "src/features": 39277 };
+// WAVE-CTX 2026-10-31: raised for the customer-context wave (ENGINE-JOIN-1, ENGINE-ORDER-1, UI-RADAR-1, OPS-FIX-1) by operator directive; LOCK re-pins to actuals after the wave.
+export const LIMITS = { src: 68100, "src/core": 20850, "src/core/brief": 1336, "src/core/digest": 270, "src/features": 40300 };
 const CODE_FILE = /\.(ts|tsx|js|jsx|mjs)$/;
 
 /** The code lines of one source text: blank lines, `//` lines and block comments do not count. */
