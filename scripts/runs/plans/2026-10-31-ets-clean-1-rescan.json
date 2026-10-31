@@ -1,0 +1,31 @@
+{
+  "ruling": "operator and coordinator 2026-10-31 (ETS-CLEAN-1, operator: \"Delete\"): the 278 forward events and the 67 obligation objects that item ff4064ab (EU ETS maritime) and item 40c05a1e (Weights and Dimensions revision) held from captures of OTHER instruments (heal-provenance:capture-cited copies of PPWR, the truck CO2 standards and Directive 2003/87) are deleted with their 278 derived obligations; POOL-FIX-1 (PR 185) keeps the extractor off foreign captures, so this run reads the two items again from their own captures, through the connect stage so the flywheel behind the reading runs with it. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "rescan-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "ids": ["ff4064ab-9489-4fc4-b3cc-f0f157e71db5", "40c05a1e-f834-4a14-b2dd-a16707df703c"],
+          "scan_limit": 1
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "rescan-apply",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "ids": ["ff4064ab-9489-4fc4-b3cc-f0f157e71db5", "40c05a1e-f834-4a14-b2dd-a16707df703c"],
+          "scan_limit": 1
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
