@@ -30,7 +30,7 @@
 .hTitle { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-20); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; color: var(--ink); }
 .hCaption { font-size: var(--fs-11); font-weight: 600; color: var(--ink-3); min-width: 0; }
 .hLink { display: inline-flex; align-items: center; min-height: var(--target); color: inherit; text-decoration: underline; }
-.hTrack { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(156px, calc((100% - 40px) / 5)); gap: var(--sp-10); overflow-x: auto; scroll-snap-type: x proximity; padding: var(--sp-12) var(--sp-16) var(--sp-16); }
+.hTrack { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--sp-10); padding: var(--sp-12) var(--sp-16) var(--sp-16); }
 .hCard { border: 1px solid var(--line-1); border-radius: var(--radius-card); box-shadow: var(--shadow-card); background: var(--card); padding: var(--sp-10) var(--sp-12); overflow: hidden; min-width: 0; }
 .hLabel { font-size: var(--fs-11); font-weight: 700; color: var(--ink-3); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hValueRow { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2) var(--sp-8); margin-top: var(--sp-6); }
@@ -105,15 +105,15 @@
 
 /* the rail, the coverage line */
 .railRows { display: grid; gap: var(--sp-8); }
-.railRow { display: flex; justify-content: space-between; gap: var(--sp-8); border-top: 1px solid var(--line-3); padding-top: var(--sp-6); font-size: var(--fs-115); }
+.railRow { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-4) var(--sp-8); border-top: 1px solid var(--line-3); padding-top: var(--sp-6); font-size: var(--fs-115); }
 .railName { font-weight: 700; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
-.railValue { color: var(--ink-3); font-size: var(--fs-10); text-align: right; }
+.railValue { color: var(--ink-3); font-size: var(--fs-10); text-align: right; min-width: 0; overflow-wrap: anywhere; }
 .coverageLine { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--sp-12); font-size: var(--fs-11); color: var(--ink-2); }
 .coverageLink { display: inline-flex; align-items: center; min-height: var(--target); font-weight: 600; color: var(--ink); }
 
 @media (max-width: 767px) {
   .band, .strip { padding-left: var(--sp-16); padding-right: var(--sp-16); }
-  .hTrack { grid-auto-columns: 150px; }
+  .hTrack { grid-template-columns: minmax(0, 1fr); }
   .corridorGrid, .producerGrid { grid-template-columns: minmax(0, 1fr); }
 }
 
