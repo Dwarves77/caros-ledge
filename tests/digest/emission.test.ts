@@ -96,7 +96,7 @@ test("INV-DIG-5: the entry applies end to end: the blocks reach their tables wit
   assert.equal(w.db.rows("entity_refs").length - seededRefs + w.db.rows("obligation_objects").length + w.db.rows("entity_relations").length + w.db.rows("vocabulary_terms").length, 0, "a dry run wrote nothing");
   const r = await apply(w, e);
   assert.equal(r.counts.applied, 1, r.notes.join("\n"));
-  assert.equal((r.data as { downstream: { counts: Record<string, number> } }).downstream.counts.flywheel_passes, 5, "the tag, discovery, term, corpus and pattern passes ran after the batch");
+  assert.equal((r.data as { downstream: { counts: Record<string, number> } }).downstream.counts.flywheel_passes, 6, "the obligation derive, tag, discovery, term, corpus and pattern passes ran after the batch");
   const reader = (row: Record<string, unknown>) => row.method_version === READER_METHOD;
   // entities and the objects' entities and the event's entity and mode, each a typed ref carrying the quote
   const refs = w.db.rows("entity_refs").filter((x) => x.asserted_by === "reader");
@@ -315,4 +315,18 @@ test("G3 minting: the same name minted twice gives one id (the normalised name);
   assert.deepEqual(ov.errors, [], reasons(ov));
   assert.equal(ov.plan?.candidates[0]?.kind, "vessel_class");
   assert.match(reasons(await check(w, emissionEntry(w, { new_entity_candidates: [{ proposed_kind: "Vessel Class", canonical_name: "Maersk Line A/S", quote: q(ORG) }] }))), /snake_case token/);
+});
+
+test("INV-OD-4: an item-briefs apply that verifies an item derives its obligations in the batch's own downstream, before the tag pass, and counts them in the batch artifact", async () => {
+  const w = emissionWorld();
+  const calls: Array<{ id: string; status: unknown }> = [];
+  const real = w.deps.intake.connect.deriveObligations;
+  const deps = { ...w.deps, intake: { ...w.deps.intake, connect: { ...w.deps.intake.connect, deriveObligations: async (id: string) => { calls.push({ id, status: w.db.rows("intelligence_items").find((r) => r.id === id)?.provenance_status }); return real(id); } } } };
+  const r = await applyBatch("item-briefs", deps, { content: JSON.stringify(batchFile("item-briefs", [emissionEntry(w)])), dry: false, runId: "r1" });
+  assert.equal(r.counts.applied, 1, r.notes.join("\n"));
+  const down = (r.data as { downstream: { counts: Record<string, number>; notes: string[] } }).downstream;
+  assert.equal(calls.length >= 2, true, "the per-item participation derived, and the batch downstream derived again over the verified item");
+  assert.deepEqual(calls.at(-1), { id: ITEM, status: "verified" }, "the batch's own derive ran last, over a verified item");
+  assert.equal(typeof down.counts.obligations_derived, "number", down.notes.join("\n"));
+  assert.ok(w.db.rows("obligation_objects").some((o) => o.instrument_item_id === ITEM), "the fixture instrument has obligation objects after one briefs apply");
 });

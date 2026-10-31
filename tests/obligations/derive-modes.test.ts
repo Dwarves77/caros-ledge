@@ -60,12 +60,19 @@ test("INV-DRV-5: every leg mode has a rule and two planted spans that classify t
   assert.deepEqual(classifyMode("Article 1 Aircraft operators and shipping companies shall report.", NONE).modes, ["ocean", "air"], "a span naming two modes is their union in vocabulary order");
 });
 
-test("INV-DRV-1: no match is no mode (never a default); the span wins over the instrument; a title-only match is counted as from the instrument", async () => {
-  assert.deepEqual(classifyMode(SPAN_SPAN, NONE), { modes: [], ruleIds: [], from: null, matched: [], consignmentWide: false });
+test("INV-DRV-1 / INV-OD-2 (ruling 65 amends INV-DRV-2): span beats title beats the instrument's own declared modes; an instrument that declares none and matches nothing is no mode, never a default", async () => {
+  assert.deepEqual(classifyMode(SPAN_SPAN, NONE), { modes: [], ruleIds: [], basis: null, matched: [], consignmentWide: false });
+  assert.deepEqual(classifyMode(SPAN_SPAN, NONE, { instrumentModes: [] }).modes, [], "an instrument that declares no mode stays null");
+  const declared = classifyMode(SPAN_SPAN, NONE, { instrumentModes: ["road", "ocean", "not-a-mode"] });
+  assert.deepEqual([declared.modes, declared.basis, declared.ruleIds], [["road", "ocean"], "instrument", []], "the instrument's own leg modes, in vocabulary order, no alien token");
+  const titleWins = classifyMode(SPAN_SPAN, { title: "FuelEU Maritime initiative" }, { instrumentModes: ["road"] });
+  assert.deepEqual([titleWins.modes, titleWins.basis], [["ocean"], "title"], "a title match beats the declared modes");
+  const spanWins = classifyMode("Article 3 Aircraft operators shall monitor emissions.", { title: "FuelEU Maritime initiative" }, { instrumentModes: ["road"] });
+  assert.deepEqual([spanWins.modes, spanWins.basis], [["air"], "span"], "a span match beats the title and the declared modes");
   const titled = classifyMode(SPAN_SPAN, { title: "FuelEU Maritime initiative" });
-  assert.deepEqual([titled.modes, titled.from], [["ocean"], "instrument"]);
+  assert.deepEqual([titled.modes, titled.basis], [["ocean"], "title"]);
   const both = classifyMode("Article 3 Aircraft operators shall monitor emissions.", { title: "FuelEU Maritime initiative" });
-  assert.deepEqual([both.modes, both.from], [["air"], "span"]);
+  assert.deepEqual([both.modes, both.basis], [["air"], "span"]);
   const plan = async (row: Row, title: string) => ((await fillObjectFields(connectDb({ intelligence_items: [{ ...ITEM, title }], obligation_objects: [row], agent_run_searches: [CAPTURE] }).db, { dry: true, after: null })).data as { plan: Array<{ patch: Row; modeAbsence: string | null }> }).plan[0] as { patch: Row; modeAbsence: string | null };
   const none = await plan(OBJ(1), "A plain notice");
   assert.deepEqual([none.patch, none.modeAbsence], [{}, "M"], "the absence token is on the plan row; the table gets nothing");
@@ -134,7 +141,7 @@ test("INV-DRV-2: a maximum or formula whose figure is not in its span is refused
   assert.deepEqual(rows.map((r) => r.mode), rows.map(() => ["ocean"]));
 });
 
-const OBJ = (n: number, over: Row = {}): Row => ({ obligation_id: `cl:obligation:${String(n).padStart(16, "0")}`, instrument_item_id: "i1", instrument_entity_id: null, version: 1, supersedes: null, pinpoint_citation: `Article ${n}`, verbatim_text: SPAN_SPAN, plain_language: null, binding_position: "direct_duty", duty_holder_class: ["carrier"], applicability_trigger: { attribute: "a", value: "b" }, mode: null, statutory_maximum: null, cost_formula: null, status: "not_assessed", capture_id: "c1", updated_at: "2026-10-01T00:00:00Z", ...over });
+const OBJ = (n: number, over: Row = {}): Row => ({ obligation_id: `cl:obligation:${String(n).padStart(16, "0")}`, instrument_item_id: "i1", instrument_entity_id: null, source_id: null, version: 1, supersedes: null, pinpoint_citation: `Article ${n}`, verbatim_text: SPAN_SPAN, plain_language: null, binding_position: "direct_duty", duty_holder_class: ["carrier"], applicability_trigger: { attribute: "a", value: "b" }, mode: null, statutory_maximum: null, cost_formula: null, status: "not_assessed", capture_id: "c1", updated_at: "2026-10-01T00:00:00Z", ...over });
 const objects = (): Row[] => [
   OBJ(1, { verbatim_text: "Article 1 Aircraft operators shall report." }),
   OBJ(2, { verbatim_text: "Article 2 Shipping companies shall report; fines of up to EUR 2 000 per tonne." }),
@@ -228,4 +235,37 @@ test("the server answers at most 1,000 rows a response: 1,200 objects are all fi
   const job = connectDb({ intelligence_items: [ITEM], obligation_objects: many(), agent_run_searches: [CAPTURE], section_claim_provenance: [], fact_suppressions: [], item_forward_events: [] });
   const replay = await deriveObligationsJob({ sb: job.db }, { dry: false });
   assert.equal(replay.counts.fill_updated, 1200, replay.notes.join("|"));
+});
+
+const SOURCE = "00000000-0000-4000-8000-0000000000a1";
+const INSTRUMENT = "cl:instrument:00000000000000a1";
+const OCEAN_ENTITY = "cl:asset:00000000000000b1";
+/** The refs that file an item under a mode entity, and the typed-column ref that says which closed token that entity is. */
+const modeRefs = (token: string): Row[] => [
+  { ref_table: "intelligence_items", ref_id: "i1", entity_id: OCEAN_ENTITY, role: "cites_mode", asserted_by: "t", basis: {}, method_version: "t" },
+  { ref_table: "obligation_objects", ref_id: "00000000-0000-4000-8000-0000000000c1", entity_id: OCEAN_ENTITY, role: "cites_mode", asserted_by: "t", basis: { column: "mode", value: token }, method_version: "t" },
+];
+
+test("INV-OD-2: the backfill takes a mode no span or title gives from the instrument's own refs, else its transport_modes leg tokens; an instrument that declares none stays null; the refs beat the column", async () => {
+  const plan = async (item: Row, refs: Row[] = []) => (await fillObjectFields(connectDb({ intelligence_items: [{ ...ITEM, ...item }], obligation_objects: [OBJ(3)], agent_run_searches: [CAPTURE], entity_refs: refs }).db, { dry: true, after: null }));
+  const none = await plan({ transport_modes: [] });
+  assert.deepEqual([none.data?.plan[0]?.patch, none.counts.mode_unmatched], [{}, 1], "declares nothing, matches nothing: null");
+  const column = await plan({ transport_modes: ["rail", "not-a-mode", "sea"] });
+  assert.deepEqual([column.data?.plan[0]?.patch.mode, column.data?.plan[0]?.modeFrom, column.counts.mode_from_instrument, column.counts.mode_from_title], [["rail", "ocean"], "instrument", 1, 0], "column tokens that are leg modes, aliases normalised");
+  const filed = await plan({ transport_modes: ["rail"] }, modeRefs("road"));
+  assert.deepEqual([filed.data?.plan[0]?.patch.mode, filed.data?.plan[0]?.modeFrom], [["road"], "instrument"], "the instrument's cites_mode refs beat its column");
+});
+
+test("INV-OD-3: the backfill fills source_id and instrument_entity_id only where NULL from the instrument item, never overwrites, and a second run plans zero", async () => {
+  const carrier = { ...ITEM, source_id: SOURCE, instrument_entity_id: INSTRUMENT };
+  const world = connectDb({ intelligence_items: [carrier], obligation_objects: [OBJ(3), OBJ(4, { source_id: "00000000-0000-4000-8000-0000000000ff", instrument_entity_id: "cl:instrument:00000000000000ff", mode: ["rail"] })], agent_run_searches: [CAPTURE] });
+  const first = await fillObjectFields(world.db, { dry: false, after: null });
+  assert.deepEqual([first.outcome, first.counts.source_set, first.counts.instrument_entity_set, first.counts.updated], ["ok", 1, 1, 1]);
+  const byId = (id: string) => (world.tables.obligation_objects as Row[]).find((r) => r.obligation_id === id) as Row;
+  assert.deepEqual([byId("cl:obligation:0000000000000003").source_id, byId("cl:obligation:0000000000000003").instrument_entity_id], [SOURCE, INSTRUMENT]);
+  assert.deepEqual([byId("cl:obligation:0000000000000004").source_id, byId("cl:obligation:0000000000000004").instrument_entity_id], ["00000000-0000-4000-8000-0000000000ff", "cl:instrument:00000000000000ff"], "a non-null column is never overwritten");
+  const again = await fillObjectFields(world.db, { dry: true, after: null });
+  assert.deepEqual([again.counts.source_set, again.counts.instrument_entity_set, again.data?.plan.filter((p) => Object.keys(p.patch).length).length], [0, 0, 0], "a second run plans nothing");
+  const born = (await deriveObligationObjects(connectDb({ intelligence_items: [carrier], section_claim_provenance: [], fact_suppressions: [], item_forward_events: [], agent_run_searches: [CAPTURE], obligation_objects: [] }).db, { dry: true, itemIds: [], extraCandidates: [candidate()] })).data as { plan: { toInsert: Array<{ row: Row }> } };
+  assert.deepEqual([born.plan.toInsert[0]?.row.source_id, born.plan.toInsert[0]?.row.instrument_entity_id], [SOURCE, INSTRUMENT], "a new object is born with both columns");
 });

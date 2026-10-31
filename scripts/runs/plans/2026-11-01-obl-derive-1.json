@@ -1,0 +1,67 @@
+{
+  "ruling": "OBL-DERIVE-1 brief and coordinator ruling 65 (2026-10-31): fill the NULL mode of the existing obligation objects (span, then title, then the instrument's own declared modes), and the NULL source_id and instrument_entity_id from the instrument item, never a non-null column; then the connect stage re-derives the AFIR item (ff95b385) and the FuelEU item (7a0ead55) with the derive reading the instrument's true status, so discovery, obligations and patterns run on them (rule 17). The steps fetch nothing, so no scrape cadence is exercised (rule 16 stands). Expected: AFIR 8 objects and FuelEU 17 in total (the operator's owed figures); any shortfall is reported with its refusal reasons, nothing is forced",
+  "steps": [
+    {
+      "name": "backfill-null-columns-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "derive": {
+            "only": "modes-and-maximum",
+            "batch": 3000
+          }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "backfill-null-columns",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "derive": {
+            "only": "modes-and-maximum",
+            "batch": 3000
+          }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "connect-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "ids": [
+            "ff95b385-6cb2-453a-94e6-b9fc84d7f851",
+            "7a0ead55-7a7b-403b-8ba3-33862cb296e2"
+          ],
+          "scan_limit": 2
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "connect-apply",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "ids": [
+            "ff95b385-6cb2-453a-94e6-b9fc84d7f851",
+            "7a0ead55-7a7b-403b-8ba3-33862cb296e2"
+          ],
+          "scan_limit": 2
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
