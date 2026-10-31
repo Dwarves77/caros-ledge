@@ -1,5 +1,5 @@
-// GATES-LOCK-1: two lanes on one workstation never run the heavy gates (build, tests, schema:local) at once. withLock is a cross-process lock on an atomic mkdir; the test runner is capped so one lane cannot take every core.
-// Every case uses its own lock directory, never the real <tmpdir>/caros-ledge-gates, because this file itself runs inside the gates' held lock.
+// GATES-LOCK-1, scoped by GATES-FIX-1: two runs in one clone never run the heavy gates (build, tests, schema:local) at once; gates.mjs gives each clone its own lock directory (<git-dir>/gates-lock), so independent clones never wait for each other. withLock is a cross-process lock on an atomic mkdir; the test runner is capped so one lane cannot take every core.
+// Every case uses its own lock directory, never a clone's real <git-dir>/gates-lock, because this file itself runs inside the gates' held lock.
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
@@ -50,6 +50,20 @@ test('a second process waits until the first releases, then runs (order by times
   assert.equal(b.code, 0, b.out);
   assert.ok(at(b, 'acquired') >= at(a, 'released'), `B acquired at ${at(b, 'acquired')} before A released at ${at(a, 'released')}`);
   assert.match(b.out, /^t: waiting for \d+ since \d{4}-\d\d-\d\dT/m);
+});
+
+test('locks in different directories (two clones) do not wait for each other; gates.mjs scopes its lock to the clone git-dir and withLock has no shared default', async () => {
+  const dirA = dirOf();
+  const a = collect(child(dirA, 20_000));
+  await waitFor(a, 'acquired');
+  const b = collect(child(dirOf(), 0));
+  await b.done;
+  assert.equal(b.code, 0, b.out);
+  assert.ok(b.out.includes('acquired') && !b.out.includes('waiting for'), `B must run at once: ${b.out}`);
+  writeFileSync(join(dirA, 'go'), '');
+  await a.done;
+  assert.match(readFileSync('scripts/ci/gates.mjs', 'utf8'), /const lockDir = join\(gitDir, "gates-lock"\)[\s\S]*withLock\("gates", \(\) => run\(step\), \{ dir: lockDir \}\)/);
+  await assert.rejects(() => withLock('t', () => 1, { ci: false }), 'no dir, no shared default directory');
 });
 
 test('a lock whose holder pid is dead is broken with a logged line, then taken', async () => {
