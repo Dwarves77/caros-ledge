@@ -46,16 +46,14 @@ export const stepsFor = (profile) => {
 
 /** The paths changed in each `--range a..b` of argv, de-duplicated; a range git cannot read (a forced push, a remote commit not fetched) is measured from origin/main instead. */
 export const rangeFiles = (argv) => [...new Set(argv.flatMap((a, i) => (argv[i - 1] === "--range" ? changedIn(a) : [])))];
-const changedIn = (range) => {
-  for (const r of [range, "origin/main...HEAD"]) {
-    try {
-      return git("diff", "--name-only", r).split("\n").filter(Boolean);
-    } catch {
-      /* try the next */
-    }
+const diffNames = (range) => {
+  try {
+    return git("diff", "--name-only", range).split("\n").filter(Boolean);
+  } catch {
+    return null; // git cannot read the range
   }
-  return [];
 };
+const changedIn = (range) => diffNames(range) ?? diffNames("origin/main...HEAD") ?? [];
 
 const TEST_FILE = /^tests\/.*\.test\.(mjs|ts)$/;
 /** The test files (of `tracked`, the repository's tracked tests) that cover `files`: src/core/<x>/** -> tests/<x>/** and tests/core/<x>/** (and tests/core/<x>.test.*); src/features/<x>/** -> tests/<x>/**; scripts/ci/** -> tests/ci/**; a changed test file runs itself. Sorted, de-duplicated. */
