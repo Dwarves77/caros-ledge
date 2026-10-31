@@ -99,7 +99,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit --ignore-scripts
-      - name: Gates (npm run gates -- --profile full; the pre-push hook runs this same full list for a push touching code, tests, scripts, supabase or package files, and the fast subset for docs-only pushes)
+      - name: Gates (npm run gates -- --profile full; the full matrix is this job and the merge gate, the pre-push hook runs only the fast subset and the changed modules tests)
         shell: bash -eo pipefail {0}
         run: npm run gates -- --profile full
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

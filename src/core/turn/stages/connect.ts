@@ -1,8 +1,8 @@
 // Ported from old_repo/scripts/turns/run-population-flywheel.mjs (lines 522-710)
 // Ported from old_repo/scripts/turns/run-population-flywheel.mjs (lines 966-1294)
-// Stage 6, connect: the flywheel over the slice the intake stage minted AND any earlier slice nothing ever connected (read from the ledger). Order: tags first, so discovery and the corpus pass see them;
-// then discovery for the slice, the term pass, the corpus pass, and last the reading of the backlog: every verified item not yet read at the current versions has its source text extracted and its obligations derived, oldest first, a bounded number per
-// turn (IMPACT-1; the propagate stage behind scores what was read); last, every pending regulatory trigger a later capture now states is resolved (FLY-1, ADR-050). A slice whose ids are gone refuses; the stage never writes a zero outcome over it.
+// Stage 6, connect: the flywheel over the slice the intake stage minted AND any earlier slice nothing ever connected (read from the ledger). The order is the body of runConnect (ENGINE-ORDER-1): what a step reads is written by a step before it.
+// A slice whose ids are gone refuses; the stage never writes a zero outcome over it.
+import { mineRefs } from "@/core/coupling";
 import { bindInstrumentCaptures } from "@/core/fetch";
 import { edgeSnapshotSink } from "@/core/flywheel/edges";
 import { runPatterns } from "@/core/flywheel/patterns";
@@ -27,13 +27,13 @@ function planConnect(upstreamIds: readonly string[], backlog: readonly string[],
 }
 
 /** The passes' results become one: counts namespaced by pass (the scan's own counts are the stage's: extracted, derived, refused), the outcome the worst, the connected and scanned ids the hand-off to propagate. Pure. */
-export function shapeConnect(ids: readonly string[], parts: { bind?: RunResult | null; tag: RunResult | null; discovery: RunResult | null; term: RunResult | null; corpus: RunResult | null; patterns?: RunResult | null; scan?: RunResult<{ ids: { scanned_item_ids: string[] } }> | null; triggers?: RunResult | null }): RunResult {
+export function shapeConnect(ids: readonly string[], parts: { bind?: RunResult | null; couplings?: RunResult | null; tag: RunResult | null; discovery: RunResult | null; term: RunResult | null; corpus: RunResult | null; patterns?: RunResult | null; scan?: RunResult<{ ids: { scanned_item_ids: string[] } }> | null; triggers?: RunResult | null }): RunResult {
   const list = Object.values(parts).filter((p): p is RunResult => p !== null && p !== undefined);
   const outcome = worst("ok", ...list.map((p) => p.outcome));
   const counts: Record<string, number> = {
     slice: ids.length, bound: parts.bind?.counts.bound ?? 0, unbound: parts.bind?.counts.unbound ?? 0, connected: outcome === "failed" ? 0 : ids.length, tag_items_written: parts.tag?.counts.items_written ?? 0,
     edges_written: (parts.discovery?.counts.written ?? 0) + (parts.corpus?.counts.intersection_inserted ?? 0),
-    term_writes: parts.term ? sumWritten(parts.term.counts) : 0, themes: parts.corpus?.counts.themes ?? 0, ...(parts.patterns?.counts ?? {}), ...(parts.scan?.counts ?? {}), ...Object.fromEntries(Object.entries(parts.triggers?.counts ?? {}).map(([k, n]) => [`triggers_${k}`, n])),
+    term_writes: parts.term ? sumWritten(parts.term.counts) : 0, themes: parts.corpus?.counts.themes ?? 0, ...(parts.couplings?.counts ?? {}), ...(parts.patterns?.counts ?? {}), ...(parts.scan?.counts ?? {}), ...Object.fromEntries(Object.entries(parts.triggers?.counts ?? {}).map(([k, n]) => [`triggers_${k}`, n])),
   };
   return { ...runResult(outcome, counts, leadWithFailures(list)), data: { ids: { connected_item_ids: outcome === "failed" ? [] : [...ids], scanned_item_ids: parts.scan?.data?.ids.scanned_item_ids ?? [] } } };
 }
@@ -52,13 +52,15 @@ export async function runConnect(call: FamilyCall, d: BuiltDeps): Promise<RunRes
   const snap = { ...deps, snapshot: edgeSnapshotSink(d.sb, call.runId) };
   // DERIVE-3 D3: the captures of the instruments' own pages that were stored with no item are bound first, so the reading below finds them as the item's
   const bind = await bindInstrumentCaptures(deps, { dry: call.dry });
+  // ENGINE-ORDER-1: the facts the steps below read are written first. The reading writes the item_forward_events, obligations and obligation_objects; the mining files them (and every claim and typed row) under their entities in entity_refs
+  const scan = await scanBacklog(deps, { dry: call.dry, sliceIds: ids, limit: typeof call.input.scan_limit === "number" ? call.input.scan_limit : READING.backlog.scanPerTurn });
+  const couplings = await mineRefs(deps, { dry: call.dry });
   const tag = ids.length ? await tagPass(deps, { ids, dry: call.dry, discover: false }) : null;
   const discovery = ids.length ? await discoverForItems(snap, { ids, dry: call.dry }) : null;
   const term = corpus ? await termPass(deps, { dry: call.dry }) : null;
   const pass = corpus ? await corpusPass(snap, { dry: call.dry }) : null;
-  // the five pattern detectors run every turn after the corpus pass (CONNECT-2): the joined input is read from the spine the propagate stage's seed and ref passes keep
+  // the pattern detectors run every turn after the corpus pass (CONNECT-2) over the spine the reading and the mining above wrote this turn
   const patterns = await runPatterns(deps, { dry: call.dry });
-  const scan = await scanBacklog(deps, { dry: call.dry, sliceIds: ids, limit: typeof call.input.scan_limit === "number" ? call.input.scan_limit : READING.backlog.scanPerTurn });
   const triggers = await resolvePendingTriggers(deps, { dry: call.dry });
-  return shapeConnect(ids, { bind, tag, discovery, term, corpus: pass, patterns, scan, triggers });
+  return shapeConnect(ids, { bind, couplings, tag, discovery, term, corpus: pass, patterns, scan, triggers });
 }

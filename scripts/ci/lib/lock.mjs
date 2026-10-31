@@ -1,8 +1,8 @@
-// withLock(name, fn): a cross-process lock for the heavy gates (GATES-LOCK-1). Two lanes on one workstation must never run `next build`, `node --test` and `schema:local` at once, so each takes
-// <tmpdir>/caros-ledge-gates/<name>.lock (an atomic mkdir; mkdir fails for everyone but one) holding holder.json {pid, at}. A waiter polls, saying once a minute who it waits for. A lock whose pid is
-// not alive, or older than staleMs, is broken (renamed away first, so only one waiter breaks it). The holder releases in finally, on exit and on SIGINT/SIGTERM. CI runners are isolated: no lock there.
+// withLock(name, fn, { dir }): a cross-process lock for the heavy gates (GATES-LOCK-1, scoped by GATES-FIX-1). Two runs in ONE clone must never run `next build`, `node --test` and `schema:local` at once (they share its .next and test-output.txt),
+// so each takes <dir>/<name>.lock (an atomic mkdir; mkdir fails for everyone but one) holding holder.json {pid, at}. gates.mjs passes <git-dir>/gates-lock, so there is one lock per clone and independent clones never wait for each other (the embedded
+// PostgreSQL takes its own temp dir and free port, so nothing else is shared). A waiter polls, saying once a minute who it waits for. A lock whose pid is not alive, or older than staleMs, is broken (renamed away first, so only one waiter breaks it).
+// The holder releases in finally, on exit and on SIGINT/SIGTERM. CI runners are isolated: no lock there.
 import { mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const alive = (pid) => {
@@ -29,7 +29,7 @@ function holder(lock) {
   }
 }
 
-export async function withLock(name, fn, { staleMs = 45 * 60_000, pollMs = 5_000, dir = join(tmpdir(), "caros-ledge-gates"), log = console.log, ci = Boolean(process.env.CI || process.env.GITHUB_ACTIONS) } = {}) {
+export async function withLock(name, fn, { staleMs = 45 * 60_000, pollMs = 5_000, dir, log = console.log, ci = Boolean(process.env.CI || process.env.GITHUB_ACTIONS) } = {}) {
   if (ci) return fn();
   const lock = join(dir, `${name}.lock`);
   mkdirSync(dir, { recursive: true });

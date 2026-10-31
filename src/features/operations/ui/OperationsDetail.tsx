@@ -48,7 +48,7 @@ export interface OperationsDetailProps {
   crossPage: CrossPageData;
   related: RelatedResult;
   eligibility: MatrixEligibility;
-  spec09: { aux: AuxiliaryEnergyRow[] | null; grid: GridQueueRow[] | null; intensity: GridIntensity | null; intensityFailed: boolean };
+  spec09: { aux: AuxiliaryEnergyRow[] | null; grid: GridQueueRow[] | null; gridHeadroomOnly: number | null; intensity: GridIntensity | null; intensityFailed: boolean };
   derived: DerivedFigure[] | null;
   events?: ObligationEventInput[] | undefined;
   eventsFailed?: boolean | undefined;
@@ -125,6 +125,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
       onExport={() => void downloadMarkdownBrief(r, { filenamePrefix: "operations", metaRows: [r.jurisdiction ? `- Region: ${r.jurisdiction}` : null, r.modes && r.modes.length > 0 ? `- Modes: ${r.modes.join(", ")}` : null, r.url ? `- Source: ${r.url}` : null] })}
       {...commonActionCardProps(r, { tagPopover: <DetailTagRow itemId={r.id} open={tagOpen} onOpenChange={setTagOpen} />, watch: <DetailWatch type="operations" id={r.id} />, onTag: () => setTagOpen((v) => !v) })}
       timeline={timeline}
+      noMilestoneNote="No dated binding milestone is held for this profile."
       where={{ value: jurisLabel || null }}
     />
   );
@@ -190,7 +191,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
               <AuxiliaryEnergyPanel rows={p.spec09.aux} intensity={p.spec09.intensity} retryHref={here} />
             </DetailSection>
             <DetailSection id="grid-queue" title="Grid connection queue" aside={GRID_QUEUE_ASIDE} index={4}>
-              <GridQueuePanel rows={p.spec09.grid} retryHref={here} />
+              <GridQueuePanel rows={p.spec09.grid} headroomOnly={p.spec09.gridHeadroomOnly} jurisdiction={regionGroup || jurisLabel} retryHref={here} />
             </DetailSection>
             <DetailSection id="sources" title="Sources" index={5} aside={rows.length > 0 ? `${rows.length} · tier = provenance, never urgency` : undefined}>
               {rows.length > 0 ? <SourcesGrid rows={rows} /> : <StateNote>No sources are listed for this item.</StateNote>}

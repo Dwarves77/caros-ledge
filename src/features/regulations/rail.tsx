@@ -7,7 +7,7 @@ import Link from "next/link";
 import { formatDenominatorLine } from "@/core/coverage";
 import type { DenominatorLine } from "@/core/coverage/matrix";
 import { classifyByDays } from "@/core/lists";
-import { daysFrom, formatForwardEventCompact, selectObligationRailRows } from "@/features/obligations";
+import { daysFrom, formatForwardEventCompact, railRowLines, selectObligationRailRows } from "@/features/obligations";
 import { Absence, CoverageState, RailCard, StateNote } from "@/ui";
 
 import { coverageLineModel } from "./coverage-line";
@@ -18,6 +18,18 @@ export interface RailEvent {
   date_precision: string;
   obligation_text: string;
   item: { title: string | null };
+}
+
+/** Two lines, each on one line at any width: the item's short title, then the first sentence of the clause; the full text is the hover title. */
+function ObligationRowText({ ev }: { ev: RailEvent }) {
+  const { title, lead } = railRowLines(ev);
+  const line = { display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.4 } as const;
+  return (
+    <span style={{ minWidth: 0 }} title={`${ev.item.title ?? ""} ${ev.obligation_text}`.trim()}>
+      <span style={{ ...line, fontWeight: 600, color: "var(--ink)" }}>{title}</span>
+      <span style={{ ...line, color: "var(--ink-2)" }}>{lead}</span>
+    </span>
+  );
 }
 
 export function ObligationsRailCard({ events, failed, nowIso }: { events: readonly RailEvent[]; failed: boolean; nowIso: string }) {
@@ -35,9 +47,7 @@ export function ObligationsRailCard({ events, failed, nowIso }: { events: readon
             <div key={ev.id} data-audit="obligation-row" style={{ display: "grid", gridTemplateColumns: "0.1875rem 3.5rem 1fr", gap: "var(--sp-10)", alignItems: "start" }}>
               <span aria-hidden="true" style={{ background: classifyByDays(daysFrom(ev.event_date, now)).cssVar, borderRadius: "0.125rem", alignSelf: "stretch" }} />
               <span style={{ fontWeight: 700, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{formatForwardEventCompact(ev.event_date, ev.date_precision)}</span>
-              <span style={{ lineHeight: 1.4, color: "var(--ink)" }}>
-                {ev.item.title ? `${ev.item.title} — ` : ""}{ev.obligation_text}
-              </span>
+              <ObligationRowText ev={ev} />
             </div>
           ))}
         </div>

@@ -20,5 +20,5 @@ export { DEFAULT_KINDS, EVENT_KINDS, KIND_LABELS, PRECISIONS } from "./kinds";
 export type { EventKind } from "./kinds";
 export { fetchForwardEventCount, fetchRegisterFacetOptions } from "./read/register-facets";
 export { buildRegisterQuerySpec, DUE_WINDOWS, fetchObligationRegisterPage, fetchObligationRegisterPage as readRegister } from "./read/register-read";
-export { daysFrom, formatForwardEvent, formatForwardEventCompact, selectObligationRailRows } from "./read/rail-select";
+export { daysFrom, formatForwardEvent, formatForwardEventCompact, railRowLines, selectObligationRailRows } from "./read/rail-select";
 export { defaultJurisdictionFilter, readUpcoming, resolveScope, scopeLabel } from "./read/upcoming-read";
