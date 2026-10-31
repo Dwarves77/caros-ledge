@@ -7,10 +7,10 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 ## 1. Current Repository State
 
 - **Branch:** `main` at `7ff2059f` (DRAIN-2F, PR 172). Its main push CI run (41152197719) concluded `success`; `ruled-runs` = success.
-- **LOC Status (`node scripts/ci/loc.mjs`, run 2026-10-30 late):** `src` 66,268; `src/core` 20,421 (ceilings 66,291 / 20,428 per the prior handoff; unchanged, every change below is 0 src lines except MAIN-RED-1/CLASSIFY lanes already inside the ceiling).
+- **LOC Status (`node scripts/ci/loc.mjs`, run 2026-10-30 late):** `src` 66,268; `src/core` 20,421 (all 2026-10-30 PRs were 0 net src lines; `loc.mjs` LIMITS unchanged at src 66,291 / src/core 20,428, re-read on main).
 - **Gates (`scripts/ci/gates.mjs`):** `workflow-yaml`, `lint`, `typecheck`, `build` (heavy), `test` (heavy), `validator-report`, `tree-checks`, `ui-checks`, `client-walk`, `loc`, `connections`, `columns`, `joinability`, `verify:citations`, `method-versions`, `migration-checks`, `edge-bundle` (scoped to the capture-worker), plus `schema:local` when `supabase/` changed.
-- **Branch protection now enforces for admins:** every change goes via PR; `ci` + `schema` are required checks.
-- **Pre-push hook runs the FULL profile** for src/tests/scripts/supabase/public/config changes (HOOK-FULL-1, ruling 43). Docs-only pushes run the fast profile.
+- **Branch protection now enforces for admins:** every change goes via PR; `ci` + `schema` are required checks (`enforce_admins=true`, set via `gh api` 2026-10-30).
+- **Pre-push hook runs the FULL profile** for src/tests/scripts/supabase/public/config changes (PR 167 HOOK-FULL-1, merged; ruling 43). Docs-only pushes run the fast profile.
 
 ---
 
@@ -19,15 +19,15 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 `git log e79ed02..main`, 10 commits, all merged PRs (verified with `gh pr view`: 163-172 all MERGED):
 
 - **MAIN-RED-1 (PR 165, `122ed0aa`):** two tests were red since the direct pushes. SectionIndex text restored, structure-test regex fixed, timeline test pins the stage label, parity baselines refreshed to the redesign (ruling 41), compare slot fix, mobile timeline date wrap.
-- **SYNTH-APPLY-4 (PR 163, `efd1d788`):** two admin capital-radar answers on production: clusters `68275fe1d81735bb` (ex-3044) and `5d16d8d5fc4b3799` (ex-5dfc), gaps-and-signposts; 4 signposts + 5 gap flags written 22:07 UTC.
+- **SYNTH-APPLY-4 (PR 163, `efd1d788`):** two admin capital-radar answers on production: clusters `68275fe1d81735bb` (ex-3044) and `5d16d8d5fc4b3799` (ex-5dfc), gaps-and-signposts; 4 signposts + 5 gap flags written 22:07 UTC [not independently re-read].
 - **CLASSIFY-FIX-1 (PR 164, `48c21340`):** `LEGISLATIVE_BODY_RE` accepts "HAVE ADOPTED" and `&nbsp;`; 5 EUR-Lex captures flip.
 - **CI-TRIM-2 (PR 166, `bdc9b142`):** deployment-status browser checks run on production only; preview-parity removed (ruling 42).
 - **HOOK-FULL-1 (PR 167, `8017ca0f`):** pre-push runs the full profile on code, test and CI changes (ruling 43).
 - **PARITY-8 (PR 168, `f48d84f4`):** 17 unused approved-changes waivers deleted.
 - **CLASSIFY-FIX-2 (PR 169, `c727284b`):** `detectNumeric` folds HTML spaces; EUR-Lex shell test host-gated, callers pass url; 96 Commission-domain captures stop being discarded.
-- **DRAIN-2G (PR 170, `daf10c44`):** `947e08f3` IEA brief rewritten to the research contract, 21 FACT + 2 GAP, verified 23:26 UTC. SELECT read: `provenance_status=verified`, severity `monitoring`, item_type `research_finding`.
+- **DRAIN-2G (PR 170, `daf10c44`):** `947e08f3` IEA brief rewritten to the research contract, 21 FACT + 2 GAP [not independently re-read], verified 23:26 UTC. SELECT read: `provenance_status=verified`, severity `monitoring`, item_type `research_finding`.
 - **DRAIN-2E (PR 171, `9305b394`):** `ff95b385` AFIR re-ground, 28 omitted events. SELECT read: `provenance_status=verified`, severity `monitoring`, item_type `regulation`.
-- **DRAIN-2F (PR 172, `7ff2059f`):** `7a0ead55` FuelEU rewritten to the regulatory contract, 76 FACT. SELECT read: `provenance_status=verified`, severity `cost_alert`, item_type `regulation`. (HIGH is not a column value read here; severity column holds `cost_alert`. Unverified: the HIGH label.)
+- **DRAIN-2F (PR 172, `7ff2059f`):** `7a0ead55` FuelEU rewritten to the regulatory contract, 76 FACT [not independently re-read]. SELECT read: `provenance_status=verified`, severity `cost_alert`, priority `HIGH` (coordinator SELECT of the priority column, 00:51 UTC), item_type `regulation`.
 
 Prior handoff content (editorial UI, auth waterfall removal, CI ratchet burn-down to zero, horizon-scan stage badges) stands; see `git log 2b813da..0a96e18`.
 
