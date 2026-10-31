@@ -2,9 +2,7 @@
 // Ported from old_repo/src/components/shell/ThemeStrip.tsx (lines 1-9)
 import Link from "next/link";
 
-import type { RadarView } from "@/features/flywheel/radar/read";
-
-import { FlywheelRadar } from "../flywheel/FlywheelRadar";
+import { FlywheelRadar, type RadarView } from "../flywheel/FlywheelRadar";
 
 export interface ThemeChip {
   themeId: string;

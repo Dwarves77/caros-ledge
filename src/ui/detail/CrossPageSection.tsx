@@ -8,11 +8,10 @@ import { pickVisibleInferences, type InferenceView } from "@/core/detail/inferen
 import { CONNECTED_SECTION_ID, crossPageOrd, INFERENCES_SECTION_ID } from "@/core/detail/section-index";
 import type { buildIntersectionView } from "@/core/flywheel/view-model";
 import type { ThemeAnalysisView } from "@/core/themes";
-import type { RadarView } from "@/features/flywheel/radar/read";
 
 import { GfmSection } from "../GfmSection";
 import { DetailSubSection, MoreBelowDisclosure } from "../ItemGroup";
-import { FlywheelRadar, MovesWith } from "../flywheel/FlywheelRadar";
+import { FlywheelRadar, MovesWith, type RadarView } from "../flywheel/FlywheelRadar";
 import { StateNote } from "../StateNote";
 
 import { DetailSection } from "./DetailShell";

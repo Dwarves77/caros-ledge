@@ -9,6 +9,9 @@ import { FACT_SPECS } from "@/core/flywheel/patterns/config";
 import { PATTERN_METHODS } from "@/core/propagation/methods";
 import { SURFACE_LABELS, SURFACE_ORDER, SURFACE_PATH, surfaceHref, surfaceOf } from "@/core/routing";
 import { PATTERN_COPY } from "@/features/operations/model/derived-view";
+import type { RadarForming, RadarGroup, RadarPattern, RadarView } from "@/ui/flywheel/FlywheelRadar";
+
+export type { RadarForming, RadarGroup, RadarPattern, RadarView };
 
 /** The two joins the radar's neighbours read; ENGINE-JOIN-1's facts-join.ts exports them with a database as the first argument. */
 export interface FactsJoin {
@@ -24,38 +27,6 @@ export const FACTS_JOIN: FactsJoin | null = null;
 export const radarClients = (db: Db): { db: Db; admin: Db } => ({ db, admin: isServiceConfigured() ? serviceClient() : db });
 
 export type RadarScope = { kind: "corpus" } | { kind: "surface"; surface: string } | { kind: "item"; itemUuid: string; memberIds: readonly string[] };
-export interface RadarGroup {
-  surface: string;
-  label: string;
-  /** The surface's own page, so a group with no item of its own is still a link. */
-  href: string;
-  items: { title: string; href: string }[];
-  /** The entities the findings on this surface are filed under, by their canonical names. */
-  names: string[];
-}
-export interface RadarPattern {
-  key: string;
-  label: string;
-  /** What it means to the reader; the pattern's own sentence, or the family name while the chain is forming. */
-  means: string;
-  forming: boolean;
-  groups: RadarGroup[];
-  watch: string | null;
-  missingParts: string[];
-  next: string | null;
-}
-export interface RadarForming {
-  key: string;
-  family: string | null;
-  chain: { title: string; href: string; surface: string }[];
-  reason: string;
-  next: string | null;
-}
-export interface RadarView {
-  patterns: RadarPattern[];
-  forming: RadarForming[];
-}
-
 interface PatternRow {
   value_id: string;
   entity_id: string;

@@ -7,10 +7,42 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { refusalSentence } from "@/core/http/failure";
-import type { RadarView } from "@/features/flywheel/radar/read";
 
 import { DetailSubSection } from "../ItemGroup";
 import { StateNote } from "../StateNote";
+
+// the views the server composes (src/features/flywheel/radar/read.ts) and this panel draws
+export interface RadarGroup {
+  surface: string;
+  label: string;
+  /** The surface's own page, so a group with no item of its own is still a link. */
+  href: string;
+  items: { title: string; href: string }[];
+  /** The entities the findings on this surface are filed under, by their canonical names. */
+  names: string[];
+}
+export interface RadarPattern {
+  key: string;
+  label: string;
+  /** What it means to the reader; the pattern's own sentence, or the family name while the chain is forming. */
+  means: string;
+  forming: boolean;
+  groups: RadarGroup[];
+  watch: string | null;
+  missingParts: string[];
+  next: string | null;
+}
+export interface RadarForming {
+  key: string;
+  family: string | null;
+  chain: { title: string; href: string; surface: string }[];
+  reason: string;
+  next: string | null;
+}
+export interface RadarView {
+  patterns: RadarPattern[];
+  forming: RadarForming[];
+}
 
 const RADAR_EMPTY = "No cross-surface pattern has formed yet in this scope.";
 
