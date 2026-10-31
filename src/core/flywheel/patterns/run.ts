@@ -36,7 +36,7 @@ function inputsOf(p: Pick<Pattern, "evidence">, facts: ReadonlyMap<string, Fact>
 const NEEDS = createdBy(GAP_NAMESPACE, "pattern_");
 /** The needs-search flags of the discovery hook (flywheel-gap kind, open): reflected through the one owner of the flag lifecycle (flags.ts): a need not yet raised is raised, a need this stage no longer raises is closed. A dry run counts both. */
 async function raiseNeeds(sb: Db, gaps: ReturnType<typeof patternGaps>, dry: boolean, nowIso: string): Promise<{ counts: Record<string, number>; notes: string[] }> {
-  const r = await reflectFindings(sb, GAP_NAMESPACE, gapFindings(gaps), "pattern-step", nowIso, { dry, owns: (by) => by.startsWith(NEEDS) });
+  const r = await reflectFindings(sb, GAP_NAMESPACE, gapFindings(gaps, await entityRefs(sb, gaps.flatMap((g) => g.missing.entity ?? []))), "pattern-step", nowIso, { dry, owns: (by) => by.startsWith(NEEDS) });
   return { counts: { pattern_needs: gaps.length, pattern_needs_raised: dry ? 0 : r.inserted, pattern_needs_closed: dry ? 0 : r.resolved }, notes: r.notes };
 }
 

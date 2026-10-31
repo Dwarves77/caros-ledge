@@ -11,6 +11,7 @@ import { fetchAllRows } from "@/core/db";
 import { clusterThemes, type Theme } from "@/core/flywheel/cluster";
 import { SIGNATURE_CAP } from "@/core/flywheel/signature";
 import { readAllEdges, writeIntersectionEdges, type SnapshotSink } from "@/core/flywheel/edges";
+import { entityRefs } from "@/core/flywheel/facts-join";
 import { ANTICIPATE_NAMESPACE, createdBy, GAP_NAMESPACE, reflectFindings, type FlagCounts } from "@/core/flywheel/flags";
 import { anticipateFindings, computeAnticipatedTargets, detectGaps, gapFindings, type ForwardEventRow } from "@/core/flywheel/gaps";
 import { detectIntersections, type IntersectionItem } from "@/core/flywheel/intersections";
@@ -90,7 +91,7 @@ export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<
       const ins = await sb.from("connection_themes").insert(rows);
       if (ins.error) throw new Error(`connection_themes insert failed: ${ins.error.message}`);
     }
-    const reflected: FlagCounts[] = [await reflectFindings(sb, GAP_NAMESPACE, gapFindings(gaps), "corpus-pass", nowIso, { owns: (by) => !by.startsWith(createdBy(GAP_NAMESPACE, "pattern_")) }), await reflectFindings(sb, ANTICIPATE_NAMESPACE, anticipateFindings(anticipated), "corpus-pass", nowIso)];
+    const reflected: FlagCounts[] = [await reflectFindings(sb, GAP_NAMESPACE, gapFindings(gaps, await entityRefs(sb, gaps.flatMap((g) => g.missing.entity ?? []))), "corpus-pass", nowIso, { owns: (by) => !by.startsWith(createdBy(GAP_NAMESPACE, "pattern_")) }), await reflectFindings(sb, ANTICIPATE_NAMESPACE, anticipateFindings(anticipated), "corpus-pass", nowIso)];
     for (const r of reflected) {
       failed += r.failed;
       notes.push(...r.notes);

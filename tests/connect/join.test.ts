@@ -9,6 +9,7 @@ import { clusterThemes } from "@/core/flywheel/cluster";
 import { discoverAll, evidenceOf, isCorroborationOnly } from "@/core/flywheel/discover";
 import { missingFor, readEntityFacts, readFactItems } from "@/core/flywheel/facts-join";
 import { createdBy, GAP_NAMESPACE, reflectFindings } from "@/core/flywheel/flags";
+import { detectGaps, gapFindings } from "@/core/flywheel/gaps";
 import { withEntityGraph, type Signature } from "@/core/flywheel/signature";
 import { runConnectionDiscovery } from "@/features/flywheel/run-discovery";
 
@@ -211,4 +212,14 @@ test("C: the pattern family is read from the entity classes, the surface is the 
   assert.equal(missingFor(set(), set(), set("regulations", "market", "operations", "research"), null), null);
   const words = JSON.stringify(missingFor(set("instrument"), set("instrument"), set(), null));
   assert.ok(!/scenario|compliance_object|shared_/.test(words), "no evidence-kind name reaches a customer field");
+});
+
+test("INV-6b: a gap flag carries its typed payload {surface, truth, entity} beside the prose, so a surface never parses the description", () => {
+  const theme = { id: "T", members: ["a", "b"], surfaces: ["regulations", "research"], pivots: [] };
+  const [flag] = gapFindings(detectGaps([theme]), new Map());
+  const payload = (flag?.row.recommended_actions as { action?: string; surface?: string; truth?: string; entity?: unknown }[]).find((a) => a.action === "missing");
+  assert.deepEqual(payload, { action: "missing", surface: "market", truth: "a Market Intel price series that ties these items together", entity: null });
+  const home = gapFindings(detectGaps([{ ...theme, surfaces: ["regulations"] }], { profile: { jurisdictions: { US: 3 } }, jurisdictionsByMember: { a: ["DE"], b: ["FR"] } }), new Map([["cl:jurisdiction:7bb4f2d2b3d6dde1", { id: "cl:jurisdiction:7bb4f2d2b3d6dde1", kind: "jurisdiction", canonicalName: "United States" }]]));
+  const j = home.flatMap((f) => f.row.recommended_actions as { action?: string; surface?: string; truth?: string; entity?: string | null }[]).find((a) => a.action === "missing" && a.surface === "regulations");
+  assert.equal(j?.truth.startsWith("a Regulations dated obligation"), true);
 });
