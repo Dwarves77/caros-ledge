@@ -6,6 +6,7 @@
 import { readFactSuppressionsFor } from "@/core/detail/claim-tiers";
 import { admissibleClaims } from "@/core/derived/admissible";
 import type { Db } from "@/core/db";
+import { isForeignCapture, type InstrumentIdentity } from "@/core/fetch";
 import { readAllPoolRows, usableCaptures, type PoolRow } from "@/core/grounding";
 
 import { isDueDateSlotClaim, type ClaimIn } from "./scan";
@@ -70,15 +71,16 @@ export async function readExtractionInput(sb: Db, itemId: string, now: Date): Pr
   const [claimRes, sectionRes, itemRes] = await Promise.all([
     sb.from("section_claim_provenance").select("id, claim_kind, claim_text, source_span").eq("intelligence_item_id", itemId).in("claim_kind", [...CLAIM_KIND_FILTER]).order("id", { ascending: true }),
     sb.from("intelligence_item_sections").select("id, section_key, content_md").eq("item_id", itemId).order("id", { ascending: true }),
-    sb.from("intelligence_items").select("item_type, last_regenerated_at").eq("id", itemId).maybeSingle(),
+    sb.from("intelligence_items").select("item_type, last_regenerated_at, canonical_instrument_key, instrument_identifier, source_url").eq("id", itemId).maybeSingle(),
   ]);
   if (claimRes.error) throw new Error(`section_claim_provenance read failed: ${claimRes.error.message}`);
   if (sectionRes.error) throw new Error(`intelligence_item_sections read failed: ${sectionRes.error.message}`);
   if (itemRes.error) throw new Error(`intelligence_items read failed: ${itemRes.error.message}`);
-  const itemRow = itemRes.data as { item_type?: string | null; last_regenerated_at?: string | null } | null;
+  const itemRow = itemRes.data as ({ item_type?: string | null; last_regenerated_at?: string | null } & InstrumentIdentity) | null;
   const claimRows = admissibleClaims(((claimRes.data ?? []) as ClaimRow[]).map((r) => ({ ...r, intelligence_item_id: itemId })), await readFactSuppressionsFor(sb, [itemId]));
   const mapped = claimRows.map(mapClaimRow);
-  const poolRows = await readAllPoolRows(sb, itemId);
+  // The item's own instrument only: the heal filed other instruments' captures here (POOL-FIX-1), and their clauses are not this item's mandates.
+  const poolRows = (await readAllPoolRows(sb, itemId)).filter((r) => !itemRow || !isForeignCapture({ search_query: r.search_query, result_url: r.url }, itemRow));
   return {
     claims: attachDueDateContext(mapped, poolRows),
     captures: usableCaptures(poolRows).map((r) => ({ capture_id: r.id, text: r.text })),

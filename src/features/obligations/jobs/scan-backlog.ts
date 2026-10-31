@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { isVerbatim } from "@/core/contracts/verbatim";
 import { admitItems } from "@/core/derived/admissible";
 import { fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
+import { isForeignCapture, type InstrumentIdentity } from "@/core/fetch";
 import { readRequiredSlots } from "@/core/grounding";
 import { applyLedgerOps, sourceForCapture, type AttributionCtx, type LedgerOp } from "@/core/grounding/ledger";
 import { indexOfInsensitive } from "@/core/parse";
@@ -77,9 +78,9 @@ async function healStaleDeadlineItem(sb: Db, itemId: string, itemType: string | 
       if (delEv.error) throw new Error(`item_forward_events delete failed: ${delEv.error.message}`);
     }
   }
-  const itRes = await sb.from("intelligence_items").select("id, item_type, source_url, provenance_status").eq("id", itemId).maybeSingle();
+  const itRes = await sb.from("intelligence_items").select("id, item_type, source_url, provenance_status, canonical_instrument_key, instrument_identifier").eq("id", itemId).maybeSingle();
   if (itRes.error) throw new Error(`intelligence_items read failed: ${itRes.error.message}`);
-  const item = itRes.data as { id: string; item_type: string; source_url: string | null; provenance_status: string | null } | null;
+  const item = itRes.data as ({ id: string; item_type: string; provenance_status: string | null } & InstrumentIdentity) | null;
   if (!item || item.provenance_status !== "quarantined") return false;
   if (dry) return true;
   const required = (await readRequiredSlots(sb, item.item_type)).map((s) => s.slot_key);
@@ -87,7 +88,7 @@ async function healStaleDeadlineItem(sb: Db, itemId: string, itemType: string | 
     const [claimRes, secRes, capRes, srcRes] = await Promise.all([
       sb.from("section_claim_provenance").select("id, claim_kind, claim_text").eq("intelligence_item_id", itemId).order("id", { ascending: true }),
       sb.from("intelligence_item_sections").select("id, section_key, section_order, content_md").eq("item_id", itemId).order("id", { ascending: true }),
-      sb.from("agent_run_searches").select("id, result_url, result_content").eq("intelligence_item_id", itemId).order("id", { ascending: true }),
+      sb.from("agent_run_searches").select("id, result_url, result_content, search_query").eq("intelligence_item_id", itemId).order("id", { ascending: true }),
        fetchAllRows<SourceRow>((from, to) => sb.from("sources").select("id, url, base_tier, tier_override, status").order("id", { ascending: true }).range(from, to), { cap: 200_000 }),
     ]);
     if (claimRes.error) throw new Error(`section_claim_provenance read failed: ${claimRes.error.message}`);
@@ -95,7 +96,8 @@ async function healStaleDeadlineItem(sb: Db, itemId: string, itemType: string | 
     if (capRes.error) throw new Error(`agent_run_searches read failed: ${capRes.error.message}`);
     const claims = (claimRes.data ?? []) as { id: string; claim_kind: string; claim_text: string }[];
     const sections = (secRes.data ?? []) as { id: string; section_key: string; section_order: number; content_md: string | null }[];
-    const captures = (capRes.data ?? []) as { id: string; result_url: string | null; result_content: string }[];
+    // The item's own instrument only (POOL-FIX-1): the longest capture stands for the item, and a heal-filed copy of another instrument is the longest.
+    const captures = ((capRes.data ?? []) as { id: string; result_url: string | null; result_content: string; search_query: string | null }[]).filter((c) => !isForeignCapture(c, item));
     const best = captures.filter((c) => c.result_content.trim().length > 200).sort((a, b) => b.result_content.length - a.result_content.length)[0];
     const hasSlot = (k: string) => claims.some((c) => (c.claim_kind === "FACT" || c.claim_kind === "GAP") && indexOfInsensitive(c.claim_text, k) !== null);
     const missing = required.filter((k) => !hasSlot(k));
@@ -115,7 +117,7 @@ async function healStaleDeadlineItem(sb: Db, itemId: string, itemType: string | 
         sections.push(recSec);
       }
       for (const slot of missing) {
-        const sc = buildRecordSlotClaim(slot, { capturedText: best.result_content, sourceUrl: item.source_url });
+        const sc = buildRecordSlotClaim(slot, { capturedText: best.result_content, sourceUrl: item.source_url ?? null });
         const holder = sc.claim_kind === "FACT" ? captures.find((c) => isVerbatim(c.result_content, sc.source_span)) : undefined;
         if (sc.claim_kind === "FACT" && !holder) continue;
         const row = holder
