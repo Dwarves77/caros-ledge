@@ -326,3 +326,7 @@ export const readLinkedBy = async (db: Db, memberIds: readonly string[]): Promis
     if (r.error) throw new Error(`item_cross_references read failed: ${r.error.message}`);
     return ((r.data ?? []) as { basis: EdgeBasis | null }[]).map((x) => x.basis);
   }, { chunk: 100, manyPerId: true }));
+
+/** What a detail page adds under Connected intelligence: the patterns resting on the item or its theme (null: that read failed), and the structured rows tied to its entities. */
+export const readItemExtras = async (db: Db, itemUuid: string, memberIds: readonly string[], facts: readonly FactLink[]) => ({ radar: await readFlywheelRadar(radarClients(db), { kind: "item", itemUuid, memberIds }).catch(() => null), moves: movesRows(facts) });
+export type ItemExtras = Awaited<ReturnType<typeof readItemExtras>>;

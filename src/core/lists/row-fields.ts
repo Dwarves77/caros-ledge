@@ -53,16 +53,10 @@ export function dueInfo(r: Resource, now: Date): DueInfo | null {
 }
 
 /** The first sentence of a stored text, cut at its end (not at "No." or "Art."); null when there is none. */
-function firstSentence(text: string | null | undefined): string | null {
+const firstSentence = (text: string | null | undefined): string | null => {
   const t = (text ?? "").replace(/\s+/g, " ").trim();
-  const ends = [...t.matchAll(/[.!?](?=\s+[A-Z("“]|$)/g)].map((m) => m.index + 1);
-  return t ? t.slice(0, ends.find((n) => !/\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i.test(t.slice(0, n)))) : null;
-}
-
-/** The row's second line, never blank: why it matters to the reader, else what it changes, else what the record is, else a line composed from its jurisdiction and next date. */
-function rowSummary(r: Resource, juris: string, due: DueInfo | null): string {
-  return firstSentence(r.whyMatters) ?? firstSentence(r.whatItChanges) ?? firstSentence(r.whatIsIt) ?? firstSentence(r.note) ?? `${juris ? `Applies in ${juris}` : "Applies across jurisdictions"}${due ? `; next date ${due.label}` : ""}.`;
-}
+  return t ? t.slice(0, [...t.matchAll(/[.!?](?=\s+[A-Z("“]|$)/g)].map((m) => m.index + 1).find((n) => !/\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i.test(t.slice(0, n)))) : null;
+};
 
 export function toListRowFields(r: Resource, now: Date): ListRowFields {
   const due = dueInfo(r, now);
@@ -73,7 +67,8 @@ export function toListRowFields(r: Resource, now: Date): ListRowFields {
     jurisdiction: jurisdictionCode(r),
     title: r.title,
     type: r.type ?? null,
-    summary: rowSummary(r, jurisdictionCode(r), due),
+    // the second line, never blank: why it matters, else what it changes, else what the record is, else a line composed from its jurisdiction and next date
+    summary: firstSentence(r.whyMatters) ?? firstSentence(r.whatItChanges) ?? firstSentence(r.whatIsIt) ?? firstSentence(r.note) ?? `${jurisdictionCode(r) ? `Applies in ${jurisdictionCode(r)}` : "Applies across jurisdictions"}${due ? `; next date ${due.label}` : ""}.`,
     due: due ? { label: due.label, days: due.days } : null,
     tier: r.sourceTier ?? null,
     watchType: watchTypeForItem(r),

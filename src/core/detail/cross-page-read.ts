@@ -8,7 +8,7 @@ import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { surfaceHref, surfaceOf } from "@/core/routing";
 import { log } from "@/core/shared/log";
 import { buildIntersectionView, lineageFromThemeDelta, type ConnectionIn, type ResourceLookup } from "@/core/flywheel";
-import { movesRows, radarClients, readFlywheelRadar, readLinkedBy, type RadarView } from "@/features/flywheel/radar/read";
+import { type ItemExtras, readItemExtras, readLinkedBy } from "@/features/flywheel/radar/read";
 import { HORIZONS, themeAnalysisView, themeChips, themeForItem, type BriefRow, type MemberRow, type ThemeAnalysisView, type ThemeEventRow, type ThemeRow } from "@/core/themes";
 
 import { readCustomerInferences, type InferenceView } from "./inference-view";
@@ -17,13 +17,9 @@ const THEME_COLUMNS = "id, member_ids, dominant_signals, density, convergence, s
 const BRIEF_COLUMNS = "theme_id, title, brief_md, member_hash, generated_at, sections, member_ids";
 const CAP = 5000;
 
-export interface CrossPage {
+export interface CrossPage extends ItemExtras {
   intersections: ReturnType<typeof buildIntersectionView>;
   theme: ThemeAnalysisView | null;
-  /** The cross-surface patterns that rest on this item or its theme; null when that read failed (the panel says so with Retry). */
-  radar: RadarView | null;
-  /** The structured rows tied to this item's entities, one line each. */
-  moves: { kind: string; line: string }[];
   inferences: InferenceView | null;
   /** The blocks whose read failed this request ("themes", "inferences"): the page offers Retry and does not call them empty. */
   degraded: string[];
@@ -99,15 +95,14 @@ async function resolveBracketedIds(db: Db, text: string | null): Promise<string 
 }
 
 /** The cross-page analysis of one item: each block read on its own, so one failing block does not take the others down. `facts` are the item's own structured rows (the join of its entities). */
-export async function readCrossPage(db: Db, itemUuid: string, surface: string, intersectionSummary: string | null, connections: readonly ConnectionIn[], lookup: ResourceLookup | Promise<ResourceLookup>, asOfIso: string, facts: Parameters<typeof movesRows>[0] = []): Promise<CrossPage> {
+export async function readCrossPage(db: Db, itemUuid: string, surface: string, intersectionSummary: string | null, connections: readonly ConnectionIn[], lookup: ResourceLookup | Promise<ResourceLookup>, asOfIso: string, facts: Parameters<typeof readItemExtras>[3] = []): Promise<CrossPage> {
   const degraded: string[] = [];
   const [theme, inferences, summary] = await Promise.all([
     readTheme(db, itemUuid, surface, asOfIso).catch(() => (degraded.push("themes"), null)),
     readFreshInferences(db, itemUuid).catch(() => (degraded.push("inferences"), null)),
     resolveBracketedIds(db, intersectionSummary),
   ]);
-  const radar = await readFlywheelRadar(radarClients(db), { kind: "item", itemUuid, memberIds: theme?.memberIds ?? [] }).catch(() => null);
-  return { intersections: buildIntersectionView(connections, await lookup, { currentSurface: surface, summary }), theme, radar, moves: movesRows(facts), inferences, degraded };
+  return { intersections: buildIntersectionView(connections, await lookup, { currentSurface: surface, summary }), theme, ...(await readItemExtras(db, itemUuid, theme?.memberIds ?? [], facts)), inferences, degraded };
 }
 
 /** The theme chips of a list page (`surface` null is the cross-page view the dashboard reads). Throws on a failed read; the caller says the strip did not load. */
