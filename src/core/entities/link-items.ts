@@ -91,7 +91,7 @@ export async function linkItems(sb: Db, itemId: string, opts: LinkOptions = {}):
       } else edges += part.inserts.length;
     }
     for (const u of part.upgrades) {
-      const { error } = await sb.from("item_cross_references").update({ relationship: u.relationship, basis: u.basis }).eq("id", u.id as string);
+      const { error } = await sb.from("item_cross_references").update({ relationship: u.relationship, basis: u.basis, ...(u.origin ? { origin: u.origin } : {}) }).eq("id", u.id as string);
       if (error) {
         failed += 1;
         notes.push(`edge upgrade failed for ${itemId}: ${error.message}`);

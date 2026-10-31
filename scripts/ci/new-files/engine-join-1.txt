@@ -1,0 +1,3 @@
+# OPERATOR-OVERRIDE: operator corrections 1-4 of 2026-10-31 (ENGINE-JOIN-1 addendum A): "structured facts join the flywheel"; the coordinator grants the module src/core/flywheel/facts-join.ts in the brief
+# path | reason (files with no "Ported from" header)
+src/core/flywheel/facts-join.ts | new in ENGINE-JOIN-1 (addendum A): the read-time join between the items and the structured tables that carry entity refs (entity_refs direct, entity_relations one hop), the entity-graph reads discovery's signatures share, and the words for the surface truth a developing connection or forming pattern lacks; the old engine joined on titles and shared sources only

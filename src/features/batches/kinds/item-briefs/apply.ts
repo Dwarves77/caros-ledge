@@ -13,7 +13,9 @@ import type { Db } from "@/core/db";
 import { runResult, worst, type RunResult } from "@/core/types/run-result";
 import { recordBriefTerms } from "@/core/vocabulary";
 import { ledgerCoversClaims } from "@/core/grounding/ledger";
-import { corpusPass, tagPass, termPass } from "@/features/flywheel";
+import { edgeSnapshotSink } from "@/core/flywheel/edges";
+import { runPatterns } from "@/core/flywheel/patterns";
+import { corpusPass, discoverForItems, tagPass, termPass } from "@/features/flywheel";
 import { groundInjectedLedger, injectBrief, readAdoptedTerms, sectionBrief, sectionsDeriveFromBrief } from "@/features/intake";
 import { runParticipation } from "@/features/intake/flywheel-participation";
 import { recordItemChange } from "@/features/sources/change";
@@ -171,7 +173,7 @@ async function applyItem(deps: BatchDeps, item: Item<RecordPlan>, batch: string,
   return { ref: item.plan.itemId, notes: failed, counts };
 }
 
-/** The unscoped flywheel over exactly the applied ids (tags, terms, then the corpus pass). */
+/** The unscoped flywheel over exactly the applied ids, after the reader's refs are written: tags, discovery (a brief's new entities make new edges), terms, the corpus pass, then the patterns. */
 async function afterBatch(deps: BatchDeps, ids: string[], o: ApplyOpts): Promise<RunResult> {
   const parts: RunResult[] = [];
   const guard = async (what: string, f: () => Promise<RunResult>) => {
@@ -182,9 +184,11 @@ async function afterBatch(deps: BatchDeps, ids: string[], o: ApplyOpts): Promise
     }
   };
   const d = { sb: deps.sb, now: deps.now };
-  await guard("tag pass", () => tagPass(d, { ids, dry: false }));
+  await guard("tag pass", () => tagPass(d, { ids, dry: false, discover: false }));
+  await guard("discovery", () => discoverForItems({ ...d, ...(o.runId ? { snapshot: edgeSnapshotSink(deps.sb, o.runId) } : {}) }, { ids, dry: false }));
   await guard("term pass", () => termPass(d, { dry: false }));
   await guard("corpus pass", () => corpusPass({ ...d, ...(o.runId ? { runId: o.runId } : {}) }, { dry: false }));
+  await guard("patterns", () => runPatterns(d, { dry: false }));
   const notes = parts.flatMap((p) => p.notes);
   return runResult(worst("ok", ...parts.map((p) => p.outcome)), { flywheel_passes: parts.length }, notes);
 }

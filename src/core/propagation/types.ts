@@ -4,7 +4,7 @@ export type Contractable = "statutory_fixed" | "statutory_formula" | "observed" 
 export type NonContractable = "interpolated" | "modelled" | "estimated";
 export type Derivation = Contractable | NonContractable;
 export type OriginClass = "community" | "community-corroborated" | "modelled" | "derived" | "partner" | "verified" | "official";
-export type Lifecycle = "emerging" | "strengthening" | "corroborated" | "verified" | "stalled" | "falsified" | "superseded" | "obsolete";
+export type Lifecycle = "forming" | "emerging" | "strengthening" | "corroborated" | "verified" | "stalled" | "falsified" | "superseded" | "obsolete";
 export type Admissibility = "display_only" | "analysis_ok" | "calculation_ok" | "filing_ok" | "stale";
 export type Use = "display" | "analysis" | "calculation" | "filing";
 
