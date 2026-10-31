@@ -1,0 +1,29 @@
+{
+  "ruling": "operator and coordinator 2026-10-31 (THEME-1a, rulings 45-49 and mandate 3): the connect stage runs once over the verified corpus so the corpus pass re-clusters connection_themes on the typed graph ENGINE-JOIN-1 (PR 183, migration 0145) built, where a developing connection and a shared source alone no longer join two items; the 833-member theme glued by same-source edges is replaced wholesale with the delta stored on the connection_theme_runs row, and the fresh theme briefs of THEME-1b are authored against the result. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "recluster-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "corpus": true
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "recluster-apply",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "corpus": true
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
