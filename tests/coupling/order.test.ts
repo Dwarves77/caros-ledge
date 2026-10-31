@@ -68,11 +68,14 @@ test("INV-1: the connect stage reads the backlog (forward events, obligations) f
   assert.ok(log.indexOf("obligation_objects") < firstMine, "the obligation objects are written before they are filed");
 });
 
-test("INV-3: the propagate stage no longer mines refs: it opens no identifier table and files nothing", async () => {
+test("INV-3: the propagate stage files the producer tables' rows in entity_refs in the same turn (a market_series row for a fuel entity), and files nothing for intelligence_items or claims: those are the connect stage's", async () => {
   const f = orderFixture();
-  const { d, log } = recorded(f);
+  const { d } = recorded(f);
   const before = f.db.rows("entity_refs").length;
   assert.equal((await stage(f, "propagate", d)).exit, 0);
-  assert.equal(log.includes("entity_identifiers"), false);
-  assert.equal(f.db.rows("entity_refs").length, before);
+  const mined = f.db.rows("entity_refs").filter((r) => r.asserted_by === "coupling/refs");
+  const series = f.db.rows("market_series").filter((r) => r.entity_id === E("carrier:hvo"));
+  assert.ok(series.length >= 1 && series.every((m) => mined.some((r) => r.ref_table === "market_series" && r.ref_id === m.id && r.entity_id === E("carrier:hvo"))), "every series row of the fuel is filed under it before the turn ends");
+  assert.deepEqual([...new Set(mined.map((r) => r.ref_table))].filter((t) => ["intelligence_items", "section_claim_provenance", "obligation_objects", "item_forward_events"].includes(String(t))), []);
+  assert.ok(f.db.rows("entity_refs").length > before);
 });

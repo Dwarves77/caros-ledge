@@ -1,5 +1,5 @@
 // The three planted triangles of TRIANGLE-TRACE Q2 on an isolated fixture database (CONNECT-2 PR B, unified design section 4). Test values only: every number below is a fixture number, none is a real fact. The rows are the minimal rows of the trace's fixture specs; the refs the reader's `entity_ids`
-// would file them under (DIGEST-1 PR B's apply) are planted as entity_refs rows with a reader method_version and a basis; the refs the typed columns give are mined by the connect stage, and the relations are the seeded couplings plus the lane's corridor_links edge (JOIN-1 J2).
+// would file them under (DIGEST-1 PR B's apply) are planted as entity_refs rows with a reader method_version and a basis; the refs the typed columns give are mined in the turn (the producer tables by the propagate stage, the item-owned ones by the connect stage), and the relations are the seeded couplings plus the lane's corridor_links edge (JOIN-1 J2).
 import { uuidOf } from "@/core/coupling";
 
 import { roleOf } from "../_support/ontology.ts";
@@ -19,7 +19,7 @@ const item = (id: string, title: string, status: string): Row => ({ id, title, i
 const object = (id: string, itemId: string, entity: string, over: Row): Row => ({ obligation_id: id, instrument_item_id: itemId, instrument_entity_id: entity, pinpoint_citation: "Article 1", verbatim_text: "fixture verbatim text", binding_position: "direct_duty", duty_holder_class: ["carrier"], applicability_trigger: {}, capture_id: uuid(90), source_id: SRC, ...over });
 const reader = (table: string, key: string, entity: string, quote: string): Row => ({ ref_table: table, ref_id: /^[0-9a-f]{8}-/.test(key) ? key : uuidOf(key), entity_id: entity, role: roleOf(entity), asserted_by: "reader/item-briefs", basis: { quote, capture_id: uuid(90) }, method_version: "reader@fixture" });
 
-/** Plant the rows of the three triangles into the fixture database (before the connect stage mines the typed refs). */
+/** Plant the rows of the three triangles into the fixture database (before the turn mines the typed refs). */
 export function plantTriangles(f: Fixture, over: { endedCeiling?: boolean } = {}): void {
   const db = f.db;
   db.seed("intelligence_items", [item(ITEM.ets, "fixture ETS", "verified"), item(ITEM.fueleu, "fixture FuelEU Maritime", "quarantined"), item(ITEM.afir, "fixture AFIR", "quarantined"), item(ITEM.research, "fixture research", "verified")]);
@@ -45,7 +45,7 @@ export function plantTriangles(f: Fixture, over: { endedCeiling?: boolean } = {}
   db.seed("market_series", [point(ROW.seriesA, 4400, day(-23)), point(ROW.seriesB, 4950, day(-2))]);
 }
 
-/** After the connect stage has mined the refs: the refs the reader's entity_ids would file (the carrier under the FuelEU step, the node under the AFIR step, the instrument and the mode under the maritime trigger), and the lane's corridor_links edge to its mode. */
+/** Before the connect stage mines the item-owned refs: the refs the reader's entity_ids would file (the carrier under the FuelEU step, the node under the AFIR step, the instrument and the mode under the maritime trigger), and the lane's corridor_links edge to its mode. */
 export function plantReaderRefs(f: Fixture): void {
   f.db.rows("entity_refs").push(...[
     // the technology categories and the grid queue are words and codes the engine maps to nothing: the Reader files them

@@ -5,6 +5,7 @@
 // Everything after the drain works from the events the drain just processed, so one change reaches every consumer in the same run.
 import { readFileSync } from "node:fs";
 
+import { COLUMNS, mineRefs } from "@/core/coupling";
 import { FAMILIES, type FamilyCall } from "@/core/harness";
 import { scoreItems } from "@/core/impact/run";
 import { runPropagationDrain, reopener } from "@/core/propagation";
@@ -21,6 +22,9 @@ import type { BuiltDeps } from "../wiring";
 import { captureCited } from "./capture";
 
 const PROPAGATE_CALLER = "turn-propagate";
+/** The typed tables the producers write in this stage (ENGINE-ORDER-1): their rows are filed in entity_refs before the turn ends. The item-owned tables (an item's obligations and forward events) are filed by the connect stage, which reads the items. */
+const ITEM_OWNED = new Set(["obligation_objects", "item_forward_events"]);
+const PRODUCER_TABLES = COLUMNS.map((m) => m.table).filter((t) => !ITEM_OWNED.has(t));
 type DrainData = NonNullable<Awaited<ReturnType<typeof runPropagationDrain>>["data"]>;
 type Processed = DrainData["processedEvents"][number];
 
@@ -48,7 +52,7 @@ const changedItemIds = (events: readonly Processed[]): string[] => [...new Set(e
 const pick = (r: RunResult | null, prefix: string): Record<string, number> => Object.fromEntries(Object.entries(r?.counts ?? {}).map(([k, v]) => [`${prefix}${k}`, v]));
 
 /** One result from the five steps. A producer the gates refused is a note, not a failed stage: the drain and its consumers still ran. Pure. */
-export function shapePropagate(parts: { producers: RunResult | null; drain: RunResult; questions: RunResult; signposts: RunResult; assess: RunResult | null; derive?: RunResult<{ ids: { derive_cursor: string[] } }> | null; impact?: RunResult<{ ids: { scored_item_ids: string[] } }> | null; carbon?: RunResult | null }, events: readonly Processed[], itemIds: readonly string[]): RunResult {
+export function shapePropagate(parts: { producers: RunResult | null; drain: RunResult; questions: RunResult; signposts: RunResult; assess: RunResult | null; derive?: RunResult<{ ids: { derive_cursor: string[] } }> | null; impact?: RunResult<{ ids: { scored_item_ids: string[] } }> | null; carbon?: RunResult | null; mined?: RunResult | null }, events: readonly Processed[], itemIds: readonly string[]): RunResult {
   const held = (r: RunResult) => (r.counts.refused ?? 0) > 0 || r.notes.some((n) => n.includes("REFUSING"));
   const soft = (r: RunResult | null) => (r && r.outcome === "failed" && held(r) ? { ...r, outcome: "partial" as const } : r);
   const producers = soft(parts.producers);
@@ -56,10 +60,10 @@ export function shapePropagate(parts: { producers: RunResult | null; drain: RunR
   const counts: Record<string, number> = {
     drained: parts.drain.counts.drained ?? 0, recomputed: parts.drain.counts.recomputed ?? 0, invalidated: parts.drain.counts.invalidated ?? 0, events: parts.drain.counts.events ?? 0,
     questions_written: parts.questions.counts.written ?? 0, scored: parts.signposts.counts.scored ?? 0, signposts_fired: parts.signposts.counts.signposts_fired ?? 0, assessed_written: assess?.counts.written ?? 0,
-    ...pick(producers, "producers_"), ...pick(assess, "assess_"), ...pick(parts.derive ?? null, "derive_"), ...(parts.impact?.counts ?? {}), ...(parts.carbon?.counts ?? {}),
+    ...pick(producers, "producers_"), ...pick(assess, "assess_"), ...pick(parts.derive ?? null, "derive_"), ...(parts.impact?.counts ?? {}), ...(parts.carbon?.counts ?? {}), refs_written: parts.mined?.counts.refs_written ?? 0,
   };
-  const outcome = worst(parts.drain.outcome, parts.questions.outcome, parts.signposts.outcome, producers?.outcome ?? "ok", assess?.outcome ?? "ok", parts.impact?.outcome ?? "ok", parts.carbon?.outcome ?? "ok", parts.derive?.outcome ?? "ok");
-  const notes = leadWithFailures([parts.derive ?? null, parts.drain, parts.questions, parts.signposts, producers, assess, parts.impact ?? null, parts.carbon ?? null]);
+  const outcome = worst(parts.drain.outcome, parts.questions.outcome, parts.signposts.outcome, producers?.outcome ?? "ok", assess?.outcome ?? "ok", parts.impact?.outcome ?? "ok", parts.carbon?.outcome ?? "ok", parts.derive?.outcome ?? "ok", parts.mined?.outcome ?? "ok");
+  const notes = leadWithFailures([parts.derive ?? null, parts.drain, parts.questions, parts.signposts, producers, assess, parts.impact ?? null, parts.carbon ?? null, parts.mined ?? null]);
   return { ...runResult(outcome, counts, notes), data: { ids: { drained_event_ids: events.map((e) => String(e.eventId)), reassessed_item_ids: [...itemIds], scored_item_ids: parts.impact?.data?.ids.scored_item_ids ?? [], ...(parts.derive?.data ? { derive_cursor: parts.derive.data.ids.derive_cursor } : {}) } } };
 }
 
@@ -114,5 +118,7 @@ export async function runPropagate(call: FamilyCall, d: BuiltDeps): Promise<RunR
   }
   const impact = await scoreItems({ sb, now: d.now, registry: d.registry }, { dry: call.dry, readIds: call.upstream?.ids.scanned_item_ids ?? [] });
   const carbon = await produceCarbonInputs({ sb, now: d.now, registry: d.registry }, { dry: call.dry });
-  return shapePropagate({ producers, derive, drain, questions, signposts, assess, impact, carbon }, events, itemIds);
+  // every typed row the producers wrote above is filed under its entities now, not by the next turn's connect stage
+  const mined = await mineRefs({ sb, now: d.now }, { dry: call.dry, tables: PRODUCER_TABLES });
+  return shapePropagate({ producers, derive, drain, questions, signposts, assess, impact, carbon, mined }, events, itemIds);
 }
