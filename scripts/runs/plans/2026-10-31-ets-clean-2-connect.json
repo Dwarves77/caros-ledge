@@ -1,0 +1,31 @@
+{
+  "ruling": "operator and coordinator 2026-10-31 (ETS-CLEAN-2, follows ETS-CLEAN-1 \"Delete\"): after the orphan clean-up (the entity_refs rows that still named the 212 forward events and the 67 obligation objects ETS-CLEAN-1 deleted, and the 67 obligation entities no row references any more), the connect stage runs again over item ff4064ab (EU ETS maritime) and item 40c05a1e (Weights and Dimensions revision), so discovery, the entity mining, the pattern detectors and the reading's downstream (obligations, refs, candidates) run on them from their own captures. Needs JOIN-CHUNK-1 (facts-join reads 200 ids a query, not 500 over the request-line limit) merged first. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "connect-dry",
+      "stage": "connect",
+      "mode": "dry",
+      "input": {
+        "connect": {
+          "ids": ["ff4064ab-9489-4fc4-b3cc-f0f157e71db5", "40c05a1e-f834-4a14-b2dd-a16707df703c"],
+          "scan_limit": 1
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "connect-apply",
+      "stage": "connect",
+      "mode": "apply",
+      "input": {
+        "connect": {
+          "ids": ["ff4064ab-9489-4fc4-b3cc-f0f157e71db5", "40c05a1e-f834-4a14-b2dd-a16707df703c"],
+          "scan_limit": 1
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
