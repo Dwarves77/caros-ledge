@@ -108,7 +108,7 @@ test("member hash is order-independent; a brief is stale when the members move; 
   assert.equal(isBriefStale(computeMemberHash(["a", "b"]), ["b", "a"]), false);
   assert.equal(isBriefStale(computeMemberHash(["a"]), ["a", "b"]), true);
   assert.deepEqual([convergenceBand(0.4), convergenceBand(0.5), convergenceBand(1.5)], ["low", "medium", "high"]);
-  const r = resolveBriefForTheme({ id: "T", member_ids: ["a", "b"] }, [{ theme_id: "T", member_hash: computeMemberHash(["a"]) } as never]);
+  const r = resolveBriefForTheme({ id: "T", member_ids: ["a", "b"] }, [{ theme_id: "T", member_hash: computeMemberHash(["a"]) }]);
   assert.equal(r.brief?.theme_id, "T");
   assert.equal(r.stale, true);
 });
