@@ -213,16 +213,7 @@ const KIND_ORDER = ["shared_entity", "shared_regulation_identifier", "shared_tit
 /** A relation token in words, for "{A} {relation} {B}" (the closed RELATIONS of the coupling ontology). */
 const RELATION_WORDS: Readonly<Record<(typeof RELATIONS)[number], string>> = { feedstock_of: "is a feedstock of", fuel_for_mode: "fuels", competes_for_feedstock: "competes for feedstock with", shares_grid_zone: "shares a grid zone with", serves_hub: "serves", corridor_links: "links to", implements: "implements", amends: "amends", consignment_wide: "applies across the same consignment as" };
 /** The reason an explicit relationship states by itself (the legal edges, which need no evidence) and what a plain citation says, each composed with the counterpart's name so no two connections share a sentence unless they share a counterpart (ruling 67). */
-const RELATION_REASON: Readonly<Record<string, (other: string) => string>> = {
-  Supersedes: (n) => `Replaces the prior statutory provisions of ${n}.`,
-  "Superseded by": (n) => `Succeeded by newer legislation, ${n}.`,
-  Implements: (n) => `Technical execution of the parent framework, ${n}.`,
-  "Implemented by": (n) => `Carried out by implementing legislation, ${n}.`,
-  Amends: (n) => `Modifies the text or scope of ${n}.`,
-  "Amended by": (n) => `Updated by a later amendment, ${n}.`,
-  "Conflicts with": (n) => `Its requirements conflict with those of ${n}.`,
-  "Depends on": (n) => `This depends on ${n} being in force.`,
-};
+const RELATION_REASON: Readonly<Record<string, (other: string) => string>> = { Supersedes: (n) => `Replaces the prior statutory provisions of ${n}.`, "Superseded by": (n) => `Succeeded by newer legislation, ${n}.`, Implements: (n) => `Technical execution of the parent framework, ${n}.`, "Implemented by": (n) => `Carried out by implementing legislation, ${n}.`, Amends: (n) => `Modifies the text or scope of ${n}.`, "Amended by": (n) => `Updated by a later amendment, ${n}.`, "Conflicts with": (n) => `Its requirements conflict with those of ${n}.`, "Depends on": (n) => `This depends on ${n} being in force.`, };
 const CITATION_REASON: Readonly<Record<string, (other: string) => string>> = { References: (n) => `Cites ${n} directly in its source text.`, "Referenced by": (n) => `${n} cites this item directly in its source text.` };
 /** The entities an evidence entry names: the typed canonical names, or the stored detail ("both name reg:x, y"). */
 const entityNames = (e: BasisEntry, names: ReadonlyMap<string, string> = new Map()): string[] => {
@@ -286,10 +277,7 @@ function tagSentence(evidence: readonly BasisEntry[], other: string): string | n
   return parts.length ? `${other} also ${parts.join(" and ")}.` : null;
 }
 /** What the sentence of a connection reads besides its basis: the obligations the two items share (who each binds, the date, the instrument) and the names of the entities its evidence cites. */
-export interface ReasonContext {
-  obligations?: ReadonlyMap<string, { holders: string[]; date: string | null; instrument: string | null }> | undefined;
-  names?: ReadonlyMap<string, string> | undefined;
-}
+export interface ReasonContext { obligations?: ReadonlyMap<string, { holders: string[]; date: string | null; instrument: string | null }> | undefined; names?: ReadonlyMap<string, string> | undefined; }
 /** A duty-holder class token as a plural in words ("importer_of_record" is "importers of record"). */
 const holderWords = (token: string): string => token.replace(/_/g, " ").replace(/^(.+?)( of .+)?$/, (_m, head: string, tail?: string) => `${head.replace(/s?$/, "s")}${tail ?? ""}`);
 /** Everything a detail page reads once for its connections: the structured facts tied to the item and to its neighbours (the entity of each in words), the obligations their edges share, and the names of the entities their evidence cites. One batched read of obligation_objects and one of the instruments' items per page render, never one per edge. */
