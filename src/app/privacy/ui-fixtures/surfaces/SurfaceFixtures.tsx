@@ -94,7 +94,7 @@ export function SurfaceFixtures({ screen: requested }: { screen: string }) {
               <DerivedFigures figures={OPERATIONS.derived} />
               <DerivedFigures figures={null} />
               <AuxiliaryEnergyPanel rows={[{ profile_id: "p1", load_type: "cold_room", kw_draw: 12, duty_cycle: 0.6, hours_typical: 48, setpoint_c: 16, setpoint_rh_pct: 50, grid_intensity_source: null }]} intensity={{ gco2ePerKwh: 120, sourceName: "NESO", period: "2026-10" }} retryHref="/operations" />
-              <GridQueuePanel rows={[{ queue_id: "q1", dso_name: "UK Power Networks", capacity_band_mw: "10-50", queue_months_p50: 18, queue_months_p90: 30, as_of: "2026-09-01", substation_name: null, demand_firm_mw: null, demand_available_mw: null, demand_constraint: null, demand_constraint_limiting_factor: null }]} retryHref="/operations" />
+              <GridQueuePanel rows={[{ queue_id: "q1", dso_name: "UK Power Networks", capacity_band_mw: "10-50", queue_months_p50: 18, queue_months_p90: 30, as_of: "2026-09-01", substation_name: null, demand_firm_mw: null, demand_available_mw: null, demand_constraint: null, demand_constraint_limiting_factor: null }]} headroomOnly={0} jurisdiction="United Kingdom" retryHref="/operations" />
             </section>
           </div>
         )}

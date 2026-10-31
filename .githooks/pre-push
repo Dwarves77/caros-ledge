@@ -1,5 +1,5 @@
 #!/bin/sh
-# The gate (HOOK-FULL-1, ruling 43): every push runs scripts/ci/gates.mjs. A push whose range touches anything the fast profile does not cover (src/, tests/, scripts/, supabase/, package and config files; the set is FULL_PREFIXES/FULL_FILES in gates.mjs) runs `--profile full`, the list the ci job runs; a docs-only push runs `--profile fast`. A gate that cannot run locally exits 2 and is reported skipped. Bypassing the hook is a rule violation, never a step.
+# The gate (HOOK-FULL-1, amended by GATES-FIX-1, ruling 55): every push runs `scripts/ci/gates.mjs --memo --profile fast --range <pushed range>`: the fast profile plus the test files of the modules the push changed. The hook never runs the full profile; the full matrix (build, the whole test suite, schema) is GitHub Actions', and its ci job is the merge gate. A HEAD that already passed on a clean tree is not run again (gates-last-pass.json). A gate that cannot run locally exits 2 and is reported skipped. Bypassing the hook is a rule violation, never a step.
 # A [skip ci] commit at the head of a pushed ref is refused: a PR never ends on an unproven SHA.
 zero=0000000000000000000000000000000000000000
 ranges=""
@@ -20,4 +20,4 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 done
 [ -z "$ranges" ] && exit 0
 # shellcheck disable=SC2086
-exec node scripts/ci/gates.mjs $ranges
+exec node scripts/ci/gates.mjs --memo --profile fast $ranges

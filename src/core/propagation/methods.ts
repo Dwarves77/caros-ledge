@@ -128,7 +128,7 @@ const reevaluateInference: InferenceFn = (ctx) => {
 };
 
 export const IMPACT_METHOD_ID = "impact_scores";
-export const IMPACT_METHOD_VERSION = "1.0.0";
+export const IMPACT_METHOD_VERSION = "1.1.0";
 export const CARBON_METHOD_ID = "carbon_intensity_tkm";
 export const CARBON_METHOD_VERSION = "1.0.0";
 export const MARKET_DELTA_METHOD_ID = "market_series_delta";

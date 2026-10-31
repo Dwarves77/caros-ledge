@@ -11,6 +11,7 @@ import { readOperationsPage } from "@/features/operations/read/operations-reads"
 import { LabourChain } from "@/features/operations/ui/LabourChain";
 import { AuxiliaryEnergyPanel, GridQueuePanel } from "@/features/operations/ui/Spec09Panels";
 import { StatementsBlock } from "@/features/operations/ui/StatementsBlock";
+import { railRowLines } from "@/features/obligations";
 import { ObligationsRailCard } from "@/features/regulations/rail";
 
 import { memoryDb } from "../_support/memory-db.ts";
@@ -24,6 +25,18 @@ test("surfaces:7 an empty list says what is true: nothing due in 30 days is not 
   const text = draw(createElement(ObligationsRailCard, { events: [], failed: false, nowIso: "2026-10-19T00:00:00Z" }));
   assert.doesNotMatch(text, MISSING_SOURCE);
   assert.match(text, /Nothing is due in the next 30 days/);
+});
+
+test("OPS-FIX-1 item 8: an obligation row is the item's short title and the clause's first sentence cut at 140 characters, never the statutory title with its Annex list", () => {
+  const annexTitle = "REGULATION (EU) 2025/40 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 19 December 2024 on packaging and packaging waste, amending Regulation (EU) 2019/1020 and Directive (EU) 2019/904, and repealing Directive 94/62/EC ANNEX I Indicative list of items ANNEX II Categories and parameters for assessment of recyclability ANNEX III Compostable packaging ANNEX IV Methodology for packaging minimisation assessment";
+  const clause = "By 12 February 2027 Member States shall lay down the rules on penalties applicable to infringements of this Regulation and shall take all measures necessary to ensure that they are implemented, and they shall notify the Commission of those rules without delay. A second sentence that must not appear.";
+  const text = draw(createElement(ObligationsRailCard, { events: [{ id: "e1", event_date: "2026-11-05", date_precision: "day", obligation_text: clause, item: { title: annexTitle } }], failed: false, nowIso: "2026-10-31T00:00:00Z" }));
+  assert.doesNotMatch(text, /ANNEX|second sentence/i, "no Annex list and no second sentence in the row");
+  assert.ok(text.length < 330, `the row is short (${text.length} chars)`);
+  assert.match(text, /By 12 February 2027 Member States shall lay down the rules on penalties/, "the clause's first sentence leads");
+  assert.match(text, /…/, "the long first sentence is cut with an ellipsis");
+  const lines = railRowLines({ item: { title: annexTitle }, obligation_text: clause });
+  assert.ok(lines.lead.length <= 140 && lines.title.length <= 80, "the caps hold");
 });
 
 test("surfaces:7 and 66 a labour term held only per year says so (its cause), draws a dash and no primary-source reason, and a chain term names its source by name, never by the stored key", () => {
@@ -71,7 +84,7 @@ test("surfaces:16 the labour-cost fact names the member states averaged, so a si
 test("surfaces:67, 71 and 13 no variable name, no design note and no roadmap sentence reaches the customer in the profile panels", () => {
   const aux = draw(createElement(AuxiliaryEnergyPanel, { rows: [{ profile_id: "p", load_type: "cold_room", kw_draw: Number.NaN, duty_cycle: 0.5, hours_typical: 8, setpoint_c: 4, setpoint_rh_pct: null, grid_intensity_source: null }], intensity: null, retryHref: "/operations/x" }));
   assert.doesNotMatch(aux, /kwDraw|finite number|needs /);
-  const grid = draw(createElement(GridQueuePanel, { rows: [{ queue_id: "q", dso_name: "UKPN", capacity_band_mw: "10-50", queue_months_p50: null, queue_months_p90: null, as_of: "2026-09-01", substation_name: null, demand_firm_mw: null, demand_available_mw: null, demand_constraint: null, demand_constraint_limiting_factor: null }], retryHref: "/operations/x" }));
+  const grid = draw(createElement(GridQueuePanel, { rows: [{ queue_id: "q", dso_name: "UKPN", capacity_band_mw: "10-50", queue_months_p50: null, queue_months_p90: null, as_of: "2026-09-01", substation_name: null, demand_firm_mw: null, demand_available_mw: null, demand_constraint: null, demand_constraint_limiting_factor: null }], headroomOnly: 0, jurisdiction: "United Kingdom", retryHref: "/operations/x" }));
   assert.doesNotMatch(grid, /needs |a gate, not a cost line/);
   assert.match(GRID_QUEUE_ASIDE, /assumed 24-month planning horizon/);
   assert.doesNotMatch(AUXILIARY_ENERGY_ASIDE, /per-tonne-km factor|never/);

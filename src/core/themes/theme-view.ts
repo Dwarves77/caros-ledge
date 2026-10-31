@@ -48,14 +48,10 @@ const label = (s: string): string | undefined => SURFACE_LABELS[s];
 
 export const themeForItem = (themes: readonly ThemeRow[] | null | undefined, itemId: string | null | undefined): ThemeRow | null => (itemId && themes ? (themes.find((t) => t && Array.isArray(t.member_ids) && t.member_ids.includes(itemId)) ?? null) : null);
 
-const MIN_BRIEF_OVERLAP = 0.5;
 /** A brief explains a theme while its member hash still matches, or while at least half of the members it was written about are still in the theme; a brief that fails both describes a different group and is not shown under this one. */
 function briefHolds(theme: ThemeRow, brief: BriefRow | null, stale: boolean): brief is BriefRow {
-  if (!brief) return false;
-  if (!stale) return true;
-  const was = Array.isArray(brief.member_ids) ? brief.member_ids : [];
-  const now = new Set(theme.member_ids);
-  return was.length > 0 && was.filter((id) => now.has(id)).length / was.length >= MIN_BRIEF_OVERLAP;
+  const was = brief?.member_ids ?? [];
+  return !!brief && (!stale || (was.length > 0 && was.filter((id) => theme.member_ids.includes(id)).length / was.length >= 0.5));
 }
 
 /** The brief that explains the item's theme: exact, or inherited from a dissolved theme (always stale), and only while it still describes the theme (briefHolds). */
@@ -121,6 +117,7 @@ export function themeAnalysisView(input: { itemId: string; surface: string; them
   }
   return {
     themeId: theme.id,
+    memberIds: theme.member_ids,
     title: brief ? brief.title : null,
     briefMd: brief ? brief.briefMd : null,
     generatedAt: brief ? brief.generatedAt : null,

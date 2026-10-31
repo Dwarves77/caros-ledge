@@ -4,7 +4,7 @@
 import { surfaceOf } from "@/core/routing";
 
 import { CONFIG } from "./config";
-import type { BasisEntry } from "./discover";
+import { CANDIDATE_ORIGIN, evidenceOf, isCorroborationOnly, type BasisEntry } from "./discover";
 import { basisEntryKey } from "./intersections";
 
 const MAX_ROUNDS = CONFIG.cluster.maxRounds;
@@ -20,7 +20,8 @@ export interface ClusterEdge {
   source: string;
   target: string;
   score?: number | null;
-  basis?: BasisEntry[] | null;
+  basis?: unknown;
+  origin?: string | null;
 }
 export interface Theme {
   id: string;
@@ -57,12 +58,14 @@ export function clusterThemes(nodes: readonly ClusterNode[], edges: readonly Clu
   for (const e of edges) {
     if (!e || typeof e.source !== "string" || typeof e.target !== "string" || e.source === e.target) continue;
     if (!nodeById.has(e.source) || !nodeById.has(e.target)) continue;
+    // a developing connection is no connection yet, and a shared source corroborates but connects nothing (it glued 19,440 edges into one 833-member theme)
+    if (e.origin === CANDIDATE_ORIGIN || isCorroborationOnly(e.basis)) continue;
     const score = typeof e.score === "number" && Number.isFinite(e.score) ? e.score : 0;
     if (score <= 0) continue;
     const [a, b] = e.source < e.target ? [e.source, e.target] : [e.target, e.source];
     const key = `${a}|${b}`;
     const existing = pair.get(key);
-    const incoming = (Array.isArray(e.basis) ? e.basis : []).filter((x) => x && x.signal);
+    const incoming = evidenceOf(e.basis);
     if (existing) {
       existing.score = Math.max(existing.score, score);
       for (const bs of incoming) if (!existing.basis.some((x) => basisEntryKey(x) === basisEntryKey(bs))) existing.basis.push(bs);

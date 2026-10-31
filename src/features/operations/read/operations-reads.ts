@@ -7,8 +7,9 @@
 // a failure is never an empty matrix, a zero or "no coverage" (INV-263). The old tree selected severity (a dead field), read the source fetch status and dropped every error: all gone.
 import { admitItems } from "@/core/derived/admissible";
 import { boundedRead, fetchAllByIdChunks, fetchAllRows, type Db } from "@/core/db";
-import { FACTS_JOIN, readWhyMatters } from "@/features/flywheel/radar/read";
+import { readWhyMatters } from "@/features/flywheel/radar/read";
 import { stalenessOf } from "@/core/contracts";
+import { canonicalJurisdictionCode, entityId } from "@/core/entities";
 import { surfaceOf } from "@/core/routing";
 import { hostOf } from "@/core/shared";
 import { log } from "@/core/shared/log";
@@ -83,6 +84,12 @@ async function readCoverage(db: Db, rosterP: readonly OperationsRegion[] | Promi
   return roster ? rows.filter((r) => byId.has(r.region_id)).map((r) => ({ regionCode: byId.get(r.region_id) as string, dimension: r.dimension, state: r.state, factCount: r.fact_count, notes: r.notes })) : (null as never);
 }
 
+/** Each fact with its two "Why this matters" lines: the regulation tied to its entity with the next dated obligation and penalty, and the item tied to it (the facts join). */
+async function withWhy(db: Db, facts: OperationsFact[], nowIso: string): Promise<OperationsFact[]> {
+  const why = await readWhyMatters(db, "regional_data_facts", facts.flatMap((f) => (f.id ? [{ id: f.id, subject: f.factLabel }] : [])), nowIso);
+  return facts.map((f) => ({ ...f, why: why.get(f.id ?? "") ?? [] }));
+}
+
 /** Every regional fact the producers wrote, with the registered source's customer tier and freshness derived from the row's own date against `nowIso` (no instant, no judgement: freshness is unknown). */
 async function readFacts(db: Db, rosterP: readonly OperationsRegion[] | Promise<readonly OperationsRegion[] | null>, nowIso?: string): Promise<OperationsFact[]> {
   type Row = Record<string, unknown> & { id: string; region_id: string; sources: SourceEmbed | SourceEmbed[] | null };
@@ -125,11 +132,26 @@ async function readLinkedRegulations(db: Db, rosterP: readonly OperationsRegion[
   return counts;
 }
 
-/** The recomputed figures that rest on Operations inputs: current rows only (a row an input change made stale is not shown), with each input named, dated and rated by its publisher's class. */
-export async function readDerivedFigures(db: Db, limit = 8): Promise<DerivedFigure[]> {
+/** The places a profile is about: the jurisdiction entities of its ISO codes, jurisdictions and regions, and the roster regions it falls in. */
+export interface ProfileScope {
+  entityIds: ReadonlySet<string>;
+  regionIds: ReadonlySet<string>;
+}
+export function profileScope(item: ItemJurisdictions, roster: readonly OperationsRegion[]): ProfileScope {
+  const regions = roster.filter((r) => regionsForItem(roster, item).includes(r.code));
+  const codes = [...(item.jurisdictionIso ?? []), ...(item.jurisdictions ?? []), item.jurisdiction ?? "", ...regions.map((r) => r.code)].map(canonicalJurisdictionCode).filter((c): c is string => !!c);
+  return { entityIds: new Set(codes.map((c) => entityId("jurisdiction", c))), regionIds: new Set(regions.map((r) => r.id)) };
+}
+
+/**
+ * The recomputed figures that rest on Operations inputs: current rows only (a row an input change made stale is not shown), with each input named, dated and rated by its publisher's class. A profile (`scope`) sees the figures whose
+ * jurisdictioned inputs are all its own (a series' entity, a factor's jurisdiction, a fact's region); a figure none of whose inputs names a jurisdiction is global and shows everywhere; the list (`scope` null) spans all regions. A recalculation
+ * that came out equal to the value it replaced is not a notice.
+ */
+export async function readDerivedFigures(db: Db, scope: ProfileScope | null, limit = 8, nowIso?: string): Promise<DerivedFigure[]> {
   const read = await boundedRead<DerivedRow>((n) => db.from("derived_values_admissible").select("value_id, method_id, value, unit, currency, origin_class, lifecycle, base_confidence, computed_at, supersedes, inputs").order("computed_at", { ascending: false }).order("value_id", { ascending: true }).limit(n) as never, { limit: 200 });
   if (read.error) throw new Error(read.error.message);
-  const rows = read.data.filter(isOperationsFigure).slice(0, limit);
+  const rows = read.data.filter(isOperationsFigure);
   if (rows.length === 0) return [];
   const pks = (table: string): string[] => [...new Set(rows.flatMap((r) => inputRefs(r.inputs)).filter((i) => i.table === table).map((i) => i.pk))];
   const chunk = async <T>(table: string, idCol: string, cols: string): Promise<Map<string, T>> => {
@@ -140,13 +162,13 @@ export async function readDerivedFigures(db: Db, limit = 8): Promise<DerivedFigu
     });
     return new Map(got.map((g) => [String(g[idCol]), g as T]));
   };
-  type M = { id: string; label: string | null; reference_period: string | null; source_key: string | null };
+  type M = { id: string; label: string | null; reference_period: string | null; source_key: string | null; entity_id: string | null };
   type F = { factor_id: string; mode: string | null; jurisdiction: string | null; quantity_basis: string | null; as_at_date: string | null; source_key: string | null };
-  type R = { id: string; fact_label: string; reference_period: string | null; source_key: string | null; sources: SourceEmbed | SourceEmbed[] | null };
+  type R = { id: string; region_id: string; fact_label: string; reference_period: string | null; source_key: string | null; sources: SourceEmbed | SourceEmbed[] | null };
   const supersededIds = rows.map((r) => r.supersedes).filter((x): x is string => !!x);
   const [series, factors, facts, supersededRows] = await Promise.all([
-    chunk<M>("market_series", "id", "id, label, reference_period, source_key"), chunk<F>("emission_factors", "factor_id", "factor_id, mode, jurisdiction, quantity_basis, as_at_date, source_key"),
-    chunk<R>("regional_data_facts", "id", "id, fact_label, reference_period, source_key, sources(name, url, base_tier, effective_tier, tier_override)"),
+    chunk<M>("market_series", "id", "id, label, reference_period, source_key, entity_id"), chunk<F>("emission_factors", "factor_id", "factor_id, mode, jurisdiction, quantity_basis, as_at_date, source_key"),
+    chunk<R>("regional_data_facts", "id", "id, region_id, fact_label, reference_period, source_key, sources(name, url, base_tier, effective_tier, tier_override)"),
     fetchAllByIdChunks(supersededIds, async (slice) => {
       const { data, error } = await db.from("derived_values").select("value_id, value").in("value_id", slice);
       if (error) throw new Error(error.message);
@@ -168,16 +190,27 @@ export async function readDerivedFigures(db: Db, limit = 8): Promise<DerivedFigu
     if (ref.table === "regional_data_facts" && r) return { label: r.fact_label, period: r.reference_period, sourceName: embed(r.sources)?.name ?? p(r.source_key)?.name ?? null, tier: customerTierOf(embed(r.sources)) ?? p(r.source_key)?.tier ?? null };
     return { label: "an input that is no longer held", period: null, sourceName: null, tier: null };
   };
+  // Whether an input is the profile's own (true), another place's (false), or names no place (null: global).
+  const own = (ref: { table: string; pk: string }): boolean | null => {
+    const m = series.get(ref.pk), f = factors.get(ref.pk), r = facts.get(ref.pk);
+    if (ref.table === "market_series" && m) return m.entity_id ? scope?.entityIds.has(m.entity_id) ?? true : null;
+    if (ref.table === "emission_factors" && f) { const code = canonicalJurisdictionCode(f.jurisdiction); return code ? scope?.entityIds.has(entityId("jurisdiction", code)) ?? true : null; }
+    if (ref.table === "regional_data_facts" && r) return scope?.regionIds.has(r.region_id) ?? true;
+    return null;
+  };
   const before = new Map(supersededRows.map((v) => [v.value_id, num(v.value)] as const));
-  const figures = rows.map((r) => toDerivedFigure(r, inputRefs(r.inputs).filter((i) => OPERATIONS_INPUT_TABLES.includes(i.table)).map(resolve), r.supersedes ? (before.get(r.supersedes) ?? null) : null));
+  const kept = rows.flatMap((r) => {
+    const refs = inputRefs(r.inputs).filter((i) => OPERATIONS_INPUT_TABLES.includes(i.table));
+    const figure = toDerivedFigure(r, refs.map(resolve), r.supersedes ? (before.get(r.supersedes) ?? null) : null);
+    return refs.every((i) => own(i) !== false) && !(figure.previous !== null && figure.previous === figure.value) ? [{ figure, first: refs[0] }] : [];
+  }).slice(0, limit);
   // "Why this matters" for each figure: the items tied to its first input row (one join per input table)
-  const first = rows.map((r) => inputRefs(r.inputs).find((i) => OPERATIONS_INPUT_TABLES.includes(i.table)));
   const why = new Map<string, string[]>();
   for (const table of OPERATIONS_INPUT_TABLES) {
-    const asked = figures.flatMap((f, n) => (first[n]?.table === table ? [{ id: first[n]?.pk as string, subject: f.inputs[0]?.label ?? f.title }] : []));
-    for (const [pk, lines] of (await readWhyMatters(db, FACTS_JOIN, table, asked)) ?? []) why.set(`${table}/${pk}`, lines);
+    const asked = kept.flatMap((k) => (k.first?.table === table ? [{ id: k.first.pk, subject: k.figure.inputs[0]?.label ?? k.figure.title }] : []));
+    if (nowIso) for (const [pk, lines] of await readWhyMatters(db, table, asked, nowIso)) why.set(`${table}/${pk}`, lines);
   }
-  return figures.map((f, n) => ({ ...f, why: why.get(`${first[n]?.table}/${first[n]?.pk}`) ?? [] }));
+  return kept.map(({ figure, first }) => ({ ...figure, why: why.get(`${first?.table}/${first?.pk}`) ?? [] }));
 }
 
 export interface OperationsPageData {
@@ -197,11 +230,10 @@ export async function readOperationsPage(db: Db, nowIso: string, orgId: string |
   const rosterP = settle("the region roster", () => readRoster(db));
   const [roster, category, aggregates, coverage, facts, stateCosts, linkedRegulations, derived] = await Promise.all([
     rosterP, readCategory(db, orgId ? "get_operations_items" : "get_operations_items_public", orgId), readSurfaceCounts(db, orgId, "operations"),
-    settle("coverage", () => readCoverage(db, rosterP)), settle("facts", () => readFacts(db, rosterP, nowIso)),
-    settle("state cost facts", () => readStateCosts(db)), settle("linked regulations", () => readLinkedRegulations(db, rosterP)), settle("recomputed figures", () => readDerivedFigures(db)),
+    settle("coverage", () => readCoverage(db, rosterP)), settle("facts", () => readFacts(db, rosterP, nowIso).then((facts) => withWhy(db, facts, nowIso))),
+    settle("state cost facts", () => readStateCosts(db)), settle("linked regulations", () => readLinkedRegulations(db, rosterP)), settle("recomputed figures", () => readDerivedFigures(db, null, 8, nowIso)),
   ]);
-  const why = facts ? await readWhyMatters(db, FACTS_JOIN, "regional_data_facts", facts.flatMap((f) => (f.id ? [{ id: f.id, subject: f.factLabel }] : []))) : null;
-  return { rows: category.resources, rowsFailed: category.failed, aggregates, roster, coverage, facts: why ? (facts as OperationsFact[]).map((f) => ({ ...f, why: why.get(f.id ?? "") ?? [] })) : facts, stateCosts, linkedRegulations, derived };
+  return { rows: category.resources, rowsFailed: category.failed, aggregates, roster, coverage, facts, stateCosts, linkedRegulations, derived };
 }
 
 /** The S3/S4 gate for one profile: the roster and the sourced coverage over the item's whole jurisdiction list; either read failing closes the gate and says why (INV-233). */
@@ -230,7 +262,10 @@ export async function readItemRegionInputs(db: Db, itemUuid: string): Promise<It
 export interface Spec09Data {
   /** The workspace's own loads (org-scoped); null when the read failed. */
   aux: AuxiliaryEnergyRow[] | null;
+  /** The profile's own queue rows that carry a queue time (p50 or p90); null when the read failed. */
   grid: GridQueueRow[] | null;
+  /** How many of the profile's substations carry headroom figures but no queue time; null when the read failed. */
+  gridHeadroomOnly: number | null;
   /** The latest sourced grid intensity of the profile's region; null when there is none, and `intensityFailed` says the read failed rather than found nothing. */
   intensity: GridIntensity | null;
   intensityFailed: boolean;
@@ -238,25 +273,30 @@ export interface Spec09Data {
 const SPEC09_LIMIT = 25;
 const GCO2_PER_KWH = /^\s*gCO2e?\s*\/\s*kWh\s*$/i;
 
-/** The profile's panels: the workspace's auxiliary loads, the grid connection queue gate rows and the sourced grid intensity of the region the profile is about (the conversion the old card only named). */
-export async function readSpec09(db: Db, orgId: string | null, regionCodes: readonly string[], known?: readonly OperationsRegion[]): Promise<Spec09Data> {
+/** The profile's panels: the workspace's auxiliary loads, the grid connection queue rows of the profile's own jurisdiction and the sourced grid intensity of the region the profile is about (the conversion the old card only named). */
+export async function readSpec09(db: Db, orgId: string | null, scope: ProfileScope): Promise<Spec09Data> {
   let intensity: GridIntensity | null = null;
   let intensityFailed = false;
-  const [aux, grid] = await Promise.all([
+  const [aux, queue] = await Promise.all([
     orgId ? settle("auxiliary loads", async () => {
       const { data, error } = await db.from("auxiliary_energy_profiles").select("profile_id, load_type, kw_draw, duty_cycle, hours_typical, setpoint_c, setpoint_rh_pct, grid_intensity_source").eq("org_id", orgId).order("created_at", { ascending: false }).order("profile_id", { ascending: true }).limit(SPEC09_LIMIT);
       if (error) throw new Error(error.message);
       return (data ?? []) as unknown as AuxiliaryEnergyRow[];
     }) : Promise.resolve([]),
     settle("grid queue", async () => {
-      const { data, error } = await db.from("grid_connection_queues").select("queue_id, dso_name, capacity_band_mw, queue_months_p50, queue_months_p90, as_of, substation_name, demand_firm_mw, demand_available_mw, demand_constraint, demand_constraint_limiting_factor").order("demand_available_mw", { ascending: true, nullsFirst: true }).order("as_of", { ascending: false }).order("queue_id", { ascending: true }).limit(SPEC09_LIMIT);
-      if (error) throw new Error(error.message);
-      return (data ?? []) as unknown as GridQueueRow[];
+      // Only the profile's own jurisdiction (the table is per jurisdiction entity); a row with a queue time is a queue entry, one with only headroom figures is counted, not drawn as a queue.
+      const ids = [...scope.entityIds];
+      const [timed, noTime] = await Promise.all([
+        db.from("grid_connection_queues").select("queue_id, dso_name, capacity_band_mw, queue_months_p50, queue_months_p90, as_of, substation_name, demand_firm_mw, demand_available_mw, demand_constraint, demand_constraint_limiting_factor").in("jurisdiction_id", ids).or("queue_months_p50.gte.0,queue_months_p90.gte.0").order("demand_available_mw", { ascending: true, nullsFirst: true }).order("as_of", { ascending: false }).order("queue_id", { ascending: true }).limit(SPEC09_LIMIT),
+        db.from("grid_connection_queues").select("queue_id", { count: "exact", head: true }).in("jurisdiction_id", ids).is("queue_months_p50", null).is("queue_months_p90", null),
+      ]);
+      if (timed.error) throw new Error(timed.error.message);
+      if (noTime.error) throw new Error(noTime.error.message);
+      return { rows: (timed.data ?? []) as unknown as GridQueueRow[], headroomOnly: noTime.count ?? 0 };
     }),
     (async () => {
       try {
-        const roster = known ?? (await readRoster(db));
-        const ids = roster.filter((r) => regionCodes.includes(r.code)).map((r) => r.id);
+        const ids = [...scope.regionIds];
         if (ids.length === 0) return;
         const { data, error } = await db.from("regional_data_facts").select("id, value_numeric, unit, as_at_date, reference_period, sources(name, url, base_tier, effective_tier, tier_override)").eq("dimension", "grid_intensity").in("region_id", ids).not("value_numeric", "is", null).order("as_at_date", { ascending: false }).order("id", { ascending: true }).limit(20);
         if (error) throw new Error(error.message);
@@ -265,7 +305,7 @@ export async function readSpec09(db: Db, orgId: string | null, regionCodes: read
       } catch (e) { warn("grid intensity", e); intensityFailed = true; }
     })(),
   ]);
-  return { aux, grid, intensity, intensityFailed };
+  return { aux, grid: queue?.rows ?? null, gridHeadroomOnly: queue?.headroomOnly ?? null, intensity, intensityFailed };
 }
 
 /**

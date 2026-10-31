@@ -14,3 +14,4 @@ results-artifact/
 parity-report.txt
 next-start.log
 cutover-run/
+scripts/tmp/

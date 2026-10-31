@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { locateSpan } from "@/core/contracts/verbatim";
 import { ledgerCoversClaims } from "@/core/grounding/ledger";
 import { applyBatch } from "@/features/batches";
 import { validateRecordBriefEntry } from "@/features/batches/kinds/item-briefs/validate";
@@ -249,4 +250,25 @@ test("GROUND-FIX-1 G2 (duplicate sections): a claim authored in two sections and
   assert.equal(ledgerCoversClaims([row("Scope widens in 2022", "From January 2022", "s3"), other], authored, sections), true, "stored in the second authored section");
   assert.equal(ledgerCoversClaims([row("Scope widens in 2022", "From January 2022", "s1"), other], authored, sections), false, "stored in a section it was never authored in");
   assert.equal(ledgerCoversClaims([other], authored, sections), false, "a pair not stored at all");
+});
+
+test("INV-8 (ENGINE-JOIN-1): the flywheel learns from a brief: the entity its reader files the item under makes a new edge to the item already filed under it, in the same run", async () => {
+  const w = batchWorld();
+  w.deps.locate = locateSpan;
+  const E = "cl:instrument:0000000000000099";
+  const OTHER = "a0000000-0000-4000-8000-0000000000bb";
+  const base = w.db.rows("intelligence_items")[0] as Record<string, unknown>;
+  w.db.seed("entities", [{ entity_id: E, kind: "instrument", canonical_name: "the reporting standard", status: "active" }]);
+  w.db.seed("intelligence_items", [{ ...base, id: OTHER, legacy_id: "other-item", title: "Other item", provenance_status: "verified", is_archived: false, replaced_by: null }]);
+  w.db.seed("entity_refs", [{ ref_table: "intelligence_items", ref_id: OTHER, entity_id: E, role: "cites_instrument", asserted_by: "test", method_version: "refs@3.0.0" }]);
+  const capture = w.db.rows("agent_run_searches").find((r) => r.intelligence_item_id === ITEM) as Record<string, unknown>;
+  assert.equal(w.db.rows("item_cross_references").length, 0);
+  const r = await apply(w, [recordEntry(w.db, { entity_ids: [{ entity_id: E, quote: { capture_id: capture.id, text: SPAN_REPORT } }] })]);
+  assert.equal(r.counts.applied, 1, refusals(r));
+  const edge = w.db.rows("item_cross_references").find((x) => x.source_item_id === ITEM && x.target_item_id === OTHER);
+  assert.ok(edge, "the brief's new entity produced an edge to the item filed under it");
+  assert.deepEqual([edge?.origin, (edge?.basis as { signal: string }[]).some((b) => b.signal === "shared_entity")], ["provenance_discovery", true]);
+  const before = w.db.rows("item_cross_references").length;
+  await apply(w, [recordEntry(w.db, { entity_ids: [{ entity_id: E, quote: { capture_id: capture.id, text: SPAN_REPORT } }] })], { options: { allowBriefOverwrite: true } });
+  assert.equal(w.db.rows("item_cross_references").length, before, "idempotent: a second run makes no second edge");
 });

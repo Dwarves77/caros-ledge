@@ -45,9 +45,12 @@ export function AuxiliaryEnergyPanel({ rows, intensity, retryHref }: { rows: Aux
   );
 }
 
-export function GridQueuePanel({ rows, retryHref }: { rows: GridQueueRow[] | null; retryHref: string }) {
+const headroomNote = (n: number, where: string): string => `${n} ${n === 1 ? "substation" : "substations"} in ${where} ${n === 1 ? "has" : "have"} headroom figures but no queue time is published, so no connection gate is stated for ${n === 1 ? "it" : "them"}.`;
+
+export function GridQueuePanel({ rows, headroomOnly, jurisdiction, retryHref }: { rows: GridQueueRow[] | null; headroomOnly: number | null; jurisdiction: string; retryHref: string }) {
   if (rows === null) return <CoverageState state="error" variant="inline" subject="Grid connection queue" retryHref={retryHref} />;
-  if (rows.length === 0) return <RequestableCoverageState state="not_covered" variant="inline" subject="Grid connection queue" reason="No rows yet: no free public source confirms demand-side connection-queue months." requestRef={`${retryHref}#grid-queue`} />;
+  const where = jurisdiction || "this profile's jurisdiction";
+  if (rows.length === 0) return <RequestableCoverageState state="not_covered" variant="inline" subject="Grid connection queue" reason={headroomOnly ? headroomNote(headroomOnly, where) : `No grid-connection queue data is held for ${where} yet. The UK is the only network with published queue figures in the ledger.`} requestRef={`${retryHref}#grid-queue`} />;
   const statuses = rows.map((r) => { const g = gridQueueGate({ queueMonthsP90: r.queue_months_p90, horizonMonths: DECISION_HORIZON_MONTHS }); return g.label === "M" ? "UNKNOWN" : (g.value as string); });
   const clearCount = statuses.filter((s) => s === "CLEAR").length;
   const blockedCount = statuses.filter((s) => s === "BLOCKED").length;
@@ -73,6 +76,7 @@ export function GridQueuePanel({ rows, retryHref }: { rows: GridQueueRow[] | nul
         <span>{rows.length} {rows.length === 1 ? "substation" : "substations"} monitored against {DECISION_HORIZON_MONTHS}-month horizon{[...new Set(rows.map((r) => r.dso_name.split(",")[0]?.trim()).filter(Boolean))].length > 0 ? ` · ${[...new Set(rows.map((r) => r.dso_name.split(",")[0]?.trim()).filter(Boolean))].join(", ")}` : ""}</span>
         <span>{clearCount} Clear · {blockedCount} Blocked · {unknownCount} Unknown</span>
       </div>
+      {headroomOnly ? <p className={styles.derivedMeta}>{headroomNote(headroomOnly, where)}</p> : null}
       <div className={styles.specGrid}>{rows.slice(0, 4).map((r, i) => drawSubstation(r, i))}</div>
       {rows.length > 4 && (
         <details data-audit="disclosure-row" className="cl-register-master">

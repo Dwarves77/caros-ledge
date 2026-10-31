@@ -1,36 +1,23 @@
 // `npm run gates [-- --profile fast|full]`: the one list of checks a change must pass, in CI's order, fail-fast. Two profiles over ONE list (GATES-FAST-1):
-// `full` (the default) is every step, and is what the `ci` job in ci.yml runs (`--profile full`; step names are log groups). `fast` is the steps marked `fast: true`, each measured
-// under 60 s, and is what .githooks/pre-push runs for a push that touches only what it covers (docs); a push touching src/, tests/, scripts/, supabase/ or the package/config files runs `full` (HOOK-FULL-1, ruling 43), so a push is gated in minutes while the full suite (build, the whole test suite, the client bundle walk, schema:local) runs in CI.
+// `full` (the default) is every step, and is what the `ci` job in ci.yml runs (`--profile full`; step names are log groups). `fast` is the steps marked `fast: true`, each measured under 60 s.
+// GATES-FIX-1 (ruling 55): .githooks/pre-push runs `--memo --profile fast --range a..b` and never the full profile: the fast steps plus the test files of the modules the push changed (testFilesFor); the full matrix (build, the whole test suite, schema) is GitHub Actions', whose ci job is the merge gate.
+// A pass on a clean tree is remembered in <git-dir>/gates-last-pass.json; under --memo (the hook) the same HEAD with the same clean tree and a covering profile is not run again. Never skipped in CI.
 // Both profiles also run `schema:local` (schema-apply, then `joinability:schema`, the ci.yml schema job's two steps), on the embedded PostgreSQL, when a file under supabase/ differs from the upstream branch (@{upstream}, else origin/main); in CI the `schema` job owns that step.
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { isMain } from "../lib/fs.mjs";
 
 import { withLock } from "./lib/lock.mjs";
+import { testArgs } from "./test.mjs";
 
 const inCi = Boolean(process.env.GITHUB_ACTIONS);
 const git = (...args) => execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 
 export const PROFILES = ["fast", "full"];
 
-/** HOOK-FULL-1 (ruling 43): the paths a push must run the FULL profile for, because the fast profile proves none of what they change. Derived from STEPS, not guessed. The steps the fast profile lacks are Build (compiles src/, reads next.config.ts, public/, package*.json, tsconfig.json),
- * Tests (`tests/**` + `tests/parity/**`, and they import scripts/** and read scripts/runs/plans/*.json: tests/runs/plan.test.ts parses every plan, so a plan edit is a full-profile change), the client bundle walk (src/**), the Edge Function bundle (supabase/functions/**,
- * and src/core/fetch/policy.ts) and schema:local (supabase/**). Fast-covered or covered by nothing: docs/**, *.md at the root, .claude/**, .gitignore, .gitattributes, .env.example (lint, tree-checks, citations and workflow-yaml run in both). A path matches by prefix, or exactly for a root file. */
-export const FULL_PREFIXES = ["src/", "tests/", "scripts/", "supabase/", "public/"];
-export const FULL_FILES = ["package.json", "package-lock.json", "tsconfig.json", "tsconfig.tests.json", "next.config.ts", "eslint.config.mjs", "vercel.json", ".nvmrc", ".githooks/pre-push"];
-
-/** The first changed path of `files` the fast profile does not cover, or null when every one is fast-covered (an empty list is fast). */
-export const fullTrigger = (files) => files.find((f) => FULL_FILES.includes(f) || FULL_PREFIXES.some((p) => f.startsWith(p))) ?? null;
-
-/** The one-line decision the pre-push hook prints: which profile and why. */
-export function pickProfile(files) {
-  const hit = fullTrigger(files);
-  return hit ? { profile: "full", line: `pre-push: profile full, ${hit} is not covered by the fast profile (${files.length} changed path${files.length === 1 ? "" : "s"})` } : { profile: "fast", line: `pre-push: profile fast, none of the ${files.length} changed path${files.length === 1 ? "" : "s"} is outside what the fast profile covers` };
-}
-
-/** Every step is an npm script, so the failure line names a real script. `fast: true` puts a step in the fast profile (measured under 60 s on a workstation, and never `heavy`); a step without it is full-only. A `heavy` step (build, tests, schema:local) takes the cross-process "gates" lock (scripts/ci/lib/lock.mjs): two lanes on one workstation never run them at once; the cheap checks stay outside it and report fast, so the lock applies to the full profile only. */
+/** Every step is an npm script, so the failure line names a real script. `fast: true` puts a step in the fast profile (measured under 60 s on a workstation, and never `heavy`); a step without it is full-only. A `heavy` step (build, tests, schema:local) takes this clone's "gates" lock (scripts/ci/lib/lock.mjs, in its own git-dir): a clone never runs two of them at once (they share its .next and test-output.txt), and independent clones never wait for each other. */
 export const STEPS = [
   { name: "Workflows are valid: YAML parses and the pinned actionlint finds nothing (IMP-100)", cmd: "workflow-yaml", fast: true },
   { name: "Lint", cmd: "lint", fast: true },
@@ -40,7 +27,7 @@ export const STEPS = [
   { name: "Brief validator report (VALID-1, INV-VAL-5: every rule trips exactly the fixture rows labelled with it)", cmd: "validator-report", fast: true },
   { name: "Tree checks", cmd: "tree-checks", fast: true },
   { name: "UI checks", cmd: "ui-checks", fast: true },
-  { name: "Client bundle walk (no \"use client\" file reaches a server-only module, node:crypto or a secret; audit 2026-10-23 2.4)", cmd: "client-walk" },
+  { name: "Client bundle walk (no \"use client\" file reaches a server-only module, node:crypto or a secret; audit 2026-10-23 2.4)", cmd: "client-walk", fast: true },
   { name: "LOC gates", cmd: "loc", fast: true },
   { name: "Connection check (nothing runs alone)", cmd: "connections", fast: true },
   { name: "Column check (every select, filter, write payload and rpc in src names a column or function the database defines)", cmd: "columns", fast: true },
@@ -57,17 +44,43 @@ export const stepsFor = (profile) => {
   return profile === "full" ? [...STEPS] : STEPS.filter((s) => s.fast);
 };
 
-/** The paths changed in each `--range a..b` of argv (git diff --name-only), de-duplicated. */
-export const rangeFiles = (argv) =>
-  [...new Set(argv.flatMap((a, i) => (argv[i - 1] === "--range" ? changedIn(a) : [])))];
-/** Paths in one range; a range git cannot read (a remote commit not fetched, a forced push) cannot be shown docs-only, so it counts as code. */
-const changedIn = (range) => {
+/** The paths changed in each `--range a..b` of argv, de-duplicated; a range git cannot read (a forced push, a remote commit not fetched) is measured from origin/main instead. */
+export const rangeFiles = (argv) => [...new Set(argv.flatMap((a, i) => (argv[i - 1] === "--range" ? changedIn(a) : [])))];
+const diffNames = (range) => {
   try {
     return git("diff", "--name-only", range).split("\n").filter(Boolean);
   } catch {
-    return ["src/(range unreadable)"];
+    return null; // git cannot read the range
   }
 };
+const changedIn = (range) => diffNames(range) ?? diffNames("origin/main...HEAD") ?? [];
+
+const TEST_FILE = /^tests\/.*\.test\.(mjs|ts)$/;
+/** The test files (of `tracked`, the repository's tracked tests) that cover `files`: src/core/<x>/** -> tests/<x>/** and tests/core/<x>/** (and tests/core/<x>.test.*); src/features/<x>/** -> tests/<x>/**; scripts/ci/** -> tests/ci/**; a changed test file runs itself. Sorted, de-duplicated. */
+export function testFilesFor(files, tracked) {
+  const want = new Set();
+  const under = (dir) => tracked.filter((t) => t.startsWith(`${dir}/`)).forEach((t) => want.add(t));
+  for (const f of files) {
+    const core = /^src\/core\/([^/]+)\//.exec(f)?.[1];
+    const feature = /^src\/features\/([^/]+)\//.exec(f)?.[1];
+    if (core) {
+      under(`tests/${core}`);
+      under(`tests/core/${core}`);
+      tracked.filter((t) => /^tests\/core\/[^/]+\.test\.(mjs|ts)$/.test(t) && t.slice(11).replace(/\.test\.(mjs|ts)$/, "") === core).forEach((t) => want.add(t));
+    } else if (feature) under(`tests/${feature}`);
+    else if (f.startsWith("scripts/ci/")) under("tests/ci");
+    else if (TEST_FILE.test(f) && tracked.includes(f)) want.add(f);
+  }
+  return [...want].filter((t) => TEST_FILE.test(t)).sort();
+}
+
+/** Which profiles satisfy a required one: a full pass covers fast. */
+const COVERS = { fast: ["fast", "full"], full: ["full"] };
+/** GATES-FIX-1: the one-line reason a run is skipped, or null when it must run. `rec` is <git-dir>/gates-last-pass.json; the skip needs the same HEAD, a covering profile, a clean tree, no CI, and (when the hook asks for the changed modules' tests) a record that ran them. */
+export function memoSkip(rec, { head, profile, clean, ci, targeted }) {
+  if (ci || !clean || !rec || rec.sha !== head || !COVERS[profile].includes(rec.profile) || (targeted && !rec.targeted)) return null;
+  return `gates: HEAD ${head.slice(0, 12)} already passed ${rec.profile} at ${rec.at}; skipping`;
+}
 
 /** `--profile fast|full` or `--profile=fast|full` from argv; full when absent. */
 export function profileFrom(argv) {
@@ -99,7 +112,9 @@ export const edgeChanged = () => changedUnder("supabase/functions/", "src/core/f
 function run(step) {
   if (inCi) console.log(`::group::${step.name}`);
   else console.log(`\n== ${step.name}`);
-  const r = spawnSync("npm", ["run", step.cmd], { shell: true, encoding: "utf8", maxBuffer: 1 << 28, env: { ...process.env, ...step.env }, stdio: step.capture ? "pipe" : "inherit" });
+  const r = step.files
+    ? spawnSync(process.execPath, testArgs(undefined, step.files), { stdio: "inherit" })
+    : spawnSync("npm", ["run", step.cmd], { shell: true, encoding: "utf8", maxBuffer: 1 << 28, env: { ...process.env, ...step.env }, stdio: step.capture ? "pipe" : "inherit" });
   if (step.capture) {
     const out = `${r.stdout ?? ""}${r.stderr ?? ""}`;
     writeFileSync(step.capture, out);
@@ -110,30 +125,44 @@ function run(step) {
 }
 
 if (isMain(import.meta.url)) {
+  const argv = process.argv.slice(2);
   let profile;
   try {
-    const argv = process.argv.slice(2);
-    if (argv.includes("--range")) {
-      // pre-push: `--range a..b` (one per pushed ref) chooses the profile by the paths pushed; no --profile is given
-      const picked = pickProfile(rangeFiles(argv));
-      console.log(picked.line);
-      profile = picked.profile;
-    } else profile = profileFrom(argv);
+    profile = profileFrom(argv);
   } catch (e) {
     console.error(`gates: ${e.message}`);
     process.exit(2);
   }
-  const stampName = profile === "full" ? "gates-last" : "gates-last-fast";
-  const stamp = execFileSync("git", ["rev-parse", "--git-path", stampName], { encoding: "utf8" }).trim();
-  const last = existsSync(stamp) ? readFileSync(stamp, "utf8").trim() : null;
+  const gitDir = git("rev-parse", "--absolute-git-dir");
+  const memoPath = join(gitDir, "gates-last-pass.json");
+  const read = () => {
+    try {
+      return JSON.parse(readFileSync(memoPath, "utf8"));
+    } catch {
+      return null;
+    }
+  };
+  const clean = () => git("status", "--porcelain") === "";
+  const ranged = argv.includes("--range");
+  const last = read();
+  if (argv.includes("--memo")) {
+    const line = memoSkip(last, { head: git("rev-parse", "HEAD"), profile, clean: clean(), ci: Boolean(process.env.CI || process.env.GITHUB_ACTIONS), targeted: ranged });
+    if (line) {
+      console.log(line);
+      process.exit(0);
+    }
+  }
   const steps = stepsFor(profile).filter((s) => !s.scoped || inCi || s.scoped());
   if (!inCi && supabaseChanged()) steps.push({ name: "Schema on an embedded PostgreSQL 15 (supabase/ changed)", cmd: "schema:local", heavy: true });
-  console.log(`gates (${profile}): ${steps.map((s) => s.cmd).join(", ")}${last ? `; the last ${profile} run took ${last}s` : ""}`);
+  const tests = ranged ? testFilesFor(rangeFiles(argv), git("ls-files", "--", "tests").split("\n").filter(Boolean)) : [];
+  if (tests.length) steps.push({ name: `Tests of the changed modules (${tests.length} file${tests.length === 1 ? "" : "s"})`, cmd: "test", files: tests, heavy: true });
+  console.log(`gates (${profile}): ${steps.map((s) => s.cmd).join(", ")}${last?.profile === profile ? `; the last ${profile} pass took ${last.seconds}s` : ""}`);
+  const lockDir = join(gitDir, "gates-lock");
   const started = Date.now();
   const skipped = [];
   for (const step of steps) {
     const t0 = Date.now();
-    const code = step.heavy ? await withLock("gates", () => run(step)) : run(step);
+    const code = step.heavy ? await withLock("gates", () => run(step), { dir: lockDir }) : run(step);
     console.log(`gates: ${step.cmd} ${Math.round((Date.now() - t0) / 1000)}s`);
     if (code === 2 && !inCi) {
       // a gate that cannot run here (no credentials) exits 2 after printing why: skipped, never a red and never counted as proven. CI never skips.
@@ -146,7 +175,7 @@ if (isMain(import.meta.url)) {
       process.exit(1);
     }
   }
-  mkdirSync(dirname(stamp), { recursive: true });
-  writeFileSync(stamp, `${Math.round((Date.now() - started) / 1000)}\n`);
-  console.log(`\ngates (${profile}): ${steps.length - skipped.length} passed${skipped.length ? `, ${skipped.length} skipped (${skipped.join(", ")})` : ""} in ${Math.round((Date.now() - started) / 1000)}s`);
+  const seconds = Math.round((Date.now() - started) / 1000);
+  if (!inCi && clean()) writeFileSync(memoPath, JSON.stringify({ sha: git("rev-parse", "HEAD"), profile, at: new Date().toISOString(), seconds, targeted: ranged }) + "\n");
+  console.log(`\ngates (${profile}): ${steps.length - skipped.length} passed${skipped.length ? `, ${skipped.length} skipped (${skipped.join(", ")})` : ""} in ${seconds}s`);
 }

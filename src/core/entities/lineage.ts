@@ -3,6 +3,7 @@
 // foreign-origin edge that already holds a different type (reported as a conflict, not written), merges basis entries additively, and never
 // re-creates an admin-tombstoned pair. The one change it makes to another machine origin's row is upgrading a generic related edge to a typed one.
 import { isPairTombstoned } from "@/core/corrections";
+import { CANDIDATE_ORIGIN } from "@/core/flywheel/discover";
 
 import { resolveMention, type CorpusRow } from "./mentions";
 
@@ -70,7 +71,8 @@ export function partitionLineageWrites(writes: readonly EdgeWrite[], existingByP
       out.inserts.push(row);
       continue;
     }
-    const own = existing.origin === LINEAGE_BACKFILL_ORIGIN;
+    // a developing connection (candidate) is a machine row no fact stands on: a typed lineage edge takes it over
+    const own = existing.origin === LINEAGE_BACKFILL_ORIGIN || existing.origin === CANDIDATE_ORIGIN;
     if (existing.origin === MANUAL_ORIGIN) {
       out.skippedForeign.push({ ...pair, foreignOrigin: existing.origin });
       continue;
@@ -94,7 +96,7 @@ export function partitionLineageWrites(writes: readonly EdgeWrite[], existingByP
       out.unchanged.push({ id: existing.id as string, ...pair });
       continue;
     }
-    out.upgrades.push({ id: existing.id as string, ...pair, relationship: row.relationship, basis: merged, origin: existing.origin, prior_relationship: existing.relationship, basis_added: added });
+    out.upgrades.push({ id: existing.id as string, ...pair, relationship: row.relationship, basis: merged, origin: existing.origin, prior_relationship: existing.relationship, basis_added: added, ...(existing.origin === CANDIDATE_ORIGIN ? { origin: row.origin } : {}) });
   }
   out.inserts.sort(byPair);
   for (const k of ["upgrades", "skippedForeign", "conflicts", "unchanged", "skippedTombstoned"] as const) (out[k] as Pair[]).sort(byPair);

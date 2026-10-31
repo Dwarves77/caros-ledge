@@ -1,6 +1,8 @@
 // Ported from old_repo/src/lib/forward-events/obligation-rail-select.mjs (lines 1-54)
 // The rail card's rows: events inside 30 days of the server's day, soonest first, at most the artboard's four. UTC day math; `now` is passed in by the
 // caller (the server's clock, never the client's).
+import { normalizeDisplayTitle } from "@/core/fetch/titles";
+
 const OBLIGATION_RAIL_WINDOW_DAYS = 30;
 const OBLIGATION_RAIL_ROW_CAP = 4;
 const MS_PER_DAY = 86_400_000;
@@ -41,3 +43,17 @@ function formatBy(eventDate: unknown, precision: unknown, compact: boolean): str
 export const formatForwardEvent = (eventDate: unknown, precision: unknown): string => formatBy(eventDate, precision, false);
 /** The compact form: "Mar 4 2026". */
 export const formatForwardEventCompact = (eventDate: unknown, precision: unknown): string => formatBy(eventDate, precision, true);
+
+const RAIL_TITLE_MAX = 80;
+const RAIL_LEAD_MAX = 140;
+const cut = (text: string, max: number): string => {
+  if (text.length <= max) return text;
+  const head = text.slice(0, max - 1);
+  const space = head.lastIndexOf(" ");
+  return `${(space > max * 0.6 ? head.slice(0, space) : head).replace(/[\s,;:.—-]+$/, "")}…`;
+};
+/** A rail row's two lines: the item's short title (an Annex list is the title's tail and goes) and the first sentence of the clause cut at 140 characters; the full clause lives on the item. */
+export function railRowLines(ev: { item: { title: string | null }; obligation_text: string }): { title: string; lead: string } {
+  const text = String(ev.obligation_text ?? "").replace(/\s+/g, " ").trim();
+  return { title: cut(normalizeDisplayTitle(ev.item.title ?? "").title, RAIL_TITLE_MAX), lead: cut(text.split(/(?<=[.!?])\s+/)[0] ?? text, RAIL_LEAD_MAX) };
+}

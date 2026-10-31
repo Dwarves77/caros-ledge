@@ -4,6 +4,7 @@
 import type { Db } from "@/core/db";
 import { fetchAllByIdChunks, fetchAllRows } from "@/core/db";
 import { isYearOnlyTarget } from "@/core/flywheel/clusters";
+import { CANDIDATE_ORIGIN, evidenceOf } from "@/core/flywheel/discover";
 import { detectGaps } from "@/core/flywheel/gaps";
 import { computeMemberHash, lineageFromThemeDelta, resolveBriefForTheme } from "@/core/flywheel/themes";
 import { surfaceOf } from "@/core/routing";
@@ -15,7 +16,7 @@ export interface ThemeRow { id: string; member_ids: string[] | null; dominant_si
 export interface MemberItem { id: string; title: string | null; item_type: string | null; domain: number | null; jurisdiction_iso: string[] | null; priority: string | null; summary: string | null; added_date: string | null }
 export interface ThemeClaim { id: string; intelligence_item_id: string; claim_kind: string; claim_text: string; source_id: string | null; source_span?: string | null }
 export interface ThemeEvent { id: string; intelligence_item_id: string; event_date: string; date_precision: string; event_kind: string; obligation_text: string; source_span: string | null; confidence: string | null }
-export interface ThemeEdge { source_item_id: string; target_item_id: string; relationship: string | null; origin: string | null; basis: { detail?: string }[] | null; score: number | null }
+export interface ThemeEdge { source_item_id: string; target_item_id: string; relationship: string | null; origin: string | null; basis: unknown; score: number | null }
 export interface ThemeMaterial { items: MemberItem[]; claims: ThemeClaim[]; events: ThemeEvent[]; edges: ThemeEdge[]; jurisdictionWeights: Record<string, unknown> }
 export interface StoredBrief { theme_id: string; member_hash: string; member_count: number; title: string | null; generated_at: string | null; generated_by: string | null; member_ids: string[] | null }
 
@@ -97,7 +98,7 @@ export async function loadThemeMaterial(sb: Db, themes: readonly ThemeRow[], opt
     (await byIds<MemberItem>(sb, "intelligence_items", MEMBER_COLUMNS, memberIds, "id", "id")).filter((i) => live.has(i.id)),
     await admissible.claims(sb, (await byIds<ThemeClaim>(sb, "section_claim_provenance", CLAIM_COLUMNS, memberIds, "intelligence_item_id", "id")).filter((c) => c.claim_kind === "FACT")),
     (await byIds<ThemeEvent>(sb, "item_forward_events", EVENT_COLUMNS, memberIds, "intelligence_item_id", "id")).filter((e) => live.has(e.intelligence_item_id)),
-    (await byIds<ThemeEdge>(sb, "item_cross_references", EDGE_COLUMNS, memberIds, "source_item_id", "target_item_id")).filter((e) => live.has(e.source_item_id) && live.has(e.target_item_id)),
+    (await byIds<ThemeEdge>(sb, "item_cross_references", EDGE_COLUMNS, memberIds, "source_item_id", "target_item_id")).filter((e) => e.origin !== CANDIDATE_ORIGIN && live.has(e.source_item_id) && live.has(e.target_item_id)),
   ];
   return { items, claims, events, edges, jurisdictionWeights: await loadHomeJurisdictions(sb, opts.homes ?? "all-workspaces") };
 }
@@ -124,7 +125,7 @@ export function buildValidationContext(themes: readonly ThemeRow[], material: Th
   for (const t of themes) {
     const members = new Set(t.member_ids ?? []);
     const tokens = new Set<string>();
-    for (const e of material.edges) if (members.has(e.source_item_id) && members.has(e.target_item_id)) for (const b of Array.isArray(e.basis) ? e.basis : []) for (const tk of figureTokens(b?.detail)) tokens.add(tk);
+    for (const e of material.edges) if (members.has(e.source_item_id) && members.has(e.target_item_id)) for (const b of evidenceOf(e.basis)) for (const tk of figureTokens(b.detail)) tokens.add(tk);
     basisTokensByTheme.set(t.id, tokens);
   }
   const groundedText = new Map<string, readonly string[]>([

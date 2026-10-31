@@ -33,9 +33,11 @@ export interface MarketViewProps {
   chips: ThemeChip[] | null;
   /** The cross-surface patterns of this page; null: that read failed; absent: none was read. */
   radar?: RadarView | null | undefined;
+  /** Per headline card (its family key), the two "Why this matters" lines; null when that read failed. */
+  why?: Record<string, string[]> | null | undefined;
 }
 
-export function MarketView({ read, nowIso, coverage, chips, radar }: MarketViewProps) {
+export function MarketView({ read, nowIso, coverage, chips, radar, why }: MarketViewProps) {
   const { signals, series, corridors, carbon, panels } = read;
   const board = series.ok ? series.data.board : null;
   const cards = corridors.ok && carbon.ok ? buildCarbonCards(corridors.data, carbon.data) : null;
@@ -49,7 +51,7 @@ export function MarketView({ read, nowIso, coverage, chips, radar }: MarketViewP
           failed={!signals.ok}
           nowIso={nowIso}
           seriesCount={board ? board.totalObservedSeries : null}
-          headline={board && series.ok ? <HeadlineSeries board={board} ratings={series.data.ratings} nowIso={nowIso} why={series.data.why} /> : <RetryNote what="The headline series" />}
+          headline={board && series.ok ? <HeadlineSeries board={board} ratings={series.data.ratings} nowIso={nowIso} why={why ?? null} /> : <RetryNote what="The headline series" />}
           rail={<MarketRail carbon={cards ? summariseCarbonCorridors(cards) : null} drops={board ? selectNextDataDrops(board, { now: new Date(nowIso) }) : null} board={board} />}
           belowRows={
             <>

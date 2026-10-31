@@ -4,13 +4,12 @@
 // Ported from old_repo/scripts/connections/propose-tags.mjs (lines 101-198)
 // Ported from old_repo/scripts/connections/analyze-corpus.mjs (lines 60-76)
 // The flag grammar of the connection layer: one namespaced created_by per finding family, a subject_ref, dedup on (subject_ref, created_by)
-// against rows of ANY status, and a finding with nothing left to decide is written already resolved (ADR-030 rider). Nothing waits on a person.
+// against open rows, and a finding is born OPEN and resolved by the pass that no longer makes it (ENGINE-JOIN-1): a gap that is still real stays visible, one that closed does not linger. Nothing waits on a person.
 import type { Db } from "@/core/db";
 import { fetchAllRows } from "@/core/db";
 
 export const GAP_NAMESPACE = "flywheel-gap:";
 export const ANTICIPATE_NAMESPACE = "flywheel-anticipate:";
-export const SIGNAL_NAMESPACE = "flywheel-signal:";
 export const TAG_NAMESPACE = "flywheel-tag:";
 export const QUESTION_NAMESPACE = "question:";
 export const HOLDINGS_NEED_NAMESPACE = "holdings-need:";
@@ -54,22 +53,7 @@ export interface Finding {
   subjectRef: string;
   row: FlagRow;
 }
-const RESOLVED_REFLECTION_NOTE = "reflected in the coverage view; no per-row decision pending";
-
-/** A finding as a row that was never open: the system records it and nothing waits on it. The clock is injected. */
-function buildResolvedRow(finding: FlagRow, resolvedBy: string, nowIso: string, note: string = RESOLVED_REFLECTION_NOTE): FlagRow {
-  return { ...finding, status: "resolved", resolved_at: nowIso, resolved_by: resolvedBy, resolution_note: note };
-}
-
 const key = (subjectRef: string, by: string): string => `${subjectRef}|${by}`;
-
-/** New rows are findings with no row of ANY status for the same (subject_ref, created_by); the rest are unchanged. */
-function planResolvedReflectionInserts(existingAnyStatus: readonly { subject_ref: string; created_by: string }[] | null | undefined, fresh: readonly Finding[] | null | undefined): { newRows: FlagRow[]; unchanged: number } {
-  const existing = new Set((existingAnyStatus ?? []).map((r) => key(r.subject_ref, r.created_by)));
-  const list = fresh ?? [];
-  const newRows = list.filter((f) => !existing.has(key(f.subjectRef, f.row.created_by))).map((f) => f.row);
-  return { newRows, unchanged: list.length - newRows.length };
-}
 
 /** Open flags against fresh findings: new rows for findings without one, and the open flags whose finding is no longer made (stale). */
 export function planReflect(existingOpen: readonly { id: string; subject_ref: string; created_by: string }[] | null | undefined, fresh: readonly Finding[] | null | undefined, opts: { scopeSubjectRefs?: Set<string> | null } = {}): { newRows: FlagRow[]; staleIds: string[]; unchanged: number } {
@@ -84,35 +68,50 @@ export function planReflect(existingOpen: readonly { id: string; subject_ref: st
 
 export interface FlagCounts {
   inserted: number;
+  /** Open flags whose finding the pass no longer makes: resolved by it. */
+  resolved: number;
   unchanged: number;
   failed: number;
   notes: string[];
 }
 
-/** Every flag of a namespace, any status (the dedup key set). A failed page throws. */
-export async function readFlagKeys(sb: Db, namespace: string, status?: "open"): Promise<{ id: string; subject_ref: string; created_by: string; status: string }[]> {
+/** The flags of a namespace in the given statuses (default: every status). A failed page throws. */
+async function readFlagKeys(sb: Db, namespace: string, statuses?: readonly string[]): Promise<{ id: string; subject_ref: string; created_by: string; status: string }[]> {
   return fetchAllRows((from, to) => {
     let q = sb.from("integrity_flags").select("id, subject_ref, created_by, status").like("created_by", `${namespace}%`);
-    if (status) q = q.eq("status", status);
+    if (statuses) q = q.in("status", [...statuses]);
     return q.order("id", { ascending: true }).range(from, to);
   }, { cap: 500_000 });
 }
 
-/** Insert findings born resolved, de-duplicated against rows of any status. Errors are counted and noted, never swallowed. */
-export async function reflectResolved(sb: Db, namespace: string, fresh: readonly Finding[], resolvedBy: string, nowIso: string, opts: { dry?: boolean } = {}): Promise<FlagCounts> {
-  const out: FlagCounts = { inserted: 0, unchanged: 0, failed: 0, notes: [] };
-  const existing = await readFlagKeys(sb, namespace);
-  const resolved = fresh.map((f) => ({ subjectRef: f.subjectRef, row: buildResolvedRow(f.row, resolvedBy, nowIso) }));
-  const { newRows, unchanged } = planResolvedReflectionInserts(existing, resolved);
-  out.unchanged = unchanged;
-  if (opts.dry || !newRows.length) return { ...out, inserted: opts.dry ? newRows.length : 0 };
-  for (let i = 0; i < newRows.length; i += 200) {
-    const batch = newRows.slice(i, i + 200);
+const OPEN = ["open", "in_review"];
+const NO_LONGER_MADE = "the pass no longer makes this finding: the gap it named is closed or its subject is gone.";
+
+/**
+ * Reflect a pass's findings as OPEN flags: a finding with no open flag is inserted (born open), and an open flag of the namespace (limited to `owns`, the created_by values this pass is the writer of) whose finding the pass no longer makes is resolved by `resolvedBy`.
+ * Errors are counted and noted, never swallowed; a dry run counts both and writes nothing.
+ */
+export async function reflectFindings(sb: Db, namespace: string, fresh: readonly Finding[], resolvedBy: string, nowIso: string, opts: { dry?: boolean; owns?: (createdBy: string) => boolean } = {}): Promise<FlagCounts> {
+  const out: FlagCounts = { inserted: 0, resolved: 0, unchanged: 0, failed: 0, notes: [] };
+  const open = (await readFlagKeys(sb, namespace, OPEN)).filter((f) => opts.owns?.(f.created_by) ?? true);
+  const plan = planReflect(open, fresh.map((f) => ({ ...f, row: { ...f.row, status: "open" as const } })));
+  out.unchanged = plan.unchanged;
+  if (opts.dry) return { ...out, inserted: plan.newRows.length, resolved: plan.staleIds.length };
+  for (let i = 0; i < plan.newRows.length; i += 200) {
+    const batch = plan.newRows.slice(i, i + 200);
     const { error } = await sb.from("integrity_flags").insert(batch);
     if (error) {
       out.failed += batch.length;
       out.notes.push(`integrity_flags insert (${namespace}) chunk ${i} failed: ${error.message}`);
     } else out.inserted += batch.length;
+  }
+  for (let i = 0; i < plan.staleIds.length; i += 100) {
+    const ids = plan.staleIds.slice(i, i + 100);
+    const { error } = await sb.from("integrity_flags").update({ status: "resolved", resolved_at: nowIso, resolved_by: resolvedBy, resolution_note: NO_LONGER_MADE }).in("id", ids).in("status", OPEN);
+    if (error) {
+      out.failed += ids.length;
+      out.notes.push(`integrity_flags resolve (${namespace}) chunk ${i} failed: ${error.message}`);
+    } else out.resolved += ids.length;
   }
   return out;
 }

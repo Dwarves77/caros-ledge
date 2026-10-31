@@ -28,7 +28,7 @@ test("a read item is scored from what it holds, an unread one from what it holds
   assert.deepEqual([rows[I1]?.compliance, rows[I1]?.cost, rows[I1]?.operational, rows[I1]?.missing], [1, 0, 3, []], "duties on carriers and shippers that do not reach the forwarder: non-binding, no cost signal, a carrier duty");
   assert.deepEqual(((rows[I1]?.basis as { compliance: { obligations: string[] } }).compliance.obligations).sort(), objects);
   assert.deepEqual([rows[I2]?.compliance, rows[I2]?.cost, rows[I2]?.operational, rows[I2]?.missing], [null, 1, null, ["obligations", "operational"]], "the second item was never read: its mechanism scores, its other inputs are named");
-  assert.equal(rows[I1]?.method_version, "impact_scores@1.0.0");
+  assert.equal(rows[I1]?.method_version, "impact_scores@1.1.0");
   assert.deepEqual([r.counts.impact_missing_obligations, r.counts.impact_missing_operational, r.counts.impact_missing_cost], [1, 1, 0]);
 });
 

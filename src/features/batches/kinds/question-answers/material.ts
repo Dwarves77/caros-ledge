@@ -7,6 +7,7 @@
 // budget, every cut counted. A question item may be cited only when verified, not archived and not Community-sourced (ADR-041).
 import type { Db } from "@/core/db";
 import { heldPoolHash, queryHeldPools, type HeldPoolHit, type PoolCapture } from "@/core/fetch/candidates";
+import { CANDIDATE_ORIGIN, evidenceOf, type BasisEntry } from "@/core/flywheel/discover";
 import { QUESTION_NAMESPACE } from "@/core/flywheel/flags";
 import { ANSWERED_ACTION, FLAG_COLUMNS, OPEN_STATUSES, parseQuestionRef, UNANSWERABLE_ACTION, type NeedFlag, type ParsedQuestionRef } from "@/core/flags/need-targets";
 import { usableCaptures, poolHash } from "@/core/grounding";
@@ -18,12 +19,12 @@ export const MAX_CONNECTED = 8;
 const STRUCTURE_SHARE = 0.4;
 
 interface ItemRow { id: string; title: string | null; item_type: string | null; domain: number | null; jurisdiction_iso: string[] | null; summary: string | null; provenance_status: string | null; is_archived: boolean | null; origin_class: string | null; instrument_entity_id: string | null }
-interface EdgeRow { source_item_id: string; target_item_id: string; relationship: string | null; origin: string | null; basis: { signal?: string; detail?: string }[] | null; score: number | null }
+interface EdgeRow { source_item_id: string; target_item_id: string; relationship: string | null; origin: string | null; basis: unknown; score: number | null }
 interface ClaimRow { id: string; intelligence_item_id: string; claim_kind: string; claim_text: string; source_id: string | null }
 interface EventRow { id: string; intelligence_item_id: string; event_date: string; date_precision: string; event_kind: string; obligation_text: string; source_span: string | null; confidence: string | null }
 export interface InferenceRow { inference_id: string; trigger_question_ref: string; claim_text: string; supersedes: string | null; computed_at: string }
 export interface RecordedAction { action: string; pool_hash?: string; rationale?: string; batch?: string; recorded_at?: string; inference_id?: string }
-export interface Edge { other: string; relationship: string | null; origin: string | null; score: number | null; basis: { signal?: string; detail?: string }[]; typed: boolean }
+export interface Edge { other: string; relationship: string | null; origin: string | null; score: number | null; basis: BasisEntry[]; typed: boolean }
 export interface Material { items: Map<string, ItemRow>; connected: Map<string, { connected: Edge[]; unusable: Map<string, string>; candidates: number }>; claimsByItem: Map<string, ClaimRow[]>; eventsByItem: Map<string, EventRow[]>; poolsByItem: Map<string, PoolCapture[]> }
 export interface QuestionContext {
   flag: NeedFlag; parsed: ParsedQuestionRef; item: ItemRow | null; itemUnusable: string | null; questionText: string; connectedEdges: Edge[]; unusable: Map<string, string>; connectedCandidates: number;
@@ -91,8 +92,8 @@ export async function loadQuestionMaterial(sb: Db, questionItemIds: readonly str
   const [out, inn] = [await rowsByIds<EdgeRow>(sb, "item_cross_references", EDGES, ids, "source_item_id"), await rowsByIds<EdgeRow>(sb, "item_cross_references", EDGES, ids, "target_item_id")];
   const candidates = new Map(ids.map((id) => [id, new Map<string, Edge>()]));
   const consider = (own: string, other: string, e: EdgeRow) => {
-    if (own === other || !candidates.has(own)) return;
-    const cand: Edge = { other, relationship: e.relationship ?? null, origin: e.origin ?? null, score: e.score ?? null, basis: Array.isArray(e.basis) ? e.basis : [], typed: !!e.relationship && e.relationship !== "related" };
+    if (own === other || !candidates.has(own) || e.origin === CANDIDATE_ORIGIN) return;
+    const cand: Edge = { other, relationship: e.relationship ?? null, origin: e.origin ?? null, score: e.score ?? null, basis: evidenceOf(e.basis), typed: !!e.relationship && e.relationship !== "related" };
     const prior = candidates.get(own)?.get(other);
     if (!prior || cmpEdge(cand, prior) < 0) candidates.get(own)?.set(other, cand);
   };

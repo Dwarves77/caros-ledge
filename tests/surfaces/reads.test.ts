@@ -76,7 +76,8 @@ test("INV-233: the gate reads the roster and the sourced coverage over the item'
 
 const MS = "5a000000-0000-4000-8000-000000000001";
 const FX = "fa000000-0000-4000-8000-000000000001";
-const derived = (o: Row = {}): Row => ({ value_id: "d1000000-0000-4000-8000-000000000001", entity_id: null, method_id: "market_series_delta", method_version: "1.0.0", value: "0.05", unit: "USD/EUR", currency: "USD", derivation: "calculated", origin_class: "derived", lifecycle: "verified", admissibility: "calculation_ok", base_confidence: "0.9", asserted_at: NOW, computed_at: NOW, supersedes: null, inputs: [{ table: "market_series", pk: MS }], ...o });
+const MS0 = "5a000000-0000-4000-8000-0000000000a0";
+const derived = (o: Row = {}): Row => ({ value_id: "d1000000-0000-4000-8000-000000000001", entity_id: null, method_id: "market_series_delta", method_version: "1.0.0", value: "0.05", unit: "USD/EUR", currency: "USD", derivation: "calculated", origin_class: "derived", lifecycle: "verified", admissibility: "calculation_ok", base_confidence: "0.9", asserted_at: NOW, computed_at: NOW, supersedes: null, inputs: [{ table: "market_series", pk: MS }, { table: "market_series", pk: MS0 }], ...o });
 test("the recalculated figures are the CURRENT rows resting on Operations inputs, each with its inputs named, dated and rated by the publisher's class; a stale or unrelated row is not shown; the previous value rides along", async () => {
   const db = memoryDb({
     derived_values: [
@@ -85,23 +86,23 @@ test("the recalculated figures are the CURRENT rows resting on Operations inputs
       derived({ value_id: "d1000000-0000-4000-8000-000000000003", inputs: [{ table: "obligations", pk: "x" }] }),
       derived({ value_id: "d1000000-0000-4000-8000-000000000004", lifecycle: "falsified" }),
     ],
-    market_series: [{ id: MS, label: "EUR/USD", reference_period: "2026-10-15", source_key: "ecb" }],
+    market_series: [{ id: MS, label: "EUR/USD", reference_period: "2026-10-15", source_key: "ecb", entity_id: null }, { id: MS0, label: "EUR/USD", reference_period: "2026-10-08", source_key: "ecb", entity_id: null }],
     data_sources: [{ source_key: "ecb", name: "European Central Bank", url: "https://www.ecb.europa.eu/stats/eurofxref/", redistribution: "free", embeddable: true, licence: "x", attribution: "x" }],
     emission_factors: [{ factor_id: FX, mode: "road", jurisdiction: "EU", quantity_basis: "tkm", as_at_date: "2025-01-01", source_key: "ecb" }],
   }).db;
-  const figs = await readDerivedFigures(db);
+  const figs = await readDerivedFigures(db, null);
   assert.equal(figs.length, 1, "the stale row, the falsified row and the unrelated row are not shown");
   const f = figs[0]!;
   assert.deepEqual([f.title, f.value, f.previous, f.originClass], ["One-week movement · EUR/USD", 0.05, 0.03, "Derived"]);
-  assert.deepEqual(f.inputs.map((i) => [i.label, i.period, i.sourceName]), [["EUR/USD", "2026-10-15", "European Central Bank"]]);
+  assert.deepEqual(f.inputs.map((i) => [i.label, i.period, i.sourceName]), [["EUR/USD", "2026-10-15", "European Central Bank"], ["EUR/USD", "2026-10-08", "European Central Bank"]]);
   assert.equal(typeof f.tier, "number", "rated through the publisher's host class");
   assert.doesNotMatch(JSON.stringify(f), /market_series|derived_values|market_series_delta|obligations/, "no table or method name reaches a customer string");
-  await assert.rejects(readDerivedFigures(memoryDb({}, { failures: [{ table: "derived_values_admissible", op: "select", message: "boom" }] }).db), /boom/, "a failed read throws; the page marks the panel failed");
+  await assert.rejects(readDerivedFigures(memoryDb({}, { failures: [{ table: "derived_values_admissible", op: "select", message: "boom" }] }).db, null), /boom/, "a failed read throws; the page marks the panel failed");
 });
 
 test("a figure with an input that cannot be rated is an absence, never a tier: the weakest rating among the inputs, null when any input is unrated", async () => {
   const db = memoryDb({ derived_values: [derived({ inputs: [{ table: "market_series", pk: MS }, { table: "market_series", pk: "5a000000-0000-4000-8000-000000000002" }] })], market_series: [{ id: MS, label: "A", reference_period: "p", source_key: "ecb" }, { id: "5a000000-0000-4000-8000-000000000002", label: "B", reference_period: "p", source_key: null }], data_sources: [{ source_key: "ecb", name: "ECB", url: "https://www.ecb.europa.eu/", redistribution: "free", embeddable: true, licence: "x", attribution: "x" }] }).db;
-  assert.equal((await readDerivedFigures(db))[0]?.tier, null);
+  assert.equal((await readDerivedFigures(db, null))[0]?.tier, null);
 });
 
 const ROW = (itemId: string, o: Row = {}): Row => ({ id: `a1${itemId.slice(2)}`, item_id: itemId, supersedes: null, is_current: true, lifecycle_state: null, technical_maturity_low: 8, technical_maturity_high: 9, technical_maturity_method: "m", commercial_maturity_low: null, commercial_maturity_high: null, commercial_maturity_method: null, horizon_kind: "availability", horizon_band: "NEAR", horizon_rule: "R4", horizon_confidence: "low", horizon_trigger_note: "inferred", refusal_reason: null, credibility_evidence_score: "limited", credibility_authority_score: null, status_token: "HYPOTHESIS", computed_at: NOW, ...o });

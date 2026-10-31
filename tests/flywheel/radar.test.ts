@@ -8,11 +8,12 @@ import { test } from "node:test";
 
 import { createElement } from "react";
 
-import { buildConnectionRows, buildSupersessionRows, linkedByWords, movesRows, reasonFor, whyLines, type ConnectionIn, type FactLink } from "@/core/flywheel/view-model";
+import { buildConnectionRows, buildSupersessionRows, type ConnectionIn } from "@/core/flywheel/view-model";
+import type { FactLink } from "@/core/flywheel/facts-join";
 import { toListRowFields } from "@/core/lists/row-fields";
 import { themeAnalysisView } from "@/core/themes/theme-view";
 import { isOperationsFigure } from "@/features/operations/model/derived-view";
-import { readFlywheelRadar, readWhyMatters, type FactsJoin, type RadarView } from "@/features/flywheel/radar/read";
+import { linkedByWords, movesRows, readFlywheelRadar, readWhyMatters, reasonFor, whyLines, type RadarView } from "@/features/flywheel/radar/read";
 import { DerivedFigures } from "@/features/operations/ui/Spec09Panels";
 import { CrossPageSection } from "@/ui/detail/CrossPageSection";
 import { ItemConnections } from "@/ui/detail/ItemConnections";
@@ -28,12 +29,12 @@ const SCN = { signal: "shared_scenario", detail: "both touch ocean-fuel-surcharg
 const ENT = { signal: "shared_entity", detail: "both name reg:2023/959", weight: 0.85 };
 const edge = (id: string, over: Partial<ConnectionIn> = {}): ConnectionIn => ({ id, uuid: `uuid-${id}`, relationship: "related", direction: "outgoing", surface: "market", origin: "provenance_discovery", score: 0.69, ...over });
 const link = (refTable: string, summary: FactLink["summary"], over: Partial<FactLink> = {}): FactLink => ({ refTable, refId: `${refTable}-1`, entity: { id: "e1", kind: "material", canonicalName: "Heavy fuel oil" }, hop: 0, surface: "market", summary, ...over });
-const HFO = link("market_series", { label: "Heavy fuel oil 3.5%S", delta: { window: "1w", pct: 24.8 } });
-const ETS = link("statutory_computations", { date: "2027-01-01", dutyHolder: "ocean carriers", penalty: "EUR 100/t excess emissions" }, { entity: { id: "e2", kind: "instrument", canonicalName: "Directive 2023/959" }, surface: "regulations" });
+const HFO = link("market_series", { label: "Heavy fuel oil 3.5%S", delta: { week: 0.248 } });
+const ETS = link("statutory_computations", { label: "Directive 2023/959", value: 100, unit: "EUR/t", asOf: "2026-10-30" }, { entity: { id: "e2", kind: "instrument", canonicalName: "Directive 2023/959" }, surface: "regulations" });
 
 test("INV-2: every rendered connection carries a plain reason, whatever the basis it came from", () => {
   const rows = buildConnectionRows(
-    [edge("a", { basis: [SRC, SCN] }), edge("b", { basis: [ENT, SRC] }), edge("c", { basis: { evidence: [{ signal: "coupled_entity", entities: [{ canonicalName: "Methanol" }, { canonicalName: "Container shipping" }], relation: "fuel_for_mode" }] } }), edge("d", { origin: "manual", basis: null, relationship: "supersedes" }), edge("e", { origin: "entity_extraction", basis: null })],
+    [edge("a", { basis: [SRC, SCN] }), edge("b", { basis: [ENT, SRC] }), edge("c", { basis: { evidence: [{ signal: "coupled_entity", tokens: { coupled: [{ parent: { id: "e1", name: "Methanol" }, relation: "fuel_for_mode", child: { id: "e2", name: "Container shipping" } }] } }] } }), edge("d", { origin: "manual", basis: null, relationship: "supersedes" }), edge("e", { origin: "entity_extraction", basis: null })],
     LOOKUP,
   );
   assert.equal(rows.length, 5);
@@ -59,8 +60,8 @@ test("a same-source-only edge is not a connection, and a candidate edge is not i
 
 test("a reason states the causal chain from the facts of the two items, the reader's rationale first", () => {
   const withFacts = buildConnectionRows([edge("a", { basis: [SCN] })], LOOKUP, { self: [ETS], facts: new Map([["uuid-a", [HFO]]]) });
-  assert.equal(withFacts[0]?.reason, "Directive 2023/959 binds ocean carriers from Jan 1, 2027 (penalty EUR 100/t excess emissions). Heavy fuel oil 3.5%S rose 24.8% over the last week.");
-  const authored = buildConnectionRows([edge("a", { basis: { evidence: [SCN], rationale: { text: "Both costs land on the same voyage and reach forwarders as surcharge." } } })], LOOKUP, { self: [ETS], facts: new Map([["uuid-a", [HFO]]]) });
+  assert.equal(withFacts[0]?.reason, "Directive 2023/959 states 100 EUR/t (as of Oct 30, 2026). Heavy fuel oil 3.5%S rose 24.8% over the last week.");
+  const authored = buildConnectionRows([edge("a", { basis: { evidence: [SCN], rationale: { text: "Both costs land on the same voyage and reach forwarders as surcharge.", authoredBy: "run-1", at: "2026-10-31" } } })], LOOKUP, { self: [ETS], facts: new Map([["uuid-a", [HFO]]]) });
   assert.equal(authored[0]?.reason, "Both costs land on the same voyage and reach forwarders as surcharge.");
   assert.equal(reasonFor({ basis: null, origin: "manual", label: "Related" }), null, "a reason is never invented");
   assert.deepEqual(buildSupersessionRows([{ old: "a", new: "self" }], "self", LOOKUP).map((r) => r.reason), ["Replaces prior statutory provisions."]);
@@ -122,14 +123,14 @@ test("INV-3: the radar draws N patterns from N emerging rows, and none, with the
 test("the radar adds the signpost that confirms a pattern and the missing part an open need names, and scopes to a surface and an item", async () => {
   const db = worldOf(2, {
     signposts: [{ entity_id: "s1", watches: "anchor1", predicate: { op: "date_passed", pattern: "mandateCapacity:k1", key_date: "2027-01-01" }, outcome: null }, { entity_id: "s2", watches: "anchor2", predicate: { pattern: "mandateCapacity:k2" }, outcome: "refuted" }],
-    integrity_flags: [{ id: "f1", subject_ref: "pattern:mandateCapacity:k1:far", description: "Pattern x names y to far. Missing vertex: a row on far. Surface market; entities far; window the last 30 days; venue class: docket.", created_by: "flywheel-gap:pattern_hop_gap", status: "open" }, { id: "f2", subject_ref: "pattern:mandateCapacity:k2:far", description: "Surface market;", created_by: "flywheel-gap:pattern_hop_gap", status: "resolved" }],
+    integrity_flags: [{ id: "f1", subject_ref: "pattern:mandateCapacity:k1:far", description: "Pattern x names y to far.", recommended_actions: [{ action: "missing", surface: "market", truth: "a Market Intel price series for far", entity: "far" }], created_by: "flywheel-gap:pattern_hop_gap", status: "open" }, { id: "f3", subject_ref: "pattern:mandateCapacity:k2:other", description: "Pattern x names y to other. Surface operations; entities other.", recommended_actions: [], created_by: "flywheel-gap:pattern_hop_gap", status: "open" }, { id: "f2", subject_ref: "pattern:mandateCapacity:k2:far", description: "Surface market;", created_by: "flywheel-gap:pattern_hop_gap", status: "resolved" }],
   });
   const view = await readFlywheelRadar({ db, admin: db }, { kind: "corpus" });
   const [p1, p2] = view.patterns.sort((a, b) => a.key.localeCompare(b.key));
   assert.equal(p1?.watch, "Watch: confirmed if the dated step still stands on 2027-01-01.");
   assert.equal(p2?.watch, null, "a scored signpost is not a thing to watch");
   assert.deepEqual(p1?.missingParts, ["Missing part: no Market Intel item yet; the chain is incomplete until one appears."]);
-  assert.deepEqual(p2?.missingParts, [], "a resolved need is not shown");
+  assert.deepEqual(p2?.missingParts, ["Missing part: no Operations item yet; the chain is incomplete until one appears."], "a flag written before the typed action still names its surface; a resolved need is not shown");
   assert.equal((await readFlywheelRadar({ db, admin: db }, { kind: "surface", surface: "market" })).patterns.length, 0, "no pattern on the market page has a row there");
   assert.equal((await readFlywheelRadar({ db, admin: db }, { kind: "item", itemUuid: "i2", memberIds: [] })).patterns.length, 1, "an item sees the patterns it rests on");
   await assert.rejects(readFlywheelRadar({ db: memoryDb({}, { failures: [{ table: "derived_values_admissible", op: "select", message: "boom" }] }).db, admin: db }, { kind: "corpus" }), /boom/);
@@ -137,8 +138,8 @@ test("the radar adds the signpost that confirms a pattern and the missing part a
 
 test("a pattern still forming is drawn as its family with the chain so far and the next link to watch; a candidate edge likewise", async () => {
   const db = worldOf(1, {
-    derived_values: [PATTERN(1, { method_id: "pattern_penalty_abatement", lifecycle: "forming", computed_by: "pattern_penalty_abatement@1.5.0:k1", inputs: [{ table: "obligation_objects", pk: "ob1", surface: "regulations", entities: ["e1"] }, { missing: { surface: "research", truth: "a Research abatement-cost evaluation for methanol engines", entity: "e1" } }] })],
-    item_cross_references: [{ id: "x1", source_item_id: "i1", target_item_id: "i2", origin: "candidate", score: 0.22, basis: { evidence: [{ signal: "shared_entity", entities: [{ canonicalName: "Methanol" }] }], missing: { surface: "market", truth: "a Market price series for e-methanol", patternFamily: "penaltyAbatement" } } }],
+    derived_values: [PATTERN(1, { method_id: "forming_penalty_abatement", lifecycle: "forming", admissibility: "display_only", computed_by: "forming:penaltyAbatement|obligation_objects/ob1", inputs: [{ table: "obligation_objects", pk: "ob1", kind: "key", surface: "regulations", entities: ["e1"] }], missing: { surface: "research", truth: "a Research abatement-cost evaluation for methanol engines", entity: "e1" } })],
+    item_cross_references: [{ id: "x1", source_item_id: "i1", target_item_id: "i2", origin: "candidate", score: 0.22, basis: { evidence: [{ signal: "shared_entity", tokens: { entities: [{ id: "e1", name: "Methanol" }] } }], missing: { surface: "market", truth: "a Market price series for e-methanol", patternFamily: "penaltyAbatement" } } }],
     intelligence_items: [ITEM("i1", "FuelEU Maritime"), ITEM("i2", "E-methanol price signal", "market_signal", 4)],
   });
   const view = await readFlywheelRadar({ db, admin: db }, { kind: "corpus" });
@@ -170,7 +171,7 @@ test("INV-4: a stale brief with under half its members left is not drawn, the co
   assert.match(keptHtml, /discharge-and-penalty/);
   assert.match(keptHtml, /Written for an earlier membership/);
   assert.equal(view([])?.hasBrief, false, "a brief that names no members cannot be shown to describe this theme");
-  assert.deepEqual(linkedByWords([[SCN, SRC], [SCN], { evidence: [{ signal: "shared_entity", entities: [{ canonicalName: "Methanol" }] }] }]), ["ocean fuel surcharge", "Methanol"], "the same source is not a link; most frequent first");
+  assert.deepEqual(linkedByWords([[SCN, SRC], [SCN], { evidence: [{ signal: "shared_entity", tokens: { entities: [{ id: "e1", name: "Methanol" }] } }] }]), ["ocean fuel surcharge", "Methanol"], "the same source is not a link; most frequent first");
 });
 
 // -- INV-5: the second line of a row -------------------------------------------------------------------------------------------------------------------
@@ -187,21 +188,33 @@ test("INV-5: a list or dashboard row always has a second line: why it matters, e
 
 // -- the figure lines and the moves ------------------------------------------------------------------------------------------------------------------
 test("Why this matters: two lines naming the regulation with its next date and penalty and the operation tied to it; an absence names the surface that holds nothing", async () => {
-  const items = [{ ...ETS, summary: { title: "Directive 2023/959", date: "2027-01-01", penalty: "EUR 100/t" } }, link("intelligence_items", { title: "Rotterdam shore-power profile" }, { surface: "operations" })];
-  assert.deepEqual(whyLines(items, "heavy fuel oil"), ["Directive 2023/959: next dated obligation Jan 1, 2027, penalty EUR 100/t.", "Also tied: Rotterdam shore-power profile (Operations)."]);
+  const items = [{ ...ETS, summary: { label: "Directive 2023/959", date: "2027-01-01", penalty: { value: 100, unit: "EUR/t" } } }, link("intelligence_items", { label: "Rotterdam shore-power profile" }, { surface: "operations" })];
+  assert.deepEqual(whyLines(items, "heavy fuel oil"), ["Directive 2023/959: next dated obligation Jan 1, 2027, penalty 100 EUR/t.", "Also tied: Rotterdam shore-power profile (Operations)."]);
   assert.deepEqual(whyLines([], "propane"), ["No regulation in the ledger is tied to propane yet.", "No operations, market or research item is tied to propane yet."]);
-  const join: FactsJoin = { readEntityFacts: async () => new Map(), readFactItems: async (_db, _t, ids) => new Map(ids.map((id) => [id, id === "s1" ? items : []])) };
-  const lines = await readWhyMatters(worldOf(0), join, "market_series", [{ id: "s1", subject: "HFO" }, { id: "s2", subject: "propane" }]);
-  assert.equal(lines?.get("s1")?.[0], "Directive 2023/959: next dated obligation Jan 1, 2027, penalty EUR 100/t.");
-  assert.match(lines?.get("s2")?.[0] ?? "", /No regulation in the ledger is tied to propane yet/);
-  assert.equal(await readWhyMatters(worldOf(0), null, "market_series", [{ id: "s1", subject: "HFO" }]), null, "with no join a card draws no line: it never claims nothing is tied");
+  // through the real join: a series filed under the fuel resolves the regulation filed under the instrument one relation away, with its next dated obligation and penalty
+  const E_FUEL = "cl:material:aaaaaaaaaaaaaaa1", E_ACT = "cl:instrument:aaaaaaaaaaaaaaa2";
+  const REG = "11111111-1111-4111-8111-111111111111", S1 = "50000000-0000-4000-8000-000000000001", S2 = "50000000-0000-4000-8000-000000000002";
+  const ent = (entity_id: string, canonical_name: string) => ({ entity_id, kind: entity_id.split(":")[1], canonical_name, status: "active" });
+  const ref = (ref_id: string, entity_id: string, role: string, ref_table = "intelligence_items") => ({ ref_table, ref_id, entity_id, role, asserted_by: "test", method_version: "refs@3.0.0" });
+  const db = memoryDb({
+    entities: [ent(E_FUEL, "heavy fuel oil"), ent(E_ACT, "the maritime emissions scheme")],
+    intelligence_items: [ITEM(REG, "Maritime emissions scheme")],
+    entity_refs: [ref(REG, E_ACT, "cites_instrument"), ref(S1, E_FUEL, "cites_feedstock", "market_series")],
+    entity_relations: [{ parent_entity_id: E_FUEL, child_entity_id: E_ACT, relation: "fuel_for_mode", asserted_by: "test" }],
+    market_series: [{ id: S1, series_key: "hfo", label: "HFO", value_numeric: 100, unit: "USD/t", as_at_date: "2026-10-01" }, { id: S2, series_key: "lpg", label: "Propane", value_numeric: 5, unit: "USD/t", as_at_date: "2026-10-01" }],
+    obligation_objects: [{ obligation_id: "obl:next", instrument_item_id: REG, due_date: "2026-12-01", duty_holder_class: ["operator"] }],
+    statutory_computations: [{ computation_id: "60000000-0000-4000-8000-000000000001", entity_id: E_ACT, obligation_id: "obl:next", scenario_key: "2026", result: 50000, result_unit: "EUR", computed_at: "2026-10-30T00:00:00Z" }],
+  }).db;
+  const lines = await readWhyMatters(db, "market_series", [{ id: S1, subject: "heavy fuel oil" }, { id: S2, subject: "propane" }], "2026-10-31T00:00:00Z");
+  assert.deepEqual(lines.get(S1), ["Maritime emissions scheme: next dated obligation Dec 1, 2026, penalty 50,000 EUR.", "No operations, market or research item is tied to heavy fuel oil yet."]);
+  assert.deepEqual(lines.get(S2), ["No regulation in the ledger is tied to propane yet.", "No operations, market or research item is tied to propane yet."]);
   assert.match(textOf(renderApp(createElement(WhyMatters, { lines: whyLines([], "propane") }))), /^Why this matters No regulation/);
 });
 
 test("What moves with this: each structured row tied to the item's entities as one line, the strongest kind first", () => {
-  const rows = movesRows([HFO, ETS, link("oem_tech_roadmaps", { label: "Methanol dual-fuel engines", trl: 8 }, { hop: 1, entity: { id: "e3", kind: "technology", canonicalName: "Methanol" } })]);
+  const rows = movesRows([HFO, ETS, link("oem_tech_roadmaps", { label: "Methanol dual-fuel engines", stage: "series_production" }, { hop: 1, entity: { id: "e3", kind: "technology", canonicalName: "Methanol" } })]);
   assert.deepEqual(rows.map((r) => r.kind), ["Obligation", "Price or figure", "Technology"]);
-  assert.equal(rows[2]?.line, "Methanol dual-fuel engines is at technology readiness level 8. It reaches this item through Methanol.");
+  assert.equal(rows[2]?.line, "Methanol dual-fuel engines is at the series production stage. It reaches this item through Methanol.");
 });
 
 test("a cross-surface pattern leaves the Operations recalculated-figures rail; a price movement stays", () => {

@@ -4,6 +4,7 @@
 // jurisdiction ENTITIES (canonical code, then entity id), never as raw strings (B-0238/2150/2151): "uk" and "GB" are one jurisdiction.
 import { canonicalJurisdictionCode, entityId, GENERIC_JURISDICTIONS } from "@/core/entities/id";
 
+import { missingTruth, type EntityRef } from "./facts-join";
 import { buildSubjectRef, ANTICIPATE_NAMESPACE, createdBy, GAP_NAMESPACE, type Finding } from "./flags";
 import type { Theme } from "./cluster";
 import { PATTERNS } from "./patterns/config";
@@ -25,6 +26,8 @@ export interface Gap {
   description: string;
   recommended_actions: string[];
   evidence: Record<string, unknown>;
+  /** What the gap lacks as typed fields: the surface with no member and the entity it is about (null for a theme-wide gap). The flag carries it with its words (gapFindings), so a surface never parses the description. */
+  missing: { surface: string; entity: string | null };
 }
 
 function homeJurisdictions(profile: { jurisdictions?: Record<string, unknown> } | undefined): string[] {
@@ -66,7 +69,7 @@ export function detectGaps(themes: readonly Pick<Theme, "id" | "members" | "surf
             type: "jurisdiction_span_gap", category: "coverage_gap", subject_type: "system", subject_ref: buildSubjectRef(theme.id),
             description: `Theme ${theme.id} spans ${spanned.size} jurisdictions (${names.join(", ")}) with no member in ${home}, a jurisdiction this workspace weights as home.`,
             recommended_actions: [`Confirm whether ${home} coverage for this theme exists outside this cluster before treating it as a real gap.`],
-            evidence: { themeId: theme.id, spannedJurisdictions: names, missingHome: home, memberCount: members.length },
+            evidence: { themeId: theme.id, spannedJurisdictions: names, missingHome: home, memberCount: members.length }, missing: { surface: "regulations", entity: homeKey },
           });
         }
       }
@@ -76,7 +79,7 @@ export function detectGaps(themes: readonly Pick<Theme, "id" | "members" | "surf
         type: "surface_gap", category: "coverage_gap", subject_type: "system", subject_ref: buildSubjectRef(theme.id),
         description: `Theme ${theme.id} connects regulation and research signals (${members.length} members) with no market signal tracked.`,
         recommended_actions: ["Check whether a market-signal item for this theme exists but scored below the discovery threshold."],
-        evidence: { themeId: theme.id, surfaces: [...surfaces].sort(), memberCount: members.length },
+        evidence: { themeId: theme.id, surfaces: [...surfaces].sort(), memberCount: members.length }, missing: { surface: "market", entity: null },
       });
     }
     const pivots = Array.isArray(theme.pivots) ? theme.pivots : [];
@@ -86,7 +89,7 @@ export function detectGaps(themes: readonly Pick<Theme, "id" | "members" | "surf
         type: "pivot_operations_gap", category: "coverage_gap", subject_type: "system", subject_ref: buildSubjectRef(theme.id),
         description: `Theme ${theme.id}'s pivot (${pivot.id}, centrality ${pivot.centrality}) has no operations-surface counterpart among ${members.length} members.`,
         recommended_actions: ["Review whether this theme has an operational impact that isn't yet captured as an operations-surface item."],
-        evidence: { themeId: theme.id, pivotId: pivot.id, pivotCentrality: pivot.centrality, surfaces: [...surfaces].sort(), memberCount: members.length },
+        evidence: { themeId: theme.id, pivotId: pivot.id, pivotCentrality: pivot.centrality, surfaces: [...surfaces].sort(), memberCount: members.length }, missing: { surface: "operations", entity: null },
       });
     }
   }
@@ -94,9 +97,12 @@ export function detectGaps(themes: readonly Pick<Theme, "id" | "members" | "surf
   return gaps;
 }
 
-/** The gaps as findings (flag rows, still unwritten). */
-export const gapFindings = (gaps: readonly Gap[]): Finding[] =>
-  gaps.map((g) => ({ subjectRef: g.subject_ref, row: { category: g.category, subject_type: g.subject_type, subject_ref: g.subject_ref, description: g.description, recommended_actions: g.recommended_actions, created_by: createdBy(GAP_NAMESPACE, g.type) } }));
+/** The gaps as findings (flag rows, still unwritten). Each carries, beside its prose, the typed `missing` payload {surface, truth, entity} (the shape of a forming pattern's `missing`), the truth composed from the entity's canonical name. */
+export const gapFindings = (gaps: readonly Gap[], names: ReadonlyMap<string, EntityRef> = new Map()): Finding[] =>
+  gaps.map((g) => {
+    const missing = { action: "missing", surface: g.missing.surface, truth: missingTruth(g.missing.surface, g.missing.entity ? (names.get(g.missing.entity)?.canonicalName ?? null) : null), entity: g.missing.entity };
+    return { subjectRef: g.subject_ref, row: { category: g.category, subject_type: g.subject_type, subject_ref: g.subject_ref, description: g.description, recommended_actions: [...g.recommended_actions, missing], created_by: createdBy(GAP_NAMESPACE, g.type) } };
+  });
 
 export interface ForwardEventRow {
   id: string;
@@ -181,7 +187,7 @@ export function patternGaps(i: { patterns: readonly Pattern[]; facts: readonly F
   const recent = new Set(i.facts.filter((f) => (f.at ?? f.due ?? "") >= new Date(i.now.getTime() - PATTERNS.crossModal.recencyDays * 86_400_000).toISOString().slice(0, 10)).flatMap((f) => f.entities));
   const out: Gap[] = [];
   for (const t of i.facts.filter((f) => f.role === "trigger" && PATTERNS.leadLag.triggerKinds.includes(f.kind ?? "") && f.due && f.due >= today && f.due <= far && !f.resolved))
-    out.push({ type: "pattern_trigger_gap", category: "coverage_gap", subject_type: "system", subject_ref: buildSubjectRef("trigger", t.table, t.pk), recommended_actions: [], evidence: { trigger: t.pk, kind: t.kind, due: t.due },
+    out.push({ type: "pattern_trigger_gap", category: "coverage_gap", subject_type: "system", subject_ref: buildSubjectRef("trigger", t.table, t.pk), recommended_actions: [], evidence: { trigger: t.pk, kind: t.kind, due: t.due }, missing: { surface: "regulations", entity: t.entities[0] ?? null },
       description: `Pending ${t.kind} ${t.pk} falls due ${t.due} and no capture resolves it. Missing vertex: the capture that states it. Surface regulations; entities ${t.entities.join(", ") || "none filed"}; window ${today} to ${t.due}; venue class: ${d.venueOfSurface.regulations ?? "docket"}.` });
   for (const p of i.patterns) {
     const own = new Set(p.evidence.flatMap((e) => e.entities));
@@ -189,7 +195,7 @@ export function patternGaps(i: { patterns: readonly Pattern[]; facts: readonly F
       const far = own.has(edge.parent) ? edge.child : edge.parent;
       const surface = d.surfaceOfClass[i.classOf?.(far) ?? ""];
       if (!surface || recent.has(far)) continue;
-      out.push({ type: "pattern_hop_gap", category: "coverage_gap", subject_type: "system", subject_ref: buildSubjectRef("pattern", patternSeed(p), far), recommended_actions: [], evidence: { pattern: patternSeed(p), entity: far, relation: edge.relation },
+      out.push({ type: "pattern_hop_gap", category: "coverage_gap", subject_type: "system", subject_ref: buildSubjectRef("pattern", patternSeed(p), far), recommended_actions: [], evidence: { pattern: patternSeed(p), entity: far, relation: edge.relation }, missing: { surface, entity: far },
         description: `Pattern ${patternSeed(p)} names ${edge.relation} to ${far} (reader-asserted) and no recent row is filed under it. Missing vertex: a row on ${far}. Surface ${surface}; entities ${far}; window the last ${PATTERNS.crossModal.recencyDays} days; venue class: ${d.venueOfSurface[surface] ?? "docket"}.` });
     }
   }

@@ -1,5 +1,16 @@
 {
-  "weights": { "shared_source": 0.4, "shared_scenario": 0.3, "shared_compliance_object": 0.18, "shared_jurisdiction_topic": 0.2, "shared_entity": 0.85, "shared_obligation": 0.35 },
+  "weights": { "shared_source": 0.15, "shared_scenario": 0.3, "shared_compliance_object": 0.18, "shared_jurisdiction_topic": 0.2, "shared_entity": 0.85, "shared_obligation": 0.35, "coupled_entity": 0.5 },
+  "_note": "ENGINE-JOIN-1: coupled_entity (two items whose direct entities meet across one entity_relations edge) is 0.5; shared_source is 0.15 because a shared source corroborates and never connects on its own (it was 0.4, and 19,440 of 24,181 production edges were that alone).",
+  "candidate": { "floor": 0.18, "cap": 6 },
+  "missing": {
+    "families": [
+      { "family": "penaltyAbatement", "classes": [["feedstock", "carrier"], ["instrument", "mandate"]], "surfaces": ["market", "research"] },
+      { "family": "mandateCapacity", "classes": [["instrument", "mandate"], ["node", "hub", "corridor"]], "surfaces": ["operations"] },
+      { "family": "crossModal", "classes": [["feedstock", "carrier"]], "eachSide": true, "surfaces": ["market", "operations"] },
+      { "family": "regulatoryStacking", "classes": [["instrument", "mandate"]], "eachSide": true, "surfaces": ["regulations"] }
+    ],
+    "otherwise": { "family": "leadLag", "surfaces": ["market"] }
+  },
   "perTagCap": 3,
   "threshold": 0.3,
   "limit": 12,

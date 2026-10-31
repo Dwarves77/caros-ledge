@@ -3,21 +3,22 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { clusterThemes } from "@/core/flywheel/cluster";
-import { computeTagFrequencies, discoverConnections, type TagFrequencies } from "@/core/flywheel/discover";
+import { computeTagFrequencies, discoverAll, type TagFrequencies } from "@/core/flywheel/discover";
 import { detectIntersections } from "@/core/flywheel/intersections";
 import type { Signature } from "@/core/flywheel/signature";
 import { computeMemberHash, convergenceBand, diffThemes, isBriefStale, lineageFromThemeDelta, resolveBriefForTheme } from "@/core/flywheel/themes";
 
+const discoverConnections = (item: Signature, candidates: readonly Signature[], opts: Parameters<typeof discoverAll>[2] = {}) => discoverAll(item, candidates, opts).kept;
 const sig = (id: string, over: Partial<Signature> = {}): Signature => ({ id, item_type: "regulation", domain: 1, ...over });
 /** One pair scored: a threshold of zero keeps the pairs that score nothing, so a self-pair or an unrelated pair reads as a zero score. */
-const scoreConnection = (a: Signature, b: Signature, freqMap?: TagFrequencies) => discoverConnections(a, [b], { threshold: 0, ...(freqMap ? { freqMap } : {}) })[0] as NonNullable<ReturnType<typeof discoverConnections>[number]>;
+const scoreConnection = (a: Signature, b: Signature, freqMap?: TagFrequencies) => discoverConnections(a, [b], { threshold: 0, ...(freqMap ? { freqMap } : {}) })[0] ?? { score: 0, basis: [], crossSurface: false, relationship: "none", target: b.id };
 
 test("scoreConnection: each basis carries its configured weight, the score caps at 1, a self-pair scores nothing", () => {
   const a = sig("a", { source_id: "s1", compliance_object_tags: ["battery"], entity_ids: ["reg:2023/1805"], obligation_keys: ["o1"] });
   const b = sig("b", { source_id: "s1", compliance_object_tags: ["battery"], entity_ids: ["reg:2023/1805"], obligation_keys: ["o1"] });
   const r = scoreConnection(a, b);
   const w = (s: string) => r.basis.find((x) => x.signal === s)?.weight;
-  assert.equal(w("shared_source"), 0.4);
+  assert.equal(w("shared_source"), 0.15);
   assert.equal(w("shared_compliance_object"), 0.18);
   assert.equal(w("shared_entity"), 0.85);
   assert.equal(w("shared_obligation"), 0.35);
@@ -45,16 +46,17 @@ test("scenario weight falls with tag frequency (idf), floor 0.25 of the weight",
   assert.ok(a >= 0.3 * 0.25 - 1e-9);
 });
 
-test("discoverConnections: threshold 0.3, limit 12, cross-surface first", () => {
-  const item = sig("a", { source_id: "s" });
-  const same = sig("same", { source_id: "s" });
-  const cross = sig("cross", { source_id: "s", item_type: "market_signal", domain: 2 });
+test("discoverConnections: threshold 0.3, limit 12, cross-surface first; a shared source alone connects nothing", () => {
+  const item = sig("a", { entity_ids: ["e"] });
+  const same = sig("same", { entity_ids: ["e"] });
+  const cross = sig("cross", { entity_ids: ["e"], item_type: "market_signal", domain: 2 });
   const weak = sig("weak", { jurisdiction_iso: ["DE"], topic_tags: ["x"] });
   const out = discoverConnections(item, [same, cross, weak]);
   assert.deepEqual(out.map((c) => c.target), ["cross", "same"]);
   assert.equal(out[0]?.crossSurface, true);
-  const lots = Array.from({ length: 30 }, (_, i) => sig(`k${String(i).padStart(2, "0")}`, { source_id: "s" }));
+  const lots = Array.from({ length: 30 }, (_, i) => sig(`k${String(i).padStart(2, "0")}`, { entity_ids: ["e"] }));
   assert.equal(discoverConnections(item, lots).length, 12);
+  assert.equal(discoverConnections(sig("a", { source_id: "s" }), [sig("b", { source_id: "s" })]).length, 0);
 });
 
 test("intersections: the AND rule (a shared scenario without a shared object is no pair) and the points 3/2/5/2", () => {

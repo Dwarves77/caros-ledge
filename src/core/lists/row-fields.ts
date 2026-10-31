@@ -52,14 +52,11 @@ export function dueInfo(r: Resource, now: Date): DueInfo | null {
   return { label: formatDate(new Date(best).toISOString().slice(0, 10)), days: `${diff} day${diff === 1 ? "" : "s"}`, daysNum: diff };
 }
 
-const ABBREVIATION = /\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i;
 /** The first sentence of a stored text, cut at its end (not at "No." or "Art."); null when there is none. */
 function firstSentence(text: string | null | undefined): string | null {
   const t = (text ?? "").replace(/\s+/g, " ").trim();
-  if (!t) return null;
-  const end = /[.!?](?=\s+[A-Z("“]|$)/g;
-  for (let m = end.exec(t); m; m = end.exec(t)) if (!ABBREVIATION.test(t.slice(0, m.index + 1))) return t.slice(0, m.index + 1);
-  return t;
+  const ends = [...t.matchAll(/[.!?](?=\s+[A-Z("“]|$)/g)].map((m) => m.index + 1);
+  return t ? t.slice(0, ends.find((n) => !/\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i.test(t.slice(0, n)))) : null;
 }
 
 /** The row's second line, never blank: why it matters to the reader, else what it changes, else what the record is, else a line composed from its jurisdiction and next date. */

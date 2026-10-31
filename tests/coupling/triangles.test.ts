@@ -6,13 +6,12 @@ import { test } from "node:test";
 import { uuidOf } from "@/core/coupling";
 import { readPackets } from "@/core/digest/packets";
 
-import { connect, countsOf, E, patterns, propagate } from "./_world.ts";
+import { connect, countsOf, E, patterns } from "./_world.ts";
 import { ITEM, OBL, plantReaderRefs, triangleFixture } from "./_triangles.ts";
 
 const keyOf = (r: Record<string, unknown>): string => String(r.computed_by).slice(String(r.computed_by).indexOf(":") + 1);
 async function turn(over: { endedCeiling?: boolean } = {}) {
   const f = triangleFixture(over);
-  assert.equal((await propagate(f)).exit, 0);
   plantReaderRefs(f);
   assert.equal((await connect(f)).exit, 0);
   return f;

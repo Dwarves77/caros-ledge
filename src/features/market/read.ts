@@ -14,13 +14,11 @@ import { classTierForHost, customerTierOf, readSourceByUrl } from "@/core/source
 import { hostOf, log, resolveItemUuid } from "@/core/shared";
 import type { Resource } from "@/core/types";
 import { readCategory, readSurfaceCounts, type WorkspaceAggregates } from "@/features/lists";
-import { FACTS_JOIN, readWhyMatters } from "@/features/flywheel/radar/read";
 
 import { addDaysIso } from "./producers/published-price-statistics";
 import type { FactorRow } from "./lib/carbon";
 import type { LeadTimeRow } from "./lib/lead-time";
 import { prefixOf, producerFor } from "./lib/registry";
-import { selectHeadlineSeries } from "./lib/headline";
 import { buildSeriesBoard, type SeriesBoard, type SeriesDisplayRow, type SeriesRow } from "./lib/series-board";
 import type { SourceRating } from "./lib/provenance";
 
@@ -120,17 +118,13 @@ export interface MarketSeries {
   ratings: Record<string, SourceRating>;
   /** Series rows whose latest 1-week change has a recorded derivation; null when the lineage could not be checked (no service client). */
   lineage: Set<string> | null;
-  /** Per headline card (its family key), the two "Why this matters" lines; null when the facts join was not available. */
-  why: Record<string, string[]> | null;
 }
 export async function readMarketSeries(db: Db, o: { edgeDb?: Db | null } = {}): Promise<MarketSeries> {
   const rows = await readSeriesRows(db);
   const board = buildSeriesBoard(rows);
   const shown = board.groups.flatMap((g) => g.series).concat(board.unregistered);
   const [ratings, lineage] = await Promise.all([readSourceRatings(db, rows.map((r) => r.source_key)), o.edgeDb ? readDeltaEdges(o.edgeDb, shown.map((s) => s.id).filter((i): i is string => !!i)) : Promise.resolve(null)]);
-  const cards = selectHeadlineSeries(board).cards.flatMap((c) => (c.row.id ? [{ key: c.familyKey, id: c.row.id, subject: c.label }] : []));
-  const why = await readWhyMatters(db, FACTS_JOIN, "market_series", cards);
-  return { board, leadTime: rows.filter((r) => prefixOf(r.series_key) === "sbti"), ratings, lineage, why: why ? Object.fromEntries(cards.map((c) => [c.key, why.get(c.id) ?? []])) : null };
+  return { board, leadTime: rows.filter((r) => prefixOf(r.series_key) === "sbti"), ratings, lineage };
 }
 
 const FACTOR_COLS = "factor_id, mode, vehicle_class, jurisdiction, quantity_basis, ttw_co2e, wtt_co2e, wtw_co2e, source_key, tier, derivation, origin_class, method_version, n_observations, as_at_date, pedigree";
