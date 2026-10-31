@@ -1,0 +1,21 @@
+{
+  "ruling": "coordinator 2026-10-30 (scope ruling Q4, DRAIN-2F): rewrite the 7a0ead55 FuelEU Maritime (EU 2023/1805) brief to the 2026-09-11 item-briefs contract; nothing else about the item changes. Nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "drain-2f-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-10-30-drain-2f.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "drain-2f-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-10-30-drain-2f.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
