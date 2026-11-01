@@ -20,8 +20,8 @@ import { itemPool, type BatchExport, type Obj } from "../../kit/session-batch";
 import { candidateMenu, itemSeed, menuBlock } from "./candidates";
 
 const omitId = (row: Obj): Obj => Object.fromEntries(Object.entries(row).filter(([k]) => k !== "id"));
-interface ItemRow { id: string; title: string | null; item_type: string; format_type: string | null; jurisdiction_iso: string[] | null; canonical_instrument_key: string | null; source_id: string | null; source_url: string | null; provenance_status: string | null; is_archived: boolean | null; priority: string | null; severity: string | null; urgency_tier: string | null; instrument_entity_id: string | null }
-const COLUMNS = "id, title, item_type, format_type, jurisdiction_iso, canonical_instrument_key, source_id, source_url, provenance_status, is_archived, priority, severity, urgency_tier, instrument_entity_id, domain";
+interface ItemRow { id: string; title: string | null; item_type: string; format_type: string | null; jurisdiction_iso: string[] | null; canonical_instrument_key: string | null; source_id: string | null; source_url: string | null; provenance_status: string | null; is_archived: boolean | null; priority: string | null; severity: string | null; item_grade: string | null; what_is_it: string | null; why_matters: string | null; what_it_changes: string | null; urgency_tier: string | null; instrument_entity_id: string | null }
+const COLUMNS = "id, title, item_type, format_type, jurisdiction_iso, canonical_instrument_key, source_id, source_url, provenance_status, is_archived, priority, severity, urgency_tier, instrument_entity_id, domain, item_grade, what_is_it, why_matters, what_it_changes";
 
 /** The exact ids requested, as items: verified or quarantined and not archived; every id that cannot be exported is named archived or not_found. */
 async function selectByIds(sb: Db, ids: readonly string[]): Promise<{ items: ItemRow[]; notExported: { id: string; reason: "archived" | "not_found" }[] }> {
@@ -70,7 +70,7 @@ export function itemBriefsExporter(sb: Db, now: () => Date, packets: PacketReade
         const menu = await candidateMenu(sb, await itemSeed(sb, it, { claimIds: ctx.claimIds, eventIds: events.map((e) => String(e.id)), obligationIds: ctx.obligationIds }));
         const timelines = await allRows<Obj>(sb, "item_timelines", "id, milestone_date, label, is_completed", { where: (q) => q.eq("item_id", it.id) });
         out.push({
-          id: it.id, provenance_status: it.provenance_status, title: it.title, item_type: it.item_type, format_type: it.format_type, jurisdiction_iso: it.jurisdiction_iso, canonical_instrument_key: it.canonical_instrument_key, source_id: it.source_id, source_url: it.source_url,
+          id: it.id, item_grade: it.item_grade, current_metadata: { what_is_it: it.what_is_it, why_matters: it.why_matters, what_it_changes: it.what_it_changes }, provenance_status: it.provenance_status, title: it.title, item_type: it.item_type, format_type: it.format_type, jurisdiction_iso: it.jurisdiction_iso, canonical_instrument_key: it.canonical_instrument_key, source_id: it.source_id, source_url: it.source_url,
           required_slots: slotRows.filter((s) => s.item_type === it.item_type).map((s) => ({ slot_key: s.slot_key, description: s.description })),
           claims: input.claims, sections: input.sections, pool: pool.pool.map(({ id, url, text }) => ({ capture_id: id, url, text })), source_pool_hash: pool.hash, candidate_entities: menuBlock(menu),
           forward_events: kept.map((e) => omitId(e)), truncation: { forward_events_dropped_year_only_target: events.length - kept.length }, timelines: timelines.map((t) => omitId(t)),

@@ -89,21 +89,22 @@ function fieldValue(col: (typeof FIELDS)[number], v: unknown, slice: string, pre
   }
 }
 
+/** The one quote locator (typed blocks and metadata refreshes): { capture_id, text } to the capture's own exact slice, or the reason it is not in a capture of the item. */
+export function quoteIn(live: Pick<EmitLive, "captures" | "locate">, v: unknown): Quote | string {
+  if (!isObj(v) || !nonEmpty(v.capture_id) || !nonEmpty(v.text)) return "quote must be { capture_id, text }";
+  const cap = live.captures.get(v.capture_id);
+  if (cap === undefined) return `capture ${v.capture_id} is not a capture of this item`;
+  const slice = live.locate?.(cap, v.text) ?? null;
+  return slice === null || !isVerbatim(cap, slice) ? `the quote is not in capture ${v.capture_id}: ${JSON.stringify(v.text.slice(0, 80))}` : { capture_id: v.capture_id, text: slice };
+}
+
 /** Validate the typed blocks of ONE entry against the item's live material. No block, no work; with a block and no locate door the entry is refused (the door is wired by the turn). */
 export function validateEmission(entry: Obj, tag: string, live: EmitLive): { errors: string[]; plan: EmissionPlan | null } {
   if (!hasEmission(entry)) return { errors: [], plan: null };
   const errors: string[] = [];
   const err = (at: string, msg: string): null => (errors.push(`${tag} ${at}: ${msg}`), null);
   if (!live.locate) return { errors: [`${tag}: the locate door is not wired, so a quote cannot be located and the typed blocks are refused`], plan: null };
-  const locate = live.locate;
-  const quote = (v: unknown, at: string): Quote | null => {
-    if (!isObj(v) || !nonEmpty(v.capture_id) || !nonEmpty(v.text)) return err(at, "quote must be { capture_id, text }");
-    const cap = live.captures.get(v.capture_id);
-    if (cap === undefined) return err(at, `capture ${v.capture_id} is not a capture of this item`);
-    const slice = locate(cap, v.text);
-    if (slice === null || !isVerbatim(cap, slice)) return err(at, `the quote is not in capture ${v.capture_id}: ${JSON.stringify(v.text.slice(0, 80))}`);
-    return { capture_id: v.capture_id, text: slice };
-  };
+  const quote = (v: unknown, at: string): Quote | null => { const q = quoteIn(live, v); return typeof q === "string" ? err(at, q) : q; };
   const entityOf = (tokenValue: unknown, at: string): string | null => {
     const id = typeof tokenValue === "string" ? (live.ids.get(tokenValue) ?? (candidateIds.has(tokenValue) ? tokenValue : undefined)) : undefined;
     return id ?? (err(at, `unknown entity id ${JSON.stringify(tokenValue)}: it is not on the candidate menu and no formal code resolves it`));
