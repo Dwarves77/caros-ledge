@@ -11,7 +11,7 @@
             "only": "oem-roadmap-rows",
             "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -29,7 +29,7 @@
             "only": "oem-roadmap-rows",
             "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -46,7 +46,7 @@
           "producers": {
             "only": "research-assessment"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -63,7 +63,7 @@
           "producers": {
             "only": "research-assessment"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -80,7 +80,7 @@
           "producers": {
             "only": "bls-oews"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -97,7 +97,7 @@
           "producers": {
             "only": "bls-oews"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -114,7 +114,7 @@
           "producers": {
             "only": "eurostat-lc-lci-lev"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -131,7 +131,7 @@
           "producers": {
             "only": "eurostat-lc-lci-lev"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -148,7 +148,7 @@
           "producers": {
             "only": "eurostat-nrg-pc-205"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -165,7 +165,7 @@
           "producers": {
             "only": "eurostat-nrg-pc-205"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -182,7 +182,7 @@
           "producers": {
             "only": "neso-carbon-intensity"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -199,7 +199,7 @@
           "producers": {
             "only": "neso-carbon-intensity"
           },
-          "cadence_exception": "operator 2026-10-23 ruling 1: population hold lifted for the structured-data producers (rulings-2026-10-11.md)"
+          "cadence_exception": "NORMALISE-2 (2026-10-31): re-run the producers whose output the joinability gate counted. oem-roadmap-rows re-reads the reviewed rows file (6 rows held; expected 0 created, any row whose target_year or absent marker is missing is refused by name). research-assessment files each current assessment under the technology its item's refs name and stores the stated absence (technical_maturity_method not_stated) where the text states no readiness level: expected at most 38 superseding assessment rows (the 24 with a null level and the up-to-32 filed under no entity; the exact count is reported by the dry step), signposts re-pointed. bls-oews, eurostat-lc-lci-lev, eurostat-nrg-pc-205 and neso-carbon-intensity fetch the network and run forced dry under build-mode gating (rule 16: scrape cadence stays off, nothing proposes flipping it); each reports forcedDry and writes 0 rows, so regional_data_facts.source_id (91 of 92 null) stays on the allow-list until the producers run on a cadence. Then the connect term pass (rule 17). A step with a success apply row is skipped."
         }
       },
       "producer_env": [
@@ -214,7 +214,7 @@
       "input": {
         "connect": {
           "corpus": true,
-          "scan_limit": 0
+          "scan_limit": 1000
         }
       },
       "producer_env": [],

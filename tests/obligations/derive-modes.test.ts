@@ -107,7 +107,7 @@ test("statutoryUnit maps every token its data map can produce, and a fragment it
     USD: "US$ 500", "USD/tCO2e": "USD 100 per tCO2", "USD/t": "USD 40 per ton", "USD/FEU": "USD 40 for each FEU", "USD/TEU": "USD 40 per TEU", "USD/GJ": "USD 2 per gigajoule",
     GBP: "£500", "GBP/tCO2e": "GBP 100 for every tonne of CO2", "GBP/t": "GBP 40 per metric tonne", "GBP/FEU": "GBP 40 per FEU", "GBP/TEU": "GBP 40 per TEU", "GBP/GJ": "GBP 2 per GJ",
     pct_turnover: "up to 5 % of the annual worldwide turnover", "gCO2e/MJ": "89.3 gCO2e/MJ", pct: "at least 2 %", t: "1 000 tonnes", MW: "40 MW", kW: "kW", months: "12 months",
-    "EUR/t VLSFO-eq": "EUR per equivalent metric ton of VLSFO", "MJ/t VLSFO": "MJ per metric ton of VLSFO", year: "calendar year", "Wh/kg": "Wh/kg", kWh: "kWh", "1/h": "1/h", km: "km", ratio: "ratio", "gCO2e/tkm": "gCO2e/tonne-km", tkm: "tonne_km", "gCO2/kWh": "gCO2/kWh",
+    "EUR/t VLSFO-eq": "EUR per equivalent metric ton of VLSFO", "MJ/t VLSFO": "MJ per metric ton of VLSFO", year: "calendar year", "Wh/kg": "Wh/kg", kWh: "kWh", "1/h": "1/h", km: "km", ratio: "ratio", "gCO2e/tkm": "gCO2e/tonne-km", tkm: "tonne_km", "gCO2/kWh": "gCO2/kWh", "/h": "per hour", "USD/h": "USD/hr", "EUR/h": "EUR/hour", "GBP/h": "GBP per hour",
   };
   assert.deepEqual(Object.keys(cases).sort(), [...STATUTORY_UNIT_TOKENS].sort(), "every token has a planted fragment");
   for (const [token, fragment] of Object.entries(cases)) assert.equal(statutoryUnit(fragment), token, fragment);

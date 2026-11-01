@@ -181,7 +181,7 @@ function envelopeSpec(o: { name: string; licenceKey: string; killSwitchEnv: stri
 const json = (text: string): Rec => JSON.parse(text) as Rec;
 const EUROSTAT: DatasetSource = { url: "https://ec.europa.eu/eurostat", title: "Eurostat, the statistical office of the European Union" };
 export const blsOews = envelopeSpec({
-  name: "bls-oews", licenceKey: "bls", killSwitchEnv: "REGIONAL_PRODUCER_BLS_OEWS_ENABLED", sourceKey: "bls", source: { url: "https://www.bls.gov/oes/", title: "Occupational Employment and Wage Statistics (OEWS), US Bureau of Labor Statistics" },
+  name: "bls-oews", licenceKey: "bls", killSwitchEnv: "REGIONAL_PRODUCER_BLS_OEWS_ENABLED", sourceKey: "bls", source: { url: "https://api.bls.gov/publicAPI/v2/timeseries/data/", title: "Occupational Employment and Wage Statistics (OEWS), US Bureau of Labor Statistics" },
   async fetchDoc(ctx) {
     const seriesid = OEWS_OCCUPATIONS.flatMap((o) => Object.values(MEASURES).map((m) => buildOewsSeriesId(o.socCode, m.datatype)));
     return { text: await (await ctx.get("https://api.bls.gov/publicAPI/v2/timeseries/data/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ seriesid }) })).text() };
