@@ -1,0 +1,7 @@
+{
+  "ruling": "coordinator 2026-11-01 (REG-BACKFILL batch 1b, operator directive for the COO walk-through): metadata refresh of the empty what_is_it / why_matters / what_it_changes fields of 15 verified brief-grade regulations and one directive that render in the Dashboard and /regulations Due-next band (events within 90 days); each field is grounded by a verbatim quote from the item's own capture pool, authored by two reader lanes and judged by an independent second reader (ruling 60, J05 and J24 verdicts in each entry's review); the full briefs, claims, grades, sections and timelines are untouched (REG-BACKFILL-1b, PR 211); nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    { "name": "reg-backfill-1b-dry", "stage": "briefs", "mode": "dry", "input_file": "data/2026-11-01-reg-backfill-1b.items.json", "producer_env": [], "on_failure": "stop" },
+    { "name": "reg-backfill-1b-items", "stage": "briefs", "mode": "apply", "input_file": "data/2026-11-01-reg-backfill-1b.items.json", "producer_env": [], "on_failure": "stop" }
+  ]
+}
