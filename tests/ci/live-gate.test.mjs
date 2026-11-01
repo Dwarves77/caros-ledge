@@ -11,7 +11,7 @@ import { EVALUATORS, formatTable, gateResults, linksOf, loadAssertions } from '.
 import { storageStateOf } from '../../scripts/ci/live-session.mjs';
 
 /** Once armed, never disarmed. A lane that arms an assertion in its own PR adds the id here in the same PR. */
-const ARMED_FLOOR = ['signed-in', 'no-404', 'ribbon-complete', 'rows-have-why', 'connections-have-reason', 'radar-present', 'no-raw-ids', 'scoped-grid', 'no-pending-text'];
+const ARMED_FLOOR = ['signed-in', 'no-404', 'ribbon-complete', 'rows-have-why', 'connections-have-reason', 'radar-present', 'no-raw-ids', 'scoped-grid', 'no-pending-text', 'own-mandates', 'reasons-are-pairwise'];
 
 const row = (over = {}) => ({ title: 'Regulation (EU) 2024/1157', why: 'Sets the rules for shipments of waste across borders.', href: '/regulations/a?list=regulations', ...over });
 const page = (path, facts = {}, over = {}) => ({ path, status: 200, finalUrl: `https://x.test${path}`, facts: { text: 'A page a reader sees', accountMenu: true, title: 'Regulation (EU) 2024/1157', rows: [row()], connections: [], triggers: [], radar: { links: 2, absence: false }, ribbon: null, board: null, ...facts }, ...over });
@@ -136,10 +136,10 @@ test('INV-1: a missing session file and an empty or expired storage state each m
   assert.ok(empty[0].failed >= 1, 'an empty storage state ends every page on /login: the armed signed-in assertion fails');
   const findings = await signedInDom({ io: { base: 'https://x.test', sessionContext: async () => fakeContext({}), bypass: {}, log: () => {} } });
   assert.ok(findings.some((x) => x.severity === 'fail' && x.url === 'signed-in'), 'the failing assertion is named');
-  const signed = (p, over = {}) => ({ finalPath: p, facts: { text: 'A reader sees', accountMenu: true, title: 'Title', rows: [{ title: 'T', why: 'w', href: '/regulations/a' }], connections: p.includes('/regulations/a') ? ['A', 'B', 'C'].map((t) => ({ label: 'References', title: `Act ${t}`, reason: 'Both concern Directive 2023/959.' })) : [], triggers: [], radar: { links: 2, absence: false }, ribbon: p === '/market' ? ribbon() : null, board: p === '/market/series' ? board() : null, ...over } });
+  const signed = (p, over = {}) => ({ finalPath: p, facts: { text: 'A reader sees', accountMenu: true, title: 'Title', rows: [{ title: 'T', why: 'w', href: '/regulations/a' }], connections: p.includes('/regulations/a') ? ['A', 'B', 'C'].map((t) => ({ label: 'References', title: `Act ${t}`, reason: `Act ${t} also concerns Directive 2023/959.` })) : [], triggers: [], radar: { links: 2, absence: false }, ribbon: p === '/market' ? ribbon() : null, board: p === '/market/series' ? board() : null, ...over } });
   const live = await asRunner(async () => fakeContext({ '/': signed('/'), '/regulations': signed('/regulations'), '/market': signed('/market'), '/operations': signed('/operations'), '/research': signed('/research'), '/market/series': signed('/market/series'), '/regulations/a': signed('/regulations/a'), '/operations/us': signed('/operations/us') }));
   assert.equal(live[0].failed, 0, 'a signed-in run whose armed assertions pass is green; the unarmed ones only warn');
-  assert.ok(live[0].warnings > 0, 'the unarmed assertions that would fail are printed as warnings');
+  assert.equal(live[0].warnings, 0, 'no assertion is unarmed, so no warning is owed; the warn path is proven by INV-2');
   const gone = await asRunner(async () => fakeContext({ '/': signed('/'), '/regulations': signed('/regulations'), '/market': signed('/market'), '/operations': signed('/operations'), '/research': signed('/research'), '/market/series': signed('/market/series') }, { '/regulations/a': 404 }));
   assert.ok(gone[0].failed >= 1, 'a 404 detail link is an armed failure (the detail it hides also leaves connections-have-reason unread)');
 });
