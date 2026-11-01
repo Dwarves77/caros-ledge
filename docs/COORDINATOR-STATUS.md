@@ -1,4 +1,4 @@
-# Coordinator Status & Handoff Report (`2026-10-31` close of the customer-context wave)
+# Coordinator Status & Handoff Report (`2026-11-01` close of wave P56)
 
 This file is the canonical handoff status for the coordinator session. Whenever the operator types `coordinator` or `/coordinator`, read this file first alongside `git log -n 10 --oneline` and `git status -s`.
 
@@ -6,12 +6,12 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 
 ## 1. Current Repository State
 
-- **Branch:** `main` at `55991423` (PR 196 UI-RADAR-3) at the time of writing, plus later docs/lock PRs; verify with `git log -n 10`.
+- **Branch:** `main` at `0c79977f` at the time of writing; verify with `git log -n 10`.
 - **Branch protection:** `enforce_admins=true`; every change via PR; `ci` + `schema` required.
 - **Local gates:** pre-push runs the fast profile plus tests mapped from changed modules, once; the passing HEAD is remembered in the git-dir (ruling 55, PR 180). The full matrix runs in GitHub Actions only.
-- **Scrape cadence:** `off` (build mode, rule 16). Migrations 0145-0148 applied.
+- **Scrape cadence:** `off` (build mode, rule 16). Migrations 0145, 0147, 0148 applied, plus 0149 (PRODUCER-CAPTURE-1); the orphan 0146 row is deleted.
 
-## 2. Merged since 2026-10-30 (PRs 176-197, all MERGED)
+## 2. Merged since 2026-10-30 (PRs 176-209, all MERGED)
 
 - 176 TEST-FIX-1 (f340d401): licence-register golden runs without network.
 - 177 LIVE-GATE-1 (9ebfa220): signed-in production DOM gate with armed assertions.
@@ -35,28 +35,27 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 - 195 CONTENT-1b (39f34ca4): ff4064ab replaced_by 15f63ea9, migration 0147 applied.
 - 196 UI-RADAR-3 (55991423): entity display names, instrument titles, obligation evidence.
 - 197 THEME-1b (a200dd07): 5 cross-surface theme briefs with sections, 3 orphans superseded.
+- 200 HEAL-WALL-1, 201 ADMIT-1 (0 owed readers), 202 OBL-DERIVE-1, 203 LIVE-GATE-3, 204 DRAIN-THEMES-1, 205 GATES-FIX-2, 206 NORMALISE-2, 207 PRODUCER-CAPTURE-1 (migration 0149), 208 REG-BACKFILL-1, 209 LIVE-GATE-3b. Main 0c79977f.
 
 ## 3. Production facts (coordinator reads, 2026-10-31)
 
 - Production theme_briefs 12/5/3/0 (per THEME-1b closing state).
 - Patterns grouped and named; pairwise reasons; developing empty state; what-moves block; Oil Bulletin rows with why text.
-- Orphan clean-up (1,272 entity_refs on deleted events, 600 refs on 67 deleted obligation_objects, 67 orphan obligation entities) staged at `C:/tmp/fa1-scratch/ets-clean-2.sql`, NOT run (harness refuses agent deletions). Read-only count: entity_refs 52,062, entities 5,540, unchanged.
+- Orphan clean-up DONE by the operator 2026-11-01 (ruling 71): 1,375 dangling item_forward_events refs, 600 dangling obligation_objects refs, 67 orphan obligation entities and the orphan 0146 migration_log row deleted. entity_refs 50,453 (0 orphans), entities 5,473.
+- Truth is derived, not carried (ruling 69): the "8 and 17 owed obligation objects" are refuted; AFIR 5 and FuelEU 12 are complete under the current window rules.
 
 ## 4. Live gate assertions
 
-- Armed (signed in): no-404, ribbon-complete, rows-have-why, connections-have-reason, radar-present, no-raw-ids.
-- Unarmed: no-pending-text, own-mandates, scoped-grid, reasons-are-pairwise.
+- 11 of 11 armed and passing on production (run 41260343379 on 7caadf17): signed-in, no-404, no-raw-ids, rows-have-why, connections-have-reason, reasons-are-pairwise, no-pending-text, own-mandates, scoped-grid, ribbon-complete, radar-present.
+- `no-fallback-summary` added unarmed; it arms when REG-BACKFILL batches 1 and 1b land.
 
-## 5. Follow-ups queued
+## 5. Next wave
 
-- DRAIN-THEMES-1: drain-authored theme briefs on membership change (ADR-050), when cadence returns.
-- REG-BACKFILL-1: 985 regulations with blank what/why/changes, produced by the turn.
-- PRODUCER-CAPTURE-1: Oil Bulletin producer files each week as a capture so prose can quote values.
-- Arm own-mandates, scoped-grid, no-pending-text after a production pass; reasons-are-pairwise once shared_obligation evidence appears.
-- Orphan refs clean-up (operator-run); remove the 0146 migration_log orphan row.
-- Typecheck "cached" skip under the gates memo (trace).
-- LOCK-NO-BLOAT-2 re-pin (in flight).
-- Items below under "Carried backlog" still stand.
+- OBL-DERIVE-2 probe: ~4 AFIR and ~7 FuelEU Article duties the `dutyWindows` rules may reject ([HYPOTHESIS], ruling 69); probe against the sentence rules before any write.
+- NORMALISE-2b: delete research_assessments #18/#19 once normalise-2 applies; obligation_objects.source_id STALE delete.
+- REG-BACKFILL batch 1 bundle (author lane plus independent judge lane): batch 1 is the 24 Due-next record-grade regulations; batch 1b is the 14 brief-grade items (metadata refresh).
+- PRODUCER-CAPTURE backfill when cadence returns.
+- LOC headroom set at wave open per ruling 70 (wave-scoped ceiling; features and fixes never edit loc.mjs mid-wave).
 
 ## 6. Standing rules learned 2026-10-31
 
@@ -69,29 +68,24 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 
 ---
 
-## 7. Carried backlog (from 2026-10-30)
+## 7. State at close (replaces "Carried backlog" and "Content owed", 2026-11-01)
 
-### Carried from the prior backlog
-1. **Community post route admissible-row predicate:** `tests/derived/readers.json` has 1 `owed` entry, `src/features/community/api/post.ts` (reads `intelligence_items` without `admitItems`, `src/core/derived/admissible.ts`). Route it through `admitItems`, remove the entry.
-2. **Schema joinability:** `scripts/ci/joinability-allow.json` holds 19 entries (`npm run joinability:schema`): J3toknovocab/J3tok (oem_tech_roadmaps, research_assessments_current), J3unit (state_cost_facts.unit), J3sev (intelligence_items.severity, SEV-1), J5 producer population slices.
-3. **Judgement drain batches** via `/drain` (`item-briefs`, `theme-briefs`, `admin-opportunity-findings`, `ledger-verdicts`) when the drain switch is on.
-4. **Full profile verification:** `node scripts/ci/gates.mjs --profile full`.
+### Backlog
+- REG-BACKFILL selector backlog 1,090 regulations = 884 all-three-empty + 206 partial (1,089 authorable, 1 heal-first); 44 batches of 25 in the selector's order.
+- Batch 1 recomposed (operator directive, COO walk-through in 48 h): the Due-next / IMMEDIATE (<= 90 days) regulations rendered above the fold on Dashboard and /regulations. Production read 2026-11-01: 44 verified regulations carry a forward event within 90 days; 24 have all three context fields empty (record grade, one capture each) and 14 brief-grade items have one or two fields empty. Batch 1 = the 24; batch 1b = the 14.
+- Batches 2-44 go to the drain readers (ruling 60).
+- Joinability entries kept: intelligence_items.severity forms (data decision), derived_values.entity_id, market_series.entity_id, section_claim_provenance source_id/tier, regional_data_facts 75 legacy rows, `J3pat:intelligence_items.jurisdiction_iso` ("GLOBAL" x75, "IMO" x3: JUR-ISO data decision). Count is 21, not 19.
+- Judgement drain batches via `/drain` when the drain switch is on.
 
-### Content owed
-- Visibility check on carosledge.com of the released items: research list shows `947e08f3`; regulations show `ff95b385` and `7a0ead55`.
-- Derive the obligation objects now their instruments are verified: 8 for `ff95b385`, 17 for `7a0ead55`.
-- Re-source `947e08f3`'s IEA figures when the scrape cadence returns (source `ab2c35c3`; stored captures are a Cloudflare page and a stub).
+### Content owed (corrected)
+- Visibility check on carosledge.com of released items (research `947e08f3`; regulations `ff95b385`, `7a0ead55`).
+- ~~Derive the obligation objects now their instruments are verified: 8 for `ff95b385`, 17 for `7a0ead55`.~~ **[REFUTED 2026-11-01, ruling 69]** 17 was the count of candidates refused `instrument_item_missing` while FuelEU was quarantined (RESUME-2026-10-27:17); today FuelEU has 12 candidates, all registered; "8" has no provenance beyond this line. AFIR 5 and FuelEU 12 are complete; the open [HYPOTHESIS] is carried by OBL-DERIVE-2.
+- IEA `947e08f3` re-source: the earlier "Cloudflare page and a stub" was refuted; one wall row among six real captures, now excluded as unusable (HEAL-WALL-1).
 - `15f63ea9` R33 versus growing supplied dates (design question).
 
-### Code window (after content runs; one home per mechanism, cite the owner)
-1. Obligation derive reads the item before the briefs apply flips it to verified, refusing `instrument_item_missing` for a quarantined-but-present instrument; the refusal label is also untruthful. Owner: `src/features/obligations/derive/derive-objects.ts` `deriveObligationObjects` + `buildObjectRow`.
-2. A stored wall-page capture over 200 chars counts as a usable capture and is never refetched. Owner: `src/features/mint/heal/run.ts` step 1 and `source.ts` `capturePage`.
-3. Gate A flags dates stated from DB source records (e.g. `sources.last_inaccessible`) as orphans because no capture span carries them, forcing year-less wording.
-4. `themeOf()` keyword fallback (`src/features/research/model/taxonomy.ts`) is a word list (ADR-053/054).
-5. `validate_item_provenance` criterion 5 word-matches `slot_key` in `claim_text`: replace with a typed `slot_key`.
-6. No transition log for `provenance_status` flips.
-7. NORMALISE-2: `jurisdiction_iso`, corridor, `value_numeric`, result, TRL in the reader contract.
-8. Derive files obligations under all 5 modes; `technologyEntityOf` null; velocity / crossModal / penaltyAbatement detectors at 0.
+### Code window items closed this wave
+- Derive after verification, truthful derive refusals, wall pages unusable (HEAL-WALL-1), tsc exit 2 fails the fast gate (GATES-FIX-2), patterns kind in joinability, drain-authored themes (DRAIN-THEMES-1). Mode is classifier-or-null, then the instrument's own modes (ruling 65).
+- Still open: `themeOf()` keyword fallback (ADR-053/054); `validate_item_provenance` criterion 5 typed `slot_key`; no transition log for `provenance_status` flips; Gate A dates from DB source records.
 
 ### Rules in force (vault rulings 41-43 and the repo CLAUDE.md)
 - The redesign is the look and baselines follow it.
