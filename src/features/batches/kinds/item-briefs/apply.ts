@@ -215,7 +215,7 @@ async function refreshItem(deps: BatchDeps, plan: RecordPlan) {
   return error ? Promise.reject(new Error(`metadata refresh write failed: ${error.message}`)) : { ref: plan.itemId, counts: { metadata_refreshed: 1 } };
 }
 
-function itemBriefsSpec(opts: RecordOpts, tally: { planned: number }): EntrySpec<RecordLive, RecordPlan> {
+function itemBriefsSpec(opts: RecordOpts, tally: { planned: number }, batch: string | null): EntrySpec<RecordLive, RecordPlan> {
   return {
     kind: "item-briefs",
     batchRe: /^item-briefs-[A-Za-z0-9._-]+$/,
@@ -279,7 +279,7 @@ function itemBriefsSpec(opts: RecordOpts, tally: { planned: number }): EntrySpec
     },
     // A metadata refresh changes no brief, ref or event: the flywheel pass is for the full briefs.
     downstream: (deps, _live, written, o) => (written.some((w) => !w.plan.refresh) ? afterBatch(deps, written.filter((w) => !w.plan.refresh).map((w) => w.plan.itemId), o) : Promise.resolve(null)),
-    guard: (deps, o) => preflight(deps, { ...(o.runId ? { runId: o.runId } : {}), ...(opts.cooldownMinutes !== undefined ? { cooldownMinutes: opts.cooldownMinutes } : {}) }),
+    guard: (deps, o) => preflight(deps, { ...(o.runId ? { runId: o.runId } : {}), batch, ...(opts.cooldownMinutes !== undefined ? { cooldownMinutes: opts.cooldownMinutes } : {}) }),
   };
 }
 
@@ -290,11 +290,11 @@ const flat = (s: unknown): string => String(stripUrlMarkers(typeof s === "string
 const stored = (s: string | null | undefined): string => stripClaimLedgerBlocks(stripUrlMarkers(String(s ?? "").trim()) ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").trim();
 const sameBrief = (storedBrief: string | null | undefined, body: string): boolean => !!storedBrief && stored(storedBrief) === stored(body);
 
-/** Apply one item-briefs batch (the budget and the window arrive as options; the cooldown reads the ledger). */
+/** Apply one item-briefs batch (the budget and the window arrive as options; the cooldown reads the ledger and holds only a repeat of this same bundle, RUNS-FIX-1). */
 export async function applyItemBriefs(deps: BatchDeps, file: unknown, o: RecordOpts): Promise<RunResult> {
   const opts: RecordOpts = { ...o, budgetBytes: o.budgetBytes ?? budgetBytes(o.ioBudgetMb) };
   const tally = { planned: 0 };
-  const r = await applyEntries(itemBriefsSpec(opts, tally), deps, file, opts);
+  const r = await applyEntries(itemBriefsSpec(opts, tally, isObj(file) && typeof file.batch === "string" ? file.batch : null), deps, file, opts);
   if (tally.planned) r.counts.metadata_refresh_planned = tally.planned;
   if (r.counts.not_applied_io_budget) r.notes.push(`stop_reason=${BUDGET_STOP_REASON}`);
   return r;
