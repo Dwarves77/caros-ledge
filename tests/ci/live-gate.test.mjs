@@ -11,7 +11,7 @@ import { EVALUATORS, formatTable, gateResults, linksOf, loadAssertions } from '.
 import { storageStateOf } from '../../scripts/ci/live-session.mjs';
 
 /** Once armed, never disarmed. A lane that arms an assertion in its own PR adds the id here in the same PR. */
-const ARMED_FLOOR = ['signed-in', 'no-404', 'ribbon-complete', 'rows-have-why', 'connections-have-reason', 'radar-present', 'no-raw-ids', 'scoped-grid', 'no-pending-text', 'own-mandates', 'reasons-are-pairwise'];
+const ARMED_FLOOR = ['signed-in', 'no-404', 'ribbon-complete', 'rows-have-why', 'connections-have-reason', 'radar-present', 'no-raw-ids', 'scoped-grid', 'no-pending-text', 'own-mandates', 'reasons-are-pairwise', 'no-fallback-summary'];
 
 const row = (over = {}) => ({ title: 'Regulation (EU) 2024/1157', why: 'Sets the rules for shipments of waste across borders.', href: '/regulations/a?list=regulations', ...over });
 const page = (path, facts = {}, over = {}) => ({ path, status: 200, finalUrl: `https://x.test${path}`, facts: { text: 'A page a reader sees', accountMenu: true, title: 'Regulation (EU) 2024/1157', rows: [row()], connections: [], triggers: [], radar: { links: 2, absence: false }, ribbon: null, board: null, ...facts }, ...over });
