@@ -1,0 +1,21 @@
+{
+  "ruling": "coordinator 2026-11-01 (REG-BACKFILL-1 batch 1): the reader-authored what_is_it / why_matters / what_it_changes of 25 verified regulations through the item-briefs kit; the author lane and the independent judge lane (ruling 60) wrote the bundle from each item's own capture pool, and the judge verdicts ride in each entry's review; nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "reg-backfill-1-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-11-01-reg-backfill-1.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "reg-backfill-1-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-11-01-reg-backfill-1.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

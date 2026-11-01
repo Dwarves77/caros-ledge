@@ -54,6 +54,10 @@ export async function executePlan(plan, planPath, { invoke = invokeTurn, applied
   const results = { plan: basename(planPath, ".json"), ruling: plan.ruling, started_at: now().toISOString(), outcome: "ok", applied_item_ids: [], steps: [] };
   for (const step of plan.steps) {
     const key = `${basename(planPath)}#${step.name}`;
+    if (step.bundle_missing) {
+      results.steps.push({ step: step.name, stage: step.stage, mode: step.mode, outcome: "bundle_missing", note: `bundle_missing: ${step.input_file} does not exist yet; the drain session writes it, and the next push of the plan runs this step` });
+      continue;
+    }
     const row = step.mode === "apply" ? await applied(key) : null;
     if (row) {
       results.steps.push({ step: step.name, stage: step.stage, mode: step.mode, outcome: "already-applied", note: `already applied (${row})` });
