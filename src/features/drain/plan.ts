@@ -41,10 +41,13 @@ function earliestPending(items: readonly Item[]): string | null {
   }
   return best;
 }
-/** Oldest pending first; kinds with no dated item after those with one; ties by the fixed kind order. */
-function orderKinds<T extends { id: string; earliest: string | null }>(rows: readonly T[]): T[] {
+/** DRAIN-THEMES-1: themes are exported only while they owe a brief (no brief, or a stale one), so a theme-briefs kind with items is work the last corpus pass left behind and is planned ahead of every item kind. */
+const OWED_FIRST = "theme-briefs";
+/** Owed theme briefs first; then oldest pending first; kinds with no dated item after those with one; ties by the fixed kind order. */
+function orderKinds<T extends { id: string; earliest: string | null; items: readonly unknown[] }>(rows: readonly T[]): T[] {
+  const owed = (r: T) => (r.id === OWED_FIRST && r.items.length > 0 ? 0 : 1);
   const rank = (id: string) => { const i = KIND_ORDER.indexOf(id); return i === -1 ? KIND_ORDER.length : i; };
-  return [...rows].sort((a, b) => (a.earliest && b.earliest && a.earliest !== b.earliest ? Date.parse(a.earliest) - Date.parse(b.earliest) : a.earliest && !b.earliest ? -1 : !a.earliest && b.earliest ? 1 : rank(a.id) - rank(b.id)));
+  return [...rows].sort((a, b) => owed(a) - owed(b) || (a.earliest && b.earliest && a.earliest !== b.earliest ? Date.parse(a.earliest) - Date.parse(b.earliest) : a.earliest && !b.earliest ? -1 : !a.earliest && b.earliest ? 1 : rank(a.id) - rank(b.id)));
 }
 /** Items whose committed verdict is under a prompt_version other than the live one, oldest first. */
 function selectStaleItems(items: readonly Item[], currentVersion: string): Item[] {
