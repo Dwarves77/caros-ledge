@@ -214,7 +214,7 @@
       "input": {
         "connect": {
           "corpus": true,
-          "scan_limit": 1000
+          "scan_limit": 1
         }
       },
       "producer_env": [],
