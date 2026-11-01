@@ -183,3 +183,15 @@ test("do-now-restates-gap: the GAP claim that answers the action_now slot may ca
   const both = { ...plant.brief, claims: [claim, { ...claim, text: "[action_now] Ask carriers for the schedule." }] };
   assert.equal(run("do-now-restates-gap", both, plant.item)?.rule, "do-now-restates-gap", "the exemption is the slot's own claim, not every claim of a brief that has one");
 });
+
+test("ENTITY-MINT-1: an instrument number (\"No 528/2012\", \"No. 1234\", \"Nos 1/2024\") inside the negation window of a qualification keyword is not a negation; a real \"no\" still negates", () => {
+  const reg = fixtureRow("clean-regulatory");
+  const key = "8"; // Substantive Requirements
+  const brief = (span: string): BriefModel => ({ ...reg.brief, sections: new Map([...reg.brief.sections, [key, "Obligations surveyed: 1; workspace-adjacent: 1; extracted as FACT: 1."]]), claims: [{ kind: "FACT", section: key, span, text: span, capture: null }] });
+  const item: ItemColumns = { ...reg.item, has_trajectory: true, pool_chars: 0 };
+  const cited = (span: string) => run("accounting-line-present", brief(span), item)?.detail ?? null;
+  assert.equal(cited("Regulation (EU) No 528/2012 applies to biocidal products; small operators are exempt."), null, "No <number> is an instrument number, not a negation of the scope and exception keywords");
+  assert.equal(cited("Regulation (EU) No. 1234/2024 applies to operators; vessels under 400 GT are exempt."), null, "No. <number>");
+  assert.equal(cited("Regulations (EU) Nos 1/2024 and 2/2024 apply; the scope is limited to operators; vessels under 400 GT are exempt."), null, "Nos <number>");
+  assert.match(cited("Under Article 5 no exemption applies to small operators.") ?? "", /no unnegated exception.*no unnegated scope-limit/, "a real no still negates both keywords");
+});

@@ -77,13 +77,13 @@ function rowEntities(map: ColumnMap, row: Row, c: MineContext): { entity: string
   for (const m of map.maps) {
     const value = row[m.column];
     const values = Array.isArray(value) ? value : [value];
-    const add = (entity: string | undefined, inheritedFrom?: string) => entity && c.known.has(entity) && out.push({ entity, column: m.column, value, ...(inheritedFrom ? { inheritedFrom } : {}) });
+    const add = (entity: string | undefined, inheritedFrom?: string, held: unknown = value) => entity && c.known.has(entity) && out.push({ entity, column: m.column, value: held, ...(inheritedFrom ? { inheritedFrom } : {}) });
     if (m.by === "refs") for (const e of c.held.get(`${m.refTable}|${String(value)}`) ?? []) add(e, m.refTable);
     else
       for (const v of values) {
         if (v === null || v === undefined || v === "") continue;
         if (m.by === "entity") add(ENTITY_ID_SHAPE.test(String(v)) ? String(v) : undefined);
-        else if (m.by === "mode") add(c.onto.modeEntity(normaliseMode(v) ?? String(v)));
+        else if (m.by === "mode") add(c.onto.modeEntity(normaliseMode(v) ?? String(v)), undefined, normaliseMode(v) ?? v); // the basis holds the ONE token this entity was filed from, never the row's whole array
       }
   }
   return out;

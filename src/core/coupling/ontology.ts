@@ -38,8 +38,10 @@ export function ontologyOf(rows: OntologyRows): Ontology {
     const m = roleCounts.get(r.entity_id) ?? new Map<string, number>();
     m.set(r.role, (m.get(r.role) ?? 0) + 1);
     roleCounts.set(r.entity_id, m);
-    if (r.role === "cites_mode" && r.basis?.column === "mode" && typeof r.basis.value === "string") {
-      const t = normaliseMode(r.basis.value);
+    // the basis value is the token the column held: a string, or (a text[] mode column) a one-element array; a multi-mode array names none, since which of them the entity is cannot be read from the row
+    const held = Array.isArray(r.basis?.value) && r.basis.value.length === 1 ? r.basis.value[0] : r.basis?.value;
+    if (r.role === "cites_mode" && r.basis?.column === "mode" && typeof held === "string") {
+      const t = normaliseMode(held);
       if (t) {
         tokens.set(r.entity_id, new Set([...(tokens.get(r.entity_id) ?? []), t]));
         if (!byToken.has(t)) byToken.set(t, r.entity_id);

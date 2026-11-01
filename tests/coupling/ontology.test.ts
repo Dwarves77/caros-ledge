@@ -31,3 +31,16 @@ test("a closed mode token resolves to the entity the live refs file it under; th
   assert.equal(onto.modeEntity("rail"), undefined);
   assert.deepEqual([onto.roleOf(HVO), onto.roleOf(AIR), onto.roleOf(DE)], ["cites_carrier", "cites_mode", "cites_jurisdiction"]);
 });
+
+test("ENTITY-MINT-1: a mode ref whose basis value is a one-element array (an obligation's text[] mode column) names that mode; a multi-mode array names none (which of them the entity is cannot be read from the row)", () => {
+  const IWW = "cl:asset:7";
+  const o = ontologyOf({
+    entities: [{ entity_id: IWW, kind: "asset" }, { entity_id: AIR, kind: "asset" }],
+    refs: [{ entity_id: IWW, role: "cites_mode", basis: { column: "mode", value: ["inland_waterway"] } }, { entity_id: AIR, role: "cites_mode", basis: { column: "mode", value: ["road", "rail", "air"] } }],
+    relations: [],
+  });
+  assert.equal(o.modeEntity("inland_waterway"), IWW);
+  assert.equal(o.modeEntity("barge"), IWW, "an alias normalises to the code");
+  assert.deepEqual(o.modesOf(IWW), ["inland_waterway"]);
+  assert.equal(o.modeEntity("air"), undefined);
+});
