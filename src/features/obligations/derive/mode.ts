@@ -1,8 +1,10 @@
-// DERIVE-2 V1: the transport mode(s) a verbatim span names, or, when no span rule matches, its instrument's title and identifier (the instrument's scope applies to every obligation in it). The rules are data (object-rules.json modeClassifiers,
-// zod-validated here at import, every mode token checked against the transport_mode vocabulary); the function is pure and returns the tokens, the rule ids and the input that matched. No match is no mode: never a default.
+// DERIVE-2 V1 + OBL-DERIVE-1 (ruling 65): the transport mode(s) a verbatim span names; else its instrument's title and identifier (the instrument's scope applies to every obligation in it); else the modes the instrument itself declares (its cites_mode refs, else its
+// transport_modes leg tokens). The rules are data (object-rules.json modeClassifiers, zod-validated here at import, every mode token checked against the transport_mode vocabulary); classifyMode is pure and returns the tokens, the rule ids and the basis. An instrument that
+// declares no mode and matches no rule is no mode: never a default.
 import { z } from "zod";
 
-import { LEG_MODE_CODES } from "@/core/contracts/vocabularies";
+import { LEG_MODE_CODES, normaliseMode } from "@/core/contracts/vocabularies";
+import { fetchAllByIdChunks, type Db } from "@/core/db";
 
 import rulesJson from "./data/object-rules.json";
 
@@ -15,19 +17,52 @@ for (const c of MODE_CLASSIFIERS) {
 }
 
 export interface ModeVerdict {
-  /** Leg modes in vocabulary order; empty when no rule matched. */
+  /** Leg modes in vocabulary order; empty when nothing classified. */
   modes: string[];
   ruleIds: string[];
-  /** Where the winning rules read: the span, the instrument (a title-only match, counted apart), or nowhere. */
-  from: "span" | "instrument" | null;
+  /** Where the verdict was read: the span, the instrument's title (counted apart), the instrument's own declared modes (ruling 65), or nowhere. */
+  basis: "span" | "title" | "instrument" | null;
   /** The text each matching rule matched. */
   matched: string[];
   consignmentWide: boolean;
 }
 
-export function classifyMode(span: string, instrument: { title?: string | null | undefined; identifier?: string | null | undefined }): ModeVerdict {
+export function classifyMode(span: string, instrument: { title?: string | null | undefined; identifier?: string | null | undefined }, declared: { instrumentModes: readonly string[] } = { instrumentModes: [] }): ModeVerdict {
   const read = (on: "span" | "instrument", text: string) => MODE_CLASSIFIERS.filter((c) => c.on === on).flatMap((c) => { const m = c.re.exec(text); return m ? [{ c, matched: m[0] }] : []; });
   const fromSpan = read("span", span);
   const hits = fromSpan.length ? fromSpan : read("instrument", `${instrument.title ?? ""} ${instrument.identifier ?? ""}`);
-  return { modes: LEG_MODE_CODES.filter((m) => hits.some((h) => h.c.modes.includes(m))), ruleIds: hits.map((h) => h.c.id), from: fromSpan.length ? "span" : hits.length ? "instrument" : null, matched: hits.map((h) => h.matched), consignmentWide: hits.some((h) => h.c.consignment_wide === true) };
+  const modes = LEG_MODE_CODES.filter((m) => hits.some((h) => h.c.modes.includes(m)));
+  if (modes.length) return { modes, ruleIds: hits.map((h) => h.c.id), basis: fromSpan.length ? "span" : "title", matched: hits.map((h) => h.matched), consignmentWide: hits.some((h) => h.c.consignment_wide === true) };
+  const declaredModes = LEG_MODE_CODES.filter((m) => declared.instrumentModes.includes(m));
+  return { modes: declaredModes, ruleIds: [], basis: declaredModes.length ? "instrument" : null, matched: [], consignmentWide: false };
+}
+
+/**
+ * The modes each instrument item declares (ruling 65): the closed mode tokens of the mode entities its cites_mode refs file it under (a mode entity's tokens are the basis.value of its typed-column cites_mode refs, as core/coupling/ontology reads them), else its transport_modes
+ * column tokens that are leg modes. An item with neither is absent from the map.
+ */
+export async function readInstrumentModes(sb: Db, items: readonly { id: string; transport_modes?: readonly string[] | null | undefined }[]): Promise<Map<string, string[]>> {
+  const refs = await fetchAllByIdChunks<{ ref_id: string; entity_id: string; basis: { column?: unknown; value?: unknown } | null }>(items.map((i) => i.id), async (slice) => {
+    const { data, error } = await sb.from("entity_refs").select("ref_id, entity_id, basis").eq("ref_table", "intelligence_items").eq("role", "cites_mode").in("ref_id", slice);
+    if (error) throw new Error(`instrument modes: entity_refs read failed: ${error.message}`);
+    return data ?? [];
+  }, { manyPerId: true });
+  // The token a ref names: its own basis when it was filed from the mode column; else the entity's one typed-column ref (one row per mode entity, never the entity's whole citation list).
+  const tokenOf = new Map<string, string>();
+  for (const r of refs) { const t = r.basis?.column === "mode" ? normaliseMode(r.basis.value) : null; if (t) tokenOf.set(r.entity_id, t); }
+  for (const entity of new Set(refs.map((r) => r.entity_id))) {
+    if (tokenOf.has(entity)) continue;
+    const { data, error } = await sb.from("entity_refs").select("basis").eq("entity_id", entity).eq("role", "cites_mode").contains("basis", { column: "mode" }).limit(1);
+    if (error) throw new Error(`instrument modes: entity_refs read failed: ${error.message}`);
+    const t = normaliseMode(((data ?? [])[0] as { basis?: { value?: unknown } } | undefined)?.basis?.value);
+    if (t) tokenOf.set(entity, t);
+  }
+  const out = new Map<string, string[]>();
+  for (const it of items) {
+    const filed = LEG_MODE_CODES.filter((m) => refs.some((r) => r.ref_id === it.id && tokenOf.get(r.entity_id) === m));
+    const column = LEG_MODE_CODES.filter((m) => (it.transport_modes ?? []).some((t) => normaliseMode(t) === m));
+    const modes = filed.length ? filed : column;
+    if (modes.length) out.set(it.id, modes);
+  }
+  return out;
 }

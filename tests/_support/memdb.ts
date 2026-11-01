@@ -293,7 +293,10 @@ class Query {
   not(c: string, op: string, v: unknown) { return this.f(`not.${op}`, c, v, (r) => (op === "is" ? !(v === null ? col(r, c) == null : col(r, c) === v) : op === "in" ? !String(v).replace(/[()]/g, "").split(",").includes(String(col(r, c))) : col(r, c) !== v)); }
   like(c: string, pat: string) { return this.f("like", c, pat, (r) => likeRe(pat).test(String(col(r, c) ?? ""))); }
   ilike(c: string, pat: string) { return this.f("ilike", c, pat, (r) => likeRe(pat, "i").test(String(col(r, c) ?? ""))); }
-  contains(c: string, v: unknown[]) { return this.f("contains", c, v, (r) => Array.isArray(col(r, c)) && v.every((x) => (col(r, c) as unknown[]).includes(x))); }
+  contains(c: string, v: unknown[] | Record<string, unknown>) {
+    // jsonb @> for an object (every key of v is in the column, equal), array @> for an array (every member of v is in the column)
+    return this.f("contains", c, v, (r) => { const have = col(r, c); return Array.isArray(v) ? Array.isArray(have) && v.every((x) => have.includes(x)) : have !== null && typeof have === "object" && !Array.isArray(have) && Object.entries(v).every(([k, x]) => JSON.stringify((have as Record<string, unknown>)[k]) === JSON.stringify(x)); });
+  }
   overlaps(c: string, v: unknown[]) { return this.f("overlaps", c, v, (r) => Array.isArray(col(r, c)) && (col(r, c) as unknown[]).some((x) => v.includes(x))); }
   or(expr: string) {
     const tests = expr.split(/,(?=[a-z0-9_.]+\.(?:eq|neq|is|ilike|like|lt|lte|gt|gte)\.)/).map((p) => {

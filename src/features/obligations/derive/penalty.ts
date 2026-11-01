@@ -135,7 +135,7 @@ export async function withPenalties(sb: Db, input: PenaltyInputs): Promise<{ can
       const holders = [...new Set(sources.flatMap((s) => s.holders))];
       if (!holders.length) { refused.push({ instrument_item_id: item.id, pinpoint_citation: want.pinpoint, reason: "duty_holder_unresolved" }); continue; }
       const stated = extractStatutory(span);
-      const mode = classifyMode(span, { title: item.title, identifier: item.instrument_identifier });
+      const mode = classifyMode(span, { title: item.title, identifier: item.instrument_identifier }, { instrumentModes: item.instrumentModes ?? [] });
       const entity = [...want.ids.keys()].filter((id) => !held.has(id) && owner.get(id) === pinKey(p.pinpoint)).sort()[0];
       if (entity) held.add(entity);
       added.push({ instrument_item_id: item.id, capture_id: cap.id, pinpoint_citation: want.pinpoint, verbatim_text: span, duty_holder_class: holders, holder_basis: sources.map((s) => s.ref), applicability_trigger: { attribute: objectRules.triggerAttribute, value: item.canonical_instrument_key || item.instrument_identifier || item.title || "" }, plain_language: null, mode: mode.modes.length ? mode.modes : null, sanction_class: want.token, statutory_maximum: stated.maximum?.fragment ?? null, cost_formula: stated.formula?.fragment ?? null, ...(entity ? { obligation_id: entity } : {}) });

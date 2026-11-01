@@ -241,17 +241,17 @@ const placeOf = (e: BasisEntry): { where: string[]; topics: string[] } => {
 /** The quoted names of a stored detail (`both name regulation identifier(s) "2099/2002" in their titles`). */
 const quoted = (e: BasisEntry): string[] => (typeof e.detail === "string" ? [...e.detail.matchAll(/"([^"]+)"/g)].map((m) => m[1] as string) : []);
 /** One sentence about the PAIR from the strongest typed evidence the basis holds, in words; null when the basis holds none that states anything (an entry of the same source alone is corroboration, not a connection). */
-function evidenceSentence(evidence: readonly BasisEntry[], ctx: ReasonContext): string | null {
+function evidenceSentence(evidence: readonly BasisEntry[], ctx: ReasonContext, other: string): string | null {
   for (const k of KIND_ORDER) {
     const hits = evidence.filter((e) => e.signal === k);
     const first = hits[0];
     if (!first) continue;
     if (k === "shared_entity") {
       const n = [...new Set(hits.flatMap((h) => entityNames(h, ctx.names)))];
-      if (n.length) return `Both concern ${joinLabels(n)}.`;
+      if (n.length) return `${other} also turns on ${joinLabels(n)}.`;
     } else if (k === "shared_title_entity" || k === "shared_regulation_identifier") {
       const n = [...new Set(hits.flatMap(quoted))];
-      if (n.length) return `Both name ${k === "shared_regulation_identifier" ? "regulation " : ""}${joinLabels(n)} in their titles.`;
+      if (n.length) return `${other} also names ${k === "shared_regulation_identifier" ? "regulation " : ""}${joinLabels(n)} in its title.`;
     } else {
       const c = first.tokens?.coupled?.[0];
       const rel = RELATION_WORDS[c?.relation as (typeof RELATIONS)[number]];
@@ -261,7 +261,7 @@ function evidenceSentence(evidence: readonly BasisEntry[], ctx: ReasonContext): 
   }
   // the obligation both items carry: who it binds, by when, under which instrument (one read of the obligation objects per page, readConnectionFacts)
   const bound = evidence.filter((e) => e.signal === "shared_obligation").flatMap((e) => e.tokens?.obligations ?? []).map((id) => ctx.obligations?.get(id)).find((o) => o?.holders.length);
-  if (bound) return `Both bind ${joinLabels(bound.holders)}${bound.date ? ` by ${dateWords(bound.date)}` : ""}${bound.instrument ? ` under ${bound.instrument}` : ""}${bound.instrument?.endsWith("…") ? "" : "."}`;
+  if (bound) return `${other} also binds ${joinLabels(bound.holders)}${bound.date ? ` by ${dateWords(bound.date)}` : ""}${bound.instrument ? ` under ${bound.instrument}` : ""}${bound.instrument?.endsWith("…") ? "" : "."}`;
   return null;
 }
 /** The tag level, the last fallback: the operating context the other item also touches (the scenarios, the place and topic, the party addressed), every typed kind of it in words, about the counterpart by name so repeated tags differ per pair. */
@@ -327,8 +327,8 @@ function chainOf(a: readonly FactLink[], b: readonly FactLink[]): string | null 
  */
 export function reasonFor(c: { basis: EdgeBasis | null | undefined; origin: string; label: string; counterpart: string }, facts: ReasonContext & { self?: readonly FactLink[]; other?: readonly FactLink[] } = {}): string | null {
   const { evidence, rationale } = asBasis(c.basis);
-  const [specific, chain] = [evidenceSentence(evidence, facts), chainOf(facts.self ?? [], facts.other ?? [])];
   const name = shortTitle(c.counterpart, 70);
+  const [specific, chain] = [evidenceSentence(evidence, facts, name), chainOf(facts.self ?? [], facts.other ?? [])];
   const pair = (lead: string | null): string | null => [lead, chain].filter(Boolean).join(" ") || null;
   return rationale ?? (specific ? pair(specific) : null) ?? RELATION_REASON[c.label]?.(name) ?? pair(tagSentence(evidence, name)) ?? (evidence.length > 0 && c.origin === DISCOVERY_ORIGIN ? null : (CITATION_REASON[c.label]?.(name) ?? null));
 }

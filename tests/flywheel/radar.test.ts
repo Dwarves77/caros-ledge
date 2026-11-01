@@ -41,7 +41,7 @@ test("INV-2: every rendered connection carries a plain reason, whatever the basi
   for (const r of rows) assert.ok(r.reason.trim().length > 10, `${r.id}: ${r.reason}`);
   const by = Object.fromEntries(rows.map((r) => [r.id, r.reason]));
   assert.equal(by.a, "Item A also applies to ocean fuel surcharge operations.", "the tag-level sentence is the last fallback, in words, about the counterpart");
-  assert.equal(by.b, "Both concern 2023/959.", "an entity beats the same source");
+  assert.equal(by.b, "Item B also turns on 2023/959.", "an entity beats the same source");
   assert.equal(by.c, "Methanol fuels Container shipping, so a change in one reaches the other.");
   assert.equal(by.d, "Replaces the prior statutory provisions of Item D.");
   assert.equal(by.e, "Cites Item E directly in its source text.");
@@ -55,6 +55,12 @@ test("ruling 67: three connections sharing a tag, and three legal edges of one l
   assert.equal(new Set(legal.map((r) => r.reason)).size, 3);
   assert.equal(legal[0]?.reason.startsWith("Technical execution of the parent framework, Item"), true);
   assert.ok((reasonFor({ basis: null, origin: "manual", label: "Amends", counterpart: "word ".repeat(40) }) ?? "").length < 130, "a long title is cut, the sentence stays short");
+});
+
+test("ruling 67: three connections sharing one entity each name their own counterpart", () => {
+  const rows = buildConnectionRows(["a", "b", "c"].map((id) => edge(id, { basis: [ENT] })), LOOKUP);
+  assert.equal(new Set(rows.map((r) => r.reason)).size, 3);
+  assert.ok(rows.every((r) => /^Item [ABC] also turns on 2023\/959\.$/.test(r.reason)));
 });
 
 test("a same-source-only edge is not a connection, and a candidate edge is not in the connection list", () => {
@@ -158,7 +164,7 @@ test("a pattern still forming is drawn as its family with the chain so far and t
   assert.equal(view.patterns[0]?.label, "Economic/abatement crossover forming");
   assert.equal(view.patterns[0]?.next, "a Research abatement-cost evaluation for methanol engines");
   assert.equal(view.forming[0]?.family, "Economic/abatement crossover forming");
-  assert.equal(view.forming[0]?.reason, "Both concern Methanol.");
+  assert.equal(view.forming[0]?.reason, "E-methanol price signal also turns on Methanol.");
   const text = textOf(renderApp(createElement(FlywheelRadar, { view })));
   assert.match(text, /Next link to watch: a Research abatement-cost evaluation for methanol engines/);
   assert.match(text, /Next link to watch: a Market price series for e-methanol/);
@@ -256,7 +262,7 @@ test("UI-RADAR-2 reasons: a fact that belongs to the source item alone is never 
     { self: [SERIES_ONLY, SHARED_FUEL], facts: new Map([["uuid-a", [SHARED_FUEL]], ["uuid-b", []], ["uuid-c", []]]) },
   );
   const by = Object.fromEntries(rows.map((r) => [r.id, r.reason]));
-  assert.equal(by.a, "Both concern Heavy fuel oil. Heavy fuel oil 3.5%S rose 24.8% over the last week.", "a fact tied to the entity both reach is the chain");
+  assert.equal(by.a, "Item A also turns on Heavy fuel oil. Heavy fuel oil 3.5%S rose 24.8% over the last week.", "a fact tied to the entity both reach is the chain");
   assert.equal(by.b, "Item B also applies to ocean bunkering operations in Singapore on fuels and emissions.", "scenario and place in words, nothing about the source item's own series");
   assert.equal(by.c, "Item C also applies to ocean fuel surcharge operations.");
   assert.equal(new Set(Object.values(by)).size, 3, "three targets, three different pairs, three sentences");
@@ -265,7 +271,7 @@ test("UI-RADAR-2 reasons: a fact that belongs to the source item alone is never 
 
 test("UI-RADAR-2 reasons: the strongest legacy evidence (a shared regulation identifier, shared names in the titles) states the pair; the same source still does not", () => {
   const rows = buildConnectionRows([edge("a", { basis: [SRC, { signal: "shared_regulation_identifier", detail: 'both name regulation identifier(s) "2099/2002" in their titles', weight: 0.85 }] }), edge("b", { basis: [{ signal: "shared_title_entity", detail: 'both name named entit(y/ies) "Council Decision", "European Union" in their titles', weight: 0.7 }] }), edge("c", { basis: [SRC] })], LOOKUP);
-  assert.deepEqual(rows.map((r) => [r.id, r.reason]), [["a", "Both name regulation 2099/2002 in their titles."], ["b", "Both name Council Decision and European Union in their titles."]]);
+  assert.deepEqual(rows.map((r) => [r.id, r.reason]), [["a", "Item A also names regulation 2099/2002 in its title."], ["b", "Item B also names Council Decision and European Union in its title."]]);
 });
 
 test("UI-RADAR-2 detail: a detail with no forming connection says so in words", () => {
@@ -367,7 +373,7 @@ test("UI-RADAR-3 shared obligation: the reason says who both bind, by when, unde
   const { facts, also } = await readConnectionFacts(db, "uuid-self", conns);
   assert.equal(facts.size >= 1, true);
   const rows = buildConnectionRows(conns, LOOKUP, { self: [], facts, also });
-  assert.equal(rows[0]?.reason, "Both bind importers of record and carriers by Sep 30, 2027 under Regulation (EU) 2023/1805 on the use of renewable and low-carbon…");
+  assert.equal(rows[0]?.reason, "Item A also binds importers of record and carriers by Sep 30, 2027 under Regulation (EU) 2023/1805 on the use of renewable and low-carbon…");
   assert.equal(buildConnectionRows(conns, LOOKUP)[0]?.reason, "Item A also applies to ocean fuel surcharge operations.", "with no obligation read the scenario sentence stays the fallback");
 });
 
@@ -379,5 +385,5 @@ test("UI-RADAR-3 connection facts: one batched read of the obligations for every
   assert.equal(also.obligations?.size, 3);
   assert.equal(mem.reads.filter((r) => r.table === "obligation_objects").length, 1, "one read of the obligation objects for all three edges");
   assert.equal(also.names?.get("cl:jurisdiction:0000000000000002"), "Global");
-  assert.deepEqual(buildConnectionRows([edge("a", { basis: [{ signal: "shared_entity", tokens: { entities: [{ id: "cl:jurisdiction:0000000000000002", name: "GLOBAL" }] } }] })], LOOKUP, { also })[0]?.reason, "Both concern Global.");
+  assert.deepEqual(buildConnectionRows([edge("a", { basis: [{ signal: "shared_entity", tokens: { entities: [{ id: "cl:jurisdiction:0000000000000002", name: "GLOBAL" }] } }] })], LOOKUP, { also })[0]?.reason, "Item A also turns on Global.");
 });
