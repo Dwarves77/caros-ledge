@@ -8,7 +8,7 @@
 // is found on it (the old pass registered first, then looked).
 import type { Db } from "@/core/db";
 import { capture, FetchHoldError, type CaptureResult } from "@/core/fetch";
-import type { Orphan } from "@/core/grounding";
+import { isUsableCapture, type Orphan } from "@/core/grounding";
 import { institutionKey, registerAndRate } from "@/core/sources";
 import { canonicalUrl } from "@/core/shared";
 import type { LedgerOp } from "@/core/grounding/ledger";
@@ -71,7 +71,7 @@ function hopLinks(html: string | null | undefined, base: string): string[] {
 
 export async function capturePage(ctx: SourceCtx, url: string): Promise<Capture | null> {
   const key = canonicalUrl(url) ?? url;
-  const have = ctx.captures.find((c) => canonicalUrl(c.result_url) === key && c.result_content.trim().length > 200);
+  const have = ctx.captures.find((c) => canonicalUrl(c.result_url) === key && isUsableCapture(c));
   if (have) return have;
   let res = ctx.capCache.get(key);
   if (!res) {

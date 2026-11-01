@@ -9,6 +9,7 @@ import { createHash } from "node:crypto";
 
 import { isVerbatim } from "@/core/contracts/verbatim";
 import { boundedRead, type Db } from "@/core/db";
+import { bodyOpts, classifyBody, isStorableClass, type BodyClass } from "@/core/fetch/classify-body";
 import { LookupError } from "@/core/http/errors";
 
 import { GROUND_CONFIG } from "./config";
@@ -27,8 +28,16 @@ export async function readAllPoolRows(sb: Db, itemId: string): Promise<PoolRow[]
   return r.data.filter((x) => typeof x.result_url === "string").map((x) => ({ id: x.id, url: x.result_url as string, text: x.result_content ?? "", index: x.result_index ?? 0, number_locale: x.number_locale, search_query: x.search_query }));
 }
 
-/** Rows that carry real content (over the usable-capture floor), in result_index order: the pool the author reads and the hash covers. */
-export const usableCaptures = (rows: PoolRow[]): PoolRow[] => rows.filter((r) => r.text.trim().length > GROUND_CONFIG.MIN_USABLE_POOL_CHARS).sort((a, b) => a.index - b.index);
+/** The wall class (bot_wall, js_shell, login_wall, ...) a stored body classifies as, or null when it is a storable page: INV-178's one owner, read at the point of use. */
+export const captureWallClass = (row: { result_content: string | null; result_url?: string | null }): BodyClass | null => {
+  const c = classifyBody(row.result_content ?? "", bodyOpts(row.result_url)).class;
+  return isStorableClass(c) ? null : c;
+};
+/** A stored capture a reader can use: over the usable-capture floor AND not a wall page. */
+export const isUsableCapture = (row: { result_content: string | null; result_url?: string | null }): boolean => (row.result_content ?? "").trim().length > GROUND_CONFIG.MIN_USABLE_POOL_CHARS && captureWallClass(row) === null;
+
+/** Rows that carry real content (usable captures), in result_index order: the pool the author reads and the hash covers. */
+export const usableCaptures = (rows: PoolRow[]): PoolRow[] => rows.filter((r) => isUsableCapture({ result_content: r.text, result_url: r.url })).sort((a, b) => a.index - b.index);
 export async function readPool(sb: Db, itemId: string): Promise<PoolRow[]> {
   return usableCaptures(await readAllPoolRows(sb, itemId));
 }

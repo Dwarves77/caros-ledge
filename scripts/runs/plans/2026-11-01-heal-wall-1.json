@@ -1,0 +1,18 @@
+{
+  "ruling": "coordinator 2026-10-31 (HEAL-WALL-1): the IEA item 947e08f3 (source ab2c35c3) may hold a stored Cloudflare interstitial as its capture. The heal now asks INV-178's classifyBody whether a stored body is a wall page, so step 1 plans a fetch (stored_wall:<class>) instead of recording already_captured. Dry: nothing is fetched and nothing is written, so no scrape cadence is exercised and rule 16 stands",
+  "steps": [
+    {
+      "name": "heal-item-947e08f3-dry",
+      "stage": "ops",
+      "mode": "dry",
+      "input": {
+        "ops": {
+          "op": "heal-item",
+          "args": { "itemId": "947e08f3-0136-423d-8f62-03bb071bad49" }
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
