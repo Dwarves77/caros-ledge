@@ -17,7 +17,10 @@ import { ANTICIPATE_NAMESPACE, createdBy, GAP_NAMESPACE, reflectFindings, type F
 import { anticipateFindings, computeAnticipatedTargets, detectGaps, gapFindings, type ForwardEventRow } from "@/core/flywheel/gaps";
 import { detectIntersections, type IntersectionItem } from "@/core/flywheel/intersections";
 import { diffThemes, type ThemeDelta } from "@/core/flywheel/themes";
+import { loadBriefs, themesNeedingBrief, type ThemeRow } from "@/core/briefs/theme-brief-material";
 import type { RunResult } from "@/core/sources/run-result";
+
+import { retireOrphanThemeBriefs } from "./theme-brief-seam";
 
 export interface CorpusDeps {
   sb: Db;
@@ -36,7 +39,15 @@ interface CorpusItem extends IntersectionItem {
   canonical_instrument_key?: string | null;
 }
 const ITEM_COLUMNS = "id, item_type, domain, priority, jurisdiction_iso, added_date, topic_tags, canonical_instrument_key, operational_scenario_tags, compliance_object_tags, related_items";
-export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<RunResult<{ themeDelta: ThemeDelta | null; themes: number }>> {
+const OWED_IDS_CAP = 50;
+/** DRAIN-THEMES-1 (Rule 17): a pass that replaces the themes owes what that leaves behind. Briefs of themes the new set no longer holds are retired by this pass (dry: planned against the NEW ids, nothing written), and the themes with no brief or a stale one are counted and named (capped ids) for the drain, whose planner promotes the theme-briefs kind while any are owed. A stale brief keeps rendering until its replacement applies. */
+async function settleThemeBriefs(deps: CorpusDeps, themes: readonly Theme[], dry: boolean): Promise<{ counts: Record<string, number>; ids: string[]; notes: string[]; failed: boolean }> {
+  const live: ThemeRow[] = themes.map((t) => ({ id: t.id, member_ids: t.members, surfaces: t.surfaces, convergence: t.convergence }));
+  const retire = await retireOrphanThemeBriefs({ sb: deps.sb, now: deps.now }, { dry, liveIds: new Set(live.map((t) => t.id)) });
+  const owed = themesNeedingBrief(live, await loadBriefs(deps.sb));
+  return { counts: { orphan_briefs_retired: dry ? (retire.counts.orphans ?? 0) : (retire.counts.retired ?? 0), theme_briefs_owed: owed.length }, ids: owed.slice(0, OWED_IDS_CAP).map((n) => n.theme.id), notes: retire.outcome === "ok" ? [] : retire.notes, failed: retire.outcome !== "ok" };
+}
+export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<RunResult<{ themeDelta: ThemeDelta | null; themes: number; ids?: { theme_briefs_owed: string[] } }>> {
   const { sb } = deps;
   const notes: string[] = [];
   const nowIso = deps.now().toISOString();
@@ -81,7 +92,11 @@ export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<
   const prior = await fetchAllRows<{ id: string; member_ids: string[] }>((from, to) => sb.from("connection_themes").select("id, member_ids").order("id", { ascending: true }).range(from, to), { cap: 100_000 });
   const themeDelta = diffThemes(prior, clustered.themes, { belowFloor });
   Object.assign(counts, { delta_persisted: themeDelta.summary.persisted, delta_renamed: themeDelta.summary.renamed, delta_split: themeDelta.summary.split, delta_merged: themeDelta.summary.merged, delta_dissolved: themeDelta.summary.dissolved, delta_below_floor: themeDelta.below_floor?.length ?? 0, delta_appeared: themeDelta.summary.appeared });
-  if (input.dry) return { counts, outcome: "ok", notes: [...notes, "dry: nothing written"], data: { themeDelta, themes: clustered.themes.length } };
+  if (input.dry) {
+    const briefs = await settleThemeBriefs(deps, clustered.themes, true);
+    Object.assign(counts, briefs.counts);
+    return { counts, outcome: "ok", notes: [...notes, "dry: nothing written", ...briefs.notes], data: { themeDelta, themes: clustered.themes.length, ids: { theme_briefs_owed: briefs.ids } } };
+  }
 
   const run = await sb.from("connection_theme_runs").insert({ started_at: nowIso, status: "running", args: { dry: false, intersections: { pairs: pairs.length } }, nodes_read: nodes.length, edges_read: edges.length }).select("id").single();
   if (run.error) throw new Error(`connection_theme_runs insert failed: ${run.error.message}`);
@@ -102,11 +117,15 @@ export async function corpusPass(deps: CorpusDeps, input: CorpusInput): Promise<
       notes.push(...r.notes);
     }
     Object.assign(counts, { gap_flags_inserted: reflected[0]?.inserted ?? 0, gap_flags_resolved: reflected[0]?.resolved ?? 0, anticipate_flags_inserted: reflected[1]?.inserted ?? 0, anticipate_flags_resolved: reflected[1]?.resolved ?? 0 });
+    const briefs = await settleThemeBriefs(deps, clustered.themes, false);
+    Object.assign(counts, briefs.counts);
+    notes.push(...briefs.notes);
+    if (briefs.failed) failed += 1;
     const done = await sb.from("connection_theme_runs").update({ finished_at: deps.now().toISOString(), status: "ok", nodes_clustered: clustered.nodesClustered, edges_used: clustered.edgesUsed, themes_written: rows.length, gaps_flagged: gaps.length, rounds: clustered.rounds, theme_delta: themeDelta }).eq("id", runId);
     if (done.error) throw new Error(`connection_theme_runs close failed: ${done.error.message}`);
     const verify = await sb.from("connection_themes").select("id", { count: "exact", head: true });
     if (verify.error || verify.count !== rows.length) notes.push(`verify: connection_themes holds ${verify.count ?? "?"} rows, ${rows.length} written`);
-    return { counts, outcome: failed || notes.some((n) => n.startsWith("verify:")) ? "partial" : "ok", notes, data: { themeDelta, themes: rows.length } };
+    return { counts, outcome: failed || notes.some((n) => n.startsWith("verify:")) ? "partial" : "ok", notes, data: { themeDelta, themes: rows.length, ids: { theme_briefs_owed: briefs.ids } } };
   } catch (e) {
     await sb.from("connection_theme_runs").update({ finished_at: deps.now().toISOString(), status: "error", error_message: (e instanceof Error ? e.message : String(e)).slice(0, 2000) }).eq("id", runId);
     return { counts, outcome: "failed", notes: [...notes, e instanceof Error ? e.message : String(e)], data: { themeDelta: null, themes: 0 } };
