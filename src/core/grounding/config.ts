@@ -22,8 +22,8 @@ export const GROUND_CONFIG = Object.freeze({
   MAX_NOMINATION_SPAN: 1000,
   /** Nominations offered to the author per uncovered slot. */
   MAX_NOMINATIONS_PER_SLOT: 3,
-  /** Rows of one item's pool or claim ledger a read may return before it fails loud. */
-  MAX_ITEM_ROWS: 200,
+  /** Rows of one item's pool a paginated read may return before it fails loud (a series-backed item holds one capture per observed week: PRODUCER-CAPTURE-1). */
+  MAX_ITEM_ROWS: 1000,
 });
 
 export interface TruncEvent { url: string; collected: number; fullLength: number; cap: number; transport: string }

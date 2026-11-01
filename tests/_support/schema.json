@@ -124,7 +124,9 @@
     "number_locale",
     "document_date",
     "document_date_basis",
-    "document_date_method"
+    "document_date_method",
+    "transform",
+    "transform_version"
    ],
    "uuid": [
     "id"

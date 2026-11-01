@@ -31,7 +31,7 @@ type Processed = DrainData["processedEvents"][number];
 /** A reviewed rows file is read only from the producers' own data/rows directories. */
 const ROWS_FILE = /^src\/features\/(?:market|operations|statutory)\/producers\/data\/rows\/[\w.-]+\.(?:json|csv)$/;
 export interface PropagatePlan {
-  producers: { producer: string; only: string | undefined; rowsFile: string | undefined; orgId: string | undefined } | null;
+  producers: { producer: string; only: string | undefined; rowsFile: string | undefined; orgId: string | undefined; since: string | undefined } | null;
   batch: number | undefined;
   /** DERIVE-2: fill the null mode, statutory maximum and cost formula of a bounded batch of obligation objects from their verbatim spans; absent, nothing is derived. */
   derive: { only: string; batch: number | undefined } | null;
@@ -43,7 +43,7 @@ function planPropagate(input: Record<string, unknown>): PropagatePlan {
   const only = typeof p?.only === "string" ? p.only : undefined;
   const str = (v: unknown) => (typeof v === "string" ? v : undefined);
   const dv = input.derive && typeof input.derive === "object" ? (input.derive as Record<string, unknown>) : null;
-  return { derive: dv ? { only: str(dv.only) ?? FILL_ONLY, batch: typeof dv.batch === "number" ? dv.batch : undefined } : null, producers: p ? { producer: only ? "registry" : str(p.producer) ?? "all", only, rowsFile: str(p.rowsFile), orgId: str(p.orgId) } : null, batch: typeof input.batch === "number" ? input.batch : undefined, exception: str(input.cadence_exception)?.trim() ?? "" };
+  return { derive: dv ? { only: str(dv.only) ?? FILL_ONLY, batch: typeof dv.batch === "number" ? dv.batch : undefined } : null, producers: p ? { producer: only ? "registry" : str(p.producer) ?? "all", only, rowsFile: str(p.rowsFile), orgId: str(p.orgId), since: str(p.since) } : null, batch: typeof input.batch === "number" ? input.batch : undefined, exception: str(input.cadence_exception)?.trim() ?? "" };
 }
 
 /** The ids of the items among the drained events: their research assessments are re-scored (IMP-055). Pure. */
@@ -78,7 +78,7 @@ async function runProducers(call: FamilyCall, d: BuiltDeps, p: NonNullable<Propa
     if (p.rowsFile && !ROWS_FILE.test(p.rowsFile)) return runResult("failed", { refused: 1 }, [`refused: rowsFile "${p.rowsFile}" is not a file under a producer's data/rows directory`]);
     const text = p.rowsFile ? readFileSync(p.rowsFile, "utf8") : undefined;
     const cited = text !== undefined && !call.dry ? await captureCited(d, citedPages(text), ruled) : null;
-    const r = await runRegistered(d.producers, { catalog: d.catalog, producer: p.producer, only: p.only, mode: call.mode, ...(text !== undefined ? { input: { text, ...(p.orgId ? { orgId: p.orgId } : {}) } } : {}) });
+    const r = await runRegistered(d.producers, { catalog: d.catalog, producer: p.producer, only: p.only, mode: call.mode, ...(p.since ? { since: p.since } : {}), ...(text !== undefined ? { input: { text, ...(p.orgId ? { orgId: p.orgId } : {}) } } : {}) });
     return { ...r, counts: { ...r.counts, ...(cited ? pick(cited, "capture_") : {}), ...(ruled ? { cadence_exception: 1 } : {}) }, notes: r.outcome === "failed" ? [...r.notes, ...ruling, ...(cited?.notes ?? [])] : [...ruling, ...(cited?.notes ?? []), ...r.notes] };
   }
   try {
