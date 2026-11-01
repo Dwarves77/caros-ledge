@@ -31,12 +31,18 @@ export const STEPS = [
   { name: "LOC gates", cmd: "loc", fast: true },
   { name: "Connection check (nothing runs alone)", cmd: "connections", fast: true },
   { name: "Column check (every select, filter, write payload and rpc in src names a column or function the database defines)", cmd: "columns", fast: true },
-  { name: "Joinability (a stored row is reachable by the engine: columns mapped, entities connected, units normalised)", cmd: "joinability", fast: true },
+  { name: "Joinability (a stored row is reachable by the engine: columns mapped, entities connected, units normalised)", cmd: "joinability", fast: true, mayskip: true },
   { name: "Citation check (a path, line range or table.column a document cites exists: CITE-1)", cmd: "verify:citations", fast: true },
   { name: "Propagation method versions (INV-202: a released method is never edited; new behaviour is a new version)", cmd: "method-versions", fast: true },
   { name: "Migration static checks (self-check, reversal, number ledger and order, README, borrowed rows)", cmd: "migration-checks", fast: true },
   { name: "Edge Function bundle (IMP-029: capture-worker bundles with its relative policy import)", cmd: "edge-bundle", scoped: () => edgeChanged() },
 ];
+
+/** GATES-FIX-2: what a step's exit code means. Exit 2 is a SKIP only for a step marked `mayskip` (the credential-gated checks, which follow src/core/harness/exit.ts) and never in CI. For every other step 2 is a failure: `tsc --noEmit` exits 2 when it reports a type error ("diagnostics present, outputs skipped"), and PR 202's test-file TS2339 was counted as "1 skipped (typecheck)" and went green locally. Returns "pass", "skip" or "fail". */
+export function exitVerdict(step, code, ci) {
+  if (code === 0) return "pass";
+  return code === 2 && step.mayskip && !ci ? "skip" : "fail";
+}
 
 /** The step list of a profile, in order: `full` is every step, `fast` only those marked `fast: true`. */
 export const stepsFor = (profile) => {
@@ -77,9 +83,9 @@ export function testFilesFor(files, tracked) {
 /** Which profiles satisfy a required one: a full pass covers fast. */
 const COVERS = { fast: ["fast", "full"], full: ["full"] };
 /** GATES-FIX-1: the one-line reason a run is skipped, or null when it must run. `rec` is <git-dir>/gates-last-pass.json; the skip needs the same HEAD, a covering profile, a clean tree, no CI, and (when the hook asks for the changed modules' tests) a record that ran them. */
-export function memoSkip(rec, { head, profile, clean, ci, targeted }) {
-  if (ci || !clean || !rec || rec.sha !== head || !COVERS[profile].includes(rec.profile) || (targeted && !rec.targeted)) return null;
-  return `gates: HEAD ${head.slice(0, 12)} already passed ${rec.profile} at ${rec.at}; skipping`;
+export function memoSkip(rec, { head, tree, profile, clean, ci, targeted }) {
+  if (ci || !clean || !rec || rec.sha !== head || (rec.tree && rec.tree !== tree) || !COVERS[profile].includes(rec.profile) || (targeted && !rec.targeted)) return null;
+  return `gates: HEAD ${head.slice(0, 12)} already passed ${rec.profile} at ${rec.at}; skipping (memo: tree ${(tree ?? rec.tree ?? "").slice(0, 12)})`;
 }
 
 /** `--profile fast|full` or `--profile=fast|full` from argv; full when absent. */
@@ -146,14 +152,14 @@ if (isMain(import.meta.url)) {
   const ranged = argv.includes("--range");
   const last = read();
   if (argv.includes("--memo")) {
-    const line = memoSkip(last, { head: git("rev-parse", "HEAD"), profile, clean: clean(), ci: Boolean(process.env.CI || process.env.GITHUB_ACTIONS), targeted: ranged });
+    const line = memoSkip(last, { head: git("rev-parse", "HEAD"), tree: git("rev-parse", "HEAD^{tree}"), profile, clean: clean(), ci: Boolean(process.env.CI || process.env.GITHUB_ACTIONS), targeted: ranged });
     if (line) {
       console.log(line);
       process.exit(0);
     }
   }
   const steps = stepsFor(profile).filter((s) => !s.scoped || inCi || s.scoped());
-  if (!inCi && supabaseChanged()) steps.push({ name: "Schema on an embedded PostgreSQL 15 (supabase/ changed)", cmd: "schema:local", heavy: true });
+  if (!inCi && supabaseChanged()) steps.push({ name: "Schema on an embedded PostgreSQL 15 (supabase/ changed)", cmd: "schema:local", heavy: true, mayskip: true });
   const tests = ranged ? testFilesFor(rangeFiles(argv), git("ls-files", "--", "tests").split("\n").filter(Boolean)) : [];
   if (tests.length) steps.push({ name: `Tests of the changed modules (${tests.length} file${tests.length === 1 ? "" : "s"})`, cmd: "test", files: tests, heavy: true });
   console.log(`gates (${profile}): ${steps.map((s) => s.cmd).join(", ")}${last?.profile === profile ? `; the last ${profile} pass took ${last.seconds}s` : ""}`);
@@ -164,8 +170,9 @@ if (isMain(import.meta.url)) {
     const t0 = Date.now();
     const code = step.heavy ? await withLock("gates", () => run(step), { dir: lockDir }) : run(step);
     console.log(`gates: ${step.cmd} ${Math.round((Date.now() - t0) / 1000)}s`);
-    if (code === 2 && !inCi) {
-      // a gate that cannot run here (no credentials) exits 2 after printing why: skipped, never a red and never counted as proven. CI never skips.
+    const verdict = exitVerdict(step, code, inCi);
+    if (verdict === "skip") {
+      // a credential-gated gate (`mayskip`) that cannot run here exits 2 after printing why: skipped, never a red and never counted as proven. CI never skips, and no other step may.
       console.log(`gates: ${step.cmd} SKIPPED (exit 2, see its reason above); it is proven in CI`);
       skipped.push(step.cmd);
       continue;
@@ -176,6 +183,6 @@ if (isMain(import.meta.url)) {
     }
   }
   const seconds = Math.round((Date.now() - started) / 1000);
-  if (!inCi && clean()) writeFileSync(memoPath, JSON.stringify({ sha: git("rev-parse", "HEAD"), profile, at: new Date().toISOString(), seconds, targeted: ranged }) + "\n");
-  console.log(`\ngates (${profile}): ${steps.length - skipped.length} passed${skipped.length ? `, ${skipped.length} skipped (${skipped.join(", ")})` : ""} in ${seconds}s`);
+  if (!inCi && clean()) writeFileSync(memoPath, JSON.stringify({ sha: git("rev-parse", "HEAD"), tree: git("rev-parse", "HEAD^{tree}"), profile, at: new Date().toISOString(), seconds, targeted: ranged }) + "\n");
+  console.log(`\ngates (${profile}): ${steps.length - skipped.length} passed${skipped.length ? `, ${skipped.length} skipped (${skipped.map((c) => `${c}: exit 2, mayskip step`).join(", ")})` : ""} in ${seconds}s`);
 }
