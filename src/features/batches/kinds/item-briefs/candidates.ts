@@ -120,8 +120,6 @@ export async function memberSeed(sb: Db, itemIds: readonly string[]): Promise<Se
   return { weights: await weightsOf(sb, [...claims.map((c) => ({ table: "section_claim_provenance", id: c.id })), ...events.map((e) => ({ table: "item_forward_events", id: e.id }))]) };
 }
 
-/** A drain reader's packet budget for item-briefs: the exporter (`itemBriefsExporter`) bundles each item's whole usable pool, so a batch is bounded by the count of items, not by a char budget. */
-export const BACKFILL_BATCH = 25;
 const WALK_CONCURRENCY = 8;
 export interface BackfillPage { candidates: { id: string; pool: number }[]; heal_candidates: string[]; next: string | null; backlog: { total: number; all_three_empty: number; partial: number } }
 const blank = (v: string | null): boolean => !(v ?? "").trim();

@@ -9,6 +9,7 @@ import { parseArgs } from "node:util";
 
 import { isMain } from "../lib/fs.mjs";
 
+/** A drain reader's packet budget for item-briefs: itemBriefsExporter bundles each item's whole usable pool and takes `ids`/`limit` (no charBudget), so a batch is bounded by the count of items. */
 export const BATCH = 25;
 const ruling = (n, date) => `coordinator ${date} (REG-BACKFILL-1 batch ${n}): the reader-authored what_is_it / why_matters / what_it_changes of 25 verified regulations through the item-briefs kit; the author lane and the independent judge lane (ruling 60) wrote the bundle from each item's own capture pool, and the judge verdicts ride in each entry's review; nothing is fetched, so no scrape cadence is exercised and rule 16 stands`;
 
