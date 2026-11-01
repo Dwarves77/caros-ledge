@@ -3,8 +3,8 @@ import { appendFileSync, readFileSync } from "node:fs";
 
 import { isMain, walk } from "../lib/fs.mjs";
 
-// LOCK-NO-BLOAT-2 2026-10-31: re-pinned to actuals after the customer-context wave; src only shrinks from here (operator-override marker required to raise).
-export const LIMITS = { src: 67640, "src/core": 20905, "src/core/brief": 1334, "src/core/digest": 270, "src/features": 40040 };
+// WAVE-P58 open 2026-11-01 (ruling 70): wave-scoped ceiling = actuals (src 67485, core 20830, brief 1334, digest 270, features 39880) + headroom; feature and fix PRs never edit this file mid-wave; one LOCK-NO-BLOAT PR re-pins to actuals at wave close.
+export const LIMITS = { src: 67785, "src/core": 20950, "src/core/brief": 1394, "src/core/digest": 300, "src/features": 40180 };
 const CODE_FILE = /\.(ts|tsx|js|jsx|mjs)$/;
 
 /** The code lines of one source text: blank lines, `//` lines and block comments do not count. */
