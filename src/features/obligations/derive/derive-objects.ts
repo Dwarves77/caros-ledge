@@ -23,7 +23,7 @@ import { sentenceEnd, sentenceStart } from "../extract/window";
 
 import { classifyItemBindingPosition, type ItemForClassification } from "./classify-binding-position";
 import { extractStatutory, groundingRefusal } from "./maximum";
-import { classifyMode } from "./mode";
+import { classifyMode, readInstrumentModes } from "./mode";
 import { sanctionRefusal, withPenalties } from "./penalty";
 import rulesJson from "./data/object-rules.json";
 import targetsJson from "./data/fueleu-targets.json";
@@ -91,17 +91,27 @@ export interface Candidate {
 }
 export interface CaptureRow { id: string; intelligence_item_id: string; result_content: string | null; searched_at?: string | null; result_url?: string | null; search_query?: string | null; }
 export interface ExistingObject { obligation_id: string; instrument_item_id: string; pinpoint_citation: string; verbatim_text: string; version: number; supersedes?: string | null; duty_holder_class?: string[] | null; method_version?: string | null; basis?: Record<string, unknown> | null; }
-export interface ObjectItem extends ItemForClassification { id: string; is_archived?: boolean | null; source_url?: string | null; }
+export interface ObjectItem extends ItemForClassification { id: string; is_archived?: boolean | null; source_url?: string | null; source_id?: string | null; instrument_entity_id?: string | null; transport_modes?: string[] | null; /** The modes the instrument itself declares (ruling 65), read by deriveObligationObjects. */ instrumentModes?: string[]; }
+/** What the database says of an instrument item, whether or not it is admissible: the refusal names which. */
+export interface ItemStatus { provenance_status: string | null; is_archived: boolean | null; replaced_by: string | null }
 
 export type BuildResult = { ok: true; row: Record<string, unknown>; bindingSource: string } | { ok: false; reason: string };
 
+/** Why an instrument item is not one to derive from: absent, present but not verified, replaced, or archived. The truth the database holds, never a blanket "missing". */
+function itemRefusal(status: ItemStatus | null): string {
+  if (!status) return "instrument_item_missing";
+  if (status.provenance_status !== "verified") return "instrument_item_not_verified";
+  if (status.replaced_by) return "instrument_item_replaced";
+  if (status.is_archived) return "instrument_item_archived";
+  return "instrument_item_missing";
+}
+
 /** One object row from a candidate, or the named refusal. The span must be in the capture of the same instrument item; nothing is guessed. */
-function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: CaptureRow | null; existingForPinpoint: ExistingObject | null; classify?: typeof classifyItemBindingPosition }): BuildResult {
+function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; status: ItemStatus | null; capture: CaptureRow | null; existingForPinpoint: ExistingObject | null; classify?: typeof classifyItemBindingPosition }): BuildResult {
   const { item, capture, existingForPinpoint } = ctx;
   const classify = ctx.classify ?? classifyItemBindingPosition;
   if (!c || typeof c !== "object") return { ok: false, reason: "candidate_not_an_object" };
-  if (!item) return { ok: false, reason: "instrument_item_missing" };
-  if (item.is_archived) return { ok: false, reason: "instrument_item_archived" };
+  if (!item) return { ok: false, reason: itemRefusal(ctx.status) };
   if (!capture) return { ok: false, reason: "capture_missing" };
   if (capture.intelligence_item_id !== c.instrument_item_id) return { ok: false, reason: "capture_not_of_instrument" };
   if (!nz(c.pinpoint_citation)) return { ok: false, reason: "pinpoint_blank" };
@@ -142,7 +152,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
   if (!position) return { ok: false, reason: "binding_position_unresolved" };
   const version = existingForPinpoint ? Number(existingForPinpoint.version) + 1 : 1;
   const row = {
-    obligation_id: c.obligation_id ?? entityId("obligation", `${c.instrument_item_id}|${norm(c.pinpoint_citation)}|v${version}`), instrument_item_id: c.instrument_item_id, version, supersedes: existingForPinpoint ? existingForPinpoint.obligation_id : null,
+    obligation_id: c.obligation_id ?? entityId("obligation", `${c.instrument_item_id}|${norm(c.pinpoint_citation)}|v${version}`), instrument_item_id: c.instrument_item_id, instrument_entity_id: nullable(item.instrument_entity_id), version, supersedes: existingForPinpoint ? existingForPinpoint.obligation_id : null,
     pinpoint_citation: c.pinpoint_citation, verbatim_text: c.verbatim_text, plain_language: nullable(c.plain_language), binding_position: position, duty_holder_class: classes,
     applicability_trigger: { attribute: t.attribute, value: t.value, ...(t.comparison ? { comparison: t.comparison } : {}), ...(t.obs_status ? { obs_status: t.obs_status } : {}) },
     jurisdiction: nullable(c.jurisdiction), mode: nullable(c.mode), vertical: nullable(c.vertical), frequency: nullable(c.frequency),
@@ -151,7 +161,7 @@ function buildObjectRow(c: Candidate, ctx: { item: ObjectItem | null; capture: C
     cost_formula: nullable(c.cost_formula), direct_compliance_cost: nullable(c.direct_compliance_cost), effort: nullable(c.effort), status: "not_assessed",
     ...Object.fromEntries((c.method_version != null ? ["due_date", "mandated_quantity", "mandated_unit", "in_force_end", "method_version", "basis"] : []).map((k) => [k, nullable(c[k as "due_date"])])),
     ...(c.method_version != null ? { due_date_precision: c.due_date_precision ?? "day" } : {}),
-    date_reviewed: nullable(c.date_reviewed), next_review_due: nullable(c.next_review_due), source_id: nullable(c.source_id), capture_id: c.capture_id,
+    date_reviewed: nullable(c.date_reviewed), next_review_due: nullable(c.next_review_due), source_id: c.source_id ?? item.source_id ?? null, capture_id: c.capture_id,
   };
   return { ok: true, row, bindingSource };
 }
@@ -162,7 +172,7 @@ export interface ObjectPlan {
   alreadyRegistered: number;
 }
 /** Plan a candidate batch against what is already registered: a repeat of the same text is a no-op, a changed text versions the pinpoint. */
-function planObligationObjects(candidates: readonly Candidate[], ctx: { itemsById: ReadonlyMap<string, ObjectItem>; capturesById: ReadonlyMap<string, CaptureRow>; existing: readonly ExistingObject[]; classify?: typeof classifyItemBindingPosition }): ObjectPlan {
+function planObligationObjects(candidates: readonly Candidate[], ctx: { itemsById: ReadonlyMap<string, ObjectItem>; statusById: ReadonlyMap<string, ItemStatus>; capturesById: ReadonlyMap<string, CaptureRow>; existing: readonly ExistingObject[]; classify?: typeof classifyItemBindingPosition }): ObjectPlan {
   const current = currentObligationObjects<ExistingObject>(ctx.existing);
   const byPinpoint = new Map(current.map((o) => [`${o.instrument_item_id}|${norm(o.pinpoint_citation)}`, o]));
   const existingIds = new Set(ctx.existing.map((o) => o.obligation_id));
@@ -186,7 +196,7 @@ function planObligationObjects(candidates: readonly Candidate[], ctx: { itemsByI
       plan.alreadyRegistered += 1;
       continue;
     }
-    const built = buildObjectRow(c, { item: ctx.itemsById.get(c?.instrument_item_id) ?? null, capture: ctx.capturesById.get(c?.capture_id) ?? null, existingForPinpoint: prior, ...(ctx.classify ? { classify: ctx.classify } : {}) });
+    const built = buildObjectRow(c, { item: ctx.itemsById.get(c?.instrument_item_id) ?? null, status: ctx.statusById.get(c?.instrument_item_id) ?? null, capture: ctx.capturesById.get(c?.capture_id) ?? null, existingForPinpoint: prior, ...(ctx.classify ? { classify: ctx.classify } : {}) });
     if (!built.ok) plan.refused.push({ ...label, reason: built.reason });
     else if (existingIds.has(built.row.obligation_id as string)) plan.alreadyRegistered += 1;
     else plan.toInsert.push({ row: built.row, bindingSource: built.bindingSource, ...(c.holder_basis ? { basis: { duty_holder_class_from: c.holder_basis } } : {}) });
@@ -251,7 +261,7 @@ function dutyCandidate(item: ObjectItem, span: string, captureId: string, source
   const pin = PINPOINT_RE.exec(span)?.[0];
   const holders = [...new Set(PHRASES.filter((p) => p.re.test(span)).map((p) => p.class))];
   if (!value || !pin || !holders.length || !DEONTIC_RE.test(span)) return null;
-  const verdict = classifyMode(span, { title: item.title, identifier: item.instrument_identifier });
+  const verdict = classifyMode(span, { title: item.title, identifier: item.instrument_identifier }, { instrumentModes: item.instrumentModes ?? [] });
   const stated = extractStatutory(span);
   return { instrument_item_id: item.id, capture_id: captureId, pinpoint_citation: pin.replace(/\s+/g, " "), verbatim_text: span, duty_holder_class: holders, applicability_trigger: classifyTrigger(span, value), evidence_artifacts: extractArtifacts(span), plain_language: null, ...timeline, source_id: sourceId, mode: verdict.modes.length ? verdict.modes : null, statutory_maximum: stated.maximum?.fragment ?? null, cost_formula: stated.formula?.fragment ?? null };
 }
@@ -322,11 +332,18 @@ function candidatesFromFueleuTargets(item: ObjectItem, captures: readonly Captur
 export async function deriveObligationObjects(sb: Db, input: { dry: boolean; itemIds: readonly string[]; extraCandidates?: readonly Candidate[] }): Promise<RunResult<{ plan: ObjectPlan }>> {
   const ids = [...new Set([...input.itemIds, ...(input.extraCandidates ?? []).map((c) => c.instrument_item_id)])];
   const items = await fetchAllByIdChunks<ObjectItem & { id: string }>(ids, async (slice) => {
-    const { data, error } = await admitItems(sb.from("intelligence_items").select("id, title, is_archived, jurisdiction_iso, instrument_identifier, canonical_instrument_key, source_url").in("id", slice));
+    const { data, error } = await admitItems(sb.from("intelligence_items").select("id, title, is_archived, jurisdiction_iso, instrument_identifier, canonical_instrument_key, source_url, source_id, instrument_entity_id, transport_modes").in("id", slice));
     if (error) throw new Error(`derive-objects: intelligence_items read failed: ${error.message}`);
     return data ?? [];
   });
-  const itemsById = new Map(items.filter((i) => !i.is_archived).map((i) => [i.id, i]));
+  const declared = await readInstrumentModes(sb, items);
+  const itemsById = new Map(items.filter((i) => !i.is_archived).map((i) => [i.id, { ...i, instrumentModes: declared.get(i.id) ?? [] }]));
+  // The status of every named instrument, admissible or not: a refused candidate says whether its instrument is absent, unverified, replaced or archived.
+  const statusById = new Map((await fetchAllByIdChunks<ItemStatus & { id: string }>(ids, async (slice) => {
+    const { data, error } = await sb.from("intelligence_items").select("id, provenance_status, is_archived, replaced_by").in("id", slice);
+    if (error) throw new Error(`derive-objects: intelligence_items status read failed: ${error.message}`);
+    return data ?? [];
+  })).map((r) => [r.id, r]));
   const factRows = await fetchAllByIdChunks<ClaimForObjects>([...itemsById.keys()], async (slice) => {
     const { data, error } = await sb.from("section_claim_provenance").select("id, claim_text, claim_kind, source_span, search_result_id, source_id, intelligence_item_id").eq("claim_kind", "FACT").in("intelligence_item_id", slice);
     if (error) throw new Error(`derive-objects: section_claim_provenance read failed: ${error.message}`);
@@ -370,7 +387,7 @@ export async function deriveObligationObjects(sb: Db, input: { dry: boolean; ite
   }, { manyPerId: true });
   // DERIVE-3 (ADR-053): the pinpoints the statutory schedule cites become candidates from the item-bound captures, their obligation entities resolved before they are minted
   const penalties = await withPenalties(sb, { candidates, itemsById, captures, existing });
-  const plan = planObligationObjects(penalties.candidates, { itemsById, capturesById, existing });
+  const plan = planObligationObjects(penalties.candidates, { itemsById, statusById, capturesById, existing });
   plan.refused.push(...penalties.refused);
   const counts: Record<string, number> = { candidates: penalties.candidates.length, to_insert: plan.toInsert.length, already_registered: plan.alreadyRegistered, refused: plan.refused.length, inserted: 0 };
   if (input.dry || !plan.toInsert.length) return { counts, outcome: "ok", notes: input.dry ? ["dry: nothing written"] : [], data: { plan } };

@@ -30,6 +30,11 @@ test("a candidate: every refusal is named, and a good candidate becomes a not_as
   await refused({}, "capture_not_of_instrument", { agent_run_searches: [{ ...CAPTURE, intelligence_item_id: "other" }] });
   await refused({}, "capture_missing", { agent_run_searches: [] });
   await refused({}, "instrument_item_missing", { intelligence_items: [] });
+  // INV-OD-1: the refusal tells the truth about a present instrument; "missing" is only for one that is not in the table
+  await refused({}, "instrument_item_not_verified", { intelligence_items: [{ ...ITEM, provenance_status: "quarantined" }] });
+  await refused({}, "instrument_item_not_verified", { intelligence_items: [{ ...ITEM, provenance_status: null }] });
+  await refused({}, "instrument_item_replaced", { intelligence_items: [{ ...ITEM, replaced_by: "00000000-0000-4000-8000-000000000002" }] });
+  await refused({}, "instrument_item_archived", { intelligence_items: [{ ...ITEM, is_archived: true }] });
   await refused({ pinpoint_citation: " " }, "pinpoint_blank");
   await refused({ duty_holder_class: [] }, "duty_holder_missing");
   await refused({ duty_holder_class: ["Not A Token"] }, "duty_holder_unknown:Not A Token");
