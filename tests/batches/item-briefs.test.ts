@@ -184,6 +184,25 @@ test("the apply refuses inside the cooldown (read from harness_runs) and runs af
   assert.equal(resumed.counts.applied, 1, "the next dispatch resumes after the last applied key");
 });
 
+test("RUNS-FIX-1: the cooldown holds off only a repeat of the SAME bundle; a different bundle chained inside the window applies, and options.cooldownMinutes reaches the guard end to end", async () => {
+  const prev = (batch: string, finishedMinAgo: number) => ({ id: `prev-${batch}`, family: "brief-apply", root_run_id: `prev-${batch}`, mode: "apply", outcome: "success", started_at: new Date(NOW.getTime() - (finishedMinAgo + 1) * 60000).toISOString(), finished_at: new Date(NOW.getTime() - finishedMinAgo * 60000).toISOString(), inputs: { batch: { kind: "item-briefs", content: JSON.stringify(batchFile("item-briefs", [], { batch })) }, ruled_plan: "plan.json#step" }, outputs: {} });
+  // Two ruled plans in one push: the previous apply was another bundle (1c-meta), this one is 1c.
+  const w = batchWorld();
+  w.db.seed("harness_runs", [prev("item-briefs-2026-11-01-reg-backfill-1c-meta", 2)]);
+  const chained = await apply(w, [recordEntry(w.db)], { file: { batch: "item-briefs-2026-11-01-reg-backfill-1c" } });
+  assert.equal(chained.counts.applied, 1, refusals(chained));
+  assert.equal(chained.counts.guard_refused ?? 0, 0);
+  // The same bundle re-fired inside the window is still held: that repeat is the IO churn the cooldown exists for.
+  const w2 = batchWorld();
+  w2.db.seed("harness_runs", [prev("item-briefs-001", 2)]);
+  const repeat = await apply(w2, [recordEntry(w2.db)]);
+  assert.match(refusals(repeat), /cooldown/);
+  assert.equal(w2.db.writes("intelligence_items").length, 0);
+  // The option a plan's batch carries is honoured through applyBatch (the ruled-run path): a zero cooldown lets even the repeat through.
+  const zero = await apply(w2, [recordEntry(w2.db)], { options: { cooldownMinutes: 0 } });
+  assert.equal(zero.counts.applied, 1, refusals(zero));
+});
+
 test("the zero-model guard: the whole apply runs with every network call replaced by a throwing stub and the scrape gate closed, and reaches no model and no fetch", async () => {
   const w = batchWorld();
   const realFetch = globalThis.fetch;
