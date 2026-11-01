@@ -173,7 +173,22 @@ async function applyItem(deps: BatchDeps, item: Item<RecordPlan>, batch: string,
   return { ref: item.plan.itemId, notes: failed, counts };
 }
 
-/** The unscoped flywheel over exactly the applied ids, after the reader's refs are written: tags, discovery (a brief's new entities make new edges), terms, the corpus pass, then the patterns. */
+/** Rule 17 (OBL-DERIVE-1): the obligation register and objects of every applied item that is now verified, derived once its provenance is final (the per-item participation ran before the batch's later items and refs existed). Counted in the batch artifact. */
+async function deriveVerified(deps: BatchDeps, ids: string[]): Promise<RunResult> {
+  const verified = (await rowsByIds<{ id: string; provenance_status: string | null }>(deps.sb, "intelligence_items", "id, provenance_status", ids)).filter((r) => r.provenance_status === "verified").map((r) => r.id);
+  const notes: string[] = [];
+  let derived = 0;
+  for (const id of verified) {
+    try {
+      derived += (await deps.intake.connect.deriveObligations(id)).derived;
+    } catch (e) {
+      notes.push(`${id} obligations: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  return runResult(notes.length ? "partial" : "ok", { obligations_derived: derived, obligations_items: verified.length }, notes);
+}
+
+/** The unscoped flywheel over exactly the applied ids, after the reader's refs are written: obligations of the verified, tags, discovery (a brief's new entities make new edges), terms, the corpus pass, then the patterns. */
 async function afterBatch(deps: BatchDeps, ids: string[], o: ApplyOpts): Promise<RunResult> {
   const parts: RunResult[] = [];
   const guard = async (what: string, f: () => Promise<RunResult>) => {
@@ -184,13 +199,14 @@ async function afterBatch(deps: BatchDeps, ids: string[], o: ApplyOpts): Promise
     }
   };
   const d = { sb: deps.sb, now: deps.now };
+  await guard("obligation derive", () => deriveVerified(deps, ids));
   await guard("tag pass", () => tagPass(d, { ids, dry: false, discover: false }));
   await guard("discovery", () => discoverForItems({ ...d, ...(o.runId ? { snapshot: edgeSnapshotSink(deps.sb, o.runId) } : {}) }, { ids, dry: false }));
   await guard("term pass", () => termPass(d, { dry: false }));
   await guard("corpus pass", () => corpusPass({ ...d, ...(o.runId ? { runId: o.runId } : {}) }, { dry: false }));
   await guard("patterns", () => runPatterns(d, { dry: false }));
   const notes = parts.flatMap((p) => p.notes);
-  return runResult(worst("ok", ...parts.map((p) => p.outcome)), { flywheel_passes: parts.length }, notes);
+  return runResult(worst("ok", ...parts.map((p) => p.outcome)), { flywheel_passes: parts.length, obligations_derived: parts[0]?.counts.obligations_derived ?? 0 }, notes);
 }
 
 function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
