@@ -144,7 +144,11 @@ export async function regulationBackfillCandidates(sb: Db, o: { limit: number; c
   while (at < ordered.length && candidates.length < o.limit) {
     const slice = ordered.slice(at, at + WALK_CONCURRENCY);
     const pools = await Promise.all(slice.map(async (r) => usableCaptures(await readAllPoolRows(sb, r.id)).length));
-    for (let i = 0; i < slice.length && candidates.length < o.limit; i++, at++) (pools[i] ? candidates.push({ id: (slice[i] as { id: string }).id, pool: pools[i] as number }) : heal.push((slice[i] as { id: string }).id));
+    for (let i = 0; i < slice.length && candidates.length < o.limit; i++, at++) {
+      const [id, pool] = [(slice[i] as { id: string }).id, pools[i] as number];
+      if (pool) candidates.push({ id, pool });
+      else heal.push(id);
+    }
   }
   const allThree = empty.filter((r) => blank(r.what_is_it) && blank(r.why_matters) && blank(r.what_it_changes)).length;
   return { candidates, heal_candidates: heal, next: at < ordered.length ? (ordered[at - 1] as { id: string }).id : null, backlog: { total: empty.length, all_three_empty: allThree, partial: empty.length - allThree } };
