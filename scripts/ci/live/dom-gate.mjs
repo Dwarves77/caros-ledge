@@ -45,6 +45,8 @@ const PENDING = /Narrative synthesis pending|Stale: this synthesis/;
 const CAPTION = /^(\d+) famil(?:y|ies) from (\d+) series/;
 /** The line toListRowFields composes when a regulation has no reader text (src/core/lists/row-fields.ts). */
 const FALLBACK = /^Applies (in [A-Z]{2}|across jurisdictions)(; next date .*)?\.$/;
+/** The lists whose every row must draw a reader's text: the Dashboard (Due next and the changes draw through the same row mapping as the lists) and /regulations (LIST-RPC-1 widened the Dashboard in). */
+const FALLBACK_PAGES = ["/", "/regulations"];
 const WORDS = (s) => s.split(/\s+/).filter(Boolean).length;
 const pages = (facts) => [...facts.lists, ...facts.details];
 /** A page the gate did not read (it errored, or ended on the sign-in page) or no page at all: an assertion over it would pass vacuously, so each one reports it as a violation. */
@@ -68,12 +70,13 @@ export const EVALUATORS = {
       return p.facts && rows.length === 0 ? [`${p.path}: draws no rows`] : bare.length ? [`${p.path}: ${bare.length} of ${rows.length} row(s) have no second line, e.g. ${some(bare.map((r) => `"${r.title.slice(0, 60)}"`)).join("; ")}`] : [];
     }),
   ],
-  "no-fallback-summary": (f) => {
-    const page = f.lists.find((p) => p.path === "/regulations");
-    if (!page?.facts) return [`/regulations: not read (${page?.error ?? "no page"})`];
-    const fallback = page.facts.rows.filter((r) => FALLBACK.test(r.why));
-    return fallback.length ? [`/regulations: ${fallback.length} of ${page.facts.rows.length} row(s) draw the composed fallback, not a reader's text, e.g. ${some(fallback.map((r) => `"${r.title.slice(0, 60)}"`)).join("; ")}`] : [];
-  },
+  "no-fallback-summary": (f) =>
+    FALLBACK_PAGES.flatMap((path) => {
+      const page = f.lists.find((p) => p.path === path);
+      if (!page?.facts) return [`${path}: not read (${page?.error ?? "no page"})`];
+      const fallback = page.facts.rows.filter((r) => FALLBACK.test(r.why));
+      return fallback.length ? [`${path}: ${fallback.length} of ${page.facts.rows.length} row(s) draw the composed fallback, not a reader's text, e.g. ${some(fallback.map((r) => `"${r.title.slice(0, 60)}"`)).join("; ")}`] : [];
+    }),
   "connections-have-reason": (f) => [...unread(f.details, "detail page"), ...f.details.flatMap((p) => (p.facts?.connections ?? []).filter((c) => WORDS(c.reason) < 3).map((c) => `${p.path}: "${c.title.slice(0, 50)}" (${c.label || "connection"}) renders ${c.reason ? `"${c.reason}"` : "no reason"}`))],
   "reasons-are-pairwise": (f) => [
     ...unread(f.details, "detail page"),

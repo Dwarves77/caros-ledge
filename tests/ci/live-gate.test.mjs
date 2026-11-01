@@ -217,3 +217,14 @@ test('INV-RB-4: no-fallback-summary trips on the composed fallback line (with an
   for (const why of ['Applies in EU; next date 1 Jan 2027.', 'Applies across jurisdictions.', 'Applies in US.']) assert.equal(run(why).length, 1, why);
   for (const why of ['Sets the rules for shipments of waste across borders.', 'Applies in EU ports from 2025 to ships over 5,000 tons.']) assert.deepEqual(run(why), [], why);
 });
+
+test('LIST-RPC-1: no-fallback-summary judges the Dashboard too: a composed Due-next line on / trips it, and a / that was not read is a violation, not a pass', () => {
+  const f = good();
+  f.lists[0].facts.rows = [row({ why: 'Applies in EU; next date 1 Jan 2027.' })];
+  const out = EVALUATORS['no-fallback-summary'](f);
+  assert.equal(out.length, 1);
+  assert.match(out[0], /^\/: 1 of 1 row/);
+  const unread = good();
+  unread.lists[0].facts = null;
+  assert.match(EVALUATORS['no-fallback-summary'](unread)[0], /^\/: not read/);
+});
