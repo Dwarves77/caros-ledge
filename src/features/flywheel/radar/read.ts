@@ -191,7 +191,7 @@ async function readForming(db: Db, scope: RadarScope): Promise<RadarForming[]> {
     const chain = [a, b].map((it) => ({ title: shortTitle(it.title), surface: surfaceOf(it.item_type, it.domain), href: surfaceHref(surfaceOf(it.item_type, it.domain), it.legacy_id || it.id) as string }));
     if (scope.kind === "surface" && !chain.some((c) => c.surface === scope.surface)) continue;
     const basis = e.basis && !Array.isArray(e.basis) ? e.basis : null;
-    shown.push({ key: `${e.source_item_id}|${e.target_item_id}`, family: familyWords(basis?.missing?.patternFamily), chain, reason: reasonFor({ basis: e.basis, origin: CANDIDATE_ORIGIN, label: "Related" }) ?? "A chain is forming between the two.", next: basis?.missing?.truth?.trim() || null });
+    shown.push({ key: `${e.source_item_id}|${e.target_item_id}`, family: familyWords(basis?.missing?.patternFamily), chain, reason: reasonFor({ basis: e.basis, origin: CANDIDATE_ORIGIN, label: "Related", counterpart: b.title }) ?? "A chain is forming between the two.", next: basis?.missing?.truth?.trim() || null });
     if (shown.length >= SHOWN_FORMING) break;
   }
   return shown;
@@ -212,9 +212,9 @@ export const asBasis = (b: EdgeBasis | null | undefined): { evidence: BasisEntry
 const KIND_ORDER = ["shared_entity", "shared_regulation_identifier", "shared_title_entity", "coupled_entity"] as const;
 /** A relation token in words, for "{A} {relation} {B}" (the closed RELATIONS of the coupling ontology). */
 const RELATION_WORDS: Readonly<Record<(typeof RELATIONS)[number], string>> = { feedstock_of: "is a feedstock of", fuel_for_mode: "fuels", competes_for_feedstock: "competes for feedstock with", shares_grid_zone: "shares a grid zone with", serves_hub: "serves", corridor_links: "links to", implements: "implements", amends: "amends", consignment_wide: "applies across the same consignment as" };
-/** The reason an explicit relationship states by itself (the legal edges, which need no evidence) and what a plain citation says. */
-const RELATION_REASON: Readonly<Record<string, string>> = { Supersedes: "Replaces prior statutory provisions.", "Superseded by": "Succeeded by newer legislation.", Implements: "Technical execution of the parent framework.", "Implemented by": "Carried out by implementing legislation.", Amends: "Modifies the text or scope of the other.", "Amended by": "Updated by a later amendment.", "Conflicts with": "Its requirements conflict with this one.", "Depends on": "This depends on it being in force." };
-const CITATION_REASON: Readonly<Record<string, string>> = { References: "Cited directly in the source text.", "Referenced by": "Cites this item directly in its source text." };
+/** The reason an explicit relationship states by itself (the legal edges, which need no evidence) and what a plain citation says, each composed with the counterpart's name so no two connections share a sentence unless they share a counterpart (ruling 67). */
+const RELATION_REASON: Readonly<Record<string, (other: string) => string>> = { Supersedes: (n) => `Replaces the prior statutory provisions of ${n}.`, "Superseded by": (n) => `Succeeded by newer legislation, ${n}.`, Implements: (n) => `Technical execution of the parent framework, ${n}.`, "Implemented by": (n) => `Carried out by implementing legislation, ${n}.`, Amends: (n) => `Modifies the text or scope of ${n}.`, "Amended by": (n) => `Updated by a later amendment, ${n}.`, "Conflicts with": (n) => `Its requirements conflict with those of ${n}.`, "Depends on": (n) => `This depends on ${n} being in force.`, };
+const CITATION_REASON: Readonly<Record<string, (other: string) => string>> = { References: (n) => `Cites ${n} directly in its source text.`, "Referenced by": (n) => `${n} cites this item directly in its source text.` };
 /** The entities an evidence entry names: the typed canonical names, or the stored detail ("both name reg:x, y"). */
 const entityNames = (e: BasisEntry, names: ReadonlyMap<string, string> = new Map()): string[] => {
   const typed = (e.tokens?.entities ?? []).map((x) => names.get(x.id) ?? x.name?.trim() ?? "").filter(Boolean);
@@ -241,17 +241,17 @@ const placeOf = (e: BasisEntry): { where: string[]; topics: string[] } => {
 /** The quoted names of a stored detail (`both name regulation identifier(s) "2099/2002" in their titles`). */
 const quoted = (e: BasisEntry): string[] => (typeof e.detail === "string" ? [...e.detail.matchAll(/"([^"]+)"/g)].map((m) => m[1] as string) : []);
 /** One sentence about the PAIR from the strongest typed evidence the basis holds, in words; null when the basis holds none that states anything (an entry of the same source alone is corroboration, not a connection). */
-function evidenceSentence(evidence: readonly BasisEntry[], ctx: ReasonContext): string | null {
+function evidenceSentence(evidence: readonly BasisEntry[], ctx: ReasonContext, other: string): string | null {
   for (const k of KIND_ORDER) {
     const hits = evidence.filter((e) => e.signal === k);
     const first = hits[0];
     if (!first) continue;
     if (k === "shared_entity") {
       const n = [...new Set(hits.flatMap((h) => entityNames(h, ctx.names)))];
-      if (n.length) return `Both concern ${joinLabels(n)}.`;
+      if (n.length) return `${other} also turns on ${joinLabels(n)}.`;
     } else if (k === "shared_title_entity" || k === "shared_regulation_identifier") {
       const n = [...new Set(hits.flatMap(quoted))];
-      if (n.length) return `Both name ${k === "shared_regulation_identifier" ? "regulation " : ""}${joinLabels(n)} in their titles.`;
+      if (n.length) return `${other} also names ${k === "shared_regulation_identifier" ? "regulation " : ""}${joinLabels(n)} in its title.`;
     } else {
       const c = first.tokens?.coupled?.[0];
       const rel = RELATION_WORDS[c?.relation as (typeof RELATIONS)[number]];
@@ -261,23 +261,23 @@ function evidenceSentence(evidence: readonly BasisEntry[], ctx: ReasonContext): 
   }
   // the obligation both items carry: who it binds, by when, under which instrument (one read of the obligation objects per page, readConnectionFacts)
   const bound = evidence.filter((e) => e.signal === "shared_obligation").flatMap((e) => e.tokens?.obligations ?? []).map((id) => ctx.obligations?.get(id)).find((o) => o?.holders.length);
-  if (bound) return `Both bind ${joinLabels(bound.holders)}${bound.date ? ` by ${dateWords(bound.date)}` : ""}${bound.instrument ? ` under ${bound.instrument}` : ""}${bound.instrument?.endsWith("…") ? "" : "."}`;
-  // tag level: the operating context the two share, every typed kind of it in words (the scenarios, the place and topic, the party addressed)
+  if (bound) return `${other} also binds ${joinLabels(bound.holders)}${bound.date ? ` by ${dateWords(bound.date)}` : ""}${bound.instrument ? ` under ${bound.instrument}` : ""}${bound.instrument?.endsWith("…") ? "" : "."}`;
+  return null;
+}
+/** The tag level, the last fallback: the operating context the other item also touches (the scenarios, the place and topic, the party addressed), every typed kind of it in words, about the counterpart by name so repeated tags differ per pair. */
+function tagSentence(evidence: readonly BasisEntry[], other: string): string | null {
   const of = (signals: readonly string[], kind: "scenarios" | "objects"): string[] => evidence.filter((e) => signals.includes(e.signal)).flatMap((e) => tokensOf(e, kind));
   const scn = [...new Set(of(["shared_scenario", "intersection"], "scenarios").map(labelForScenario).filter(Boolean))];
   const objs = [...new Set(of(["shared_compliance_object", "intersection"], "objects").map(labelForComplianceObject).filter(Boolean))];
   const place = evidence.filter((e) => e.signal === "shared_jurisdiction_topic").map(placeOf);
   const where = [...new Set(place.flatMap((p) => p.where).map(placeWords))];
   const topics = [...new Set(place.flatMap((p) => p.topics).map(labelForScenario))];
-  const apply = scn.length || where.length ? `apply to ${scn.length ? `${joinLabels(scn)} operations` : "operations"}${where.length ? ` in ${joinLabels(where)}` : ""}${topics.length ? ` on ${joinLabels(topics)}` : ""}` : "";
-  const parts = [apply, objs.length ? `address ${joinLabels(objs)}` : ""].filter(Boolean);
-  return parts.length ? `Both ${parts.join(" and ")}.` : null;
+  const apply = scn.length || where.length ? `applies to ${scn.length ? `${joinLabels(scn)} operations` : "operations"}${where.length ? ` in ${joinLabels(where)}` : ""}${topics.length ? ` on ${joinLabels(topics)}` : ""}` : "";
+  const parts = [apply, objs.length ? `addresses ${joinLabels(objs)}` : ""].filter(Boolean);
+  return parts.length ? `${other} also ${parts.join(" and ")}.` : null;
 }
 /** What the sentence of a connection reads besides its basis: the obligations the two items share (who each binds, the date, the instrument) and the names of the entities its evidence cites. */
-export interface ReasonContext {
-  obligations?: ReadonlyMap<string, { holders: string[]; date: string | null; instrument: string | null }> | undefined;
-  names?: ReadonlyMap<string, string> | undefined;
-}
+export interface ReasonContext { obligations?: ReadonlyMap<string, { holders: string[]; date: string | null; instrument: string | null }> | undefined; names?: ReadonlyMap<string, string> | undefined; }
 /** A duty-holder class token as a plural in words ("importer_of_record" is "importers of record"). */
 const holderWords = (token: string): string => token.replace(/_/g, " ").replace(/^(.+?)( of .+)?$/, (_m, head: string, tail?: string) => `${head.replace(/s?$/, "s")}${tail ?? ""}`);
 /** Everything a detail page reads once for its connections: the structured facts tied to the item and to its neighbours (the entity of each in words), the obligations their edges share, and the names of the entities their evidence cites. One batched read of obligation_objects and one of the instruments' items per page render, never one per edge. */
@@ -323,13 +323,14 @@ function chainOf(a: readonly FactLink[], b: readonly FactLink[]): string | null 
   return lines.length ? lines.join(" ") : null;
 }
 /**
- * Why two items are connected, as one short passage about the PAIR that a reader without a sustainability background can act on: the reader's own rationale first, then what an explicit relationship says, then what the typed evidence states
- * (the shared entity, the coupled relation, the shared operating context) followed by the facts tied to an entity both items reach. Null for an edge whose only evidence is the same source (it corroborates; it never connects).
+ * Why two items are connected, as one short passage about the PAIR that a reader without a sustainability background can act on: the reader's own rationale first, then what the typed evidence states about the pair (the shared entity, the coupled relation, the shared obligation), then what an explicit relationship says of the counterpart by name, then the shared operating context named by the counterpart, followed by the facts tied to an entity both items reach. Null for an edge whose only evidence is the same source (it corroborates; it never connects).
  */
-export function reasonFor(c: { basis: EdgeBasis | null | undefined; origin: string; label: string }, facts: ReasonContext & { self?: readonly FactLink[]; other?: readonly FactLink[] } = {}): string | null {
+export function reasonFor(c: { basis: EdgeBasis | null | undefined; origin: string; label: string; counterpart: string }, facts: ReasonContext & { self?: readonly FactLink[]; other?: readonly FactLink[] } = {}): string | null {
   const { evidence, rationale } = asBasis(c.basis);
-  const pair = [evidenceSentence(evidence, facts), chainOf(facts.self ?? [], facts.other ?? [])].filter(Boolean).join(" ");
-  return rationale ?? RELATION_REASON[c.label] ?? (pair || null) ?? (evidence.length > 0 && c.origin === DISCOVERY_ORIGIN ? null : (CITATION_REASON[c.label] ?? null));
+  const name = shortTitle(c.counterpart, 70);
+  const [specific, chain] = [evidenceSentence(evidence, facts, name), chainOf(facts.self ?? [], facts.other ?? [])];
+  const pair = (lead: string | null): string | null => [lead, chain].filter(Boolean).join(" ") || null;
+  return rationale ?? (specific ? pair(specific) : null) ?? RELATION_REASON[c.label]?.(name) ?? pair(tagSentence(evidence, name)) ?? (evidence.length > 0 && c.origin === DISCOVERY_ORIGIN ? null : (CITATION_REASON[c.label]?.(name) ?? null));
 }
 /** What a set of edges is mostly linked by, in words: the canonical names of the entities they share and the scenarios they touch, most frequent first. The same source is not a link. */
 function linkedByWords(bases: readonly (EdgeBasis | null | undefined)[], top = 3): string[] {
