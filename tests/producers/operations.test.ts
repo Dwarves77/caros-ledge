@@ -179,6 +179,23 @@ test("INV-244: a region code absent from regions FAILS the run (never guessed); 
   assert.equal((await runProducer(d.deps, { spec: ON(eurostatElectricity), dry: false, text: nrg })).counts.unchanged, 1);
 });
 
+test("INV-N2-3: the BLS and Eurostat envelope producers stamp the registered, class-rated source on every row (regional_data_facts.source_id), as the NESO producer does; a re-run changes nothing and a row stored before the stamp is patched", async () => {
+  const nrg = JSON.stringify(jsonStat({ unit: ["KWH"], currency: ["EUR"], tax: ["I_TAX"], nrg_cons: ["B"], geo: ["EU27_2020"], time: ["2025-S1"] }, { 0: 0.2 }));
+  const env = { REGIONAL_PRODUCER_EUROSTAT_NRG_PC_205_ENABLED: "1" };
+  const db = memoryDb({ regions: [{ id: "r-eu", code: "EU" }] });
+  const d = makeDeps({ db, env });
+  const first = await runProducer(d.deps, { spec: ON(eurostatElectricity), dry: false, text: nrg });
+  assert.equal(first.outcome, "ok", first.notes.join("|"));
+  const row = db.tables.regional_data_facts?.[0];
+  assert.ok(row?.source_id, "the row names its source");
+  assert.equal(db.tables.sources?.some((x) => x.id === row?.source_id && String(x.url).includes("ec.europa.eu")), true, "through the registry, at the host the class table rates");
+  assert.equal((await runProducer(d.deps, { spec: ON(eurostatElectricity), dry: false, text: nrg })).counts.unchanged, 1);
+  (db.tables.regional_data_facts?.[0] as Record<string, unknown>).source_id = null;
+  const patched = await runProducer(d.deps, { spec: ON(eurostatElectricity), dry: false, text: nrg });
+  assert.equal(patched.counts.patched ?? patched.counts.updated, 1, JSON.stringify(patched.counts));
+  assert.ok(db.tables.regional_data_facts?.[0]?.source_id, "the missing source is filled by the next run");
+});
+
 // ---- state cost facts ----
 const cand = (o: object = {}) => ({ state_code: "US-CA", state_label: "California", region_code: "US-CA", dimension: "labor", fact_label: "Minimum wage", value: "16.50", unit: "USD/hour", source_url: "https://eur-lex.europa.eu/mw", source_name: "State labour department", span_text: "minimum wage is $16.50 per hour", ...o });
 test("state cost facts: grounded verbatim before rated, refused by name otherwise; a write authors the state's jurisdiction entity, identifier and ref (rule 17); origin class from the tier", async () => {

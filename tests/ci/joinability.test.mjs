@@ -2,12 +2,14 @@
 // checked by `npm run joinability` and by the last test here. The tests walk the fixture's own tables, classes and columns (Rule 19), and the counts they walked are asserted, so a fixture grown by one table is walked with no edit to a test.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 
-import { evaluate, j1, j2, ratchet, tablesOf } from "../../scripts/ci/joinability.mjs";
+import { statutoryUnit } from "@/core/parse";
+
+import { evaluate, j1, j2, loadWorld, ratchet, tablesOf } from "../../scripts/ci/joinability.mjs";
 import { codesOf, j3Findings, keyFindings, severityWriters, unitStats } from "../../scripts/ci/joinability/sample.mjs";
 
 const LEGS = ["road", "rail", "ocean", "inland_waterway", "air"];
@@ -308,4 +310,79 @@ test("the real data files: every finding of the gate is on the allow-list and no
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /joinability: clean/);
   assert.equal(typeof evaluate, "function");
+});
+
+// ---- NORMALISE-2 ----
+const realWorld = loadWorld();
+const tokenSpec = (table, column) => (realWorld.cfg.tokenColumns ?? []).find((c) => c.table === table && c.column === column);
+const dist = (values) => ({ values, nulls: 0, total: 0 });
+
+test("INV-N2-1: each new vocabulary is wired to a pinned column, accepts the values production holds and rejects a planted bad token (the gate is red on it with the form printed)", () => {
+  const observed = {
+    "oem_tech_roadmaps.tech_category": ["hydrogen_fcell", "heavy_battery", "megawatt_charging"],
+    "oem_tech_roadmaps.commercial_stage": ["mass_series_production", "pilot_demonstration", "announced", "small_batch_fleet"],
+    "research_assessments_current.horizon_band": ["NOW", "NEAR", "MID", "FAR"],
+    "research_assessments_current.horizon_kind": ["availability", "obligation", "economic"],
+    "research_assessments_current.horizon_confidence": ["low", "medium", "high"],
+    "research_assessments_current.credibility_evidence_score": ["limited", "medium", "robust"],
+    "research_assessments_current.status_token": ["CONFIRMED", "HYPOTHESIS"],
+    "research_assessments_current.lifecycle_state": ["emerging", "verified", "obsolete"],
+  };
+  for (const [id, good] of Object.entries(observed)) {
+    const [table, column] = id.split(".");
+    const spec = tokenSpec(table, column);
+    assert.ok(spec && typeof spec.vocabulary === "string", `${id} names a vocabulary`);
+    assert.ok(realWorld.cfg.tables[table].textColumns.includes(column), `${id} is a pinned column`);
+    assert.deepEqual(codesOf(realWorld, spec).filter((c) => good.includes(c)).sort(), [...good].sort(), `${id}: every observed value is a code`);
+    const ok = j3Findings(realWorld, { tokens: { [id]: dist(Object.fromEntries(good.map((v) => [v, 1]))) } }, {});
+    assert.deepEqual(ok.findings.filter((f) => f.key.includes(id)), [], `${id} accepts the observed values`);
+    const bad = j3Findings(realWorld, { tokens: { [id]: dist({ ...Object.fromEntries(good.map((v) => [v, 1])), planted_bad_token: 3 }) } }, {});
+    assert.deepEqual(bad.findings.filter((f) => f.key.includes(id)).map((f) => f.key), [`J3tok:${id}`], `${id} rejects a planted token`);
+    assert.match(bad.findings.find((f) => f.key.includes(id)).msg, /"planted_bad_token" x3/);
+  }
+});
+
+test("INV-N2-2: statutoryUnit parses the hourly forms state_cost_facts holds, and the currency forms, to one canonical hourly unit each; a non-hourly text is not an hourly unit", () => {
+  for (const f of ["/hr", "/h", "per hour", "/hour", " / hr ", "per hr"]) assert.equal(statutoryUnit(f), "/h", f);
+  for (const f of ["USD/hr", "USD/hour", "USD per hour", "USD/h"]) assert.equal(statutoryUnit(f), "USD/h", f);
+  assert.equal(statutoryUnit("EUR/hour"), "EUR/h");
+  assert.equal(statutoryUnit("GBP/hr"), "GBP/h");
+  assert.equal(statutoryUnit("USD/year"), "USD", "an annual figure is not an hourly unit");
+  assert.equal(statutoryUnit("furlongs per fortnight"), null);
+  assert.deepEqual(unitStats(["/hr", "/hr", "USD/hour", "pct"]).share, 0, "the sample forms production holds are all read");
+});
+
+test("INV-N2-4: the patterns kind is red on a planted jurisdiction_iso EUR, trl 12, an unknown corridor token and an unknown corridor id, and passes the shapes the data holds; it is wired to real columns", () => {
+  const patterns = realWorld.cfg.patterns ?? [];
+  const spec = (table, column) => patterns.find((p) => p.table === table && p.column === column);
+  for (const [table, column, good, bad] of [
+    ["intelligence_items", "jurisdiction_iso", ["US", "DE", "US-CA", "GB-WLS"], "EUR"],
+    ["intelligence_items", "jurisdiction_iso", ["US"], "GLOBAL"],
+    ["research_assessments_current", "technical_maturity_low", ["1", "9", "11"], "12"],
+    ["research_assessments_current", "technical_maturity_high", ["4", "11"], "0"],
+    ["entities", "canonical_name", ["CNSHA-NLRTM:ocean", "DEHAM-USNYC:road"], "Shanghai to Rotterdam"],
+    ["reroute_events", "baseline_corridor_id", ["cl:corridor:0123456789abcdef"], "corridor-1"],
+    ["reroute_events", "reroute_corridor_id", ["cl:corridor:0123456789abcdef"], "cl:corridor:XYZ"],
+  ]) {
+    assert.ok(spec(table, column), `${table}.${column} has a pattern`);
+    const id = `${table}.${column}`;
+    assert.deepEqual(j3Findings(realWorld, { patterns: { [id]: Object.fromEntries(good.map((v) => [v, 2])) } }, {}).findings.filter((f) => f.key === `J3pat:${id}`), [], `${id} passes ${good}`);
+    const r = j3Findings(realWorld, { patterns: { [id]: { ...Object.fromEntries(good.map((v) => [v, 2])), [bad]: 1 } } }, {});
+    assert.deepEqual(r.findings.filter((f) => f.key === `J3pat:${id}`).map((f) => f.key), [`J3pat:${id}`], `${id} is red on ${bad}`);
+    assert.ok(r.findings.find((f) => f.key === `J3pat:${id}`).msg.includes(JSON.stringify(bad)), `${id} prints ${bad}`);
+    assert.ok(r.ran.has("J3pat"));
+  }
+  assert.ok(!j3Findings(realWorld, null, {}).ran.has("J3pat"), "no sample, no pattern check (the credential-free run is unchanged)");
+});
+
+test("INV-N2-5: the stated-absence reading counts a null readiness level only when the method says not_stated (a null method is NOT stated: the read keeps a row whose marker column is null)", () => {
+  const a = realWorld.cfg.absences.find((x) => x.table === "research_assessments_current" && x.column === "technical_maturity_low");
+  assert.deepEqual(a?.statedBy, { technical_maturity_method: "not_stated" });
+  const w = realWorld;
+  const rows = { tables: { research_assessments_current: { rows: 38, unreferenced: 0, nulls: { technical_maturity_low: 24 } } }, unstated: { "research_assessments_current.technical_maturity_low": 0 } };
+  assert.deepEqual(keyFindings(w, rows).findings.filter((f) => f.key.includes("technical_maturity_low")), [], "all 24 carry the marker");
+  rows.unstated["research_assessments_current.technical_maturity_low"] = 24;
+  assert.deepEqual(keyFindings(w, rows).findings.filter((f) => f.key.includes("technical_maturity_low")).map((f) => f.key), ["J5:research_assessments_current.technical_maturity_low"], "24 with no marker are red");
+  const sql = readFileSync("scripts/ci/joinability/sample.mjs", "utf8");
+  assert.match(sql, /not coalesce\(\(/, "the marker test is null-safe: a row whose marker is null is unstated, not skipped");
 });

@@ -225,21 +225,51 @@
     },
     {
       "table": "oem_tech_roadmaps",
+      "column": "tech_category",
+      "array": false,
+      "vocabulary": "tech_category"
+    },
+    {
+      "table": "oem_tech_roadmaps",
       "column": "commercial_stage",
       "array": false,
-      "vocabulary": null
+      "vocabulary": "commercial_stage"
     },
     {
       "table": "research_assessments_current",
       "column": "horizon_band",
       "array": false,
-      "vocabulary": null
+      "vocabulary": "horizon_band"
     },
     {
       "table": "research_assessments_current",
       "column": "horizon_kind",
       "array": false,
-      "vocabulary": null
+      "vocabulary": "horizon_kind"
+    },
+    {
+      "table": "research_assessments_current",
+      "column": "horizon_confidence",
+      "array": false,
+      "vocabulary": "horizon_confidence"
+    },
+    {
+      "table": "research_assessments_current",
+      "column": "credibility_evidence_score",
+      "array": false,
+      "vocabulary": "credibility_evidence_score"
+    },
+    {
+      "table": "research_assessments_current",
+      "column": "status_token",
+      "array": false,
+      "vocabulary": "status_token"
+    },
+    {
+      "table": "research_assessments_current",
+      "column": "lifecycle_state",
+      "array": false,
+      "vocabulary": "lifecycle_state"
     },
     {
       "table": "intelligence_items",
@@ -271,6 +301,14 @@
       "column": "target_year",
       "rowsFile": "src/features/market/producers/data/rows/oem_tech_roadmaps-2026-10.json",
       "reason": "the cited capture does not state a target year for the row; the rows file says so per row (absent.target_year)"
+    },
+    {
+      "table": "research_assessments_current",
+      "column": "technical_maturity_low",
+      "statedBy": {
+        "technical_maturity_method": "not_stated"
+      },
+      "reason": "the finding's recorded text states no technology readiness level; the assessor stores technical_maturity_method not_stated with the level null and never a typed level (assess.ts: TRL_NOT_STATED)"
     }
   ],
   "tables": {
@@ -658,5 +696,47 @@
         "rounding_rule": "how the indexed amount is rounded, as written; prose"
       }
     }
-  }
+  },
+  "patterns": [
+    {
+      "table": "intelligence_items",
+      "column": "jurisdiction_iso",
+      "array": true,
+      "regex": "^[A-Z]{2}(-[A-Z0-9]{1,3})?$",
+      "reason": "a jurisdiction on an item is an ISO 3166-1 alpha-2 country code, or an ISO 3166-2 subdivision (US-CA); any other form does not join to the jurisdiction entity"
+    },
+    {
+      "table": "research_assessments_current",
+      "column": "technical_maturity_low",
+      "regex": "^([1-9]|1[01])$",
+      "reason": "a technology readiness level is 1 to 11 (research_assessments_technical_maturity_low_check)"
+    },
+    {
+      "table": "research_assessments_current",
+      "column": "technical_maturity_high",
+      "regex": "^([1-9]|1[01])$",
+      "reason": "a technology readiness level is 1 to 11 (research_assessments_technical_maturity_high_check)"
+    },
+    {
+      "table": "entities",
+      "column": "canonical_name",
+      "where": {
+        "kind": "corridor"
+      },
+      "regex": "^[A-Z]{2}[A-Z2-9]{3}-[A-Z]{2}[A-Z2-9]{3}:[a-z_]+$",
+      "reason": "a corridor is named ORIGIN-DEST:mode (parseCorridorName in src/core/entities/kinds.ts), the one shape a corridor fact joins on"
+    },
+    {
+      "table": "reroute_events",
+      "column": "baseline_corridor_id",
+      "regex": "^cl:corridor:[0-9a-f]{16}$",
+      "reason": "a reroute names its corridors by corridor entity id"
+    },
+    {
+      "table": "reroute_events",
+      "column": "reroute_corridor_id",
+      "regex": "^cl:corridor:[0-9a-f]{16}$",
+      "reason": "a reroute names its corridors by corridor entity id"
+    }
+  ]
 }

@@ -6,8 +6,7 @@ import { entityId } from "@/core/entities";
 import { runProducer } from "@/core/producers/runner";
 import { aggregateAuthorityDistribution, scoreSource } from "@/features/research/authority-score";
 import { fetchLiveCandidates, researchAssessment } from "@/features/research/assessment-producer";
-import { assessItem, extractDoiCandidate, hasChanged, toAssessmentInput, toRow, type AssessInput } from "@/features/research/model/assess";
-import { technologyEntityOf } from "@/features/research/model/technology-entity";
+import { assessItem, extractDoiCandidate, hasChanged, technologyEntityOf, toAssessmentInput, toRow, TRL_NOT_STATED, type AssessInput } from "@/features/research/model/assess";
 import { classifyTheme, THEME_VALUES } from "@/features/research/theme-rules";
 import { researchWalker, walkResearch, type WalkerDeps } from "@/features/research/walker";
 
@@ -173,10 +172,15 @@ test("the first live pass scores only verified research items with no current as
 // ---- JOIN-1: an assessment is filed under the technology its item is tagged with ----
 const SAF = couplingByKey("carrier:hefa_saf")?.entityId as string;
 
-test("NE1: no scenario tag, title or text is mapped to a technology entity by the engine (the scenario lists of couplings.json are gone): an assessment is filed under none until a relation of the database carries it", () => {
-  for (const tags of [["air-fueling", "unrelated-tag"], ["drayage"], ["SAF-blending"], [], null]) assert.equal(technologyEntityOf(tags), null);
+test("NE1/INV-N2-3: no tag, title or text is matched to a technology: the technology of an assessment is the technology-kind entity among the entities the item's refs name (first by id), else none", () => {
+  const T1 = "cl:technology:0000000000000001";
+  const T2 = "cl:technology:0000000000000002";
+  assert.equal(technologyEntityOf([]), null);
+  assert.equal(technologyEntityOf(["cl:instrument:aaaaaaaaaaaaaaaa", "cl:jurisdiction:bbbbbbbbbbbbbbbb"]), null, "an instrument or a jurisdiction is not a technology");
+  assert.equal(technologyEntityOf(["cl:instrument:aaaaaaaaaaaaaaaa", T2, T1]), T1, "several: the first by id, so the choice is stable");
   const withWords = toAssessmentInput({ id: "w", item_type: "research_finding", title: "HEFA-SAF offtake and green ammonia engines", what_is_it: "Sustainable aviation fuel.", operational_scenario_tags: ["air-fueling"] });
   assert.equal(withWords.technologyEntityId, null, "the words of the title and text and the tags are never matched");
+  assert.equal(toAssessmentInput({ id: "r", item_type: "research_finding", ref_entity_ids: [T2] }).technologyEntityId, T2);
 });
 
 test("INV-JOIN-7: the producer files a row under its technology entity only when the entity exists; an unseeded entity is counted and the row is filed under none, never a foreign-key failure", async () => {
@@ -192,15 +196,38 @@ test("INV-JOIN-7: the producer files a row under its technology entity only when
   assert.equal(bare.tables.research_assessments?.[0]?.entity_id, null);
 });
 
-test("NE1: with no tag-to-entity mapping the backlog rule re-scores nothing for want of an entity: an assessment with no current row is still produced, one that has a current row is left alone", async () => {
-  const item = (id: string, title: string, tags: string[]) => ({ id, item_type: "research_finding", domain: 7, title, is_archived: false, provenance_status: "verified", source_id: "s1", operational_scenario_tags: tags });
+test("INV-N2-3: the backlog works down in the pass that finds it: a current assessment filed under no entity while its item's refs name a technology, or one with neither a level nor the stated absence, is produced again; a complete one is left alone", async () => {
+  const item = (id: string) => ({ id, item_type: "research_finding", domain: 7, title: id, is_archived: false, provenance_status: "verified", source_id: "s1" });
+  const TECH = "cl:technology:0000000000000001";
   const db = memoryDb({
-    intelligence_items: [item("n1", "Offtake", ["air-fueling"]), item("n2", "A study", []), item("n3", "Supply", ["air-fueling"]), item("n4", "Chargers", ["drayage"])],
-    research_assessments_current: [{ item_id: "n1", entity_id: null }, { item_id: "n2", entity_id: null }, { item_id: "n3", entity_id: SAF }],
+    intelligence_items: [item("a1"), item("a2"), item("a3"), item("a4"), item("a5"), item("a6")],
+    entity_refs: [
+      { ref_table: "intelligence_items", ref_id: "a1", entity_id: TECH, role: "mentions" },
+      { ref_table: "intelligence_items", ref_id: "a2", entity_id: TECH, role: "mentions" },
+      { ref_table: "intelligence_items", ref_id: "a3", entity_id: "cl:instrument:aaaaaaaaaaaaaaaa", role: "subject" },
+      { ref_table: "intelligence_items", ref_id: "a5", entity_id: TECH, role: "mentions" },
+    ],
+    research_assessments_current: [
+      { item_id: "a1", entity_id: null, technical_maturity_low: 5, technical_maturity_method: "text_trl" },
+      { item_id: "a2", entity_id: TECH, technical_maturity_low: 5, technical_maturity_method: "text_trl" },
+      { item_id: "a3", entity_id: null, technical_maturity_low: null, technical_maturity_method: null },
+      { item_id: "a4", entity_id: null, technical_maturity_low: null, technical_maturity_method: TRL_NOT_STATED },
+      { item_id: "a5", entity_id: TECH, technical_maturity_low: null, technical_maturity_method: TRL_NOT_STATED },
+    ],
     sources: [{ id: "s1", base_tier: 2 }],
   });
   const out = await fetchLiveCandidates(db.db);
-  assert.deepEqual(out.map((c) => [c.id, c.technologyEntityId]), [["n4", null]]);
+  assert.deepEqual(out.map((c) => [c.id, c.technologyEntityId]), [["a1", TECH], ["a3", null], ["a6", null]], "a1 has no entity but names a technology; a3 stores neither a level nor the absence; a6 has no assessment; a2, a4, a5 are complete");
+});
+
+test("INV-N2-3: a level the text does not state is stored as the stated absence with the level null; a stated level is stored with its method; a change of only the marker rewrites the row", () => {
+  const unstated = toRow(assessItem(input({ text: "nothing about readiness" })));
+  assert.equal(unstated.technical_maturity_low, null);
+  assert.equal(unstated.technical_maturity_method, TRL_NOT_STATED);
+  const stated = toRow(assessItem(input({ text: "A demonstration pilot project." })));
+  assert.equal(stated.technical_maturity_method === TRL_NOT_STATED, stated.technical_maturity_low === null);
+  assert.equal(hasChanged({ ...unstated, technical_maturity_method: null }, unstated), true, "a row stored before the marker existed is rewritten");
+  assert.equal(hasChanged(unstated, unstated), false);
 });
 
 // ---- walker ----

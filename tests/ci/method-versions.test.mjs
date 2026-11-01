@@ -109,7 +109,7 @@ test("THIS repository: every registered method is recorded and unchanged under i
 test("INV-CN2-2: the six pattern detectors are registered under the gate, and a threshold edited in patterns.json without a new method version turns it red", () => {
   const treeOf = (root) => new Map(DIRS.flatMap((d) => walk(join(root, d), (n) => /\.ts$/.test(n))).map((f) => [f, readFileSync(f, "utf8")]));
   const real = currentMethods(treeOf("."));
-  for (const id of ["pattern_velocity_burst", "pattern_mandate_capacity", "pattern_lead_lag", "pattern_cross_modal", "pattern_penalty_abatement", "pattern_regulatory_stacking"]) assert.ok(real.methods.has(`derived_values:${id}@${id === "pattern_penalty_abatement" ? "1.5.0" : id === "pattern_regulatory_stacking" ? "1.0.0" : "1.4.0"}`), `${id} is registered`);
+  for (const id of ["pattern_velocity_burst", "pattern_mandate_capacity", "pattern_lead_lag", "pattern_cross_modal", "pattern_penalty_abatement", "pattern_regulatory_stacking"]) assert.ok(real.methods.has(`derived_values:${id}@${id === "pattern_penalty_abatement" ? "1.6.0" : id === "pattern_regulatory_stacking" ? "1.1.0" : "1.5.0"}`), `${id} is registered`);
   const recorded = Object.fromEntries([...real.methods].map(([k, m]) => [k, m.hash]));
   assert.deepEqual(versionProblems(real.methods, recorded), []);
   const copyWith = (file, edit) => {
@@ -118,10 +118,10 @@ test("INV-CN2-2: the six pattern detectors are registered under the gate, and a 
     writeFileSync(join(root, file), edit(readFileSync(join(root, file), "utf8")));
     return versionProblems(currentMethods(treeOf(root)).methods, recorded).join("\n");
   };
-  // one threshold moved (minSources 3 to 4), the version left at 1.4.0
-  assert.match(copyWith("src/core/flywheel/patterns/data/patterns.json", (t) => t.replace('"minSources": 3', '"minSources": 4')), /derived_values:pattern_velocity_burst@1.4.0: the code its registration runs changed and its version did not/);
+  // one threshold moved (minSources 3 to 4), the version left at 1.5.0
+  assert.match(copyWith("src/core/flywheel/patterns/data/patterns.json", (t) => t.replace('"minSources": 3', '"minSources": 4')), /derived_values:pattern_velocity_burst@1.5.0: the code its registration runs changed and its version did not/);
   // a detector edited: the arithmetic of the burst
-  assert.match(copyWith("src/core/flywheel/patterns/detect.ts", (t) => t.replace("shareNow <= base.length / inBaseline", "shareNow < base.length / inBaseline")), /pattern_velocity_burst@1.4.0/);
+  assert.match(copyWith("src/core/flywheel/patterns/detect.ts", (t) => t.replace("shareNow <= base.length / inBaseline", "shareNow < base.length / inBaseline")), /pattern_velocity_burst@1.5.0/);
   // the configuration a detector reads is part of it: a horizon window moved in couplings.json
-  assert.match(copyWith("src/core/coupling/data/couplings.json", (t) => t.replace('"toMonths": 6', '"toMonths": 7')), /pattern_mandate_capacity@1\.4\.0/);
+  assert.match(copyWith("src/core/coupling/data/couplings.json", (t) => t.replace('"toMonths": 6', '"toMonths": 7')), /pattern_mandate_capacity@1\.5\.0/);
 });
