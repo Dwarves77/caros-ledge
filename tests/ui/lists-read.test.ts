@@ -127,3 +127,11 @@ test("list row fields: due is the nearest future date; a missing jurisdiction is
   assert.equal(bandFromPriority("nonsense"), NEUTRAL_BAND, "an unknown priority is the neutral band, never Awareness (S:84)");
   assert.equal(bandFromPriority(null), NEUTRAL_BAND);
 });
+
+test("list row summary: the Official Journal guard judges the first sentence, not the whole field (a reader's why_matters that cites an Annex in sentence two still draws its first sentence)", () => {
+  const r = { id: "a", title: "DIRECTIVE (EU) 2024/2881 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL", priority: "LOW", type: "directive", modes: [], whyMatters: "The Directive puts the duty on Member States, which keep pollutants below limit values. Those plans carry measures listed in Annex VIII, among them low emission zones.", whatIsIt: "Directive (EU) 2024/2881 of the European Parliament and of the Council of 23 October 2024 on ambient air quality.", timeline: [] } as unknown as Resource;
+  const f = toListRowFields(r, new Date("2026-11-01T12:00:00Z"));
+  assert.equal(f.summary, "The Directive puts the duty on Member States, which keep pollutants below limit values.");
+  const oj = { ...r, whyMatters: "REGULATION (EU) 2024/573 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 7 February 2024 on fluorinated greenhouse gases.", whatIsIt: "" } as unknown as Resource;
+  assert.match(toListRowFields(oj, new Date("2026-11-01T12:00:00Z")).summary, /^Applies /, "a stored OJ title is still refused as a summary");
+});
