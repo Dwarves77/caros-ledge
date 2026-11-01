@@ -10,8 +10,7 @@ import { workByDoi, type OpenAlexDeps } from "@/core/http/openalex";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import type { Rec } from "@/core/producers/upsert-plan";
 
-import { technologyEntityOf } from "./model/technology-entity";
-import { assessItem, extractDoiCandidate, hasChanged, isResearchCandidate, RESEARCH_CANDIDATE_OR, toAssessmentInput, toRow, type AssessInput, type ForwardEvent, type SignpostSpec } from "./model/assess";
+import { assessItem, extractDoiCandidate, hasChanged, isResearchCandidate, RESEARCH_CANDIDATE_OR, toAssessmentInput, TRL_NOT_STATED, technologyEntityOf, toRow, type AssessInput, type ForwardEvent, type SignpostSpec } from "./model/assess";
 
 /** DOI in the item's text to an OpenAlex work to a source record for the authority score; unresolved is no record, never a guessed one. */
 async function resolveOpenAlexSourceRecords(input: AssessInput, deps: OpenAlexDeps = {}): Promise<Rec[]> {
@@ -25,16 +24,20 @@ async function resolveOpenAlexSourceRecords(input: AssessInput, deps: OpenAlexDe
 
 /** The live candidates: verified, non-archived research items with NO current assessment (the first pass never re-scores; `itemIds` names the items to re-score, current assessment or not), at most `limit`, with their source tier and forward events. */
 export async function fetchLiveCandidates(sb: Db, limit?: number, opts: { itemIds?: readonly string[] } = {}): Promise<AssessInput[]> {
-  const items = await fetchAllRows<Rec>((from, to) => admitItems(sb.from("intelligence_items").select("id,item_type,domain,added_date,title,what_is_it,why_matters,full_brief,source_id,instrument_entity_id,operational_scenario_tags").or(RESEARCH_CANDIDATE_OR)).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
+  const items = await fetchAllRows<Rec>((from, to) => admitItems(sb.from("intelligence_items").select("id,item_type,domain,added_date,title,what_is_it,why_matters,full_brief,source_id,instrument_entity_id").or(RESEARCH_CANDIDATE_OR)).order("id", { ascending: true }).range(from, to) as never, { cap: 100_000 });
   const only = opts.itemIds ? new Set(opts.itemIds) : null;
   const admitted = items.filter((r) => isResearchCandidate(r.item_type, r.domain) && (!only || only.has(String(r.id))));
-  // an assessment filed under no entity is re-scored while its item names a technology entity: the backlog works down in the pass that found it (a gap in data is the producer's fault, never a display fix)
-  const named = (r: Rec | undefined) => !!r && technologyEntityOf(r.operational_scenario_tags as string[] | null) !== null;
-  const byId = new Map(admitted.map((r) => [String(r.id), r]));
-  const current = only ? [] : await fetchAllByIdChunks(admitted.map((r) => String(r.id)), async (ids) => { const { data, error } = await sb.from("research_assessments_current").select("item_id,entity_id").in("item_id", ids); if (error) throw new Error(`reading research_assessments_current failed: ${error.message}`); return (data ?? []) as Array<{ item_id: string; entity_id: string | null }>; });
-  const have = new Set(current.filter((c) => c.entity_id || !named(byId.get(c.item_id))).map((c) => c.item_id));
+  // the entities the items' refs name (the mining pass, the Reader): the technology among them is the entity an assessment is filed under
+  const refs = await fetchAllByIdChunks(admitted.map((r) => String(r.id)), async (ids) => { const { data, error } = await sb.from("entity_refs").select("ref_id,entity_id").eq("ref_table", "intelligence_items").in("ref_id", ids); if (error) throw new Error(`reading entity_refs failed: ${error.message}`); return (data ?? []) as Array<{ ref_id: string; entity_id: string }>; }, { manyPerId: true });
+  const refIds = new Map<string, string[]>();
+  for (const x of refs) refIds.set(x.ref_id, [...(refIds.get(x.ref_id) ?? []), x.entity_id]);
+  const byId = new Map(admitted.map((r) => [String(r.id), { ...r, ref_entity_ids: refIds.get(String(r.id)) ?? [] }]));
+  // a current assessment is worked down in the pass that finds it incomplete: filed under no entity while its item names a technology, or a readiness level stored with neither a level nor the stated absence (a gap in data is the producer's fault, never a display fix)
+  const current = only ? [] : await fetchAllByIdChunks(admitted.map((r) => String(r.id)), async (ids) => { const { data, error } = await sb.from("research_assessments_current").select("item_id,entity_id,technical_maturity_low,technical_maturity_method").in("item_id", ids); if (error) throw new Error(`reading research_assessments_current failed: ${error.message}`); return (data ?? []) as Array<{ item_id: string; entity_id: string | null; technical_maturity_low: number | null; technical_maturity_method: string | null }>; });
+  const complete = (c: (typeof current)[number]) => (c.entity_id || technologyEntityOf(refIds.get(c.item_id) ?? []) === null) && (c.technical_maturity_low !== null || c.technical_maturity_method === TRL_NOT_STATED);
+  const have = new Set(current.filter(complete).map((c) => c.item_id));
   const needing = admitted.filter((r) => !have.has(String(r.id)));
-  const picked = typeof limit === "number" && limit > 0 ? needing.slice(0, limit) : needing;
+  const picked = (typeof limit === "number" && limit > 0 ? needing.slice(0, limit) : needing).map((r) => byId.get(String(r.id)) as Rec);
   const tiers = new Map((await fetchAllByIdChunks(picked.map((r) => String(r.source_id)).filter(Boolean), async (ids) => { const { data, error } = await sb.from("sources").select("id,base_tier").in("id", ids); if (error) throw new Error(`reading sources failed: ${error.message}`); return (data ?? []) as Array<{ id: string; base_tier: number | null }>; })).map((s) => [s.id, s.base_tier] as const));
   const events = await fetchAllByIdChunks(picked.map((r) => String(r.id)), async (ids) => { const { data, error } = await sb.from("item_forward_events").select("id,intelligence_item_id,event_date,event_kind,obligation_text").in("intelligence_item_id", ids); if (error) throw new Error(`reading item_forward_events failed: ${error.message}`); return (data ?? []) as Array<Rec>; }, { manyPerId: true });
   const byItem = new Map<string, ForwardEvent[]>();

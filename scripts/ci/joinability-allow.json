@@ -2,43 +2,18 @@
  "_doc": "Known joinability findings (scripts/ci/joinability.mjs --write-allow). A new offender is a red run; an entry that no longer offends is a red run (delete it); a share above its entry is a regression. Each entry is owed a data-file batch or a slice (its owner).",
  "entries": [
   {
+   "key": "J3pat:intelligence_items.jurisdiction_iso",
+   "owner": "slice JUR-ISO (a data decision: GLOBAL and IMO name no jurisdiction)",
+   "date": "2026-10-31",
+   "reason": "intelligence_items.jurisdiction_iso: 78 of 2860 values do not match ^[A-Z]{2}(-[A-Z0-9]{1,3})?$; forms \"GLOBAL\" x75, \"IMO\" x3",
+   "share": 0.0273
+  },
+  {
    "key": "J3sev:intelligence_items.severity",
    "owner": "slice SEV-1 (migration 0137)",
    "date": "2026-10-25",
    "reason": "intelligence_items.severity: 140 of 535 values are not codes of src/core/brief/data/contract.json (60 outside, 80 null); forms \"reference\" x53, \"background\" x5, \"high\" x2",
    "share": 0.2617
-  },
-  {
-   "key": "J3tok:oem_tech_roadmaps.tech_category",
-   "owner": "vocabularies.json or the writer",
-   "date": "2026-10-25",
-   "reason": "oem_tech_roadmaps.tech_category: 1 of 6 values are not codes of the coupling map; forms \"hydrogen_fcell\" x1",
-   "share": 0.1667
-  },
-  {
-   "key": "J3toknovocab:oem_tech_roadmaps.commercial_stage",
-   "owner": "vocabularies.json",
-   "date": "2026-10-25",
-   "reason": "oem_tech_roadmaps.commercial_stage: no vocabulary; distinct values \"mass_series_production\", \"pilot_demonstration\", \"announced\""
-  },
-  {
-   "key": "J3toknovocab:research_assessments_current.horizon_band",
-   "owner": "vocabularies.json",
-   "date": "2026-10-25",
-   "reason": "research_assessments_current.horizon_band: no vocabulary; distinct values \"NEAR\", \"FAR\", \"NOW\", \"MID\""
-  },
-  {
-   "key": "J3toknovocab:research_assessments_current.horizon_kind",
-   "owner": "vocabularies.json",
-   "date": "2026-10-25",
-   "reason": "research_assessments_current.horizon_kind: no vocabulary; distinct values \"availability\", \"obligation\""
-  },
-  {
-   "key": "J3unit:state_cost_facts.unit",
-   "owner": "statutory-units.json forms",
-   "date": "2026-10-25",
-   "reason": "state_cost_facts.unit: unnormalised share 0.5652 over 0.05; top forms \"/hr\" x13",
-   "share": 0.5652
   },
   {
    "key": "J5:derived_values.entity_id",
@@ -81,13 +56,6 @@
    "date": "2026-10-25",
    "reason": "obligation_objects.statutory_maximum: unreachable on 1875 of 1876 rows: null",
    "share": 0.9995
-  },
-  {
-   "key": "J5:oem_tech_roadmaps.target_year",
-   "owner": "the producer of the table",
-   "date": "2026-10-25",
-   "reason": "oem_tech_roadmaps.target_year: unreachable on 6 of 6 rows (4 stated): null",
-   "share": 1
   },
   {
    "key": "J5:regional_data_facts.as_at_date",

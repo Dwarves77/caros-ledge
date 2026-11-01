@@ -5,6 +5,7 @@
 // Three reviewed rows-file producers (OEM roadmaps, grid connection queues, reroute events) and the ONE driver they share. Every row carries a citation; the cited
 // host is rated by the class table; a figure whose source cannot be rated is refused by name; an entity is resolved by exact canonical name and never minted. With no
 // rows file the run records the gap and writes nothing (INV-121).
+import { VOCABULARIES } from "@/core/contracts";
 import { fetchAllRows, type Db } from "@/core/db";
 import { entitiesByKind, entityId, planOrganisation, planOrganisationFkUpdates } from "@/core/entities";
 import { acceptStoredQuote } from "@/core/producers/quote";
@@ -26,8 +27,9 @@ const oneOf = (v: unknown, set: readonly string[], label: string, where: string,
 };
 export const refuse = (reason: string): ParsedRow => ({ refused: true, reason });
 
-const TECH = ["heavy_battery", "megawatt_charging", "hydrogen_fcell", "ammonia_engine", "methanol_dualfuel", "saf_refinery", "e_axle", "reefer_electrification"];
-const STAGES = ["announced", "pilot_demonstration", "small_batch_fleet", "mass_series_production"];
+// the closed tokens of an OEM roadmap row are vocabularies.json (tech_category, commercial_stage), the same lists the joinability gate checks the stored column against
+const TECH = Object.keys(VOCABULARIES.tech_category ?? {});
+const STAGES = Object.keys(VOCABULARIES.commercial_stage ?? {});
 const ORIGINS = ["community", "community-corroborated", "modelled", "derived", "partner", "verified", "official"];
 const DERIVATIONS = ["statutory_fixed", "statutory_formula", "observed", "transacted_index", "assessed", "calculated", "interpolated", "modelled", "estimated"];
 const OBS_STATUS = ["A", "P", "E", "I", "F", "B", "D", "U", "V", "G", "M", "O", "L", "H", "Q", "N"];
@@ -50,6 +52,7 @@ function parseOemRoadmapRow(row: Rec, i: number, manufacturers: readonly Entity[
   const minted = !known && hostOf(citation.url) === String(row.manufacturer_name);
   const manufacturerId = known ?? (minted ? entityId("organisation", String(row.manufacturer_name)) : null);
   if (!manufacturerId) return refuse(`row[${i}]: manufacturer "${row.manufacturer_name}" not found in the live entities(kind='organisation') spine; minting one is out of this producer's write set.`);
+  if (row.target_year == null && !(typeof (row.absent as Rec | undefined)?.target_year === "string" && String((row.absent as Rec).target_year).trim())) return refuse(`row[${i}]: no target_year and no absent.target_year: a row states its target year or says the cited capture does not (the joinability gate counts only the stated absences).`);
   return {
     refused: false,
     citation,

@@ -56,6 +56,10 @@
     { "form": "kW", "unit": "kW", "exact": true },
     { "form": "kilowatts?", "unit": "kW", "exact": true },
     { "form": "months?", "unit": "months", "exact": true },
+    { "form": "(?:/|per\\s)\\s?(?:h|hr|hrs|hour|hours)", "unit": "/h", "exact": true },
+    { "form": "USD\\s?(?:/|per\\s)\\s?(?:h|hr|hrs|hour|hours)", "unit": "USD/h", "exact": true },
+    { "form": "EUR\\s?(?:/|per\\s)\\s?(?:h|hr|hrs|hour|hours)", "unit": "EUR/h", "exact": true },
+    { "form": "GBP\\s?(?:/|per\\s)\\s?(?:h|hr|hrs|hour|hours)", "unit": "GBP/h", "exact": true },
     {
       "form": "\\bEUR per equivalent metric ton of VLSFO\\b",
       "unit": "EUR/t VLSFO-eq"
