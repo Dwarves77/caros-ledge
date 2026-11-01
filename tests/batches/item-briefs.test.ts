@@ -359,3 +359,19 @@ test("INV-RB1b-4: a metadata-only entry authored against a stale pool hash is re
   const fresh = await apply(w, [{ ...e, source_pool_hash: poolHashOf(w.db) }]);
   assert.equal(fresh.counts.metadata_refreshed, 1, `re-authored against the live pool it applies: ${refusals(fresh)}`);
 });
+
+test("ruling 73: a full brief whose omitted_events names the stored compliance_deadline and entry_into_force applies and clears both columns, logged in the changelog; a date it does not name is kept", async () => {
+  const w = batchWorld();
+  Object.assign(item(w), { compliance_deadline: "2031-06-30", entry_into_force: "2030-01-02" });
+  const omitted = [{ event_date: "2031-06-30", reason: "no capture states this stored date" }, { event_date: "2030-01-02", reason: "no capture states this stored date" }];
+  const r = await apply(w, [recordEntry(w.db, { omitted_events: omitted })]);
+  assert.equal(r.counts.applied, 1, refusals(r));
+  assert.equal(item(w).compliance_deadline, null);
+  assert.equal(item(w).entry_into_force, null);
+  assert.match(String(w.db.rows("item_changelog").map((c) => c.impact).join("\n")), /cleared.*compliance_deadline.*entry_into_force|ruling 73/i);
+  const k = batchWorld();
+  Object.assign(item(k), { compliance_deadline: "2031-06-30" });
+  const kept = await apply(k, [recordEntry(k.db, { omitted_events: [{ event_date: "2031-06-29", reason: "other" }] })]);
+  assert.equal(kept.counts.residue, 1, "a date the entry does not name still trips the rule");
+  assert.equal(item(k).compliance_deadline, "2031-06-30");
+});

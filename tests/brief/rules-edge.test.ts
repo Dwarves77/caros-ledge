@@ -194,4 +194,12 @@ test("ENTITY-MINT-1: an instrument number (\"No 528/2012\", \"No. 1234\", \"Nos 
   assert.equal(cited("Regulation (EU) No. 1234/2024 applies to operators; vessels under 400 GT are exempt."), null, "No. <number>");
   assert.equal(cited("Regulations (EU) Nos 1/2024 and 2/2024 apply; the scope is limited to operators; vessels under 400 GT are exempt."), null, "Nos <number>");
   assert.match(cited("Under Article 5 no exemption applies to small operators.") ?? "", /no unnegated exception.*no unnegated scope-limit/, "a real no still negates both keywords");
+
+test("stored-date-stated (ruling 73): a stored date the body omits is satisfied by an omitted_events row carrying that date with a non-blank reason, and by nothing less", () => {
+  const item = withItem({ compliance_deadline: "2031-06-30", entry_into_force: null });
+  const omit = (o: { date: string; reason: string }[]) => run("stored-date-stated", { ...clean.brief, omitted: o }, item);
+  assert.equal(run("stored-date-stated", clean.brief, item)?.rule, "stored-date-stated", "no omitted_events row: still trips");
+  assert.equal(omit([{ date: "2031-06-30", reason: "no capture states this stored date" }]), null);
+  assert.equal(omit([{ date: "2031-06-30", reason: "  " }])?.rule, "stored-date-stated", "a blank reason does not satisfy");
+  assert.equal(omit([{ date: "2031-07-01", reason: "a different date" }])?.rule, "stored-date-stated", "another date does not satisfy");
 });

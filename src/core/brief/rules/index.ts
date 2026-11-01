@@ -102,6 +102,8 @@ function render(iso: string, template: string): string {
 }
 export const REGISTER_RENDERINGS: readonly string[] = DATE_RENDERINGS.register;
 export const stated = (body: string, iso: string, templates: readonly string[] = [...DATE_RENDERINGS.register, ...DATE_RENDERINGS.extra]): boolean => templates.some((t) => foldHtmlSpace(body).toLowerCase().includes(render(iso, t).toLowerCase()));
+/** True when `omitted` (an entry's omitted_events) carries the day `iso` with a non-blank reason: the one predicate of R6 and of the apply that clears the column. */
+export const omittedWithReason = (omitted: readonly { date: string; reason: string }[] | undefined, iso: string): boolean => (omitted ?? []).some((o) => o.reason.trim() !== "" && o.date.slice(0, 10) === iso.slice(0, 10));
 /** A date at its precision, as the key coverage compares: a day is YYYY-MM-DD, a month YYYY-MM (stored YYYY-MM-01), a year YYYY (stored YYYY-01-01). */
 export const precisionKey = (date: string, precision?: string | null): string => (precision === "month" ? date.slice(0, 7) : precision === "year" ? date.slice(0, 4) : date.slice(0, 10));
 /** A month or year key written in a section: "June 2031" or "Jun 2031" (a month), the year as a word (a year). A day key goes through the register renderings. */
@@ -223,9 +225,9 @@ export const RULES: Readonly<Record<string, Rule>> = {
     return msgs.length ? violation("fact-span-in-own-section", msgs.join("; "), msgs[0] as string) : null;
   },
   "accounting-line-present": accountingLinePresent,
-  // R6 (V11): each stored entry_into_force and compliance_deadline is written in the body in one of the accepted renderings.
+  // R6 (V11): each stored entry_into_force and compliance_deadline is written in the body in one of the accepted renderings, or (ruling 73: a stored date no capture states is a legacy value) named in omitted_events with a reason.
   "stored-date-stated": (b, i) => {
-    const missing = (["entry_into_force", "compliance_deadline"] as const).filter((k) => i[k] && !stated(b.body, i[k] as string));
+    const missing = (["entry_into_force", "compliance_deadline"] as const).filter((k) => i[k] && !stated(b.body, i[k] as string) && !omittedWithReason(b.omitted, i[k] as string));
     return missing.length ? violation("stored-date-stated", missing.map((k) => `${k} ${String(i[k])} is never written in the body`).join("; "), "") : null;
   },
   // R33: the coverage half of the no-vacuum rule (J17 keeps the interpretive half): every dated forward event and timeline row the export supplied appears in the events block, a section, or omitted_events with a reason.

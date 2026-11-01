@@ -83,7 +83,7 @@ const columns = (m: BriefMetadata | null, item: RecordItemLive, formatType: stri
 });
 
 /** FWD-COVER-1: the dates the entry's events block carries and the dates its omitted_events states it leaves out, each with a reason. */
-const eventCoverage = (entry: Obj): { events: string[]; omitted: { date: string; reason: string }[] } => ({
+export const eventCoverage = (entry: Obj): { events: string[]; omitted: { date: string; reason: string }[] } => ({
   events: (Array.isArray(entry.events) ? entry.events : []).filter(isObj).map((e) => precisionKey(String(e.event_date ?? ""), typeof e.date_precision === "string" ? e.date_precision : null)),
   omitted: (Array.isArray(entry.omitted_events) ? entry.omitted_events : []).filter(isObj).map((o) => ({ date: String(o.event_date ?? ""), reason: String(o.reason ?? "") })),
 });

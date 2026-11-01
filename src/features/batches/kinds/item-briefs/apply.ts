@@ -21,7 +21,7 @@ import { runParticipation } from "@/features/intake/flywheel-participation";
 import { recordItemChange } from "@/features/sources/change";
 import { growSources } from "@/features/sources";
 import { allRows, rowsByIds } from "@/core/db";
-import { precisionKey } from "@/core/brief/rules";
+import { omittedWithReason, precisionKey } from "@/core/brief/rules";
 import { review } from "@/core/digest/review";
 
 import { BUDGET_STOP_REASON, budgetBytes, POOL_REREADS, preflight } from "../../kit/budget";
@@ -30,7 +30,7 @@ import { applyEntries, isObj, itemPool, type ApplyOpts, type BatchDeps, type Ent
 import { recordChangelog } from "./changelog";
 import { candidateNames, entityTokens, loadEmit, writeEmission } from "./emit";
 import { hasEmission, type EmitLive } from "./emission";
-import { refreshJudges, validateRecordBriefEntry, type RecordLive, type RecordPlan } from "./validate";
+import { eventCoverage, refreshJudges, validateRecordBriefEntry, type RecordLive, type RecordPlan } from "./validate";
 
 export interface RecordOpts extends ApplyOpts {
   /** Regenerate an item that already holds a brief (a record stub needs no flag). */
@@ -39,7 +39,7 @@ export interface RecordOpts extends ApplyOpts {
   cooldownMinutes?: number;
 }
 
-interface StepCtx { deps: BatchDeps; itemId: string; entry: Obj; plan: RecordPlan; batch: string; overwrite: boolean; ok: Record<string, boolean>; provenance: string | null }
+interface StepCtx { deps: BatchDeps; itemId: string; entry: Obj; plan: RecordPlan; batch: string; overwrite: boolean; ok: Record<string, boolean>; provenance: string | null; cleared: string[] }
 interface StepOut { outcome: string; ok: boolean; counts?: Record<string, number> }
 type Step = (c: StepCtx) => Promise<StepOut>;
 const intake = (c: StepCtx) => ({ sb: c.deps.sb, sources: c.deps.intake.sources, recorder: c.deps.intake.recorder });
@@ -69,10 +69,26 @@ const itemRow = async (db: Db, id: string) => {
   return r.data as { source_id: string | null; full_brief: string | null; item_type: string; provenance_status: string | null } | null;
 };
 
+/** Ruling 73: a stored entry_into_force or compliance_deadline the full brief names in omitted_events (with a reason) is a legacy value no capture states, so the column is set to NULL here, next to the brief's own write. A reader-grounded events entry still writes the column afterwards (the deadline sync). Returns the columns cleared. */
+async function clearOmittedDates(c: StepCtx): Promise<string[]> {
+  const cols = ["entry_into_force", "compliance_deadline"] as const;
+  const omitted = eventCoverage(c.entry).omitted;
+  if (!omitted.length) return [];
+  const row = await c.deps.sb.from("intelligence_items").select("entry_into_force, compliance_deadline").eq("id", c.itemId).maybeSingle();
+  if (row.error) throw new Error(`item read failed: ${row.error.message}`);
+  const stored = (row.data ?? {}) as Record<(typeof cols)[number], string | null>;
+  const clear = cols.filter((k) => stored[k] && omittedWithReason(omitted, stored[k] as string));
+  if (!clear.length) return [];
+  const { error } = await c.deps.sb.from("intelligence_items").update(Object.fromEntries(clear.map((k) => [k, null]))).eq("id", c.itemId);
+  if (error) throw new Error(`intelligence_items update failed: ${error.message}`);
+  return [...clear];
+}
+
 /** The per-item steps, in order. A step that throws is that step's failure; the rest still run (the flywheel is independent of a quarantine). */
 const STEPS: ReadonlyArray<readonly [string, Step]> = [
   ["generate", async (c) => {
     const r = await injectBrief(intake(c), { itemId: c.itemId, body: String(c.entry.body), metadata: c.entry.metadata, sourcePoolHash: String(c.entry.source_pool_hash), allowBriefOverwrite: c.overwrite });
+    if (r.ok) c.cleared = await clearOmittedDates(c);
     return { outcome: r.ok ? "generated" : `generate_failed: ${r.detail}`, ok: r.ok };
   }],
   ["section", async (c) => fromResult(await sectionBrief(intake(c), c.itemId))],
@@ -143,12 +159,12 @@ async function recordRegeneration(c: StepCtx): Promise<string | null> {
   const r = await recordItemChange(c.deps.sb, { itemId: c.itemId, previous: { full_brief: c.overwrite ? "stored" : null }, next: { full_brief: "regenerated", batch: c.batch }, changeTypeOverride: "provision_amended" });
   if (!r.ok) return `change not recorded: ${r.error}`;
   // The same fact for the reader: item_changelog is what get_workspace_recent_changes reads to call an item UPDATED.
-  const log = await recordChangelog(c.deps.sb, { itemId: c.itemId, field: "full_brief", batch: c.batch, note: "Brief regenerated from the item's held sources.", changeDate: c.deps.now().toISOString().slice(0, 10) });
+  const log = await recordChangelog(c.deps.sb, { itemId: c.itemId, field: "full_brief", batch: c.batch, note: `Brief regenerated from the item's held sources.${c.cleared.length ? ` Cleared stored ${c.cleared.join(" and ")}: the brief omits ${c.cleared.length > 1 ? "them" : "it"} with a reason because no capture states ${c.cleared.length > 1 ? "them" : "it"} (ruling 73).` : ""}`, changeDate: c.deps.now().toISOString().slice(0, 10) });
   return log.error;
 }
 
 async function applyItem(deps: BatchDeps, item: Item<RecordPlan>, batch: string, overwrite: boolean) {
-  const ctx: StepCtx = { deps, itemId: item.plan.itemId, entry: item.entry, plan: item.plan, batch, overwrite, ok: {}, provenance: null };
+  const ctx: StepCtx = { deps, itemId: item.plan.itemId, entry: item.entry, plan: item.plan, batch, overwrite, ok: {}, provenance: null, cleared: [] };
   const failed: string[] = [];
   const counts: Record<string, number> = {};
   for (const [name, run] of STEPS) {
