@@ -74,6 +74,8 @@ function baseResourceFields(row: WorkspaceItemRpcRow): Resource {
     tags: row.tags || [],
     whatIsIt: row.what_is_it || "",
     whyMatters: row.why_matters || "",
+    // the list row's second line falls through why_matters -> what_it_changes -> what_is_it (src/core/lists/row-fields.ts toListRowFields), so every listing read carries it (LIST-RPC-1, migration 0150)
+    ...(row.what_it_changes ? { whatItChanges: row.what_it_changes } : {}),
     keyData: row.key_data || [],
     ...(row.full_brief ? { fullBrief: row.full_brief } : {}),
     ...(row.domain != null ? { domain: row.domain } : {}),
@@ -98,7 +100,6 @@ export function categoryResourceFields(row: WorkspaceItemRpcRow): Resource {
     ...(row.signal_band ? { signalBand: row.signal_band } : {}),
     ...(row.theme ? { theme: row.theme } : {}),
     ...(row.trajectory_points ? { trajectoryPoints: row.trajectory_points } : {}),
-    ...(row.what_it_changes ? { whatItChanges: row.what_it_changes } : {}),
     ...(row.does_not_resolve ? { doesNotResolve: row.does_not_resolve } : {}),
     ...(row.conversion_trigger ? { conversionTrigger: row.conversion_trigger } : {}),
     ...(row.cross_references ? { crossReferences: row.cross_references } : {}),

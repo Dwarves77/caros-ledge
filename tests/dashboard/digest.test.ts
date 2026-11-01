@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { toListRowFields } from "@/core/lists";
 import { readCounts, readDigest } from "@/features/dashboard/read/digest";
 import { buildChangedRows, buildDueNextRows } from "@/features/dashboard/rows";
 
@@ -92,4 +93,16 @@ test("the counts: the band tiles are the regulations surface's own tallies, the 
   assert.equal(c.aggregates.totalItems, 3);
   db.rpcs.get_all_surface_counts = () => ({ error: { message: "x" } });
   await assert.rejects(readCounts(db.client, ORG), /surface totals read failed/);
+});
+
+test("LIST-RPC-1: a Due-next row whose item has no why_matters draws the first sentence of what_it_changes (items_by_ids carries it, the shared row mapping keeps it)", async () => {
+  const db = dashboardWorld();
+  const a = db.rows("intelligence_items").find((i) => i.id === ID.a) as Record<string, unknown>;
+  a.why_matters = "";
+  a.what_is_it = "An EU emissions regulation.";
+  a.what_it_changes = "From 1 November 2026 every ocean quote carries an allowance cost. The surcharge then rises yearly.";
+  const d = await readDigest(db.client, ORG);
+  const alpha = d.dueNext.find((r) => r.id === ID.a)!;
+  assert.equal(alpha.whatItChanges, a.what_it_changes);
+  assert.equal(toListRowFields(alpha, NOW).summary, "From 1 November 2026 every ocean quote carries an allowance cost.");
 });

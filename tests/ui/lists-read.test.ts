@@ -135,3 +135,10 @@ test("list row summary: the Official Journal guard judges the first sentence, no
   const oj = { ...r, whyMatters: "REGULATION (EU) 2024/573 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 7 February 2024 on fluorinated greenhouse gases.", whatIsIt: "" } as unknown as Resource;
   assert.match(toListRowFields(oj, new Date("2026-11-01T12:00:00Z")).summary, /^Applies /, "a stored OJ title is still refused as a summary");
 });
+
+test("LIST-RPC-1: a listing row with no why_matters draws the first sentence of what_it_changes (the RPC carries the column, the reader maps it)", async () => {
+  const { db } = listDb({ rpc: () => ({ data: [row("w", { why_matters: "", what_is_it: "What it is.", what_it_changes: "From 2027 every tender quotes a per-tonne surcharge. Then more." })] }), from: () => ({ data: [] }) });
+  const r = await readListing(db, { orgId: "o", rpc: LISTINGS, page: { offset: 0, limit: 60 } });
+  assert.equal(r.rows[0]?.whatItChanges, "From 2027 every tender quotes a per-tonne surcharge. Then more.");
+  assert.equal(toListRowFields(r.rows[0]!, new Date("2026-11-01T00:00:00Z")).summary, "From 2027 every tender quotes a per-tonne surcharge.");
+});
