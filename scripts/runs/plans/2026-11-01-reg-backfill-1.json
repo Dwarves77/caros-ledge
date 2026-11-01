@@ -1,5 +1,5 @@
 {
-  "ruling": "coordinator 2026-11-01 (REG-BACKFILL-1 batch 1): the reader-authored what_is_it / why_matters / what_it_changes of 25 verified regulations through the item-briefs kit; the author lane and the independent judge lane (ruling 60) wrote the bundle from each item's own capture pool, and the judge verdicts ride in each entry's review; nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
+  "ruling": "coordinator 2026-11-01 (REG-BACKFILL-1 batch 1, recomposed per the operator directive for the COO walk-through): the reader-authored full briefs of the 24 verified record-grade regulations in the Dashboard / regulations Due-next band (forward event within 90 days, all three context fields empty) through the item-briefs kit; the author lane and the independent judge lane (ruling 60) wrote the bundle from each item's own capture pool, and the judge verdicts ride in each entry's review; nothing is fetched, so no scrape cadence is exercised and rule 16 stands",
   "steps": [
     {
       "name": "reg-backfill-1-dry",

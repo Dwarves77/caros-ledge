@@ -28,10 +28,13 @@ test("INV-RB-2: 60 ids make 3 batches of 25, 25, 10 with disjoint ids, and every
   }
 });
 
-test("the committed first batch: 25 distinct ids and a plan that parses", () => {
+test("the committed first batch: the ids file and the bundle name the same distinct items (at most 25), and the plan parses", () => {
   const list = JSON.parse(readFileSync("scripts/runs/plans/data/2026-11-01-reg-backfill-1.ids.json", "utf8"));
-  assert.equal(list.ids.length, 25);
-  assert.equal(new Set(list.ids).size, 25);
+  assert.ok(list.ids.length > 0 && list.ids.length <= 25);
+  assert.equal(new Set(list.ids).size, list.ids.length);
+  const bundle = JSON.parse(readFileSync("scripts/runs/plans/data/2026-11-01-reg-backfill-1.items.json", "utf8"));
+  const entryIds = JSON.parse(bundle.briefs.batch.content).entries.map((e: { item_id: string }) => e.item_id);
+  assert.deepEqual([...entryIds].sort(), [...list.ids].sort());
   const planPath = "scripts/runs/plans/2026-11-01-reg-backfill-1.json";
   assert.equal(parsePlan(readFileSync(planPath, "utf8"), planPath).steps.length, 2);
 });
