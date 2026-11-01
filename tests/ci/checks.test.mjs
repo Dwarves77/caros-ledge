@@ -12,7 +12,7 @@ import { createLinter } from 'actionlint';
 import { bundleExports, bundleProblems, declaredNames, sourceExports } from '../../scripts/ci/edge-bundle.mjs';
 import { codeLines, LIMITS, limitProblems, totalsOf } from '../../scripts/ci/loc.mjs';
 import { scopeOf } from '../../scripts/ci/changes.mjs';
-import { PROFILES, STEPS, memoSkip, profileFrom, stepsFor, testFilesFor } from '../../scripts/ci/gates.mjs';
+import { PROFILES, STEPS, exitVerdict, memoSkip, profileFrom, stepsFor, testFilesFor } from '../../scripts/ci/gates.mjs';
 import { dependencyProblems, engineDataFiles, engineDataPins, engineDataProblems, frozenAllowProblems, headerRangeProblems, identifierProblems, NEW_FILES_FROZEN, OVERRIDE_MARKER, pushGateProblems, sourceOriginProblems } from '../../scripts/ci/tree-checks.mjs';
 import { textProblems } from '../../scripts/ci/workflow-yaml.mjs';
 
@@ -253,10 +253,10 @@ test('GATES-FIX-1: the changed paths of a push map to the test files that cover 
   assert.deepEqual(of('docs/a.md', 'supabase/migrations/0001.sql', 'src/app/page.tsx', 'package.json'), [], 'migrations are the schema:local step; docs and uncovered src select no test');
 });
 
-const rec = { sha: 'a'.repeat(40), profile: 'fast', at: '2026-10-31T10:00:00.000Z', seconds: 90, targeted: true };
-const ctx = { head: 'a'.repeat(40), profile: 'fast', clean: true, ci: false, targeted: true };
+const rec = { sha: 'a'.repeat(40), tree: 'c'.repeat(40), profile: 'fast', at: '2026-10-31T10:00:00.000Z', seconds: 90, targeted: true };
+const ctx = { head: 'a'.repeat(40), tree: 'c'.repeat(40), profile: 'fast', clean: true, ci: false, targeted: true };
 test('GATES-FIX-1: a recorded pass is skipped only for the same HEAD, a covering profile, a clean tree, outside CI', () => {
-  assert.match(memoSkip(rec, ctx), /^gates: HEAD aaaaaaaaaaaa already passed fast at 2026-10-31T10:00:00\.000Z; skipping$/);
+  assert.match(memoSkip(rec, ctx), /^gates: HEAD aaaaaaaaaaaa already passed fast at 2026-10-31T10:00:00\.000Z; skipping \(memo: tree cccccccccccc\)$/);
   assert.ok(memoSkip({ ...rec, profile: 'full' }, ctx), 'full covers fast');
   assert.equal(memoSkip(rec, { ...ctx, clean: false }), null, 'dirty tree');
   assert.equal(memoSkip(rec, { ...ctx, head: 'b'.repeat(40) }), null, 'different sha');
@@ -304,4 +304,50 @@ test('GATES-FIX-1: gates.mjs records a pass in the git-dir on a clean tree and s
   rmSync(join(repo, 'dirty.txt'));
   assert.equal(commit('--allow-empty', '-m', 'two').status, 0);
   assert.ok(ran(gates(['--memo', '--profile', 'fast'], FAIL)), 'a new HEAD runs');
+});
+
+test('GATES-FIX-2: a memo is keyed on the tree as well as the commit; the line names the tree it keyed on', () => {
+  assert.equal(memoSkip(rec, { ...ctx, tree: 'd'.repeat(40) }), null, 'same HEAD sha but a different tree hash runs');
+  assert.match(memoSkip(rec, ctx), /\(memo: tree cccccccccccc\)$/);
+});
+
+test('GATES-FIX-2: exit 2 is a skip only for a credential-gated (mayskip) step outside CI; tsc exits 2 on a type error, which is a failure', () => {
+  const typecheck = STEPS.find((s) => s.cmd === 'typecheck');
+  assert.ok(!typecheck.mayskip);
+  assert.equal(exitVerdict(typecheck, 2, false), 'fail', 'tsc --noEmit exit 2 (diagnostics present) is red, not skipped');
+  assert.equal(exitVerdict(typecheck, 1, false), 'fail');
+  assert.equal(exitVerdict(typecheck, 0, false), 'pass');
+  const gated = STEPS.find((s) => s.cmd === 'joinability');
+  assert.equal(exitVerdict(gated, 2, false), 'skip');
+  assert.equal(exitVerdict(gated, 2, true), 'fail', 'CI never skips');
+  assert.deepEqual(STEPS.filter((s) => s.mayskip).map((s) => s.cmd), ['joinability'], 'only the credential-gated check opts in');
+});
+
+test('GATES-FIX-2: run as a program, a planted type error (typecheck exits 2) fails the fast profile even with a fresh memo entry; an unchanged tree skips', () => {
+  const repo = tmp('gates-tc-');
+  const script = resolve('scripts/ci/gates.mjs');
+  const sh = (cmd, args, env = {}) => spawnSync(cmd, args, { cwd: repo, encoding: 'utf8', env: { ...process.env, CI: '', GITHUB_ACTIONS: '', ...env } });
+  const scripts = Object.fromEntries(stepsFor('fast').map((s) => [s.cmd, 'node -e 0']));
+  scripts.typecheck = 'node -e "process.exit(require(\'fs\').existsSync(\'bad.test.ts\') ? 2 : 0)"';
+  scripts.joinability = 'node -e "process.exit(2)"';
+  scripts['schema:local'] = 'node -e 0';
+  writeFileSync(join(repo, 'package.json'), JSON.stringify({ scripts }));
+  const commit = (...extra) => sh('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', ...extra]);
+  assert.equal(sh('git', ['init', '-q']).status, 0);
+  assert.equal(sh('git', ['add', '.']).status, 0);
+  assert.equal(commit('-m', 'one').status, 0);
+  const gates = (args) => sh(process.execPath, [script, ...args]);
+  const first = gates(['--memo', '--profile', 'fast']);
+  assert.equal(first.status, 0, first.stdout + first.stderr);
+  assert.match(first.stdout, /1 skipped \(joinability: exit 2/);
+  assert.ok(!/skipped \([^)]*typecheck/.test(first.stdout));
+  const again = gates(['--memo', '--profile', 'fast']);
+  assert.match(again.stdout, /already passed fast .*memo: tree [0-9a-f]{12}\)/);
+  assert.ok(!again.stdout.includes('== '), 'unchanged tree: no step ran');
+  writeFileSync(join(repo, 'bad.test.ts'), 'x');
+  assert.equal(sh('git', ['add', '.']).status, 0);
+  assert.equal(commit('-m', 'two').status, 0);
+  const bad = gates(['--memo', '--profile', 'fast']);
+  assert.equal(bad.status, 1, 'the planted type error is red');
+  assert.match(bad.stderr, /FAILED at "Typecheck"/);
 });
