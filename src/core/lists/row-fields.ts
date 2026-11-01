@@ -52,8 +52,13 @@ export function dueInfo(r: Resource, now: Date): DueInfo | null {
   return { label: formatDate(new Date(best).toISOString().slice(0, 10)), days: `${diff} day${diff === 1 ? "" : "s"}`, daysNum: diff };
 }
 
-/** The first sentence of a stored text, cut at its end (not at "No." or "Art."); null when there is none. */
-const firstSentence = (text: string | null | undefined, t = (text ?? "").replace(/\s+/g, " ").trim()): string | null => (!t || /\bOF THE (?:EUROPEAN PARLIAMENT|COUNCIL)\b|\bANNEX\s+[IVX0-9]/i.test(t) ? null : t.slice(0, [...t.matchAll(/[.!?](?=\s+[A-Z("“]|$)/g)].map((m) => m.index + 1).find((n) => !/\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i.test(t.slice(0, n)))));
+/** The first sentence of a stored text, cut at its end (not at "No." or "Art."); null when there is none. An Official Journal title stored as text (the act head, or an Annex heading) is never a summary; that guard judges the sentence that would be drawn, never the whole field, so a reader's text that cites an Annex later on keeps its first sentence. */
+const OJ_TITLE_AS_TEXT = /\bOF THE (?:EUROPEAN PARLIAMENT|COUNCIL)\b|\bANNEX\s+[IVX0-9]/i;
+const firstSentence = (text: string | null | undefined, t = (text ?? "").replace(/\s+/g, " ").trim()): string | null => {
+  if (!t) return null;
+  const s = t.slice(0, [...t.matchAll(/[.!?](?=\s+[A-Z("“]|$)/g)].map((m) => m.index + 1).find((n) => !/\b(?:No|Nos|Art|Arts|Dir|Reg|Sec|vs|approx|e\.g|i\.e)\.$/i.test(t.slice(0, n))));
+  return OJ_TITLE_AS_TEXT.test(s) ? null : s;
+};
 
 export function toListRowFields(r: Resource, now: Date): ListRowFields {
   const due = dueInfo(r, now);
