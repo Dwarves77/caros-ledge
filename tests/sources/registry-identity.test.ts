@@ -147,6 +147,7 @@ const MAY_NAME_THEM: Record<string, string> = {
   "src/features/sources/snapshots.ts": "raw_fetches.content_hash, an older table",
   "src/core/capture/change-detection.ts": "a note inside a trust event, not a column",
   "src/core/producers/quote.ts": "acceptStoredQuote reads the rights verdict of the quoted page's registry row before it accepts a quote (R2f F10); a producer path, not a page",
+  "src/features/market/producers/market-series-delta.ts": "the market producers' after-hook writes the series captures with their content hash, channel and number locale (PRODUCER-CAPTURE-1); a runner job, not a page",
   "src/core/grounding/pool.ts": "the grounding pass reads the number locale its capture declares (R2f); a pass, not a page",
   "src/core/grounding/ground.ts": "the grounding pass reads each FACT under its capture's number locale (R2f)",
   "src/features/mint/heal/ground.ts": "the healer reads a capture under its declared number locale (R2f)",
