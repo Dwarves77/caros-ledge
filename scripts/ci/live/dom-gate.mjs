@@ -22,7 +22,8 @@ export const domFacts = () => {
     title: words(all("h1").at(-1)),
     rows: all('[data-part="list-row"]').map((r) => ({ title: words(r.querySelector(".cl-row-title")), why: words(r.querySelector(".cl-row-summary")), href: r.querySelector("a.cl-row-link")?.getAttribute("href") ?? null })),
     connections: all('[data-part="item-connections"] .cl-detail-link').map((a) => ({ label: words(a.querySelector(".cl-detail-label")), title: words(a.querySelector(".cl-detail-link-title")), reason: words(a.querySelector(".cl-detail-link-context")) })),
-    triggers: all(".cl-trigger-row .cl-trigger-text").map(words),
+    itemId: document.querySelector("[data-item-id]")?.getAttribute("data-item-id") ?? null,
+    triggers: all(".cl-trigger-row").map((r) => ({ text: words(r.querySelector(".cl-trigger-text")), item: r.getAttribute("data-instrument-item") })),
     ribbon: ribbon ? { caption: words(ribbon.querySelector('[class*="hCaption"]')), cards: all('[data-audit="headline-card"]', ribbon).map((c) => words(c.querySelector('[data-audit="headline-card-label"] span'))) } : null,
     board: board ? { rows: all('[class*="seriesRow"]', board).map((r) => ({ hasLatest: !r.querySelector('[class*="seriesValue"]')?.hasAttribute("title") })), unregistered: Number(/(\d+) series from a source not yet listed/.exec(board.innerText)?.[1] ?? 0) } : null,
     radar: radar ? { text: words(radar), links: all("a", radar).length, absence: Boolean(radar.querySelector('[data-part="absence"], [data-part="state-note"]')) } : null,
@@ -41,7 +42,6 @@ const RAW = [
 /** A metric or method token (ghg_intensity) in what the radar draws: its entity lines name things in words. */
 const SNAKE = /\b[a-z]+_[a-z_]+\b/g;
 const PENDING = /Narrative synthesis pending|Stale: this synthesis/;
-const INSTRUMENT = /\b\d{1,4}\/\d{1,4}\b/;
 const CAPTION = /^(\d+) famil(?:y|ies) from (\d+) series/;
 /** The line toListRowFields composes when a regulation has no reader text (src/core/lists/row-fields.ts). */
 const FALLBACK = /^Applies (in [A-Z]{2}|across jurisdictions)(; next date .*)?\.$/;
@@ -88,11 +88,9 @@ export const EVALUATORS = {
     ...unread(f.details, "detail page"),
     ...f.details.flatMap((p) => {
       const triggers = p.facts?.triggers ?? [];
-      if (!triggers.length) return [];
-      const number = INSTRUMENT.exec(p.facts.title)?.[0];
-      if (!number) return [`${p.path}: ${triggers.length} pending trigger(s) but the title names no instrument number to show they are its own`];
-      const foreign = triggers.filter((t) => !t.includes(number));
-      return foreign.length ? [`${p.path}: ${foreign.length} of ${triggers.length} trigger(s) do not cite ${number}, e.g. "${foreign[0].slice(0, 80)}"`] : [];
+      const own = p.facts?.itemId;
+      const foreign = triggers.filter((t) => !own || t.item !== own);
+      return foreign.length ? [`${p.path}: ${foreign.length} of ${triggers.length} mandate row(s) are not filed under this item (${own ? "instrument item " + (foreign[0].item ?? "absent") : "the page exposes no item id"}), e.g. "${foreign[0].text.slice(0, 80)}"`] : [];
     }),
   ],
   "scoped-grid": (f, params) => {

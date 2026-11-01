@@ -11,7 +11,7 @@ import { EVALUATORS, formatTable, gateResults, linksOf, loadAssertions } from '.
 import { storageStateOf } from '../../scripts/ci/live-session.mjs';
 
 /** Once armed, never disarmed. A lane that arms an assertion in its own PR adds the id here in the same PR. */
-const ARMED_FLOOR = ['signed-in', 'no-404', 'ribbon-complete', 'rows-have-why', 'connections-have-reason', 'radar-present', 'no-raw-ids'];
+const ARMED_FLOOR = ['signed-in', 'no-404', 'ribbon-complete', 'rows-have-why', 'connections-have-reason', 'radar-present', 'no-raw-ids', 'scoped-grid', 'no-pending-text'];
 
 const row = (over = {}) => ({ title: 'Regulation (EU) 2024/1157', why: 'Sets the rules for shipments of waste across borders.', href: '/regulations/a?list=regulations', ...over });
 const page = (path, facts = {}, over = {}) => ({ path, status: 200, finalUrl: `https://x.test${path}`, facts: { text: 'A page a reader sees', accountMenu: true, title: 'Regulation (EU) 2024/1157', rows: [row()], connections: [], triggers: [], radar: { links: 2, absence: false }, ribbon: null, board: null, ...facts }, ...over });
@@ -23,7 +23,7 @@ const good = () => ({
   lists: ['/', '/regulations', '/market', '/operations', '/research'].map((p) => page(p, p === '/market' ? { ribbon: ribbon() } : {})),
   series: page('/market/series', { board: board() }),
   links: [{ href: '/regulations/a', from: '/', status: 200, finalUrl: 'https://x.test/regulations/a' }],
-  details: [page('/regulations/a', { connections: [{ label: 'References', title: 'Another act', reason: 'Bound by shared regulation identifier' }], triggers: ['By 21 May 2027 under 2024/1157 the Commission shall adopt an act.'] })],
+  details: [page('/regulations/a', { connections: [{ label: 'References', title: 'Another act', reason: 'Bound by shared regulation identifier' }], itemId: 'item-uuid-1', triggers: [{ text: 'By 21 May 2027 the Commission shall adopt an act.', item: 'item-uuid-1' }] })],
   scoped: { panel: 'United States grid', profile: page('/operations/us') },
 });
 const byId = (results, id) => results.find((r) => r.id === id);
@@ -50,7 +50,7 @@ test('every assertion passes on good facts and trips on its own planted defect',
     'no-fallback-summary': (f) => { f.lists[1].facts.rows.push(row({ why: 'Applies in EU; next date 1 Jan 2027.' })); },
     'connections-have-reason': (f) => { f.details[0].facts.connections.push({ label: 'References', title: 'X', reason: 'shared source' }); },
     'no-pending-text': (f) => { f.details[0].facts.text = 'Narrative synthesis pending for this cluster.'; },
-    'own-mandates': (f) => { f.details[0].facts.triggers.push('The Commission shall adopt an act under 2023/9999.'); },
+    'own-mandates': (f) => { f.details[0].facts.triggers.push({ text: 'The Commission shall adopt an act.', item: 'other-uuid' }); },
     'scoped-grid': (f) => { f.scoped.profile.facts.text = 'Substations monitored: UK Power Networks'; },
     'ribbon-complete': (f) => { f.lists[2].facts.ribbon = ribbon({ caption: '2 families from 5 series', cards: ['', '+1 quotes'] }); },
     'radar-present': (f) => { f.lists[0].facts.radar = null; },
@@ -81,10 +81,17 @@ test('no-raw-ids reads a corridor token; reasons-are-pairwise passes two equal r
   assert.equal(EVALUATORS['reasons-are-pairwise'](f).length, 1);
 });
 
-test('an own-mandates panel with a title that names no instrument number cannot show its triggers are its own; no panel passes', () => {
+test('own-mandates is provenance (ruling 66): a row filed under a foreign or absent item trips, a row under the page item passes whatever its text says, no panel passes', () => {
   const f = good();
-  f.details[0].facts.title = 'Inflation Reduction Act';
-  assert.equal(EVALUATORS['own-mandates'](f).length, 1);
+  f.details[0].facts.triggers = [{ text: 'From 21 May 2027, exporters that commission audits under Article 46 must notify', item: 'item-uuid-1' }];
+  assert.deepEqual(EVALUATORS['own-mandates'](f), [], 'Article text without the instrument number passes');
+  f.details[0].facts.triggers.push({ text: 'Cites 2024/1157 in its text', item: 'item-uuid-2' });
+  assert.equal(EVALUATORS['own-mandates'](f).length, 1, 'a foreign id trips even when its text names the number');
+  f.details[0].facts.triggers = [{ text: 'x', item: null }];
+  assert.equal(EVALUATORS['own-mandates'](f).length, 1, 'an absent id trips');
+  f.details[0].facts.itemId = null;
+  f.details[0].facts.triggers = [{ text: 'x', item: 'item-uuid-1' }];
+  assert.equal(EVALUATORS['own-mandates'](f).length, 1, 'a page that exposes no item id cannot show its rows are its own');
   f.details[0].facts.triggers = [];
   assert.deepEqual(EVALUATORS['own-mandates'](f), []);
 });
@@ -112,7 +119,8 @@ const fakeContext = (answers, headLinks = {}) => ({
       waitForLoadState: async () => {},
       $$eval: async () => [],
       $eval: async () => { throw new Error('none'); },
-      $$: async () => [],
+      $$: async (sel) => (String(sel).includes('gridcell') ? [{ getAttribute: async () => 'United States, Ocean', click: async () => {} }] : []),
+      locator: () => ({ locator: () => ({ first: () => ({ getAttribute: async () => '/operations/us' }) }), innerText: async () => 'United States grid' }),
       url: () => `https://x.test${answers[at]?.finalPath ?? '/login'}`,
       evaluate: async () => answers[at]?.facts ?? { text: '', accountMenu: false, title: '', rows: [], connections: [], triggers: [], radar: null },
       close: async () => {},
@@ -128,8 +136,8 @@ test('INV-1: a missing session file and an empty or expired storage state each m
   assert.ok(empty[0].failed >= 1, 'an empty storage state ends every page on /login: the armed signed-in assertion fails');
   const findings = await signedInDom({ io: { base: 'https://x.test', sessionContext: async () => fakeContext({}), bypass: {}, log: () => {} } });
   assert.ok(findings.some((x) => x.severity === 'fail' && x.url === 'signed-in'), 'the failing assertion is named');
-  const signed = (p, over = {}) => ({ finalPath: p, facts: { text: 'A reader sees', accountMenu: true, title: 'Title', rows: [{ title: 'T', why: 'w', href: '/regulations/a' }], connections: p.includes('/regulations/a') ? [{ label: 'References', title: 'Another act', reason: 'Both concern Directive 2023/959.' }] : [], triggers: [], radar: { links: 2, absence: false }, ribbon: p === '/market' ? ribbon() : null, board: p === '/market/series' ? board() : null, ...over } });
-  const live = await asRunner(async () => fakeContext({ '/': signed('/'), '/regulations': signed('/regulations'), '/market': signed('/market'), '/operations': signed('/operations'), '/research': signed('/research'), '/market/series': signed('/market/series'), '/regulations/a': signed('/regulations/a') }));
+  const signed = (p, over = {}) => ({ finalPath: p, facts: { text: 'A reader sees', accountMenu: true, title: 'Title', rows: [{ title: 'T', why: 'w', href: '/regulations/a' }], connections: p.includes('/regulations/a') ? ['A', 'B', 'C'].map((t) => ({ label: 'References', title: `Act ${t}`, reason: 'Both concern Directive 2023/959.' })) : [], triggers: [], radar: { links: 2, absence: false }, ribbon: p === '/market' ? ribbon() : null, board: p === '/market/series' ? board() : null, ...over } });
+  const live = await asRunner(async () => fakeContext({ '/': signed('/'), '/regulations': signed('/regulations'), '/market': signed('/market'), '/operations': signed('/operations'), '/research': signed('/research'), '/market/series': signed('/market/series'), '/regulations/a': signed('/regulations/a'), '/operations/us': signed('/operations/us') }));
   assert.equal(live[0].failed, 0, 'a signed-in run whose armed assertions pass is green; the unarmed ones only warn');
   assert.ok(live[0].warnings > 0, 'the unarmed assertions that would fail are printed as warnings');
   const gone = await asRunner(async () => fakeContext({ '/': signed('/'), '/regulations': signed('/regulations'), '/market': signed('/market'), '/operations': signed('/operations'), '/research': signed('/research'), '/market/series': signed('/market/series') }, { '/regulations/a': 404 }));

@@ -4,6 +4,8 @@ import { formatDate } from "@/core/shared";
 
 export interface PendingEvent {
   id?: string;
+  /** The instrument the mandate is filed under (item_forward_events.intelligence_item_id); drawn as data-instrument-item so the live gate compares ids, not text. */
+  intelligence_item_id?: string;
   event_date: string | null;
   event_kind: string;
   obligation_text?: string | null;
@@ -23,7 +25,7 @@ export function PendingTriggers({ events, kindLabels = {} }: { events: readonly 
       </p>
       <div className="cl-trigger-rows">
         {events.map((ev, i) => (
-          <div key={ev.id ?? i} className="cl-trigger-row">
+          <div key={ev.id ?? i} className="cl-trigger-row" data-instrument-item={ev.intelligence_item_id}>
             <div className="cl-trigger-meta">
               <span className="cl-trigger-date">{ev.event_date ? formatDate(ev.event_date) : "Unscheduled"}</span>
               <span className="cl-trigger-kind">{kindLabels[ev.event_kind] ?? ev.event_kind.replace(/_/g, " ")}</span>
