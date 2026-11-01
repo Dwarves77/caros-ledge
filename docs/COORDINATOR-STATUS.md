@@ -1,4 +1,4 @@
-# Coordinator Status & Handoff Report (`2026-11-01` close of wave P56)
+# Coordinator Status & Handoff Report (`2026-11-01` STATUS-4, batches 1/1b/1c landed)
 
 This file is the canonical handoff status for the coordinator session. Whenever the operator types `coordinator` or `/coordinator`, read this file first alongside `git log -n 10 --oneline` and `git status -s`.
 
@@ -6,7 +6,7 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 
 ## 1. Current Repository State
 
-- **Branch:** `main` at `0c79977f` at the time of writing; verify with `git log -n 10`.
+- **Branch:** `main` at `d8d6419e` at the time of writing; verify with `git log -n 10`.
 - **Branch protection:** `enforce_admins=true`; every change via PR; `ci` + `schema` required.
 - **Local gates:** pre-push runs the fast profile plus tests mapped from changed modules, once; the passing HEAD is remembered in the git-dir (ruling 55, PR 180). The full matrix runs in GitHub Actions only.
 - **Scrape cadence:** `off` (build mode, rule 16). Migrations 0145, 0147, 0148 applied, plus 0149 (PRODUCER-CAPTURE-1); the orphan 0146 row is deleted.
@@ -37,23 +37,31 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 - 197 THEME-1b (a200dd07): 5 cross-surface theme briefs with sections, 3 orphans superseded.
 - 200 HEAL-WALL-1, 201 ADMIT-1 (0 owed readers), 202 OBL-DERIVE-1, 203 LIVE-GATE-3, 204 DRAIN-THEMES-1, 205 GATES-FIX-2, 206 NORMALISE-2, 207 PRODUCER-CAPTURE-1 (migration 0149), 208 REG-BACKFILL-1, 209 LIVE-GATE-3b. Main 0c79977f.
 
+- 211 REG-BACKFILL-1b (+40 src; metadata-refresh route for brief-grade items; opened wave P57 with ruling-70 headroom src 67640 / core 20905 / features 40040), 212 batch 1b (15 refreshes), 213 batch 1 (24 full briefs; stale 25-id test corrected to assert ids = bundle), 214 batch 1c (5 directive briefs + 5 refreshes; brief apply refused by the 30-minute kit cooldown behind the refresh apply), 215 re-run of the 1c brief plan after the cooldown, 216 first-sentence guard fix (OJ-title guard judges the extracted first sentence; red-first), 217 LIVE-GATE-4 arming no-fallback-summary. Main d8d6419e.
+
 ## 3. Production facts (coordinator reads, 2026-10-31)
 
 - Production theme_briefs 12/5/3/0 (per THEME-1b closing state).
 - Patterns grouped and named; pairwise reasons; developing empty state; what-moves block; Oil Bulletin rows with why text.
 - Orphan clean-up DONE by the operator 2026-11-01 (ruling 71): 1,375 dangling item_forward_events refs, 600 dangling obligation_objects refs, 67 orphan obligation entities and the orphan 0146 migration_log row deleted. entity_refs 50,453 (0 orphans), entities 5,473.
+- Batches 1/1b/1c landed: 29 full briefs (24 regulations + 5 directives) and 20 metadata refreshes, authored by Sonnet reader lanes from each item's own capture pool; every entry judged by an independent second reader (ruling 60; 20 judges per brief, J05/J24 per refresh). First-pass judge fails: 52 on batch 1, 4 on 1b, 11 on 1c; all revised and re-judged clean; every FACT span verbatim in the pool; every stored forward-event date covered. SQL-verified: 0 Due-next verified items with an empty context field (was 44 at 09:00 UTC). The six operator-named items (6666d5a0, 9ba8b509, 68af8b45, f1488b95, 0b6537ea, 6cdc920f) all carry reader text.
 - Truth is derived, not carried (ruling 69): the "8 and 17 owed obligation objects" are refuted; AFIR 5 and FuelEU 12 are complete under the current window rules.
 
 ## 4. Live gate assertions
 
-- 11 of 11 armed and passing on production (run 41260343379 on 7caadf17): signed-in, no-404, no-raw-ids, rows-have-why, connections-have-reason, reasons-are-pairwise, no-pending-text, own-mandates, scoped-grid, ribbon-complete, radar-present.
-- `no-fallback-summary` added unarmed; it arms when REG-BACKFILL batches 1 and 1b land.
+- 12 of 12 armed and passing on production (run 41341590602 on d8d6419e), including no-fallback-summary (armed by PR 217); earlier 11 of 11 (run 41260343379 on 7caadf17): signed-in, no-404, no-raw-ids, rows-have-why, connections-have-reason, reasons-are-pairwise, no-pending-text, own-mandates, scoped-grid, ribbon-complete, radar-present.
+- Armed set: signed-in, no-404, no-raw-ids, rows-have-why, connections-have-reason, reasons-are-pairwise, no-pending-text, own-mandates, scoped-grid, ribbon-complete, radar-present, no-fallback-summary.
 
 ## 5. Next wave
 
+- RUNS-FIX-1: two item-briefs apply plans in one push collide on the 30-minute apply cooldown (run bundle, honour `options.cooldownMinutes` per plan, or wait out the cooldown) [CONFIRMED].
+- LIST-RPC-1: `get_workspace_intelligence_listings` returns why_matters and what_is_it but not what_it_changes; add the column in the next migration [CONFIRMED].
+- ENTITY-MINT-1: a `CELEX:` id with a verbatim quote should mint a grounded entity (ADR-054) rather than be refused unless already in the graph [CONFIRMED]. Also: `mode:inland_waterway` token refused (one-line resolver fix) and "No 528/2012" read as a negation by qualification accounting [CONFIRMED].
+- Re-derive after batch 1 applies: 061dce37 forward events (pool is the revised UK ETS Order to 1.7.2026; first maritime handback 30 April 2028 absent) [CONFIRMED]; ef8a1268 due date 2027-01-01 derives from a recital target, operative first date is 12 March 2027 [HYPOTHESIS]; b0b883a3 stored claim cites the ship-efficiency recital date [CONFIRMED].
+- OBL-DERIVE-2 also probes obligation_objects mis-typing on 9ba8b509, 061dce37, d63b8204, b9692eae [HYPOTHESIS].
 - OBL-DERIVE-2 probe: ~4 AFIR and ~7 FuelEU Article duties the `dutyWindows` rules may reject ([HYPOTHESIS], ruling 69); probe against the sentence rules before any write.
 - NORMALISE-2b: delete research_assessments #18/#19 once normalise-2 applies; obligation_objects.source_id STALE delete.
-- REG-BACKFILL batch 1 bundle (author lane plus independent judge lane): batch 1 is the 24 Due-next record-grade regulations; batch 1b is the 14 brief-grade items (metadata refresh).
+- REG-BACKFILL batches 2-44 go to the drain readers (ruling 60); batch 1/1b/1c are DONE.
 - PRODUCER-CAPTURE backfill when cadence returns.
 - LOC headroom set at wave open per ruling 70 (wave-scoped ceiling; features and fixes never edit loc.mjs mid-wave).
 
