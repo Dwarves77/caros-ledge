@@ -106,6 +106,8 @@ export function parsePlan(text, planPath) {
     try {
       body = JSON.parse(readFileSync(at, "utf8"));
     } catch (e) {
+      // REG-BACKFILL-1: a briefs step whose bundle a drain session has not written yet is inert, not broken: the executor reports it as bundle_missing and goes on.
+      if (e.code === "ENOENT" && s.stage === "briefs") return { ...s, bundle_missing: true };
       throw new Error(`step "${s.name}": input_file ${s.input_file} is unreadable or not JSON: ${e.message}`);
     }
     if (body === null || typeof body !== "object" || Array.isArray(body)) throw new Error(`step "${s.name}": input_file ${s.input_file} must hold a JSON object keyed by stage`);

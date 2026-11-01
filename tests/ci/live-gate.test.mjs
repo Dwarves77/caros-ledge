@@ -47,6 +47,7 @@ test('every assertion passes on good facts and trips on its own planted defect',
     'no-raw-ids': (f) => { f.details[0].facts.text = 'Linked by pattern_shared_scenario · 0.45 to 6666d5a0-82bb-4b17-b3ef-d47e8d0b7ee3 and fuel_gap'; },
     'reasons-are-pairwise': (f) => { f.details[0].facts.connections = ['A', 'B', 'C'].map((title) => ({ label: 'References', title, reason: 'Kerosene-type jet fuel spot price fell 5.3% over the last week.' })); },
     'rows-have-why': (f) => { f.lists[2].facts.rows.push(row({ why: '' })); },
+    'no-fallback-summary': (f) => { f.lists[1].facts.rows.push(row({ why: 'Applies in EU; next date 1 Jan 2027.' })); },
     'connections-have-reason': (f) => { f.details[0].facts.connections.push({ label: 'References', title: 'X', reason: 'shared source' }); },
     'no-pending-text': (f) => { f.details[0].facts.text = 'Narrative synthesis pending for this cluster.'; },
     'own-mandates': (f) => { f.details[0].facts.triggers.push({ text: 'The Commission shall adopt an act.', item: 'other-uuid' }); },
@@ -208,4 +209,11 @@ test('the live job mints the session before it runs the live checks, and nothing
   assert.ok(mint > 0 && checks > mint, 'the minting step comes first');
   assert.doesNotMatch(live, /continue-on-error|\|\| true|if: .*session/, 'no step swallows a failure or skips on a session');
   for (const name of ['SUPABASE_SERVICE_ROLE_KEY', 'LIVE_ADMIN_EMAIL']) assert.match(live, new RegExp(`${name}: [$][{][{]`), `${name} reaches the job from a secret`);
+});
+
+test('INV-RB-4: no-fallback-summary trips on the composed fallback line (with and without a date, with and without a jurisdiction) and passes on reader text', () => {
+  const f = good();
+  const run = (why) => { f.lists[1].facts.rows = [row({ why })]; return EVALUATORS['no-fallback-summary'](f); };
+  for (const why of ['Applies in EU; next date 1 Jan 2027.', 'Applies across jurisdictions.', 'Applies in US.']) assert.equal(run(why).length, 1, why);
+  for (const why of ['Sets the rules for shipments of waste across borders.', 'Applies in EU ports from 2025 to ships over 5,000 tons.']) assert.deepEqual(run(why), [], why);
 });
