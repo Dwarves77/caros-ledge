@@ -12,8 +12,13 @@ BEGIN;
 
 ALTER TABLE public.agent_run_searches
   ADD COLUMN IF NOT EXISTS transform text,
-  ADD COLUMN IF NOT EXISTS transform_version text,
-  ADD CONSTRAINT agent_run_searches_transform_pair_check CHECK ((transform IS NULL) = (transform_version IS NULL));
+  ADD COLUMN IF NOT EXISTS transform_version text;
+DO $c$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'agent_run_searches_transform_pair_check') THEN
+    ALTER TABLE public.agent_run_searches ADD CONSTRAINT agent_run_searches_transform_pair_check CHECK ((transform IS NULL) = (transform_version IS NULL));
+  END IF;
+END $c$;
 COMMENT ON COLUMN public.agent_run_searches.transform IS 'Migration 0149. The declared transform that rendered result_content from a structured file row (xlsx-row-text); NULL for a capture of a page or a document.';
 COMMENT ON COLUMN public.agent_run_searches.transform_version IS 'Migration 0149. The version of that transform; NULL exactly when transform is NULL.';
 CREATE UNIQUE INDEX IF NOT EXISTS agent_run_searches_transform_capture_uidx ON public.agent_run_searches (intelligence_item_id, search_query) WHERE transform IS NOT NULL;

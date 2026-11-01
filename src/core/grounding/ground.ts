@@ -109,9 +109,9 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
 
   // ---- pool, error-body gate, cited-host gate -------------------------------------------------------------
   const allRows = await readAllPoolRows(sb, itemId);
-  const content = allRows.filter((r) => isSeriesRowCapture(r.search_query) || r.text.length > GROUND_CONFIG.MIN_USABLE_POOL_CHARS);
+  const content = allRows.filter((r) => isSeriesRowCapture(r.transform) || r.text.length > GROUND_CONFIG.MIN_USABLE_POOL_CHARS);
   const bodies = content.map((r) => ({ r, c: sources.classifyBody(r.text, r.url) }));
-  const walled = (b: (typeof bodies)[number]): boolean => b.c.errorBody && !isSeriesRowCapture(b.r.search_query);
+  const walled = (b: (typeof bodies)[number]): boolean => b.c.errorBody && !isSeriesRowCapture(b.r.transform);
   const errorBodies = bodies.filter(walled).map((b) => b.r);
   const pool: PoolRow[] = bodies.filter((b) => !walled(b)).map((b) => b.r);
   if (errorBodies.length && !dry) {

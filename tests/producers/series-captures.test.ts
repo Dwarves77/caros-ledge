@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { groundBrief, readPool } from "@/core/grounding";
+import { groundBrief, isUsableCapture, readPool } from "@/core/grounding";
 import { runProducer } from "@/core/producers/runner";
 import { createMethodRegistry, registerMarketMethods } from "@/core/propagation";
 import { exportBatch } from "@/features/batches";
@@ -111,4 +111,12 @@ test("INV-PC-3: the item's pool and its brief packet carry the weekly sentences,
   const g = await groundBrief({ sb: w.deps.sb, sources, now: () => NOW }, { itemId: ITEM, ledger: [{ ...factClaim(SENTENCE, { section: "1", source_id: EC, source_url: captureUrl }), search_result_id: null }] as never });
   assert.equal(g.dropped, 0, g.detail);
   assert.ok(w.db.rows("section_claim_provenance").some((c) => c.source_span === SENTENCE), "the span is in the ledger");
+});
+
+test("the exemption keys on the transform column, not the search text: a fetched wall page named series:x is not usable, the same row with a transform is", () => {
+  const wall = `Just a moment... Checking your browser before accessing the site. Enable JavaScript and cookies to continue. Cloudflare Ray ID. ${"x".repeat(240)}`;
+  assert.ok(wall.length >= 300);
+  const row = { result_content: wall, result_url: "https://energy.ec.europa.eu/x", search_query: "series:x" };
+  assert.equal(isUsableCapture({ ...row, transform: null }), false);
+  assert.equal(isUsableCapture({ ...row, transform: "xlsx-row-text" }), true);
 });
