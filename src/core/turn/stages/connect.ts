@@ -27,15 +27,15 @@ function planConnect(upstreamIds: readonly string[], backlog: readonly string[],
 }
 
 /** The passes' results become one: counts namespaced by pass (the scan's own counts are the stage's: extracted, derived, refused), the outcome the worst, the connected and scanned ids the hand-off to propagate. Pure. */
-export function shapeConnect(ids: readonly string[], parts: { bind?: RunResult | null; couplings?: RunResult | null; tag: RunResult | null; discovery: RunResult | null; term: RunResult | null; corpus: RunResult | null; patterns?: RunResult | null; scan?: RunResult<{ ids: { scanned_item_ids: string[] } }> | null; triggers?: RunResult | null }): RunResult {
+export function shapeConnect(ids: readonly string[], parts: { bind?: RunResult | null; couplings?: RunResult | null; tag: RunResult | null; discovery: RunResult | null; term: RunResult | null; corpus: RunResult<{ ids?: { theme_briefs_owed: string[] } }> | null; patterns?: RunResult | null; scan?: RunResult<{ ids: { scanned_item_ids: string[] } }> | null; triggers?: RunResult | null }): RunResult {
   const list = Object.values(parts).filter((p): p is RunResult => p !== null && p !== undefined);
   const outcome = worst("ok", ...list.map((p) => p.outcome));
   const counts: Record<string, number> = {
     slice: ids.length, bound: parts.bind?.counts.bound ?? 0, unbound: parts.bind?.counts.unbound ?? 0, connected: outcome === "failed" ? 0 : ids.length, tag_items_written: parts.tag?.counts.items_written ?? 0,
     edges_written: (parts.discovery?.counts.written ?? 0) + (parts.corpus?.counts.intersection_inserted ?? 0),
-    term_writes: parts.term ? sumWritten(parts.term.counts) : 0, themes: parts.corpus?.counts.themes ?? 0, ...(parts.couplings?.counts ?? {}), ...(parts.patterns?.counts ?? {}), ...(parts.scan?.counts ?? {}), ...Object.fromEntries(Object.entries(parts.triggers?.counts ?? {}).map(([k, n]) => [`triggers_${k}`, n])),
+    term_writes: parts.term ? sumWritten(parts.term.counts) : 0, themes: parts.corpus?.counts.themes ?? 0, orphan_briefs_retired: parts.corpus?.counts.orphan_briefs_retired ?? 0, theme_briefs_owed: parts.corpus?.counts.theme_briefs_owed ?? 0, ...(parts.couplings?.counts ?? {}), ...(parts.patterns?.counts ?? {}), ...(parts.scan?.counts ?? {}), ...Object.fromEntries(Object.entries(parts.triggers?.counts ?? {}).map(([k, n]) => [`triggers_${k}`, n])),
   };
-  return { ...runResult(outcome, counts, leadWithFailures(list)), data: { ids: { connected_item_ids: outcome === "failed" ? [] : [...ids], scanned_item_ids: parts.scan?.data?.ids.scanned_item_ids ?? [] } } };
+  return { ...runResult(outcome, counts, leadWithFailures(list)), data: { ids: { connected_item_ids: outcome === "failed" ? [] : [...ids], scanned_item_ids: parts.scan?.data?.ids.scanned_item_ids ?? [], theme_briefs_owed: parts.corpus?.data?.ids?.theme_briefs_owed ?? [] } } };
 }
 
 export async function runConnect(call: FamilyCall, d: BuiltDeps): Promise<RunResult> {
