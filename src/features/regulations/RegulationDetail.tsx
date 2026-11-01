@@ -29,7 +29,7 @@ import { PriorityMenu } from "./PriorityMenu";
 import { regulationMeta } from "./meta";
 import type { RelevanceFetch } from "./useItemRelevance";
 
-export interface ObligationEvent { event_date: string; event_kind: string; obligation_text?: string | null; source_span?: string | null }
+export interface ObligationEvent { intelligence_item_id?: string; event_date: string; event_kind: string; obligation_text?: string | null; source_span?: string | null }
 interface Props extends Omit<DetailSurfaceSharedProps, "relevance"> {
   resource: Resource; changelog: ChangeLogEntry[]; dispute: Dispute | null; sections: SectionRow[]; claimTiers: ClaimTierMap;
   /** The claims or their suppressions did not load: the page says so with Retry and draws no fact section. */

@@ -64,3 +64,9 @@ test("OPS-FIX-1 item 5: a bracketed item id in the stated coupling is read as th
   assert.equal(await read("No ids here."), "No ids here.");
   assert.equal(await read(null), null);
 });
+
+test("LIVE-GATE-3: each pending mandate row draws the instrument item it is filed under, for the live gate's provenance check", async () => {
+  const { PendingTriggers } = await import("@/ui/detail/PendingTriggers");
+  const html = renderApp(createElement(PendingTriggers, { events: [{ id: "e1", intelligence_item_id: "item-uuid-1", event_date: "2027-05-21", event_kind: "implementing_act_due", obligation_text: "The Commission shall adopt an act." }] }));
+  assert.match(html, /class="cl-trigger-row" data-instrument-item="item-uuid-1"/);
+});

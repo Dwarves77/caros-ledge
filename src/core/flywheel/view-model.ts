@@ -67,7 +67,7 @@ export function buildConnectionRows(connections: readonly ConnectionIn[] | null 
     const origin = c.origin || "manual";
     const label = labelForConnection(c.relationship, c.direction);
     const basis = asBasis(c.basis);
-    const reason = reasonFor({ basis: c.basis, origin, label }, { ...ctx.also, self: ctx.self ?? [], other: ctx.facts?.get(c.uuid ?? c.id) ?? [] });
+    const reason = reasonFor({ basis: c.basis, origin, label, counterpart: ref.title }, { ...ctx.also, self: ctx.self ?? [], other: ctx.facts?.get(c.uuid ?? c.id) ?? [] });
     if (!reason && origin !== CANDIDATE_ORIGIN) continue;
     seen.add(c.id);
     const surface = c.surface || "uncategorized";
@@ -87,7 +87,7 @@ export function buildSupersessionRows(supersessions: readonly Supersession[] | n
   const add = (id: string, label: string) => {
     const ref = lookup?.[id];
     if (!ref) return;
-    rows.push({ id, title: ref.title, priority: ref.priority, label, surface: "regulations", href: surfaceHref("regulations", id), origin: "manual", discovered: false, reason: reasonFor({ basis: null, origin: "manual", label }) as string });
+    rows.push({ id, title: ref.title, priority: ref.priority, label, surface: "regulations", href: surfaceHref("regulations", id), origin: "manual", discovered: false, reason: reasonFor({ basis: null, origin: "manual", label, counterpart: ref.title }) as string });
     seen.add(id);
   };
   for (const s of supersessions ?? []) {
