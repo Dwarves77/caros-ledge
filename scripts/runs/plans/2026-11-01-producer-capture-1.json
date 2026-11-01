@@ -1,0 +1,39 @@
+{
+  "ruling": "coordinator ruling 68 (2026-10-31), PRODUCER-CAPTURE-1 brief: re-read the one Weekly Oil Bulletin history workbook since 2025-01-01 so every weekly observation of a ratified series is filed as a capture (a structured-file row rendered by the declared xlsx-row-text transform, ADR-016 / rule 17); one file is fetched, scrape cadence stays off",
+  "steps": [
+    {
+      "name": "oil-bulletin-dry",
+      "stage": "propagate",
+      "mode": "dry",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "eu-weekly-oil-bulletin",
+            "since": "2025-01-01"
+          },
+          "cadence_exception": "coordinator ruling 68 (2026-10-31), PRODUCER-CAPTURE-1 brief: re-read the one Weekly Oil Bulletin history workbook since 2025-01-01 so every weekly observation of a ratified series is filed as a capture (a structured-file row rendered by the declared xlsx-row-text transform, ADR-016 / rule 17); one file is fetched, scrape cadence stays off"
+        }
+      },
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "oil-bulletin-apply",
+      "stage": "propagate",
+      "mode": "apply",
+      "input": {
+        "propagate": {
+          "producers": {
+            "only": "eu-weekly-oil-bulletin",
+            "since": "2025-01-01"
+          },
+          "cadence_exception": "coordinator ruling 68 (2026-10-31), PRODUCER-CAPTURE-1 brief: re-read the one Weekly Oil Bulletin history workbook since 2025-01-01 so every weekly observation of a ratified series is filed as a capture (a structured-file row rendered by the declared xlsx-row-text transform, ADR-016 / rule 17); one file is fetched, scrape cadence stays off"
+        }
+      },
+      "producer_env": [
+        "MARKET_PRODUCER_EU_OIL_BULLETIN_ENABLED=1"
+      ],
+      "on_failure": "stop"
+    }
+  ]
+}

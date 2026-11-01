@@ -27,7 +27,7 @@ import { openFlagOnce } from "./flags";
 import type { FactClaim } from "./gate-a-scan";
 import { buildCitationEdges, buildGateARow, clearGateAState, derivedCoveredTokens, mergeNullTierAggregate, mintGates, summarizeNullTierAggregate, upsertGateAState, type GateFact, type NullTierAggregate } from "./gates";
 import { applyLedgerDiff, ledgerCoversClaims, applyLedgerOps, diffLedger, ledgerRegression, summarizeLedger, type ClaimRow } from "./ledger";
-import { authorityFloorFor, floorPool, readAllPoolRows, reattributeToFloor, type PoolRow } from "./pool";
+import { authorityFloorFor, floorPool, isSeriesRowCapture, readAllPoolRows, reattributeToFloor, type PoolRow } from "./pool";
 import { decideSlotClaim, nominateForSlot, readRequiredSlots, type Nomination } from "./slots";
 
 export interface TargetIdentity { title: string | null; item_type: string; instrument_type: string | null; identifier: string | null; canonical_instrument_key: string | null; jurisdiction: string | null }
@@ -109,10 +109,11 @@ async function ground(deps: GroundDeps, input: GroundInput): Promise<GroundResul
 
   // ---- pool, error-body gate, cited-host gate -------------------------------------------------------------
   const allRows = await readAllPoolRows(sb, itemId);
-  const content = allRows.filter((r) => r.text.length > GROUND_CONFIG.MIN_USABLE_POOL_CHARS);
+  const content = allRows.filter((r) => isSeriesRowCapture(r.transform) || r.text.length > GROUND_CONFIG.MIN_USABLE_POOL_CHARS);
   const bodies = content.map((r) => ({ r, c: sources.classifyBody(r.text, r.url) }));
-  const errorBodies = bodies.filter((b) => b.c.errorBody).map((b) => b.r);
-  const pool: PoolRow[] = bodies.filter((b) => !b.c.errorBody).map((b) => b.r);
+  const walled = (b: (typeof bodies)[number]): boolean => b.c.errorBody && !isSeriesRowCapture(b.r.transform);
+  const errorBodies = bodies.filter(walled).map((b) => b.r);
+  const pool: PoolRow[] = bodies.filter((b) => !walled(b)).map((b) => b.r);
   if (errorBodies.length && !dry) {
     push(await openFlagOnce(sb, {
       category: "source_issue", subject_type: "item", subject_ref: itemId, created_by: "error-body-gate",

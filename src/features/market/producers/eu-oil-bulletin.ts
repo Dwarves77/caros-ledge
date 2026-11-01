@@ -8,19 +8,20 @@ import { cellText, readSheet, type SheetRow } from "@/core/producers/xlsx";
 import { StructureError, type Doc, type ParseOut, type ProducerSpec } from "@/core/producers/runner";
 import type { Rec } from "@/core/producers/upsert-plan";
 
-import { marketSeriesBase, stampEntity } from "./market-series-delta";
+import { marketSeriesBase, seriesCaptureQuery, stampEntity, type SeriesCapture } from "./market-series-delta";
 
 const PAGE_URL = "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en";
 const ORIGIN = "https://energy.ec.europa.eu";
 const FALLBACK_XLSX = "https://energy.ec.europa.eu/document/download/906e60ca-8b6a-44e7-8589-652854d2fd3f_en?filename=Weekly_Oil_Bulletin_Prices_History_maticni_4web.xlsx";
 const PRICE_SHEET = "Prices wo taxes";
-const PRODUCTS: Readonly<Record<string, { label: string; unit: string }>> = Object.freeze({
-  "eurosuper-95": { label: "Euro-Super 95 (EU average, before taxes)", unit: "EUR/1000L" },
-  "automotive-diesel": { label: "Automotive gas oil / diesel (EU average, before taxes)", unit: "EUR/1000L" },
-  "heating-gas-oil": { label: "Heating gas oil (EU average, before taxes)", unit: "EUR/1000L" },
-  "lpg-motor-fuel": { label: "LPG motor fuel (EU average, before taxes)", unit: "EUR/1000L" },
-  "residual-fuel-oil-1pct": { label: "Residual fuel oil 1%S (EU average, before taxes)", unit: "EUR/tonne" },
-  "heavy-fuel-oil-3-5pct": { label: "Heavy fuel oil 3.5%S (EU average, before taxes)", unit: "EUR/tonne" },
+const SCOPE = "EU average, before taxes";
+const PRODUCTS: Readonly<Record<string, { product: string; unit: string }>> = Object.freeze({
+  "eurosuper-95": { product: "Euro-Super 95", unit: "EUR/1000L" },
+  "automotive-diesel": { product: "Automotive gas oil / diesel", unit: "EUR/1000L" },
+  "heating-gas-oil": { product: "Heating gas oil", unit: "EUR/1000L" },
+  "lpg-motor-fuel": { product: "LPG motor fuel", unit: "EUR/1000L" },
+  "residual-fuel-oil-1pct": { product: "Residual fuel oil 1%S", unit: "EUR/tonne" },
+  "heavy-fuel-oil-3-5pct": { product: "Heavy fuel oil 3.5%S", unit: "EUR/tonne" },
 });
 const SUFFIX_SLUG: Record<string, string> = { euro95: "eurosuper-95", diesel: "automotive-diesel", heating_oil: "heating-gas-oil", fuel_oil_1: "residual-fuel-oil-1pct", fuel_oil_2: "heavy-fuel-oil-3-5pct", LPG: "lpg-motor-fuel" };
 const DISPLAY_MATCHERS: Array<[string, (h: string) => boolean]> = [
@@ -36,6 +37,8 @@ const colNum = (c: string): number => [...c].reduce((n, ch) => n * 26 + ch.charC
 export interface BulletinWeek {
   week_ending: string;
   prices: Record<string, number>;
+  /** The price cell text as the sheet shows it, by product: the value a capture quotes. */
+  shown: Record<string, string>;
   warnings: string[];
 }
 /** The first link containing "Prices_History" on the bulletin page, made absolute; null when none. */
@@ -95,27 +98,31 @@ function extractEuSeries(rows: SheetRow[], shared: readonly string[], header: Re
     const week = dateCell ? weekOf(dateCell.type === "s" ? cellText(dateCell, shared) : dateCell.raw, dateCell.type) : null;
     if (!week) continue;
     const prices: Record<string, number> = {};
+    const shown: Record<string, string> = {};
     const warnings: string[] = [];
     for (const c of header.columns) {
       if (!c.slug) continue;
       const cell = row.cells.get(c.col);
       const raw = cell ? cellText(cell, shared) : "";
       const n = raw === "" ? NaN : Number(raw);
-      if (Number.isFinite(n) && n > 0) prices[c.slug] = n;
-      else warnings.push(`week ${week}: EU column ${c.col} (${c.slug}) has no usable price ("${raw}"): omitted, not fabricated`);
+      if (Number.isFinite(n) && n > 0) {
+        prices[c.slug] = n;
+        shown[c.slug] = raw;
+      } else warnings.push(`week ${week}: EU column ${c.col} (${c.slug}) has no usable price ("${raw}"): omitted, not fabricated`);
     }
-    out.push({ week_ending: week, prices, warnings });
+    out.push({ week_ending: week, prices, shown, warnings });
   }
   return out.sort((a, b) => (a.week_ending < b.week_ending ? 1 : a.week_ending > b.week_ending ? -1 : 0));
 }
 
 /** The normalised `week_ending;product;price_eur[;n_member_states]` CSV to rows; a bad date, an unknown product and a bad price are each skipped by name. */
-function parseEuWeeklyOilBulletinCsv(csv: string): { rows: Rec[]; warnings: string[] } {
+function parseEuWeeklyOilBulletinCsv(csv: string): { rows: Rec[]; warnings: string[]; sentences: Map<string, string> } {
   const lines = String(csv ?? "").split(/\r\n|\r|\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
-  if (!lines.length) return { rows: [], warnings: ["empty input: no header, no data rows"] };
+  const sentences = new Map<string, string>();
+  if (!lines.length) return { rows: [], warnings: ["empty input: no header, no data rows"], sentences };
   const header = (lines[0] as string).split(";").map((h) => h.trim());
   const [iW, iP, iPr, iN] = ["week_ending", "product", "price_eur", "n_member_states"].map((n) => header.indexOf(n)) as [number, number, number, number];
-  if (iW < 0 || iP < 0 || iPr < 0) return { rows: [], warnings: [`header missing required column(s): need week_ending, product, price_eur (n_member_states optional); got: ${header.join(", ")}`] };
+  if (iW < 0 || iP < 0 || iPr < 0) return { rows: [], warnings: [`header missing required column(s): need week_ending, product, price_eur (n_member_states optional); got: ${header.join(", ")}`], sentences };
   const rows: Rec[] = [];
   const warnings: string[] = [];
   lines.slice(1).forEach((line, k) => {
@@ -129,12 +136,13 @@ function parseEuWeeklyOilBulletinCsv(csv: string): { rows: Rec[]; warnings: stri
     const nRaw = iN >= 0 ? cells[iN] : undefined;
     const n = nRaw ? Number(nRaw) : null;
     if (nRaw && !(Number.isInteger(n) && (n as number) > 0)) warnings.push(`${at}: bad n_member_states "${nRaw}" for ${product}: n_observations left NULL`);
-    rows.push({ series_key: `eu-oil-bulletin:${product}`, label: def.label, value_numeric: price, unit: def.unit, currency: "EUR", derivation: "observed", origin_class: "official", source_key: "ec_weekly_oil_bulletin", source_ref: `Weekly Oil Bulletin, week of ${week}`, n_observations: n !== null && Number.isInteger(n) && n > 0 ? n : null, method_version: null, as_at_date: week, reference_period: week });
+    sentences.set(seriesCaptureQuery(`eu-oil-bulletin:${product}`, week), `Weekly Oil Bulletin, week of ${week}. ${def.product}, ${SCOPE}: ${cells[iPr]} ${def.unit}.`);
+    rows.push({ series_key: `eu-oil-bulletin:${product}`, label: `${def.product} (${SCOPE})`, value_numeric: price, unit: def.unit, currency: "EUR", derivation: "observed", origin_class: "official", source_key: "ec_weekly_oil_bulletin", source_ref: `Weekly Oil Bulletin, week of ${week}`, n_observations: n !== null && Number.isInteger(n) && n > 0 ? n : null, method_version: null, as_at_date: week, reference_period: week });
   });
-  return { rows, warnings };
+  return { rows, warnings, sentences };
 }
 
-const toCsv = (weeks: BulletinWeek[]): string => ["week_ending;product;price_eur", ...weeks.flatMap((w) => Object.entries(w.prices).map(([slug, p]) => `${w.week_ending};${slug};${p}`))].join("\n");
+const toCsv = (weeks: BulletinWeek[]): string => ["week_ending;product;price_eur", ...weeks.flatMap((w) => Object.keys(w.prices).map((slug) => `${w.week_ending};${slug};${w.shown[slug]}`))].join("\n");
 
 export const euOilBulletin: ProducerSpec = {
   name: "eu-weekly-oil-bulletin",
@@ -168,6 +176,9 @@ export const euOilBulletin: ProducerSpec = {
       csv = toCsv(weeks);
     }
     const out = parseEuWeeklyOilBulletinCsv(csv);
-    return { rows: stampEntity(out.rows, ctx), warnings: [...warnings, ...out.warnings] };
+    // Ruling 68: each row rendered to its one sentence by the declared transform is a capture of the bulletin file; a document injected without its URL is the bulletin's known file.
+    const url = typeof doc.meta?.url === "string" ? doc.meta.url : FALLBACK_XLSX;
+    ctx.state.seriesCaptures = new Map<string, SeriesCapture>([...out.sentences].map(([query, text]) => [query, { url, text, locale: "en" }]));
+    return { rows: stampEntity(out.rows, ctx), warnings: [...warnings, ...out.warnings], counts: { captures_candidate: out.sentences.size } };
   },
 };

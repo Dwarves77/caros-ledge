@@ -18,6 +18,7 @@
     { "number": "0145", "slice": "ENGINE-JOIN-1", "status": "reserved", "reserved_on": "2026-10-31" },
     { "number": "0146", "slice": "THEME-CODE-1", "status": "released", "reserved_on": "2026-10-31" },
     { "number": "0147", "slice": "CONTENT-1b", "status": "reserved", "reserved_on": "2026-10-31" },
-    { "number": "0148", "slice": "THEME-CODE-1", "status": "reserved", "reserved_on": "2026-10-31" }
+    { "number": "0148", "slice": "THEME-CODE-1", "status": "reserved", "reserved_on": "2026-10-31" },
+    { "number": "0149", "slice": "PRODUCER-CAPTURE-1", "status": "reserved", "reserved_on": "2026-10-31" }
   ]
 }
