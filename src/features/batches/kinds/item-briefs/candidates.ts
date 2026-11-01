@@ -2,11 +2,13 @@
 // own instrument first, then the entities its claims, events and obligations are typed-linked to (entity_refs with a method version; never a prose match), then the rest of the closed ontology of couplings.json, then at most three region or publisher lines. Modes, hubs and windows
 // are closed tokens and stay out. The cap is MENU.cap; over it the lowest-ranked linked entities drop and the block says `truncated: n`. A line is `entity_id | kind | canonical_name | aliases | links: n`. The same function serves the theme and admin bundles (their seed is the packet's members).
 import { loadOntology, uuidOf, type Ontology } from "@/core/coupling";
-import { fetchAllByIdChunks, rowsByIds, type Db } from "@/core/db";
+import { allRows, fetchAllByIdChunks, rowsByIds, type Db } from "@/core/db";
 import { MENU } from "@/core/digest/kinds";
 import type { Packet } from "@/core/digest/packets-client";
 import { canonicalJurisdictionCode, entityId } from "@/core/entities/id";
 import { readAll } from "@/core/coupling/read";
+import { readAllPoolRows, usableCaptures } from "@/core/grounding";
+import { readImpactRows } from "@/core/impact/read";
 import { hostOf } from "@/core/shared/url";
 
 /** What ranks an entity: its own instrument, the typed-link weight of the others, where the region and publisher lines come from, and the graph neighbourhood (GRAPH-GROW-1): the item's domain, and the item itself (excluded from its own domain neighbours). */
@@ -116,4 +118,34 @@ export async function memberSeed(sb: Db, itemIds: readonly string[]): Promise<Se
   const claims = await rowsByIds<{ id: string }>(sb, "section_claim_provenance", "id", itemIds, "intelligence_item_id", "id");
   const events = await rowsByIds<{ id: string }>(sb, "item_forward_events", "id", itemIds, "intelligence_item_id", "id");
   return { weights: await weightsOf(sb, [...claims.map((c) => ({ table: "section_claim_provenance", id: c.id })), ...events.map((e) => ({ table: "item_forward_events", id: e.id }))]) };
+}
+
+/** A drain reader's packet budget for item-briefs: the exporter (`itemBriefsExporter`) bundles each item's whole usable pool, so a batch is bounded by the count of items, not by a char budget. */
+export const BACKFILL_BATCH = 25;
+const WALK_CONCURRENCY = 8;
+export interface BackfillPage { candidates: { id: string; pool: number }[]; heal_candidates: string[]; next: string | null; backlog: { total: number; all_three_empty: number; partial: number } }
+const blank = (v: string | null): boolean => !(v ?? "").trim();
+
+/**
+ * REG-BACKFILL-1: the verified, unarchived, unreplaced regulations with at least one of what_is_it / why_matters / what_it_changes empty (an empty string or NULL), ordered by stored impact (cost + compliance + operational, an unscored dimension counts 0) desc then id.
+ * Walking that order after `cursor` (the last id walked), an item with at least one usable capture is a candidate, an item with none is a heal candidate (HEAL-WALL-1 fixes the wall case; it is never authored); the walk ends when `limit` candidates are held.
+ */
+export async function regulationBackfillCandidates(sb: Db, o: { limit: number; cursor?: string | null }): Promise<BackfillPage> {
+  const rows = await allRows<{ id: string; what_is_it: string | null; why_matters: string | null; what_it_changes: string | null }>(sb, "intelligence_items", "id, what_is_it, why_matters, what_it_changes", { where: (q) => q.eq("item_type", "regulation").eq("provenance_status", "verified").eq("is_archived", false).is("replaced_by", null) });
+  const empty = rows.filter((r) => blank(r.what_is_it) || blank(r.why_matters) || blank(r.what_it_changes));
+  const impact = await readImpactRows(sb, empty.map((r) => r.id));
+  const score = (id: string): number => { const s = impact.get(id); return (s?.cost ?? 0) + (s?.compliance ?? 0) + (s?.operational ?? 0); };
+  const ordered = [...empty].sort((a, b) => score(b.id) - score(a.id) || (a.id < b.id ? -1 : 1));
+  const start = o.cursor ? ordered.findIndex((r) => r.id === o.cursor) + 1 : 0;
+  if (o.cursor && start === 0) throw new Error(`cursor ${o.cursor} is not in the backlog`);
+  const candidates: BackfillPage["candidates"] = [];
+  const heal: string[] = [];
+  let at = start;
+  while (at < ordered.length && candidates.length < o.limit) {
+    const slice = ordered.slice(at, at + WALK_CONCURRENCY);
+    const pools = await Promise.all(slice.map(async (r) => usableCaptures(await readAllPoolRows(sb, r.id)).length));
+    for (let i = 0; i < slice.length && candidates.length < o.limit; i++, at++) (pools[i] ? candidates.push({ id: (slice[i] as { id: string }).id, pool: pools[i] as number }) : heal.push((slice[i] as { id: string }).id));
+  }
+  const allThree = empty.filter((r) => blank(r.what_is_it) && blank(r.why_matters) && blank(r.what_it_changes)).length;
+  return { candidates, heal_candidates: heal, next: at < ordered.length ? (ordered[at - 1] as { id: string }).id : null, backlog: { total: empty.length, all_three_empty: allThree, partial: empty.length - allThree } };
 }

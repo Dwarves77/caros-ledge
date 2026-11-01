@@ -5,6 +5,7 @@
     { "id": "no-404", "owner": "OPS-FIX-1", "armed": true, "rule": "every detail link on the five lists answers a non-404 page that is not the sign-in page" },
     { "id": "no-raw-ids", "owner": "OPS-FIX-1 / UI-RADAR-1", "armed": true, "rule": "no uuid, no '. 0.xx' score, no pattern_ method id, no _gap token and no UN/LOCODE corridor token (CNSHA-ITGOA:ocean) in the text a reader sees on the five lists and their first details" },
     { "id": "rows-have-why", "owner": "UI-RADAR-1 (renderer); CONTENT-OIL-1 / REG-BACKFILL-1 (rows)", "armed": true, "rule": "every list row on the five lists draws a non-empty second line" },
+    { "id": "no-fallback-summary", "owner": "REG-BACKFILL", "armed": false, "rule": "no /regulations list row summary matches /^Applies (in [A-Z]{2}|across jurisdictions)(; next date .*)?\\.$/" },
     { "id": "connections-have-reason", "owner": "UI-RADAR-1", "armed": true, "rule": "every connection entry on a first detail renders a sentence of at least three words, not a token" },
     { "id": "reasons-are-pairwise", "owner": "UI-RADAR-2", "armed": false, "rule": "on a first detail no reason sentence appears on three or more of its connections (a reason is about the pair, not the source item)" },
     { "id": "no-pending-text", "owner": "THEME-1 / UI-RADAR-1", "armed": false, "rule": "the pending-synthesis and stale-synthesis notices are absent from the five lists and their first details" },
