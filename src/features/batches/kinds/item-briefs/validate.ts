@@ -5,14 +5,14 @@
 // the numeric figure (decimals kept), and criterion 5 (a required slot without a covering FACT or, where its description allows, GAP). Section boundaries come from the REAL format registry
 // (core/brief FORMAT_SPECS), so the old second copy of the section list and its drift test are gone. Pure: the caller supplies the live material.
 import { analysisLabelRe, buildTimelineRows, checkBriefContent, findTimelineSection, FORMAT_SPECS, LEGAL_CALLOUT, MODAL_RE, parseTimeline, validateClaimRecords, validateMetadata, type AdoptedTerms, type BriefMetadata, type SectionRow } from "@/core/brief";
-import { precisionKey, severityToken, validateBrief, type ItemColumns } from "@/core/brief/rules";
+import { precisionKey, REGISTRY, runRule, severityToken, validateBrief, type ItemColumns } from "@/core/brief/rules";
 import { scanGateA, uncoveredSlots, type SlotRow } from "@/core/grounding";
 import { digestKind } from "@/core/digest/kinds";
 import { review } from "@/core/digest/review";
 
-import { poolHashError, type EntryResult, isObj, nonEmpty, type Obj } from "../../kit/session-batch";
+import { poolHashError, type EntryResult, isObj, type Locate, nonEmpty, type Obj } from "../../kit/session-batch";
 
-import { validateEmission, type EmissionPlan, type EmitLive } from "./emission";
+import { quoteIn, validateEmission, type EmissionPlan, type EmitLive } from "./emission";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MIN_BODY_CHARS = 600;
@@ -59,9 +59,9 @@ function requiredSlotErrors(claims: readonly Obj[], slots: readonly SlotRow[], t
   return errors;
 }
 
-export interface RecordItemLive { /** The stored sections derive from the stored brief (DRAIN-FIX-2 R2): an applied item whose sections do not is half applied and runs again. */ sectionsOk?: boolean; /** GROUND-FIX-1: the stored ledger claims; an applied item whose ledger lacks the entry's claims is half applied and runs again. */ claims?: readonly { claim_text: string; source_span: string | null; section_row_id: string | null }[]; sections?: readonly { id: string; section_key: string; section_order: number }[]; itemType: string; grade: string | null; status: string | null; hash: string; poolText: string; bytes: number; fullBrief: string | null; entryIntoForce: string | null; complianceDeadline: string | null; /** ISO dates of the item's forward events and timeline rows (the export's forward_events and timelines). */ suppliedDates?: readonly string[] }
-export interface RecordLive { items: Map<string, RecordItemLive>; slots: Map<string, SlotRow[]>; adopted: AdoptedTerms; now: Date; allowOverwrite: boolean; /** The live material of the entries that carry typed blocks (DIGEST-1 PR B), by item. */ emit: ReadonlyMap<string, EmitLive> }
-export interface RecordPlan { itemId: string; bytes: number; claims: Obj[]; emission: EmissionPlan | null; /** EMIT-ON-RESIDUE: the blocks a residue entry does not write, each with why (its own judge failed, or the kind does not emit it on residue). */ skipped?: string[] }
+export interface RecordItemLive { /** The stored sections derive from the stored brief (DRAIN-FIX-2 R2): an applied item whose sections do not is half applied and runs again. */ sectionsOk?: boolean; /** GROUND-FIX-1: the stored ledger claims; an applied item whose ledger lacks the entry's claims is half applied and runs again. */ claims?: readonly { claim_text: string; source_span: string | null; section_row_id: string | null }[]; sections?: readonly { id: string; section_key: string; section_order: number }[]; itemType: string; grade: string | null; status: string | null; hash: string; poolText: string; bytes: number; fullBrief: string | null; entryIntoForce: string | null; complianceDeadline: string | null; /** ISO dates of the item's forward events and timeline rows (the export's forward_events and timelines). */ suppliedDates?: readonly string[]; /** REG-BACKFILL-1b: the item's pool captures (the quote locator's material) and its stored context fields (a refresh that changes nothing is already applied). */ captures?: ReadonlyMap<string, string>; fields?: Readonly<Record<string, string | null>> }
+export interface RecordLive { items: Map<string, RecordItemLive>; slots: Map<string, SlotRow[]>; adopted: AdoptedTerms; now: Date; allowOverwrite: boolean; /** The live material of the entries that carry typed blocks (DIGEST-1 PR B), by item. */ emit: ReadonlyMap<string, EmitLive>; locate?: Locate | null }
+export interface RecordPlan { itemId: string; /** REG-BACKFILL-1b: a metadata refresh writes exactly these context fields and nothing else. */ refresh?: Record<string, string>; bytes: number; claims: Obj[]; emission: EmissionPlan | null; /** EMIT-ON-RESIDUE: the blocks a residue entry does not write, each with why (its own judge failed, or the kind does not emit it on residue). */ skipped?: string[] }
 
 /** EMIT-ON-RESIDUE: what a residue entry (valid emission, prose held back) may still write. A block whose OWN judge failed is not written: J20 failed skips the connections, J18 failed skips the entity_ids (the joins that make spurious patterns). J19 does not block obligation_fields. New-entity candidates are NOT skipped: a block of the same entry may name the minted id, and the mint rests on its own verified quote, not on the prose. */
 function residueEmission(entry: Obj, plan: EmissionPlan): { emission: EmissionPlan; skipped: string[] } {
@@ -88,6 +88,37 @@ const eventCoverage = (entry: Obj): { events: string[]; omitted: { date: string;
   omitted: (Array.isArray(entry.omitted_events) ? entry.omitted_events : []).filter(isObj).map((o) => ({ date: String(o.event_date ?? ""), reason: String(o.reason ?? "") })),
 });
 
+const CONTEXT_FIELDS = ["what_is_it", "why_matters", "what_it_changes"] as const;
+/** REG-BACKFILL-1b: an entry with no body and no claims is a METADATA REFRESH of the context fields of a brief-grade item. */
+const isRefresh = (e: Obj): boolean => e.body === undefined && e.claims === undefined;
+/** The judges a refresh answers: J24 for any field, J05 where a cause and effect is stated (why_matters, what_it_changes). */
+export const refreshJudges = (e: Obj): string[] | undefined => (isRefresh(e) ? ["J24", ...(isObj(e.metadata) && (e.metadata.why_matters !== undefined || e.metadata.what_it_changes !== undefined) ? ["J05"] : [])] : undefined);
+
+/** A refresh: each present field is { value, quote } with the quote located in the item's own pool, answers the metadata rules and Gate A against its quote, and the second reader's J05/J24; only those fields are written. */
+function validateRefresh(entry: Obj, tag: string, item: RecordItemLive, live: RecordLive): EntryResult<RecordPlan> {
+  if (item.grade === "record") return { errors: [`${tag}: a metadata-only entry refreshes a brief-grade item; this item is at record grade and needs the full brief (body, metadata and claims)`] };
+  const [errors, residue, set, md] = [[] as string[], [] as string[], {} as Record<string, string>, isObj(entry.metadata) ? entry.metadata : {}];
+  const stray = [...Object.keys(entry).filter((k) => !["item_id", "source_pool_hash", "metadata", "review"].includes(k)), ...Object.keys(md).filter((k) => !(CONTEXT_FIELDS as readonly string[]).includes(k))];
+  const given = CONTEXT_FIELDS.filter((f) => md[f] !== undefined);
+  if (stray.length || !given.length) errors.push(`${tag}: a metadata-only entry holds what_is_it, why_matters and/or what_it_changes in metadata and nothing else (found: ${stray.join(", ") || "none of them"})`);
+  for (const f of given) {
+    const v = md[f];
+    const q = isObj(v) && nonEmpty(v.value) ? quoteIn({ captures: item.captures ?? new Map(), locate: live.locate ?? null }, v.quote) : "must be { value: <non-blank text>, quote: { capture_id, text } }";
+    if (typeof q === "string") { errors.push(`${tag}: metadata.${f}: ${q}`); continue; }
+    const brief = { body: String((v as Obj).value).trim(), format: "", sections: new Map<string, string>(), claims: [], exempt: [] };
+    set[f] = brief.body;
+    for (const r of REGISTRY.filter((x) => ["dash-outside-verbatim", "tier-phrase-exposure", "score-or-schema-token", "workspace-or-client-named"].includes(x.id) || (f === "what_it_changes" && x.id === "what-it-changes-length"))) {
+      const x = runRule(r, brief, { ...columns(null, item, ""), what_it_changes: brief.body });
+      if (x) (r.severity === "refuse" ? errors : residue).push(`${tag}: metadata.${f}: ${x.rule}: ${x.detail}`);
+    }
+    const gate = scanGateA(brief.body, [{ claim_text: q.text, source_span: q.text }]);
+    if (gate.orphan_count > 0) errors.push(`${tag}: metadata.${f}: Gate A mirror: ${gate.orphans.map((o) => JSON.stringify(o.token)).join(", ")} is not in the field's quote`);
+  }
+  if (!errors.length && !residue.length && given.every((f) => (item.fields?.[f] ?? "").trim() === set[f])) return { errors, done: true };
+  residue.push(...review("item-briefs", entry, refreshJudges(entry)).reasons.map((r) => `${tag}: second reader: ${r}`));
+  return errors.length || residue.length ? { errors, residue } : { errors, plan: { itemId: String(entry.item_id), bytes: 0, claims: [], emission: null, refresh: set } };
+}
+
 /** Validate ONE entry: every message names the item and the offending field or claim index. */
 export function validateRecordBriefEntry(entry: unknown, i: number, live: RecordLive): EntryResult<RecordPlan> {
   if (!isObj(entry)) return { errors: [`entries[${i}]: must be an object`] };
@@ -101,6 +132,7 @@ export function validateRecordBriefEntry(entry: unknown, i: number, live: Record
   if (!item) return { errors: [`${tag}: item not found`] };
   const stale = poolHashError(tag, entry.source_pool_hash, item.hash);
   if (stale) return { errors: [stale] };
+  if (isRefresh(entry)) return validateRefresh(entry, tag, item, live);
   if (item.grade !== "record" && !live.allowOverwrite) return { errors: [`${tag}: item_grade is '${item.grade ?? "brief"}', not 'record': an existing brief is regenerated only with allowBriefOverwrite`] };
   const body = typeof entry.body === "string" ? entry.body : "";
   if (body.trim() === "") at("body must be a non-empty string");

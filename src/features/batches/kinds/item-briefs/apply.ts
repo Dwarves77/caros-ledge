@@ -30,7 +30,7 @@ import { applyEntries, isObj, itemPool, type ApplyOpts, type BatchDeps, type Ent
 import { recordChangelog } from "./changelog";
 import { candidateNames, entityTokens, loadEmit, writeEmission } from "./emit";
 import { hasEmission, type EmitLive } from "./emission";
-import { validateRecordBriefEntry, type RecordLive, type RecordPlan } from "./validate";
+import { refreshJudges, validateRecordBriefEntry, type RecordLive, type RecordPlan } from "./validate";
 
 export interface RecordOpts extends ApplyOpts {
   /** Regenerate an item that already holds a brief (a record stub needs no flag). */
@@ -209,7 +209,13 @@ async function afterBatch(deps: BatchDeps, ids: string[], o: ApplyOpts): Promise
   return runResult(worst("ok", ...parts.map((p) => p.outcome)), { flywheel_passes: parts.length, obligations_derived: parts[0]?.counts.obligations_derived ?? 0 }, notes);
 }
 
-function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
+/** REG-BACKFILL-1b: a metadata refresh writes the context fields it carries and nothing else (the brief, claims, grade, sections and timeline stay as stored). */
+async function refreshItem(deps: BatchDeps, plan: RecordPlan) {
+  const { error } = await deps.sb.from("intelligence_items").update({ ...plan.refresh, updated_at: deps.now().toISOString() }).eq("id", plan.itemId);
+  return error ? Promise.reject(new Error(`metadata refresh write failed: ${error.message}`)) : { ref: plan.itemId, counts: { metadata_refreshed: 1 } };
+}
+
+function itemBriefsSpec(opts: RecordOpts, tally: { planned: number }): EntrySpec<RecordLive, RecordPlan> {
   return {
     kind: "item-briefs",
     batchRe: /^item-briefs-[A-Za-z0-9._-]+$/,
@@ -217,7 +223,7 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
     keyOf: (e) => (typeof e.item_id === "string" ? e.item_id : null),
     async load(deps, file) {
       const ids = [...new Set((file.entries as unknown[]).map((e) => (isObj(e) && typeof e.item_id === "string" ? e.item_id : "")).filter((x) => /^[0-9a-f-]{36}$/i.test(x)))];
-      const rows = await rowsByIds<{ id: string; item_type: string; item_grade: string | null; provenance_status: string | null; full_brief: string | null; entry_into_force: string | null; compliance_deadline: string | null }>(deps.sb, "intelligence_items", "id, item_type, item_grade, provenance_status, full_brief, entry_into_force, compliance_deadline", ids);
+      const rows = await rowsByIds<{ id: string; item_type: string; item_grade: string | null; provenance_status: string | null; full_brief: string | null; entry_into_force: string | null; compliance_deadline: string | null; what_is_it: string | null; why_matters: string | null; what_it_changes: string | null }>(deps.sb, "intelligence_items", "id, item_type, item_grade, provenance_status, full_brief, entry_into_force, compliance_deadline, what_is_it, why_matters, what_it_changes", ids);
       const items: RecordLive["items"] = new Map();
       const stored = await rowsByIds<{ id: string; item_id: string; content_md: string | null; section_key: string; section_order: number }>(deps.sb, "intelligence_item_sections", "id, item_id, content_md, section_key, section_order", ids, "item_id");
       const ledger = await rowsByIds<{ id: string; intelligence_item_id: string; claim_text: string; source_span: string | null; section_row_id: string | null }>(deps.sb, "section_claim_provenance", "id, intelligence_item_id, claim_text, source_span, section_row_id", ids, "intelligence_item_id");
@@ -226,7 +232,7 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
         const [evs, tls] = [await allRows<{ event_date: string | null; date_precision: string | null }>(deps.sb, "item_forward_events", "event_date, date_precision", { where: (q) => q.eq("intelligence_item_id", r.id) }), await allRows<{ milestone_date: string | null; date_precision: string | null }>(deps.sb, "item_timelines", "milestone_date, date_precision", { where: (q) => q.eq("item_id", r.id) })];
         // FWD-COVER-1 + precision: a month or year row is compared at its precision (YYYY-MM, YYYY), a day row as before.
         const suppliedDates = [...evs.map((e) => e.event_date && precisionKey(e.event_date, e.date_precision)), ...tls.map((t) => t.milestone_date && precisionKey(t.milestone_date, t.date_precision))].filter((d): d is string => !!d);
-        items.set(r.id, { sectionsOk: sectionsDeriveFromBrief(r.full_brief, stored.filter((x) => x.item_id === r.id)), claims: ledger.filter((x) => x.intelligence_item_id === r.id), sections: stored.filter((x) => x.item_id === r.id), suppliedDates, itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief, entryIntoForce: r.entry_into_force, complianceDeadline: r.compliance_deadline });
+        items.set(r.id, { sectionsOk: sectionsDeriveFromBrief(r.full_brief, stored.filter((x) => x.item_id === r.id)), claims: ledger.filter((x) => x.intelligence_item_id === r.id), sections: stored.filter((x) => x.item_id === r.id), suppliedDates, itemType: r.item_type, grade: r.item_grade, status: r.provenance_status, hash: p.hash, poolText: p.pool.map((x) => x.text).join("\n\n"), bytes: p.bytes, fullBrief: r.full_brief, entryIntoForce: r.entry_into_force, complianceDeadline: r.compliance_deadline, captures: new Map(p.pool.map((x) => [x.id, x.text])), fields: { what_is_it: r.what_is_it, why_matters: r.why_matters, what_it_changes: r.what_it_changes } });
       }
       const slotRows = await allRows<{ item_type: string; slot_key: string; description: string | null }>(deps.sb, "item_type_required_slots", "item_type, slot_key, description", { cap: 5000 });
       const slots: RecordLive["slots"] = new Map();
@@ -234,11 +240,13 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       const entries = (file.entries as unknown[]).filter(isObj);
       const emit: Map<string, EmitLive> = new Map();
       for (const e of entries) if (typeof e.item_id === "string" && items.has(e.item_id) && hasEmission(e)) emit.set(e.item_id, { ...(await loadEmit(deps, e.item_id, entityTokens(e), candidateNames(e))) });
-      return { items, slots, adopted: (await readAdoptedTerms(deps.sb)).adopted, now: deps.now(), allowOverwrite: opts.allowBriefOverwrite === true, emit };
+      return { items, slots, adopted: (await readAdoptedTerms(deps.sb)).adopted, now: deps.now(), allowOverwrite: opts.allowBriefOverwrite === true, emit, locate: deps.locate ?? null };
     },
     entry: (e, i, live) => {
       const done = isObj(e) && typeof e.item_id === "string" && typeof e.body === "string" ? sameBrief(live.items.get(e.item_id)?.fullBrief, e.body) && live.items.get(e.item_id)?.grade === "brief" && live.items.get(e.item_id)?.sectionsOk === true && ledgerCoversClaims(live.items.get(e.item_id)?.claims ?? [], Array.isArray(e.claims) ? e.claims : [], live.items.get(e.item_id)?.sections ?? []) : false;
-      return done ? { errors: [], done: true } : validateRecordBriefEntry(e, i, live);
+      const r = done ? { errors: [], done: true } : validateRecordBriefEntry(e, i, live);
+      tally.planned += "plan" in r && r.plan?.refresh ? 1 : 0;
+      return r;
     },
     async writeResidue(deps, _live, item) {
       const plan = item.plan.emission;
@@ -250,19 +258,27 @@ function itemBriefsSpec(opts: RecordOpts): EntrySpec<RecordLive, RecordPlan> {
       const done = Object.entries(planned).filter(([, n]) => n > 0).map(([k, n]) => `${k} ${n}`);
       return { counts: w.counts, notes: w.notes, account: `emission blocks written: ${done.join(", ") || "none"}${skipped.length ? `; skipped: ${skipped.join(", ")}` : ""}${w.notes.length ? "; failed: " + w.notes.length : ""}` };
     },
-    residueReview: (e, key) => (key ? { subjectId: key, score: review("item-briefs", e).score, reviewedBy: review("item-briefs", e).reviewed_by ?? "none" } : null),
-    write: (deps, _live, item, batch) => applyItem(deps, item, batch, opts.allowBriefOverwrite === true),
+    residueReview: (e, key) => {
+      const rv = review("item-briefs", e, refreshJudges(e));
+      return key ? { subjectId: key, score: rv.score, reviewedBy: rv.reviewed_by ?? "none" } : null;
+    },
+    write: (deps, _live, item, batch) => (item.plan.refresh ? refreshItem(deps, item.plan) : applyItem(deps, item, batch, opts.allowBriefOverwrite === true)),
     cost: (item) => item.plan.bytes * POOL_REREADS,
-    async readBack(deps, _live, written) {
+    async readBack(deps, _live, all) {
+      // A metadata refresh is read back on the fields it wrote; the brief-level checks below are for the full briefs.
+      const [fresh, written] = [all.filter((w) => w.plan.refresh), all.filter((w) => !w.plan.refresh)];
+      const held = await rowsByIds<Record<string, string | null>>(deps.sb, "intelligence_items", "id, what_is_it, why_matters, what_it_changes", fresh.map((w) => w.plan.itemId));
+      const unmatched = fresh.filter((w) => Object.entries(w.plan.refresh ?? {}).some(([k, v]) => held.find((r) => r.id === w.plan.itemId)?.[k] !== v)).map((w) => w.plan.itemId);
       const rows = await rowsByIds<{ id: string; item_grade: string | null; full_brief: string | null }>(deps.sb, "intelligence_items", "id, item_grade, full_brief", written.map((w) => w.plan.itemId));
       const ok = new Set(rows.filter((r) => r.item_grade === "brief" && !!r.full_brief).map((r) => r.id));
       // INV-FLY-1 (ADR-050): a section row of an applied item is a slice of its batch entry's body. Section text that no entry states was written by something else and fails the read-back.
       const sections = await rowsByIds<{ item_id: string; content_md: string | null }>(deps.sb, "intelligence_item_sections", "id, item_id, content_md", written.map((w) => w.plan.itemId), "item_id");
       const body = new Map(written.map((w) => [w.plan.itemId, flat(w.entry.body)]));
       const foreign = new Set(sections.filter((s) => flat(s.content_md) !== "" && !(body.get(s.item_id) ?? "").includes(flat(s.content_md))).map((s) => s.item_id));
-      return written.filter((w) => !ok.has(w.plan.itemId) || foreign.has(w.plan.itemId)).map((w) => w.plan.itemId);
+      return [...unmatched, ...written.filter((w) => !ok.has(w.plan.itemId) || foreign.has(w.plan.itemId)).map((w) => w.plan.itemId)];
     },
-    downstream: (deps, _live, written, o) => afterBatch(deps, written.map((w) => w.plan.itemId), o),
+    // A metadata refresh changes no brief, ref or event: the flywheel pass is for the full briefs.
+    downstream: (deps, _live, written, o) => (written.some((w) => !w.plan.refresh) ? afterBatch(deps, written.filter((w) => !w.plan.refresh).map((w) => w.plan.itemId), o) : Promise.resolve(null)),
     guard: (deps, o) => preflight(deps, { ...(o.runId ? { runId: o.runId } : {}), ...(opts.cooldownMinutes !== undefined ? { cooldownMinutes: opts.cooldownMinutes } : {}) }),
   };
 }
@@ -277,7 +293,9 @@ const sameBrief = (storedBrief: string | null | undefined, body: string): boolea
 /** Apply one item-briefs batch (the budget and the window arrive as options; the cooldown reads the ledger). */
 export async function applyItemBriefs(deps: BatchDeps, file: unknown, o: RecordOpts): Promise<RunResult> {
   const opts: RecordOpts = { ...o, budgetBytes: o.budgetBytes ?? budgetBytes(o.ioBudgetMb) };
-  const r = await applyEntries(itemBriefsSpec(opts), deps, file, opts);
+  const tally = { planned: 0 };
+  const r = await applyEntries(itemBriefsSpec(opts, tally), deps, file, opts);
+  if (tally.planned) r.counts.metadata_refresh_planned = tally.planned;
   if (r.counts.not_applied_io_budget) r.notes.push(`stop_reason=${BUDGET_STOP_REASON}`);
   return r;
 }

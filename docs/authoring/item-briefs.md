@@ -51,6 +51,21 @@ After the brief passes the deterministic rules, a second session answers each ju
   5. Criterion 5: every required slot has a FACT claim whose text names the slot key, or a GAP only where the slot's description names a GAP form.
   (Claim section, depth accounting and qualification accounting are rules of the registry below.)
 
+## Metadata refresh (REG-BACKFILL-1b): fill the context fields of a brief-grade item without re-authoring its brief
+
+A brief-grade item whose `what_is_it`, `why_matters` or `what_it_changes` is empty shows the fallback summary on its row. Its reader brief is not re-authored for one field: an entry with `item_id`, `source_pool_hash` and `metadata`, and NO `body` and NO `claims`, is a METADATA REFRESH. It is accepted without `options.allowBriefOverwrite` and writes only the fields it carries; the brief, claims, grade, sections and timeline stay as stored. The export (`ids` of the item) lists `item_grade` and `current_metadata` (the three stored fields), so you can see which are empty.
+
+```json
+{ "item_id": "<uuid>", "source_pool_hash": "<echo>",
+  "metadata": { "why_matters": { "value": "<your text>", "quote": { "capture_id": "<a pool capture_id>", "text": "<words from that capture>" } },
+                "what_it_changes": { "value": "<80 to 200 characters>", "quote": { "capture_id": "...", "text": "..." } } },
+  "review": { "reviewed_by": "<session>", "judges": { "J05": { "pass": true, "evidence": "<the sentence>" }, "J24": { "pass": true, "evidence": "<the sentence>" } } } }
+```
+
+Any subset of the three fields. Each field's quote is located by the same door as the typed blocks (a quote that is not in a capture of THIS item refuses the entry), and every figure or date in the field must sit inside its quote (Gate A, as for a body). The field answers the metadata rules: `what_it_changes` 80 to 200 characters (`what-it-changes-length`), `dash-outside-verbatim`, `tier-phrase-exposure`, `score-or-schema-token`, `workspace-or-client-named`. The second reader answers J24 for every field and J05 when `why_matters` or `what_it_changes` is present; a missing verdict is residue. The dry answer counts `metadata_refresh_planned`, the apply `metadata_refreshed`.
+
+Refused: a record-grade item (it needs the full brief); a stale `source_pool_hash` (INV-207); a field that is not `{ value, quote }`, a blank value, or a quote not in the pool; any key beside the three fields in `metadata`, or any key beside `item_id`, `source_pool_hash`, `metadata`, `review` in the entry (typed blocks included); an entry that holds none of the three fields. Applied twice, the second is "already applied".
+
 ## The brief rules (src/core/brief/data/rules.json)
 
 Thirty-five deterministic rules run on every entry, each a binary check named by its id. The registry row says what a violation does. A `refuse` violation (the rule would make a claim false or expose internals) refuses the entry with the rule id in each reason; the batch is held with its corrections file. A `residue` violation routes the entry to residue: it is not applied, the batch is not held, the reason in the residue row names the rule id, and the item stays a record stub that the next export lists again.

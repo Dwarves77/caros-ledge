@@ -272,3 +272,71 @@ test("INV-8 (ENGINE-JOIN-1): the flywheel learns from a brief: the entity its re
   await apply(w, [recordEntry(w.db, { entity_ids: [{ entity_id: E, quote: { capture_id: capture.id, text: SPAN_REPORT } }] })], { options: { allowBriefOverwrite: true } });
   assert.equal(w.db.rows("item_cross_references").length, before, "idempotent: a second run makes no second edge");
 });
+
+// ---- REG-BACKFILL-1b: a metadata-only entry refreshes the context fields of a brief-grade item without regenerating its brief ----------------------
+const WHY = "Operators that miss the April reporting date face enforcement, so the reporting calendar needs an owner in every operating unit this quarter.";
+const CHANGES = "Sets a fixed annual reporting date for cargo operators, so the reporting calendar and its internal owners must be settled before the first report falls due.";
+function refreshWorld(grade: "brief" | "record" = "brief") {
+  const w = batchWorld({ briefGrade: grade === "brief" });
+  w.deps.locate = locateSpan;
+  const row = item(w);
+  Object.assign(row, { what_is_it: "A new annual emissions reporting duty.", why_matters: null, what_it_changes: null, ...(grade === "brief" ? { full_brief: goodBody() } : {}) });
+  const capture = w.db.rows("agent_run_searches").find((r) => r.intelligence_item_id === ITEM) as Record<string, unknown>;
+  const quote = { capture_id: capture.id, text: SPAN_REPORT };
+  const entry = (md: Record<string, unknown> = { why_matters: { value: WHY, quote }, what_it_changes: { value: CHANGES, quote } }, over: Record<string, unknown> = {}) => {
+    const e = { item_id: ITEM, source_pool_hash: poolHashOf(w.db), metadata: md, ...over };
+    return { ...e, review: { reviewed_by: "second-reader-test", judges: { J05: { pass: true, evidence: "J05: the fixture states it" }, J24: { pass: true, evidence: "J24: the fixture states it" } } } };
+  };
+  return { w, entry, quote };
+}
+
+test("INV-RB1b-1: a metadata-only entry on a brief-grade item writes the empty fields and leaves full_brief byte-identical, without allowBriefOverwrite", async () => {
+  const { w, entry } = refreshWorld();
+  const before = JSON.stringify([item(w).full_brief, item(w).item_grade, w.db.rows("section_claim_provenance").length, w.db.rows("intelligence_item_sections").length, item(w).what_is_it]);
+  const dry = await apply(w, [entry()], { dry: true });
+  assert.equal(dry.counts.metadata_refresh_planned, 1, refusals(dry));
+  assert.equal(w.db.writes("intelligence_items").length, 0, "the dry run wrote nothing");
+  const r = await apply(w, [entry()]);
+  assert.equal(r.counts.metadata_refreshed, 1, refusals(r));
+  assert.equal(r.counts.applied, 1);
+  assert.equal(item(w).why_matters, WHY);
+  assert.equal(item(w).what_it_changes, CHANGES);
+  assert.equal(JSON.stringify([item(w).full_brief, item(w).item_grade, w.db.rows("section_claim_provenance").length, w.db.rows("intelligence_item_sections").length, item(w).what_is_it]), before, "brief, grade, claims, sections and the absent field are untouched");
+  assert.equal((await apply(w, [entry()])).counts.already_applied, 1, "INV-210: a re-apply writes nothing new");
+});
+
+test("INV-RB1b-2: a metadata-only entry on a record-grade item is refused naming the reason, and writes nothing", async () => {
+  const { w, entry } = refreshWorld("record");
+  const r = await apply(w, [entry()]);
+  assert.equal(r.counts.applied ?? 0, 0);
+  assert.match(refusals(r), /record grade and needs the full brief/);
+  assert.equal(w.db.writes("intelligence_items").length, 0);
+});
+
+test("INV-RB1b-3: a field whose quote is not in the pool is refused, and so is a bare string, a stray key and a metadata rule breach", async () => {
+  const { w, entry, quote } = refreshWorld();
+  const forged = await apply(w, [entry({ why_matters: { value: WHY, quote: { ...quote, text: "Operators are exempt from every reporting duty for five years." } } })]);
+  assert.match(refusals(forged), /metadata\.why_matters: the quote is not in capture/);
+  assert.match(refusals(await apply(w, [entry({ why_matters: WHY })])), /metadata\.why_matters: must be \{ value/);
+  assert.match(refusals(await apply(w, [entry({ why_matters: { value: WHY, quote }, severity: "COST ALERT" })])), /nothing else \(found: severity\)/);
+  assert.match(refusals(await apply(w, [entry({ what_it_changes: { value: "Too short to be a change.", quote } })])), /what-it-changes-length/);
+  assert.match(refusals(await apply(w, [entry({ why_matters: { value: `${WHY} It is a T1 source.`, quote } })])), /tier-phrase-exposure/);
+  assert.match(refusals(await apply(w, [entry({ why_matters: { value: "Operators face EUR 7500 per vessel if the April date is missed.", quote } })])), /Gate A mirror.*7500/);
+  assert.match(refusals(await apply(w, [entry(undefined, { body: goodBody() })])), /nothing else|brief-grade|allowBriefOverwrite/);
+  assert.equal(w.db.writes("intelligence_items").length, 0, "no refusal wrote anything");
+  const unreviewed = { ...entry(), review: { reviewed_by: "second-reader-test", judges: { J24: { pass: true, evidence: "J24: the fixture states it" } } } };
+  const held = await apply(w, [unreviewed]);
+  assert.match(refusals(held), /J05 .*no verdict/);
+  assert.equal(item(w).why_matters, null, "a refresh without both judges stays residue");
+});
+
+test("INV-RB1b-4: a metadata-only entry authored against a stale pool hash is refused", async () => {
+  const { w, entry } = refreshWorld();
+  const e = entry();
+  w.db.seed("agent_run_searches", [{ intelligence_item_id: ITEM, result_url: "https://eur-lex.europa.eu/other", result_content: "y".repeat(400), result_index: 9 }]);
+  const r = await apply(w, [e]);
+  assert.match(refusals(r), /stale pool/);
+  assert.equal(item(w).why_matters, null);
+  const fresh = await apply(w, [{ ...e, source_pool_hash: poolHashOf(w.db) }]);
+  assert.equal(fresh.counts.metadata_refreshed, 1, `re-authored against the live pool it applies: ${refusals(fresh)}`);
+});

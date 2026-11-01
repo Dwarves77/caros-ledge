@@ -35,9 +35,9 @@ function requiredJudges(kind: string, entry: Record<string, unknown>): Judge[] {
 }
 
 export interface Review { /** The ids of the judges this entry had to pass. */ required: string[]; /** The ids of the judges that did not pass: failed, no verdict, or a verdict without its evidence (a missing review fails them all). */ failed: string[]; score: number; reasons: string[]; residue: boolean; reviewed_by: string | null }
-/** What the verdicts on an entry amount to: a missing review, a missing or unreasoned verdict and a fail each keep the brief out, naming the criterion. The score is the share of required judges that passed (a record, not a gate). */
-export function review(kind: string, entry: Record<string, unknown>): Review {
-  const need = requiredJudges(kind, entry);
+/** What the verdicts on an entry amount to (`only` narrows the required judges to those ids: a metadata refresh answers J05 and J24 alone): a missing review, a missing or unreasoned verdict and a fail each keep the brief out, naming the criterion. The score is the share of required judges that passed (a record, not a gate). */
+export function review(kind: string, entry: Record<string, unknown>, only?: readonly string[]): Review {
+  const need = requiredJudges(kind, entry).filter((j) => !only || only.includes(j.id));
   const r = entry.review as { reviewed_by?: unknown; judges?: Record<string, { pass?: unknown; evidence?: unknown } | undefined> } | null | undefined;
   const reasons: string[] = [];
   if (!r || typeof r !== "object" || typeof r.reviewed_by !== "string" || !r.reviewed_by.trim() || !r.judges || typeof r.judges !== "object") return { required: need.map((j) => j.id), failed: need.map((j) => j.id), score: 0, reasons: ["the second reader's verdicts are missing (review: { reviewed_by, judges })"], residue: true, reviewed_by: null };
