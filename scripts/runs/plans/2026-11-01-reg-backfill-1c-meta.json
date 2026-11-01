@@ -1,0 +1,7 @@
+{
+  "ruling": "coordinator 2026-11-01 (REG-BACKFILL batch 1c-meta, operator directive for the COO walk-through): metadata refresh of the empty context fields of 5 verified brief-grade items in the Due-next band (Council Implementing Decision 2026/1295, Directives 2023/1791 and 2022/362, and the market signals Maritime Carbon Intelligence and Critical Minerals & EV Supply Chain), each field grounded by a verbatim quote from the item's own pool and judged by an independent second reader (ruling 60, J05 and J24); briefs, claims, grades, sections and timelines untouched (REG-BACKFILL-1b route); nothing is fetched and rule 16 stands",
+  "steps": [
+    { "name": "reg-backfill-1c-meta-dry", "stage": "briefs", "mode": "dry", "input_file": "data/2026-11-01-reg-backfill-1c-meta.items.json", "producer_env": [], "on_failure": "stop" },
+    { "name": "reg-backfill-1c-meta-items", "stage": "briefs", "mode": "apply", "input_file": "data/2026-11-01-reg-backfill-1c-meta.items.json", "producer_env": [], "on_failure": "stop" }
+  ]
+}
