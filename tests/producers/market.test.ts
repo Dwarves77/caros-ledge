@@ -305,17 +305,20 @@ const spine = (kind: string, names: string[]) => names.map((n, i) => ({ entity_i
 test("rows files: a citation is refused by name, an unclassifiable host is refused, an unknown manufacturer is never minted, a density needs its basis; accepted rows stay accepted", async () => {
   const db = memoryDb({ entities: spine("organisation", ["Acme Trucks"]) });
   const rows = [
-    { manufacturer_name: "Acme Trucks", tech_category: "heavy_battery", commercial_stage: "pilot_demonstration", announced_at: "2026-09-01", citation: cite },
+    { manufacturer_name: "Acme Trucks", tech_category: "heavy_battery", commercial_stage: "pilot_demonstration", announced_at: "2026-09-01", target_year: 2027, citation: cite },
     { manufacturer_name: "Acme Trucks", tech_category: "heavy_battery", commercial_stage: "announced", announced_at: "2026-09-01" },
-    { manufacturer_name: "Acme Trucks", tech_category: "heavy_battery", commercial_stage: "announced", announced_at: "2026-09-01", citation: { ...cite, url: "https://www.mondaq.com/x" } },
+    { manufacturer_name: "Acme Trucks", tech_category: "heavy_battery", commercial_stage: "announced", announced_at: "2026-09-01", target_year: 2027, citation: { ...cite, url: "https://www.mondaq.com/x" } },
     { manufacturer_name: "Nobody Inc", tech_category: "heavy_battery", commercial_stage: "announced", announced_at: "2026-09-01", citation: cite },
     { manufacturer_name: "Acme Trucks", tech_category: "heavy_battery", commercial_stage: "announced", announced_at: "2026-09-01", energy_density_wh_kg: 150, citation: cite },
     { manufacturer_name: "Acme Trucks", tech_category: "flying_car", commercial_stage: "announced", announced_at: "2026-09-01", citation: cite },
+    { manufacturer_name: "Acme Trucks", tech_category: "e_axle", commercial_stage: "announced", announced_at: "2026-09-01", citation: cite },
+    { manufacturer_name: "Acme Trucks", tech_category: "e_axle", commercial_stage: "small_batch_fleet", announced_at: "2026-09-01", absent: { target_year: "the cited capture states no target year" }, citation: cite },
   ];
   const r = await runProducer(makeDeps({ db }).deps, { spec: oemRoadmapRows, text: JSON.stringify(rows) });
-  assert.equal(r.counts.parsed, 1);
+  assert.equal(r.counts.parsed, 2, "the row with a target year and the row that states its absence; the row with neither is refused (INV-N2-3)");
   const text = r.notes.join("\n");
   assert.match(text, /row\[1\] has no citation/);
+  assert.match(text, /row\[6\]: no target_year and no absent\.target_year/);
   assert.match(text, /citation refused: host "mondaq\.com" does not resolve to a codified class/);
   assert.match(text, /manufacturer "Nobody Inc" not found/);
   assert.match(text, /energy_density_wh_kg is set with no density_basis/);

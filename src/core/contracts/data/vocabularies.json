@@ -981,6 +981,197 @@
     "contractable": false,
     "note": "Judgment without a fitted model. Must name its donor or basis."
    }
+  },
+  "tech_category": {
+   "heavy_battery": {
+    "code": "heavy_battery",
+    "label": "Heavy-duty battery",
+    "order": 1
+   },
+   "megawatt_charging": {
+    "code": "megawatt_charging",
+    "label": "Megawatt charging",
+    "order": 2
+   },
+   "hydrogen_fcell": {
+    "code": "hydrogen_fcell",
+    "label": "Hydrogen fuel cell",
+    "order": 3
+   },
+   "ammonia_engine": {
+    "code": "ammonia_engine",
+    "label": "Ammonia engine",
+    "order": 4
+   },
+   "methanol_dualfuel": {
+    "code": "methanol_dualfuel",
+    "label": "Methanol dual-fuel",
+    "order": 5
+   },
+   "saf_refinery": {
+    "code": "saf_refinery",
+    "label": "Sustainable aviation fuel refinery",
+    "order": 6
+   },
+   "e_axle": {
+    "code": "e_axle",
+    "label": "Electric axle",
+    "order": 7
+   },
+   "reefer_electrification": {
+    "code": "reefer_electrification",
+    "label": "Electrified refrigeration",
+    "order": 8
+   }
+  },
+  "commercial_stage": {
+   "announced": {
+    "code": "announced",
+    "label": "Announced",
+    "order": 1
+   },
+   "pilot_demonstration": {
+    "code": "pilot_demonstration",
+    "label": "Pilot or demonstration",
+    "order": 2
+   },
+   "small_batch_fleet": {
+    "code": "small_batch_fleet",
+    "label": "Small-batch fleet",
+    "order": 3
+   },
+   "mass_series_production": {
+    "code": "mass_series_production",
+    "label": "Mass series production",
+    "order": 4
+   }
+  },
+  "horizon_band": {
+   "NOW": {
+    "code": "NOW",
+    "label": "Now, within 2 years",
+    "order": 1
+   },
+   "NEAR": {
+    "code": "NEAR",
+    "label": "Near, 2 to 5 years",
+    "order": 2
+   },
+   "MID": {
+    "code": "MID",
+    "label": "Mid, 5 to 10 years",
+    "order": 3
+   },
+   "FAR": {
+    "code": "FAR",
+    "label": "Far, beyond 10 years",
+    "order": 4
+   }
+  },
+  "horizon_kind": {
+   "availability": {
+    "code": "availability",
+    "label": "Availability horizon",
+    "order": 1
+   },
+   "economic": {
+    "code": "economic",
+    "label": "Economic horizon",
+    "order": 2
+   },
+   "obligation": {
+    "code": "obligation",
+    "label": "Obligation horizon",
+    "order": 3
+   }
+  },
+  "horizon_confidence": {
+   "low": {
+    "code": "low",
+    "label": "Low",
+    "order": 1
+   },
+   "medium": {
+    "code": "medium",
+    "label": "Medium",
+    "order": 2
+   },
+   "high": {
+    "code": "high",
+    "label": "High",
+    "order": 3
+   }
+  },
+  "credibility_evidence_score": {
+   "limited": {
+    "code": "limited",
+    "label": "Limited",
+    "order": 1
+   },
+   "medium": {
+    "code": "medium",
+    "label": "Medium",
+    "order": 2
+   },
+   "robust": {
+    "code": "robust",
+    "label": "Robust",
+    "order": 3
+   }
+  },
+  "status_token": {
+   "CONFIRMED": {
+    "code": "CONFIRMED",
+    "label": "Confirmed",
+    "order": 1
+   },
+   "HYPOTHESIS": {
+    "code": "HYPOTHESIS",
+    "label": "Hypothesis",
+    "order": 2
+   }
+  },
+  "lifecycle_state": {
+   "emerging": {
+    "code": "emerging",
+    "label": "Emerging",
+    "order": 1
+   },
+   "strengthening": {
+    "code": "strengthening",
+    "label": "Strengthening",
+    "order": 2
+   },
+   "corroborated": {
+    "code": "corroborated",
+    "label": "Corroborated",
+    "order": 3
+   },
+   "verified": {
+    "code": "verified",
+    "label": "Verified",
+    "order": 4
+   },
+   "stalled": {
+    "code": "stalled",
+    "label": "Stalled",
+    "order": 5
+   },
+   "falsified": {
+    "code": "falsified",
+    "label": "Falsified",
+    "order": 6
+   },
+   "superseded": {
+    "code": "superseded",
+    "label": "Superseded",
+    "order": 7
+   },
+   "obsolete": {
+    "code": "obsolete",
+    "label": "Obsolete",
+    "order": 8
+   }
   }
  }
 }

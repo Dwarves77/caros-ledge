@@ -2,6 +2,7 @@
 //   (ii) constants  the unit the data states for a numeric column passes statutoryUnit, the one unit normaliser (src/core/parse/data/statutory-units.json); an unknown unit is red with the unit, never a typed bypass
 //   (i)  text units a read-only sample (500 values per column, ORDER BY pk, non-empty) normalises through statutoryUnit within `unnormalisedShare`; a quantity with no unit is counted the same way
 //   (iii) tokens    the distinct values of a token column are codes of its vocabulary (vocabularies.json, a coupling map's keys, or contract.json for severity); a column with no vocabulary is red with its values printed
+//   (iv) patterns   the distinct values of a column that holds a shaped token (an ISO code, a readiness level, a corridor name) match the regex joinability.json `patterns` names for it; a value outside is red with the values printed
 //   writers         every src path that stores intelligence_items.severity goes through toDbSeverity, and the set that gate accepts is the five tokens (ADR-052)
 //   keys            the detector-input columns of each fact table (derived from facts.json) and the entity each row is filed under; a null is reported unreachable unless a stated absence covers it
 import { readFileSync } from "node:fs";
@@ -18,6 +19,10 @@ const json = (p) => JSON.parse(readFileSync(p, "utf8"));
 const q = (id) => `"${String(id).replaceAll('"', '""')}"`;
 const top = (counts, n = 10) => [...counts].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0]))).slice(0, n);
 const finding = (key, owner, msg, extra = {}) => ({ key, owner, msg, ...extra });
+/** The `where` clause a token or pattern column states (column = 'value' pairs), or empty. */
+const whereOf = (c) => (c.where ? ` where ${Object.entries(c.where).map(([k, v]) => `${q(k)} = '${String(v).replaceAll("'", "''")}'`).join(" and ")}` : "");
+/** The distinct values of a column (an array column unnested) with their counts: the one read the token and pattern checks share. */
+const distinctSql = (c) => `select v, count(*) n from (select ${c.array ? `unnest(${q(c.column)})` : q(c.column)}::text v from ${q(c.table)}${whereOf(c)}) s where v is not null group by v`;
 
 /** The columns of a fact table a detector reads to place a row in time, quantity, tier or source (facts.json, never a typed list). */
 export const keyColumns = (spec, entityColumns = []) => [...new Set([...[spec].flat().flatMap((x) => [x.at, ...[x.due ?? []].flat(), x.dueYear, x.dueMonthsAfterAt, x.qty?.column, x.qty?.unitColumn, x.qty?.figure, x.source, x.tier, x.trl, x.group, x.capture, x.resolved, x.from, x.until]), ...entityColumns].filter(Boolean))];
@@ -110,6 +115,19 @@ export function j3Findings(w, sample, writers) {
     report.push(`token ${id}: ${total} values, outside ${outside.reduce((a, [, n]) => a + n, 0)}${c.severity ? `, null ${dist.nulls} of ${dist.total} rows` : ""}; ${codes ? `forms ${forms2 || "none"}` : `NO VOCABULARY; distinct: ${top(Object.entries(dist.values), 40).map(([v, n]) => `${JSON.stringify(v)} x${n}`).join(", ")}`}`);
     if (!codes) out.push(finding(`${c.severity ? "J3sev" : "J3tok"}novocab:${id}`, "vocabularies.json", `${id}: no vocabulary; distinct values ${top(Object.entries(dist.values), 40).map(([v]) => JSON.stringify(v)).join(", ")}`));
     else if (bad / (c.severity ? dist.total : total || 1) > limit(c)) out.push(finding(`${c.severity ? "J3sev" : "J3tok"}:${id}`, c.severity ? "slice SEV-1 (migration 0137)" : "vocabularies.json or the writer", `${id}: ${bad} of ${c.severity ? dist.total : total} values are not codes of ${typeof c.vocabulary === "string" ? c.vocabulary : c.vocabulary?.file ?? "the coupling map"}${c.severity ? ` (${outside.reduce((a, [, n]) => a + n, 0)} outside, ${dist.nulls} null)` : ""}; forms ${forms2}`, { share: bad / (c.severity ? dist.total : total) }));
+  }
+  for (const c of w.cfg.patterns ?? []) {
+    columns += 1;
+    const id = `${c.table}.${c.column}`;
+    const dist = sample?.patterns?.[id];
+    if (!dist) continue;
+    ran.add("J3pat");
+    const re = new RegExp(c.regex);
+    const outside = Object.entries(dist).filter(([v]) => !re.test(v));
+    const n = outside.reduce((a, [, k]) => a + k, 0);
+    const total = Object.values(dist).reduce((a, b) => a + b, 0);
+    report.push(`pattern ${id}: ${total} values, outside ${n}; forms ${top(outside).map(([v, k]) => `${JSON.stringify(v)} x${k}`).join(", ") || "none"}`);
+    if (n) out.push(finding(`J3pat:${id}`, "the producer of the table", `${id}: ${n} of ${total} values do not match ${c.regex} (${c.reason}); forms ${top(outside).map(([v, k]) => `${JSON.stringify(v)} x${k}`).join(", ")}`, { share: n / total }));
   }
   if (sample?.keys) {
     const k = keyFindings(w, sample.keys);
@@ -228,12 +246,14 @@ export function readSample(run, w) {
   }
   const auto = (w.cfg.autoVocabularies ?? []).flatMap((v) => Object.entries(w.cfg.tables).flatMap(([tb, p]) => (p.textColumns.includes(v) ? [{ table: tb, column: v, array: p.arrayColumns?.includes(v) ?? false }] : [])));
   for (const c of [...(w.cfg.tokenColumns ?? []), ...auto]) {
-    const where = c.where ? ` where ${Object.entries(c.where).map(([k, v]) => `${q(k)} = '${String(v).replaceAll("'", "''")}'`).join(" and ")}` : "";
+    const where = whereOf(c);
     const cell = { values: {}, nulls: 0, total: 0 };
     s.tokens[`${c.table}.${c.column}`] = cell;
-    add(`select v, count(*) n from (select ${c.array ? `unnest(${q(c.column)})` : q(c.column)}::text v from ${q(c.table)}${where}) s where v is not null group by v`, (rows) => (cell.values = Object.fromEntries(rows.map((r) => [r.v, Number(r.n)]))));
+    add(distinctSql(c), (rows) => (cell.values = Object.fromEntries(rows.map((r) => [r.v, Number(r.n)]))));
     if (c.severity) add(`select count(*) total, count(*) filter (where ${q(c.column)} is null) nulls from ${q(c.table)}${where}`, ([t]) => Object.assign(cell, { total: Number(t.total), nulls: Number(t.nulls) }));
   }
+  s.patterns = {};
+  for (const c of w.cfg.patterns ?? []) add(distinctSql(c), (rows) => (s.patterns[`${c.table}.${c.column}`] = Object.fromEntries(rows.map((r) => [r.v, Number(r.n)]))));
   for (const [t, specs] of Object.entries(w.facts)) {
     const spec = [specs].flat()[0];
     const cols = keyColumns(specs, entityColumnsOf(w, t)).filter((c) => w.schema.get(t)?.has(c));
@@ -241,7 +261,7 @@ export function readSample(run, w) {
     const unfiled = own ? `x.${q(own)} is null` : `${refOf(`x.${q(spec.pk)}`)} not in (select r.ref_id::text from entity_refs r where r.ref_table = '${spec.edge ?? t}' and r.method_version is not null)`;
     add(`select count(*) rows, count(*) filter (where ${unfiled}) unreferenced${cols.map((c, i) => `, count(*) filter (where x.${q(c)} is null) n${i}`).join("")} from ${q(t)} x`, ([r]) => (s.keys.tables[t] = { rows: Number(r.rows), unreferenced: Number(r.unreferenced), nulls: Object.fromEntries(cols.map((c, i) => [c, Number(r[`n${i}`])])) }));
   }
-  for (const a of (w.cfg.absences ?? []).filter((x) => x.statedBy)) add(`select count(*) n from ${q(a.table)} where ${q(a.column)} is null and not (${Object.entries(a.statedBy).map(([k, v]) => `${q(k)} = '${String(v).replaceAll("'", "''")}'`).join(" and ")})`, ([r]) => ((s.keys.unstated ??= {})[`${a.table}.${a.column}`] = Number(r.n)));
+  for (const a of (w.cfg.absences ?? []).filter((x) => x.statedBy)) add(`select count(*) n from ${q(a.table)} where ${q(a.column)} is null and not coalesce((${Object.entries(a.statedBy).map(([k, v]) => `${q(k)} = '${String(v).replaceAll("'", "''")}'`).join(" and ")}), false)`, ([r]) => ((s.keys.unstated ??= {})[`${a.table}.${a.column}`] = Number(r.n)));
   add("select due_date first_deadline, coalesce(array_length(mode, 1), 0) nm, instrument_entity_id is not null has_instrument from obligation_objects", (rows) => (s.obligations = obligationCoverage(rows)));
   add("select count(*) n from entity_refs where method_version is not null", ([r]) => (s.keys.minedRefs = Number(r.n)));
   add("select i.item_type, i.domain, c.source_tier_at_grounding tier, count(*) claims, count(*) filter (where i.added_date >= current_date - 90) recent from section_claim_provenance c join intelligence_items i on i.id = c.intelligence_item_id group by 1, 2, 3", (rows) => (s.claimGroups = rows));

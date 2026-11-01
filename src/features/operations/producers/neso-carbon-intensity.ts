@@ -2,11 +2,10 @@
 // NESO Carbon Intensity API: the last 14 complete days of GB daily-average grid intensity into regional_data_facts (dimension grid_intensity), envelope first
 // (coordinator ruling A, 2026-10-08). Blocks must be midnight-to-midnight; a misaligned block is skipped by name. Armed 2026-10-23 (the licence gate and the kill switch still decide a write).
 import { fetchAllRows, type Db } from "@/core/db";
-import { registerCitedSource } from "@/core/producers/rows-file";
 import type { ParseOut, ProducerCtx, ProducerSpec } from "@/core/producers/runner";
 import { KEYS, type Rec } from "@/core/producers/upsert-plan";
 
-import { buildEnvelopeRow, ENVELOPE_PAYLOAD_KEYS, latestPerNaturalKey } from "./regional-envelope";
+import { buildEnvelopeRow, ENVELOPE_PAYLOAD_KEYS, latestPerNaturalKey, stampSource } from "./regional-envelope";
 
 const omit = (r: Rec, k: string): Rec => Object.fromEntries(Object.entries(r).filter(([x]) => x !== k));
 const SOURCE_KEY = "neso_carbon_intensity";
@@ -75,14 +74,12 @@ export const nesoCarbonIntensity: ProducerSpec = {
     const reg = await sb.from("regions").select("id").eq("code", REGION_CODE).maybeSingle();
     if (reg.error) throw new Error(`reading regions failed: ${reg.error.message}`);
     if (!reg.data) throw new Error(`region code ${REGION_CODE} not found in regions (a region id is never guessed)`);
-    const src = await registerCitedSource({ url: SOURCE_URL, title: SOURCE_NAME }, { sb });
-    if (src.refused) throw new Error(`source not rated: ${src.reason}`);
-    return { rows: rows.map((row) => ({ ...omit(row, "region_code"), region_id: (reg.data as { id: string }).id, source_id: src.source_id })), refused: [] };
+    return { rows: await stampSource(sb, { url: SOURCE_URL, title: SOURCE_NAME }, rows.map((row) => ({ ...omit(row, "region_code"), region_id: (reg.data as { id: string }).id }))), refused: [] };
   },
   plan: {
-    read: (sb) => fetchAllRows<Rec>((from, to) => sb.from("regional_data_facts").select(["id", "region_id", "dimension", "fact_label", "source_id", ...ENVELOPE_PAYLOAD_KEYS].join(", ")).eq("source_key", SOURCE_KEY).order("id", { ascending: true }).range(from, to) as never, { cap: 50_000 }),
+    read: (sb) => fetchAllRows<Rec>((from, to) => sb.from("regional_data_facts").select(["id", "region_id", "dimension", "fact_label", ...ENVELOPE_PAYLOAD_KEYS].join(", ")).eq("source_key", SOURCE_KEY).order("id", { ascending: true }).range(from, to) as never, { cap: 50_000 }),
     key: KEYS.regionDimensionLabel,
-    patchable: [...ENVELOPE_PAYLOAD_KEYS, "source_id"],
+    patchable: ENVELOPE_PAYLOAD_KEYS,
     pk: "id",
   },
 };

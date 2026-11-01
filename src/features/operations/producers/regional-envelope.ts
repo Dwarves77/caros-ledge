@@ -11,10 +11,11 @@
 // Eurostat labour cost (mean over six member states), Eurostat non-household electricity price. Rows carry no derivation edges (ADR-043).
 import { fetchAllRows, type Db } from "@/core/db";
 import { regionCodes } from "@/core/entities";
+import { registerCitedSource } from "@/core/producers/rows-file";
 import { NetworkError, StructureError, type ParseOut, type ProducerCtx, type ProducerSpec } from "@/core/producers/runner";
 import { KEYS, type Rec } from "@/core/producers/upsert-plan";
 
-export const ENVELOPE_PAYLOAD_KEYS = ["value", "value_numeric", "unit", "currency", "derivation", "origin_class", "source_key", "source_ref", "n_observations", "method_version", "as_at_date", "reference_period"] as const;
+export const ENVELOPE_PAYLOAD_KEYS = ["value", "value_numeric", "unit", "currency", "derivation", "origin_class", "source_key", "source_ref", "n_observations", "method_version", "as_at_date", "reference_period", "source_id"] as const;
 const EUROSTAT_BASE = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data";
 
 const formatDisplayValue = (valueNumeric: unknown, unit: unknown): string => {
@@ -136,6 +137,14 @@ function parseNrgPc205(js: Rec, o: { geo: string; regionCode: string; dimension?
   return out;
 }
 
+/** The source a dataset is published by: registered through the registry at the class-table tier (never a hand-typed tier), then stamped on every row of the run. A source the table cannot rate refuses the run, named. */
+export interface DatasetSource { url: string; title: string }
+export async function stampSource(sb: Db, source: DatasetSource, rows: Rec[]): Promise<Rec[]> {
+  const src = await registerCitedSource(source, { sb });
+  if (src.refused) throw new Error(`source not rated: ${src.reason}`);
+  return rows.map((row) => ({ ...row, source_id: src.source_id }));
+}
+
 const ENVELOPE_SELECT = ["id", "region_id", "dimension", "fact_label", ...ENVELOPE_PAYLOAD_KEYS].join(", ");
 /** Region codes to ids; a code absent from `regions` throws (INV-244: refused, never guessed). The rows then carry region_id and no region_code. */
 async function resolveRegions(ctx: ProducerCtx, rows: Rec[]): Promise<{ rows: Rec[]; refused: string[] }> {
@@ -146,7 +155,7 @@ async function resolveRegions(ctx: ProducerCtx, rows: Rec[]): Promise<{ rows: Re
   return { rows: rows.map(({ region_code, ...rest }) => ({ ...rest, region_id: byCode.get(String(region_code)) })), refused: [] };
 }
 
-function envelopeSpec(o: { name: string; licenceKey: string; killSwitchEnv: string; sourceKey: string; fetchDoc: ProducerSpec["fetchDoc"]; parseDoc(text: string, ctx: ProducerCtx): Promise<Rec[]> | Rec[] }): ProducerSpec {
+function envelopeSpec(o: { name: string; licenceKey: string; killSwitchEnv: string; sourceKey: string; source: DatasetSource; fetchDoc: ProducerSpec["fetchDoc"]; parseDoc(text: string, ctx: ProducerCtx): Promise<Rec[]> | Rec[] }): ProducerSpec {
   return {
     name: o.name, table: "regional_data_facts", licenceKey: o.licenceKey, enabled: true, enabledRuling: "operator 2026-10-23: population hold lifted for the structured-data producers (ADR-023 code change; rulings file 2026-10-23 and 2026-10-24)", killSwitchEnv: o.killSwitchEnv,
     fetchDoc: o.fetchDoc,
@@ -156,7 +165,10 @@ function envelopeSpec(o: { name: string; licenceKey: string; killSwitchEnv: stri
       const rows = latestPerNaturalKey(all);
       return { rows, warnings: all.length !== rows.length ? [`${all.length - rows.length} superseded period(s) dropped (current-state table)`] : [], counts: { observations: all.length } };
     },
-    resolve: resolveRegions,
+    async resolve(ctx, rows) {
+      const regions = await resolveRegions(ctx, rows);
+      return { rows: await stampSource(ctx.sb as Db, o.source, regions.rows), refused: regions.refused };
+    },
     plan: {
       read: (sb) => fetchAllRows<Rec>((from, to) => sb.from("regional_data_facts").select(ENVELOPE_SELECT).eq("source_key", o.sourceKey).order("id", { ascending: true }).range(from, to) as never, { cap: 50_000 }),
       key: KEYS.regionDimensionLabel,
@@ -167,8 +179,9 @@ function envelopeSpec(o: { name: string; licenceKey: string; killSwitchEnv: stri
 }
 
 const json = (text: string): Rec => JSON.parse(text) as Rec;
+const EUROSTAT: DatasetSource = { url: "https://ec.europa.eu/eurostat", title: "Eurostat, the statistical office of the European Union" };
 export const blsOews = envelopeSpec({
-  name: "bls-oews", licenceKey: "bls", killSwitchEnv: "REGIONAL_PRODUCER_BLS_OEWS_ENABLED", sourceKey: "bls",
+  name: "bls-oews", licenceKey: "bls", killSwitchEnv: "REGIONAL_PRODUCER_BLS_OEWS_ENABLED", sourceKey: "bls", source: { url: "https://api.bls.gov/publicAPI/v2/timeseries/data/", title: "Occupational Employment and Wage Statistics (OEWS), US Bureau of Labor Statistics" },
   async fetchDoc(ctx) {
     const seriesid = OEWS_OCCUPATIONS.flatMap((o) => Object.values(MEASURES).map((m) => buildOewsSeriesId(o.socCode, m.datatype)));
     return { text: await (await ctx.get("https://api.bls.gov/publicAPI/v2/timeseries/data/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ seriesid }) })).text() };
@@ -176,7 +189,7 @@ export const blsOews = envelopeSpec({
   parseDoc: (text) => parseOewsResponse(json(text), { regionCode: "US", dimension: "labor_markets" }),
 });
 export const eurostatLabourCost = envelopeSpec({
-  name: "eurostat-lc-lci-lev", licenceKey: "eurostat", killSwitchEnv: "REGIONAL_PRODUCER_EUROSTAT_LC_LCI_LEV_ENABLED", sourceKey: "eurostat",
+  name: "eurostat-lc-lci-lev", licenceKey: "eurostat", killSwitchEnv: "REGIONAL_PRODUCER_EUROSTAT_LC_LCI_LEV_ENABLED", sourceKey: "eurostat", source: EUROSTAT,
   /** One fetch per member state; a state that fails is excluded from the mean (and named in the document), never imputed. */
   async fetchDoc(ctx) {
     const byGeo: Record<string, unknown> = {};
@@ -192,7 +205,7 @@ export const eurostatLabourCost = envelopeSpec({
   parseDoc: (text) => aggregateLcLciLevForRegion(json(text) as Record<string, Rec>, { regionCode: "EU", dimension: "labor_markets" }),
 });
 export const eurostatElectricity = envelopeSpec({
-  name: "eurostat-nrg-pc-205", licenceKey: "eurostat", killSwitchEnv: "REGIONAL_PRODUCER_EUROSTAT_NRG_PC_205_ENABLED", sourceKey: "eurostat",
+  name: "eurostat-nrg-pc-205", licenceKey: "eurostat", killSwitchEnv: "REGIONAL_PRODUCER_EUROSTAT_NRG_PC_205_ENABLED", sourceKey: "eurostat", source: EUROSTAT,
   async fetchDoc(ctx) {
     return { text: await (await ctx.get(`${EUROSTAT_BASE}/nrg_pc_205?format=JSON&lang=EN&geo=EU27_2020&unit=KWH&currency=EUR&tax=I_TAX`)).text() };
   },
