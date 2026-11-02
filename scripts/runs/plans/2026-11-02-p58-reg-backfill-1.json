@@ -1,0 +1,21 @@
+{
+  "ruling": "coordinator 2026-11-02 (Wave P58 REG-BACKFILL-1, ruling 73 zero trust in legacy content): full new-system regulatory fact documents for the 25 nearest-due legacy MODERATE regulations and directives whose rows drew the composed fallback on /regulations (live gate 41407236336: the Monitor band held only three authored items with a future date); authored by four reader lanes from each item's own capture pool, judged by independent second readers (rulings 60, 72; 20 judges each; 31 first-pass fails all revised); allowBriefOverwrite; nothing is fetched (rule 16)",
+  "steps": [
+    {
+      "name": "p58-reg-backfill-1-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-11-02-p58-reg-backfill-1.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "p58-reg-backfill-1-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-11-02-p58-reg-backfill-1.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
