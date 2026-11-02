@@ -30,16 +30,17 @@ import { ItemNotesBlock } from "./collab/ItemNotesBlock";
 import { neighbourHref, useListPosition } from "./useListPosition";
 
 /** The masthead of a detail page: the title, the breadcrumb ("surface / jurisdiction / 3 of 22 in Immediate" when the list rode along), the command bar, and the two card slots. */
-export function DetailMasthead({ title, band, surface, jurisdiction, dek, placeholder, nowIso, actionSlot, connectionsSlot }: { title: string; band: UrgencyBand; surface: string; jurisdiction?: string; dek?: ReactNode; placeholder: string; nowIso: string; actionSlot?: ReactNode; connectionsSlot?: ReactNode }) {
+export function DetailMasthead({ title, band, surface, jurisdiction, dek, placeholder, nowIso, actionSlot, impactSlot, atAGlanceSlot, relevanceSlot, connectionsSlot }: { title: string; band: UrgencyBand; surface: string; jurisdiction?: string; dek?: ReactNode; placeholder: string; nowIso: string; actionSlot?: ReactNode; impactSlot?: ReactNode; atAGlanceSlot?: ReactNode; relevanceSlot?: ReactNode; connectionsSlot?: ReactNode }) {
   const position = useListPosition();
   const base = [surface, jurisdiction].filter(Boolean).join(" / ");
   // ROWS-1: the page title is the short name the list row drew; the full official title (with its annex note) is shown once, under it. A title with no short form is the page title as stored.
   const official = normalizeDisplayTitle(title);
   const short = displayTitle(official.title, true);
   const full = short === official.title ? null : [official.title, official.subtitle].filter(Boolean).join(" · ");
+  const contextSlot = atAGlanceSlot || relevanceSlot ? <div className="cl-masthead-context-grid">{atAGlanceSlot}{relevanceSlot}</div> : undefined;
   return (
     <div className="cl-detail-mast">
-      <Masthead title={full ? short : title} size="detail" dateLabel={position.known ? `${base} / ${position.pos} of ${position.of} in ${band.label}` : base} nowIso={nowIso} dek={full ? <><p className="cl-masthead-official">{full}</p>{dek}</> : dek} commandBar={<ShellCommandBar placeholder={placeholder} />} actionSlot={actionSlot} connectionsSlot={connectionsSlot} />
+      <Masthead title={full ? short : title} size="detail" dateLabel={position.known ? `${base} / ${position.pos} of ${position.of} in ${band.label}` : base} nowIso={nowIso} dek={full ? <><p className="cl-masthead-official">{full}</p>{dek}</> : dek} commandBar={<ShellCommandBar placeholder={placeholder} />} actionSlot={actionSlot} impactSlot={impactSlot} contextSlot={contextSlot} connectionsSlot={connectionsSlot} />
     </div>
   );
 }

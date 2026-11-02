@@ -63,30 +63,34 @@ export function ActionCard({ band, kindLabel, nowIso, extraChips, tier, biasTags
   const hasTags = !!tags && tags.length > 0;
   const content = (
     <>
-      <div className="cl-ac-pills">
-        <div className="cl-ac-pills-main">
-          <BandChip band={band} withWindow />
-          <TagChip>{kindLabel}</TagChip>
-          {extraChips}
-          {typeof tier === "number" && <TierChip tier={tier} />}
-          {meta && <span className="cl-ac-meta">{meta}</span>}
-          {hasBiasTags(biasTags) && <BiasChips tags={biasTags} variant="detail" label="Source" />}
+      <div className="cl-ac-top">
+        <div className="cl-ac-pills">
+          <div className="cl-ac-pills-main">
+            <BandChip band={band} withWindow />
+            <TagChip>{kindLabel}</TagChip>
+            {extraChips}
+            {typeof tier === "number" && <TierChip tier={tier} />}
+            {meta && <span className="cl-ac-meta">{meta}</span>}
+            {hasBiasTags(biasTags) && <BiasChips tags={biasTags} variant="detail" label="Source" />}
+          </div>
+          <div className="cl-ac-actions">
+            <ActionRow onExport={onExport} onShare={onShare} watch={watch} onTag={onTag} exportDisabled={exportDisabled} overflow={overflow} {...(viewer !== undefined ? { viewer } : {})} />
+          </div>
         </div>
-        <div className="cl-ac-actions">
-          <ActionRow onExport={onExport} onShare={onShare} watch={watch} onTag={onTag} exportDisabled={exportDisabled} overflow={overflow} {...(viewer !== undefined ? { viewer } : {})} />
+        {hasTags && <div className="cl-ac-tags">{tags.map((t) => <WorkspaceTagPill key={t} name={t} />)}</div>}
+        {tagPopover}
+      </div>
+      <div className="cl-ac-bottom">
+        <div className="cl-ac-rule" aria-hidden="true" />
+        <div className="cl-exposure-grid">
+          <ExposureCell label="Where" cell={where} />
+          <ExposureCell label="Who pays" cell={whoPays} />
+          <ExposureCell label="Your lanes" cell={yourLanes} />
+          <ExposureCell label="Next milestone" cell={nextClause ? { value: nextClause } : noMilestoneNote ? { value: noMilestoneNote } : { value: null, absenceReason: "pending" }} />
         </div>
+        <div className="cl-ac-rule" aria-hidden="true" />
+        <Timeline entries={timeline} band={band} nowIso={nowIso} {...(onFullSchedule ? { onFullSchedule } : {})} {...(fullScheduleHref ? { fullScheduleHref } : {})} {...(moreMarkersHref ? { moreMarkersHref } : {})} />
       </div>
-      {hasTags && <div className="cl-ac-tags">{tags.map((t) => <WorkspaceTagPill key={t} name={t} />)}</div>}
-      {tagPopover}
-      <div className="cl-ac-rule" aria-hidden="true" />
-      <div className="cl-exposure-grid">
-        <ExposureCell label="Where" cell={where} />
-        <ExposureCell label="Who pays" cell={whoPays} />
-        <ExposureCell label="Your lanes" cell={yourLanes} />
-        <ExposureCell label="Next milestone" cell={nextClause ? { value: nextClause } : noMilestoneNote ? { value: noMilestoneNote } : { value: null, absenceReason: "pending" }} />
-      </div>
-      <div className="cl-ac-rule" aria-hidden="true" />
-      <Timeline entries={timeline} band={band} nowIso={nowIso} {...(onFullSchedule ? { onFullSchedule } : {})} {...(fullScheduleHref ? { fullScheduleHref } : {})} {...(moreMarkersHref ? { moreMarkersHref } : {})} />
     </>
   );
   return bare ? <div data-part="action-card" className="cl-ac-bare">{content}</div> : <SectionCard as="section" dataAttributes={{ "data-part": "action-card" }} padding="10px 20px 12px">{content}</SectionCard>;

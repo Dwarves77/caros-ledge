@@ -22,14 +22,16 @@ interface MastheadProps {
   eyebrowSuffix?: string;
   notice?: { text: ReactNode; linkLabel?: string; linkHref?: string };
   actionSlot?: ReactNode;
+  impactSlot?: ReactNode;
+  contextSlot?: ReactNode;
   connectionsSlot?: ReactNode;
 }
 
 /** The frame masthead: the VOL and ISO-week line, the Anton title, a dek, the command bar slot, a notice and the action and connections slots. */
-export function Masthead({ title, size = "list", dek, dateLabel, nowIso, volume = "IV", commandBar, eyebrowSuffix, notice, actionSlot, connectionsSlot }: MastheadProps) {
+export function Masthead({ title, size = "list", dek, dateLabel, nowIso, volume = "IV", commandBar, eyebrowSuffix, notice, actionSlot, impactSlot, contextSlot, connectionsSlot }: MastheadProps) {
   const { title: displayTitle, subtitle } = normalizeDisplayTitle(title);
   return (
-    <SectionCard as="header" className="cl-masthead" dataAttributes={commandBar ? { "data-masthead-size": size, "data-masthead-cmdbar": "" } : { "data-masthead-size": size }}>
+    <SectionCard as="header" className="cl-masthead" dataAttributes={{ "data-masthead-size": size, ...(commandBar ? { "data-masthead-cmdbar": "" } : {}), ...(impactSlot ? { "data-masthead-impact": "" } : {}) }}>
       <div className="cl-masthead-body">
         <p className="cl-masthead-eyebrow">
           VOL {volume} · No. {weekOfIso(nowIso)} · {dateLabel}
@@ -46,12 +48,14 @@ export function Masthead({ title, size = "list", dek, dateLabel, nowIso, volume 
           {commandBar && <div className="cl-masthead-cmdbar">{commandBar}</div>}
         </div>
       </div>
+      {impactSlot && <div className="cl-masthead-impact">{impactSlot}</div>}
       {notice && (
         <div className="cl-masthead-notice">
           <StateNote {...(notice.linkLabel && notice.linkHref ? { action: { label: notice.linkLabel, href: notice.linkHref } } : {})}>{notice.text}</StateNote>
         </div>
       )}
       {actionSlot && <div className="cl-masthead-slot">{actionSlot}</div>}
+      {contextSlot && <div className="cl-masthead-context">{contextSlot}</div>}
       {connectionsSlot && <div className="cl-masthead-slot">{connectionsSlot}</div>}
     </SectionCard>
   );

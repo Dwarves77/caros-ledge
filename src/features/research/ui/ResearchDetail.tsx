@@ -65,7 +65,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
   const band = bandFromPriority(r.priority);
   const theme = themeOf(r);
   const isRecord = r.itemGrade === "record";
-  const [depth, setDepth] = useState<"summary" | "full">("summary");
+  const [depth, setDepth] = useState<"summary" | "full">("full");
   const [tagOpen, setTagOpen] = useState(false);
   const jurisLabel = jurisLabelOf(r);
   const dek = [`Research${theme ? ` · ${themeLabel(theme)}` : ""}`, r.added ? `published ${formatDate(r.added)}` : null].filter(Boolean).join(" · ");
@@ -77,7 +77,7 @@ export function ResearchDetail(p: ResearchDetailProps) {
   const hasPendingOrUnresolved = !!r.doesNotResolve || pendingEvents.length > 0;
   const summaryProse = r.whatIsIt || r.note || r.whyMatters || null;
   const unparsedBrief = !isRecord && known.length === 0 && r.fullBrief ? stripSourcesSection(r.fullBrief) : "";
-  const presence = crossPagePresence(p.crossPage);
+  const presence = crossPagePresence(p.crossPage, p.connectionRows.length > 0);
   const hasRelated = p.related.items.length > 0;
   const index = [
     { id: "summary", shortName: "Summary", ord: 1 },
@@ -131,9 +131,9 @@ export function ResearchDetail(p: ResearchDetailProps) {
           band={band}
           action={topRecommendedAction(p.recommendedActions)}
           nowIso={nowIso}
-          footer={<><CrossPageSection surfaceKey="research" surfaceLabel="Research" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} /><NoticesRail /></>}
+          footer={<><CrossPageSection surfaceKey="research" surfaceLabel="Research" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} connections={p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} /><NoticesRail /></>}
         >
-          <DetailMasthead title={r.title} band={band} surface="Research" jurisdiction={jurisLabel} dek={dek} placeholder="Ask about this finding, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} connectionsSlot={p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} />
+          <DetailMasthead title={r.title} band={band} surface="Research" jurisdiction={jurisLabel} dek={dek} placeholder="Ask about this finding, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} impactSlot={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />} atAGlanceSlot={<AtAGlanceCard rows={[{ label: "Theme", value: theme ? themeLabel(theme) : null }, { label: "Topic", value: r.topic ?? null }]} />} relevanceSlot={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />} />
           {p.claimsDegraded && (
             <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>
               The facts of this finding did not load, so none is shown. Nothing was changed; try again.
@@ -148,9 +148,6 @@ export function ResearchDetail(p: ResearchDetailProps) {
           <DetailLayout
             rail={
               <DetailRail
-                atAGlance={<AtAGlanceCard rows={[{ label: "Theme", value: theme ? themeLabel(theme) : null }, { label: "Topic", value: r.topic ?? null }]} />}
-                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />}
-                relevance={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />}
                 designed={
                   <>
                     <AssessmentCard assessment={p.assessment.assessment} failed={p.assessment.failed} />
