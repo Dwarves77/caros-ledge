@@ -146,7 +146,7 @@ function useWorld(tables: Record<string, Row[]>, failures: { table: string; op: 
 const status = async (h: (r: Request, c: never) => Promise<Response>, p: Persona, url: string) => h(as(p, url), ctx({}) as never);
 
 test("persona matrix: the register and upcoming routes answer any signed-in caller and refuse anon", async () => {
-  useWorld({ obligations: register(), item_forward_events: [{ id: "f1", intelligence_item_id: "it-o1", event_date: "2026-11-01", date_precision: "day", event_kind: "compliance_deadline", obligation_text: "x", source_kind: "s", confidence: "high", item: { id: "it-o1", title: "T", legacy_id: null, jurisdiction_iso: ["EU"], transport_modes: ["ocean"], provenance_status: "verified", is_archived: false } }] });
+  useWorld({ obligations: register(), item_forward_events: [{ id: "f1", intelligence_item_id: "it-o1", event_date: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), date_precision: "day", event_kind: "compliance_deadline", obligation_text: "x", source_kind: "s", confidence: "high", item: { id: "it-o1", title: "T", legacy_id: null, jurisdiction_iso: ["EU"], transport_modes: ["ocean"], provenance_status: "verified", is_archived: false } }] });
   for (const p of PERSONAS) {
     const want = p === "anon" ? 401 : 200;
     assert.equal((await status(registerGet, p, "/api/obligations/register")).status, want, `register as ${p}`);
