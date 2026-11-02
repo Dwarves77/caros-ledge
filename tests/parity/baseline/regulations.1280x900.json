@@ -6,13 +6,14 @@
     "width": 1280,
     "height": 900
   },
-  "captured_at": "2026-10-20T11:16:44.843Z",
+  "captured_at": "2026-11-02T05:42:41.306Z",
   "http_status": 200,
   "final_path": "/regulations",
-  "network_idle": true,
+  "settled": true,
+  "settle_reason": null,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- complementary:\n  - link \"Caro's Ledge Freight Sustainability Intelligence\":\n    - /url: /\n    - heading \"Caro's Ledge\" [level=1]\n    - paragraph: Freight Sustainability Intelligence\n  - navigation:\n    - paragraph: Brief\n    - link \"Dashboard\":\n      - /url: /\n    - link \"Watchlist\":\n      - /url: /watchlist\n    - paragraph: Intelligence\n    - link \"Regulations\":\n      - /url: /regulations\n    - link \"Market Intel\":\n      - /url: /market\n    - link \"Research\":\n      - /url: /research\n    - link \"Operations\":\n      - /url: /operations\n    - link \"Map\":\n      - /url: /map\n    - paragraph: Network\n    - link \"Community\":\n      - /url: /community\n  - button \"Open account menu\": Account Dietl / Rockit\n- button \"Notifications\"\n- main:\n  - paragraph: VOL IV · No. 43 · Tuesday, October 20, 2026\n  - heading \"Regulations\" [level=1]\n  - text: \"1,316 active · 32 jurisdictions · last sync Sep 18 · next obligation Nov 15 · Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - button \"Immediate — ≤ 90 days, 20 items\": Immediate ≤ 90 days 20\n  - button \"Action — ≤ 6 months, 24 items\": Action ≤ 6 months 24\n  - button \"Monitor — 6–12 months, 1,002 items\": Monitor 6–12 months 1,002\n  - button \"Awareness — background, 270 items\": Awareness background 270\n  - group: Saved views\n  - text: 1,316 regulations · grouped by band ·\n  - button \"Show as one list\"\n  - text: Sort\n  - button \"Next date\" [pressed]\n  - button \"Newest\"\n  - button \"A-Z\"\n  - button \"My order\"\n  - text: Immediate ≤ 90 days showing 5 of 20\n  - link \"Regulation (EU) 2024/1157 on shipments of waste\":\n    - /url: /regulations/68af8b45-fbbf-4ba1-add8-2c1761d2d120?list=regulations&pos=1&of=20&next=g33\n  - text: GLOBAL Regulation (EU) 2024/1157 on shipments of waste regulation needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - text: Nov 21, 2026 32 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"EUDR (EU Deforestation Regulation)\":\n    - /url: /regulations/g33?list=regulations&pos=2&of=20&prev=68af8b45-fbbf-4ba1-add8-2c1761d2d120&next=0b6537ea-1c85-41b9-81ed-1486fd72ea18\n  - text: EU EUDR (EU Deforestation Regulation) regulation · ocean, road · packaging needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - text: Dec 30, 2026 71 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels\":\n    - /url: /regulations/0b6537ea-1c85-41b9-81ed-1486fd72ea18?list=regulations&pos=3&of=20&prev=g33&next=g2\n  - text: EU Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels regulation needs more data Dec 31, 2026 72 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"EU PPWR 2025/40\":\n    - /url: /regulations/g2?list=regulations&pos=4&of=20&prev=0b6537ea-1c85-41b9-81ed-1486fd72ea18&next=6cdc920f-6110-412a-b4f8-7b6c7fabdda5\n  - text: EU EU PPWR 2025/40 regulation · air, ocean, road · packaging needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - text: Dec 31, 2026 72 days\n  - img \"Milestone timeline\"\n  - text: T2\n  - button \"Regulation actions\"\n  - link \"Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)\":\n    - /url: /regulations/6cdc920f-6110-412a-b4f8-7b6c7fabdda5?list=regulations&pos=5&of=20&prev=g2&next=c509a0cd-263d-48fc-8d0b-160f786bdbb0\n  - text: EU Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance) directive needs more data Jan 1, 2027 73 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - button \"All 20 immediate →\"\n  - text: then Action · 24 Action ≤ 6 months showing 5 of 24\n  - 'link \"Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"':\n    - /url: /regulations/4a108d70-0062-4c46-a090-151683f202a6?list=regulations&pos=1&of=24&next=7dabbe8a-2ba9-4242-8a51-57495e56993f\n  - text: \"US Alternative Fuels Data Center: Federal and State Laws and Incentives Database guidance · fuels needs more data\"\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - text: Nov 15, 2026 26 days\n  - img \"Milestone timeline\"\n  - text: T2\n  - button \"Regulation actions\"\n  - link \"COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 of 16 December 2025 laying down rules for the application of Regulation (EU) 2023/956 of the European Parliament and the Council as regards the establishment of default values (Text with EEA relevance) ANNEX I Default values for goods imported into the customs territory of the Union, except for electricity ANNEX II Default values for indirect emissions of goods listed in Annex I of Regulation (EU) 2023/956 and not listed in Annex II of that Regulation ANNEX III Default values for electricity imported into the customs territory of the Union ANNEX IV Default values for precursor for which the country of production cannot be identified\":\n    - /url: /regulations/7dabbe8a-2ba9-4242-8a51-57495e56993f?list=regulations&pos=2&of=24&prev=4a108d70-0062-4c46-a090-151683f202a6&next=w4_ca_sb253\n  - text: EU COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 of 16 December 2025 laying down rules for the application of Regulation (EU) 2023/956 of the European Parliament and the Council as regards the establishment of default values (Text with EEA relevance) ANNEX I Default values for goods imported into the customs territory of the Union, except for electricity ANNEX II Default values for indirect emissions of goods listed in Annex I of Regulation (EU) 2023/956 and not listed in Annex II of that Regulation ANNEX III Default values for electricity imported into the customs territory of the Union ANNEX IV Default values for precursor for which the country of production cannot be identified regulation needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - text: Jan 1, 2027 73 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"California SB 253 — Climate Corporate Data Accountability Act\":\n    - /url: /regulations/w4_ca_sb253?list=regulations&pos=3&of=24&prev=7dabbe8a-2ba9-4242-8a51-57495e56993f&next=eu-emissions-trading-system-ets-extension-to-maritime-transport\n  - text: US-CA California SB 253 — Climate Corporate Data Accountability Act regulation · road, ocean, air, rail · reporting needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - text: Jan 1, 2027 73 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"EU Emissions Trading System (ETS) Extension to Maritime Transport\":\n    - /url: /regulations/eu-emissions-trading-system-ets-extension-to-maritime-transport?list=regulations&pos=4&of=24&prev=w4_ca_sb253&next=a2\n  - text: EU EU Emissions Trading System (ETS) Extension to Maritime Transport regulation · ocean · emissions needs more data\n  - group \"Source bias tags\": Government funded Standards defining +1 more\n  - text: Jan 1, 2027 73 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"EU Aviation ETS\":\n    - /url: /regulations/a2?list=regulations&pos=5&of=24&prev=eu-emissions-trading-system-ets-extension-to-maritime-transport&next=g6\n  - text: EU EU Aviation ETS regulation · air · emissions needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - text: Jan 1, 2027 73 days\n  - img \"Milestone timeline\"\n  - text: T2\n  - button \"Regulation actions\"\n  - button \"All 24 action →\"\n  - text: then Monitor · 1,002 Monitor 6–12 months showing 5 of 1,002\n  - link \"Council Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/EC\":\n    - /url: /regulations/30d68025-cc44-4386-8073-8335a029c25a?list=regulations&pos=1&of=1002&next=1fbb6729-0383-4e03-9603-50f63d15ce1f\n  - text: EU Council Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/EC framework · road needs more data Nov 30, 2026 41 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"COMMISSION DELEGATED REGULATION (EU) 2025/1482 of 24 July 2025 amending Regulation (EU) 2019/1021 of the European Parliament and of the Council as regards the persistent organic pollutants tetrabromodiphenyl ether, pentabromodiphenyl ether, hexabromodiphenyl ether, heptabromodiphenyl ether and decabromodiphenyl ether (Text with EEA relevance) ANNEX\":\n    - /url: /regulations/1fbb6729-0383-4e03-9603-50f63d15ce1f?list=regulations&pos=2&of=1002&prev=30d68025-cc44-4386-8073-8335a029c25a&next=01ca1bdf-a09e-4caf-afea-c90bd1040860\n  - text: EU COMMISSION DELEGATED REGULATION (EU) 2025/1482 of 24 July 2025 amending Regulation (EU) 2019/1021 of the European Parliament and of the Council as regards the persistent organic pollutants tetrabromodiphenyl ether, pentabromodiphenyl ether, hexabromodiphenyl ether, heptabromodiphenyl ether and decabromodiphenyl ether (Text with EEA relevance) ANNEX regulation needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - text: May 17, 2027 209 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"DIRECTIVE (EU) 2024/3101 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 November 2024 amending Directive 2005/35/EC as regards ship-source pollution and on the introduction of administrative penalties for infringements (Text with EEA relevance) ANNEX ‘ANNEX I Non-exhaustive list of irregularities or information referred to in Article 6 ANNEX II Information to be included in the Union-wide overview published by the Commission, referred to in Article 10c\":\n    - /url: /regulations/01ca1bdf-a09e-4caf-afea-c90bd1040860?list=regulations&pos=3&of=1002&prev=1fbb6729-0383-4e03-9603-50f63d15ce1f&next=9ca79a35-b51a-442d-8220-7ae20b6086a4\n  - text: EU DIRECTIVE (EU) 2024/3101 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 November 2024 amending Directive 2005/35/EC as regards ship-source pollution and on the introduction of administrative penalties for infringements (Text with EEA relevance) ANNEX ‘ANNEX I Non-exhaustive list of irregularities or information referred to in Article 6 ANNEX II Information to be included in the Union-wide overview published by the Commission, referred to in Article 10c Catalogue record directive needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - text: Jul 6, 2027 259 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"Regulation (EU) 2024/3015 of the European Parliament and of the Council of 27 November 2024 on prohibiting products made with forced labour on the Union market and amending Directive (EU) 2019/1937 (Text with EEA relevance)\":\n    - /url: /regulations/9ca79a35-b51a-442d-8220-7ae20b6086a4?list=regulations&pos=4&of=1002&prev=01ca1bdf-a09e-4caf-afea-c90bd1040860&next=adbf2587-535e-4c7e-9e77-433a24d250d5\n  - text: EU Regulation (EU) 2024/3015 of the European Parliament and of the Council of 27 November 2024 on prohibiting products made with forced labour on the Union market and amending Directive (EU) 2019/1937 (Text with EEA relevance) regulation needs more data Dec 14, 2027 420 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"Council Implementing Decision (EU) 2025/210 of 28 January 2025 authorising Spain to apply a reduced rate of taxation to electricity directly supplied to vessels berthed in ports in accordance with Directive 2003/96/EC\":\n    - /url: /regulations/adbf2587-535e-4c7e-9e77-433a24d250d5?list=regulations&pos=5&of=1002&prev=9ca79a35-b51a-442d-8220-7ae20b6086a4&next=a212b2ab-c394-49f7-9527-9c94a4bf700f\n  - text: EU Council Implementing Decision (EU) 2025/210 of 28 January 2025 authorising Spain to apply a reduced rate of taxation to electricity directly supplied to vessels berthed in ports in accordance with Directive 2003/96/EC regulation needs more data Dec 31, 2028 803 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - button \"All 1,002 monitor →\"\n  - text: then Awareness · 265 Awareness background showing 5 of 265\n  - link \"Euro 7 Standard\":\n    - /url: /regulations/l2?list=regulations&pos=1&of=265&next=1615aa92-bc94-4a38-ba71-cf51c6edf748\n  - text: EU Euro 7 Standard regulation · road · transport needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - text: Nov 29, 2026 40 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - link \"COMMISSION DELEGATED REGULATION (EU) 2025/656 of 2 April 2025 amending Regulation (EU) 2023/1804 of the European Parliament and of the Council as regards standards for wireless recharging, electric road system, vehicle-to-grid communication and hydrogen supply for road transport vehicles ANNEX\":\n    - /url: /regulations/1615aa92-bc94-4a38-ba71-cf51c6edf748?list=regulations&pos=2&of=265&prev=l2&next=fabda0e7-dfb4-43c2-bef9-1821bb148d5d\n  - text: EU COMMISSION DELEGATED REGULATION (EU) 2025/656 of 2 April 2025 amending Regulation (EU) 2023/1804 of the European Parliament and of the Council as regards standards for wireless recharging, electric road system, vehicle-to-grid communication and hydrogen supply for road transport vehicles ANNEX regulation needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - text: Jan 1, 2027 73 days\n  - img \"Milestone timeline\"\n  - text: T1\n  - button \"Regulation actions\"\n  - 'link \"Oregon Department of Environmental Quality: Central Hub for Environmental Compliance and Public Resources\"':\n    - /url: /regulations/fabda0e7-dfb4-43c2-bef9-1821bb148d5d?list=regulations&pos=3&of=265&prev=1615aa92-bc94-4a38-ba71-cf51c6edf748&next=brazil-national-policy-on-alternative-fuels-pnca\n  - text: \"US Oregon Department of Environmental Quality: Central Hub for Environmental Compliance and Public Resources guidance · infrastructure needs more data\"\n  - group \"Source bias tags\": Government funded Regulator aligned +2 more\n  - text: Jan 1, 2027 73 days\n  - img \"Milestone timeline\"\n  - text: T2\n  - button \"Regulation actions\"\n  - link \"Brazil National Policy on Alternative Fuels (PNCA)\":\n    - /url: /regulations/brazil-national-policy-on-alternative-fuels-pnca?list=regulations&pos=4&of=265&prev=fabda0e7-dfb4-43c2-bef9-1821bb148d5d&next=china-s-national-carbon-market-extension-to-transportation-sector\n  - text: BR Brazil National Policy on Alternative Fuels (PNCA) regulation · road, rail · fuels needs more data\n  - group \"Source bias tags\": Government funded Regulator aligned +1 more\n  - text: Jan 1, 2027 73 days\n  - img \"Milestone timeline\"\n  - text: T2\n  - button \"Regulation actions\"\n  - 'link \"China''s National Carbon Market: 2027 All-Major-Industrial-Sectors Expansion Roadmap\"':\n    - /url: /regulations/china-s-national-carbon-market-extension-to-transportation-sector?list=regulations&pos=5&of=265&prev=brazil-national-policy-on-alternative-fuels-pnca&next=o13\n  - text: \"CN China's National Carbon Market: 2027 All-Major-Industrial-Sectors Expansion Roadmap regulation · road, rail, ocean, air · emissions needs more data Jan 1, 2027 73 days\"\n  - img \"Milestone timeline\"\n  - text: T2\n  - button \"Regulation actions\"\n  - button \"All 265 awareness →\"\n  - text: end of list\n  - heading \"Themes across the corpus\" [level=2]\n  - text: 6 active\n  - region \"Themes across the corpus, scroll sideways for more\":\n    - link \"Shared regulation identifier on Regulations\":\n      - /url: /regulations/36c92d72-1d40-4683-a3f7-4302f2fa8dd9\n    - text: 2 items Regulations\n    - link \"· Regulation (EC) No 923/2009 of the European Parliament and of the Council of 16 September 2009 amending Regulation (EC) No 1692/2006 establishing the second Marco Polo programme for the granting of Community financial assistance to improve the environmental performance of the freight transport system (Marco Polo II)\":\n      - /url: /regulations/932c2268-c6fe-40b7-8edd-342c0dfe2b53\n    - link \"Shared source on Regulations\":\n      - /url: /regulations/00d1a570-d3f9-43be-a292-44c90384b669\n    - text: 18 items Regulations\n    - link \"· New Source Performance Standards Review for Stationary Combustion Turbines and Stationary Gas Turbines; Correction\":\n      - /url: /regulations/167176f3-f6aa-4c67-a20f-9c44f268e771\n    - link \"· Technical Guidelines for the Production of Regenerative Agricultural Biofuel Feedstocks\":\n      - /url: /regulations/51748690-2ab6-4f88-bab6-a080499d677a\n    - link \"· Air Plan Approval; Delaware; 2006 24-Hour Fine Particulate Matter Limited Maintenance Plan for the Philadelphia Nonattainment Area\":\n      - /url: /regulations/9c9452a4-e866-4ff4-8c49-57f730471692\n    - link \"Shared regulation identifier on Regulations\":\n      - /url: /regulations/66816829-642c-42fb-97c1-bc5f00e52a21\n    - text: 2 items Regulations\n    - link \"· Commission Delegated Regulation (EU) 2026/52 of 16 December 2025 amending Annex III to Directive (EU) 2024/1275 of the European Parliament and of the Council as regards the Union framework for the national calculation of life-cycle global warming potential\":\n      - /url: /regulations/e40f898b-d664-4bcc-a409-d500a4ecbd58\n    - link \"Shared scenarios on Regulations\":\n      - /url: /regulations/36f1519b-56d6-481f-a1c0-144d48692175\n    - text: 2 items Regulations\n    - link \"· Regulation (EU) No 649/2012 of the European Parliament and of the Council of 4 July 2012 concerning the export and import of hazardous chemicals (recast) (Text with EEA relevance)\":\n      - /url: /regulations/504e9eae-2903-4851-87e3-ffe79a76ea84\n    - link \"Shared title entity on Regulations\":\n      - /url: /regulations/4f4f85c9-a212-4300-854a-66ec6eb49bbe\n    - text: 2 items Regulations\n    - link \"· Commission Implementing Decision (EU) 2016/422 of 18 March 2016 on the compliance of unit rates for charging zones for 2015 under Article 17 of Implementing Regulation (EU) No 391/2013 (notified under document C(2016) 1595) (Text with EEA relevance)\":\n      - /url: /regulations/6c1d0dad-8ca8-4d6a-9d43-5b884af81d4a\n    - link \"Shared regulation identifier on Regulations\":\n      - /url: /regulations/02fb82c0-4535-4ae5-ac61-c2bedff11796\n    - text: 4 items Regulations\n    - link \"· Commission Regulation (EC) No 93/2007 of 30 January 2007 amending Regulation (EC) No 2099/2002 of the European Parliament and of the Council establishing a Committee on Safe Seas and the Prevention of Pollution from Ships (COSS) (Text with EEA relevance)\":\n      - /url: /regulations/3596380c-83d4-4133-967d-b21390817311\n    - link \"· Commission Regulation (EC) No 415/2004 of 5 March 2004 amending Regulation (EC) No 2099/2002 of the European Parliament and of the Council establishing a Committee on Safe Seas and the Prevention of Pollution from Ships (COSS) and amending the regulations on maritime safety and the prevention of pollution from ships (Text with EEA relevance)\":\n      - /url: /regulations/73c4976b-0250-4c20-a040-162ddaf7baf0\n    - link \"· Regulation (EC) No 2099/2002 of the European Parliament and of the Council of 5 November 2002 establishing a Committee on Safe Seas and the Prevention of Pollution from Ships (COSS) and amending the Regulations on maritime safety and the prevention of pollution from ships\":\n      - /url: /regulations/a55f0a52-8554-4494-ba3a-f1808137898f\n  - paragraph:\n    - text: \"Coverage: 2,056 of 2,278 catalogued Regulations instruments are dual-verified. 1,414 verified briefs are on the platform.\"\n    - link \"See coverage\":\n      - /url: /dashboard/coverage?data_class=regulations\n  - paragraph: Filters\n  - button \"Clear\" [disabled]\n  - paragraph: Mode\n  - checkbox \"Road 57\"\n  - text: Road 57\n  - checkbox \"Ocean 48\"\n  - text: Ocean 48\n  - checkbox \"Air 47\"\n  - text: Air 47\n  - checkbox \"Rail 17\"\n  - text: Rail 17\n  - checkbox \"maritime 11\"\n  - text: maritime 11\n  - checkbox \"Inland waterway 3\"\n  - text: Inland waterway 3\n  - paragraph: Jurisdiction\n  - checkbox \"EU 172\"\n  - text: EU 172\n  - checkbox \"US 23\"\n  - text: US 23\n  - checkbox \"GLOBAL 5\"\n  - text: GLOBAL 5\n  - checkbox \"GB 4\"\n  - text: GB 4\n  - checkbox \"ASIA 3\"\n  - text: ASIA 3\n  - checkbox \"BR 2\"\n  - text: BR 2\n  - button \"+ 26 more\"\n  - paragraph: Topic\n  - checkbox \"transport 30\"\n  - text: transport 30\n  - checkbox \"emissions 27\"\n  - text: emissions 27\n  - checkbox \"aviation 17\"\n  - text: aviation 17\n  - checkbox \"maritime 16\"\n  - text: maritime 16\n  - checkbox \"reporting 10\"\n  - text: reporting 10\n  - checkbox \"corridors 8\"\n  - text: corridors 8\n  - button \"+ 14 more\"\n  - paragraph: Source tier\n  - checkbox \"T1 1,280\"\n  - text: T1 1,280\n  - checkbox \"T2 28\"\n  - text: T2 28\n  - checkbox \"T3 2\"\n  - text: T3 2\n  - checkbox \"T4 1\"\n  - text: T4 1\n  - paragraph: Obligations · next 30 days\n  - link \"Calendar →\":\n    - /url: /regulations/register\n  - text: needs primary-source figure\n- button \"Back to top\"\n- alert"
+    "tree": "- complementary:\n  - link \"Caro's Ledge Freight Sustainability Intelligence\":\n    - /url: /\n    - heading \"Caro's Ledge\" [level=1]\n    - paragraph: Freight Sustainability Intelligence\n  - navigation:\n    - paragraph: Brief\n    - link \"Dashboard\":\n      - /url: /\n    - link \"Watchlist\":\n      - /url: /watchlist\n    - paragraph: Intelligence\n    - link \"Regulations\":\n      - /url: /regulations\n    - link \"Market Intel\":\n      - /url: /market\n    - link \"Research\":\n      - /url: /research\n    - link \"Operations\":\n      - /url: /operations\n    - link \"Map\":\n      - /url: /map\n    - paragraph: Network\n    - link \"Community\":\n      - /url: /community\n  - button \"Open account menu\": Account Dietl / Rockit\n- button \"Notifications\"\n- main:\n  - paragraph: VOL IV · No. 45 · Monday, November 2, 2026\n  - heading \"Regulations\" [level=1]\n  - text: 1,321 active · 32 jurisdictions · last sync Nov 2 · next obligation Nov 2 ·\n  - link \"Regulation (EU) 2024/3005 on the transparency an…\":\n    - /url: /regulations/9ba8b509-4624-4c39-b388-786dda389b08\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - button \"Immediate — ≤ 90 days, 2 items\": Immediate ≤ 90 days 2\n  - button \"Action — ≤ 6 months, 25 items\": Action ≤ 6 months 25\n  - button \"Monitor — 6–12 months, 969 items\": Monitor 6–12 months 969\n  - button \"Awareness — later, 325 items\": Awareness later 325\n  - group: Saved views\n  - paragraph: No saved views yet.\n  - text: 1,321 regulations · grouped by band ·\n  - button \"Show as one list\"\n  - text: Sort\n  - button \"Next date\" [pressed]\n  - button \"Newest\"\n  - button \"A-Z\"\n  - button \"My order\"\n  - text: Immediate ≤ 90 days showing 2 of 2\n  - link \"COMMISSION DELEGATED DECISION (EU) 2025/934 of 5 March 2025 amending Decision 2000/532/EC as regards an update of the list of waste in relation to battery-related waste\":\n    - /url: /regulations/56596695-69eb-4364-b178-9f472976b22a?list=regulations&pos=1&of=2&next=68af8b45-fbbf-4ba1-add8-2c1761d2d120\n  - text: \"Delegated Decision (EU) 2025/934 The Decision rewrites the waste codes for batteries and for the waste from making and recycling them: lithium-based, sodium-based and nickel-based batteries each get their own entries, and a new hazardous code covers lithium-based batteries separately collected from municipal waste. EU Regulation Nov 9, 2026 · 7 days T1\"\n  - button \"Regulation actions\"\n  - link \"Regulation (EU) 2024/1157 on shipments of waste\":\n    - /url: /regulations/68af8b45-fbbf-4ba1-add8-2c1761d2d120?list=regulations&pos=2&of=2&prev=56596695-69eb-4364-b178-9f472976b22a\n  - text: Regulation (EU) 2024/1157 Since 21 May 2026 prior-consent procedures run electronically through the Commission's central system, with the paper route allowed for green-listed waste only until 31 December 2026. Regulation Nov 21, 2026 · 19 days T1\n  - button \"Regulation actions\"\n  - text: then Action · 25 Action ≤ 6 months showing 5 of 25\n  - link \"Council Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/EC\":\n    - /url: /regulations/30d68025-cc44-4386-8073-8335a029c25a?list=regulations&pos=1&of=25&next=62ab491a-da2c-4456-b74b-6d704e38d3d1\n  - text: Implementing Decision (EU) 2026/1295 A road operator that buys diesel or petrol in Sweden between 1 July 2026 and 30 November 2026 can face a lower fuel tax than the EU minimum, because the Council has authorised Sweden to cut it by up to 2,4 SEK per litre. EU Framework Nov 30, 2026 · 28 days T1\n  - button \"Regulation actions\"\n  - link \"REGULATION (EU) 2025/2650 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 19 December 2025 amending Regulation (EU) 2023/1115 as regards certain obligations of operators and traders ANNEX I ANNEX II ‘ANNEX III Simplified declaration for micro or small primary operators\":\n    - /url: /regulations/62ab491a-da2c-4456-b74b-6d704e38d3d1?list=regulations&pos=2&of=25&prev=30d68025-cc44-4386-8073-8335a029c25a&next=g33\n  - text: Regulation (EU) 2025/2650 For a forwarder the change lands at the border and in the booking record. EU Regulation Dec 30, 2026 · 58 days T1\n  - button \"Regulation actions\"\n  - link \"EUDR (EU Deforestation Regulation)\":\n    - /url: /regulations/g33?list=regulations&pos=3&of=25&prev=62ab491a-da2c-4456-b74b-6d704e38d3d1&next=061dce37-78f4-4621-9df3-81ee36543ad6\n  - text: EUDR (EU Deforestation Regulation) The main duties apply from 30 December 2026 to large and medium operators and, as the Commission's trade page states, to downstream operators and traders of all sizes, dates the Commission pages attribute to Regulation (EU) 2025/2650; natural persons and micro-enterprises follow on 30 June 2027. EU Regulation Dec 30, 2026 · 58 days T1\n  - button \"Regulation actions\"\n  - link \"The Greenhouse Gas Emissions Trading Scheme Order 2020\":\n    - /url: /regulations/061dce37-78f4-4621-9df3-81ee36543ad6?list=regulations&pos=4&of=25&prev=g33&next=128b6a2e-cf78-4c9f-b03d-9256a3df5222\n  - text: The Greenhouse Gas Emissions Trading Scheme Order 2020 Aircraft operators and, since the 2026 extension, maritime operators must report their emissions and hand back allowances each year, for aircraft by 30th April of the following year and for 2026 maritime emissions by 30th April 2028. GB Regulation Dec 31, 2026 · 59 days T1\n  - button \"Regulation actions\"\n  - link \"COMMISSION IMPLEMENTING REGULATION (EU) 2023/2122 of 12 October 2023 amending Implementing Regulation (EU) 2018/2066 as regards updating the monitoring and reporting of greenhouse gas emissions pursuant to Directive 2003/87/EC of the European Parliament and of the Council (Text with EEA relevance) ‘ANNEX IIa Tier definitions for calculation-based methodologies related to regulated entities ‘ANNEX IX Minimum data and information to be retained in accordance with Article 67(1) ‘ANNEX Xa Reports on fuel suppliers and fuel use of stationary installations and, where relevant, aircraft operators and shipping companies ANNEX Xb Reports on released fuels by regulated entities\":\n    - /url: /regulations/128b6a2e-cf78-4c9f-b03d-9256a3df5222?list=regulations&pos=5&of=25&prev=061dce37-78f4-4621-9df3-81ee36543ad6&next=5885a604-1ceb-4630-8fc2-9955a51f280a\n  - text: Implementing Regulation (EU) 2023/2122 A second EU carbon market for fuels used in road transport and buildings starts reporting on 1 January 2025, with the recitals expecting trading to start in 2027. EU Regulation Dec 31, 2026 · 59 days T1\n  - button \"Regulation actions\"\n  - button \"All 25 action →\"\n  - text: then Monitor · 969 Monitor 6–12 months showing 5 of 969\n  - link \"REGULATION (EU) 2024/1252 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 11 April 2024 establishing a framework for ensuring a secure and sustainable supply of critical raw materials and amending Regulations (EU) No 168/2013, (EU) 2018/858, (EU) 2018/1724 and (EU) 2019/1020 (Text with EEA relevance) ANNEX I Strategic raw materials ANNEX II Critical raw materials ANNEX III Assessment of the recognition criteria for Strategic Projects ANNEX IV Criteria for certification schemes ANNEX V Environmental footprint\":\n    - /url: /regulations/f1488b95-8058-49e4-9873-c429ba51126f?list=regulations&pos=1&of=969&next=99e2b81c-0bb0-4f6d-a24b-938f865b1930\n  - text: Regulation (EU) 2024/1252 The regulation reaches freight through the goods and their paperwork, not through a charge on carriage. EU Regulation Nov 24, 2026 · 22 days T1\n  - button \"Regulation actions\"\n  - link \"REGULATION (EU) 2025/2365 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 12 November 2025 on preventing plastic pellet losses to reduce microplastic pollution ANNEX I RISK MANAGEMENT PLAN FOR INSTALLATIONS ANNEX II FORM FOR SELF-DECLARATION OF CONFORMITY ANNEX III ACTIONS FOR EU CARRIERS AND NON-EU CARRIERS ANNEX IV FORM OF THE CERTIFICATE OF CONFORMITY ANNEX V INFORMATION TO BE PROVIDED PURSUANT TO ARTICLE 10\":\n    - /url: /regulations/99e2b81c-0bb0-4f6d-a24b-938f865b1930?list=regulations&pos=2&of=969&prev=f1488b95-8058-49e4-9873-c429ba51126f&next=67adbecd-d572-4fd9-a9c8-b99a804775ab\n  - text: Regulation (EU) 2025/2365 on preventing plastic pellet losses to reduce microplastic pollution For a forwarder the regulation reaches the booking and the carrier contract, on a staged calendar. EU Regulation Dec 17, 2026 · 45 days T1\n  - button \"Regulation actions\"\n  - link \"REGULATION (EU) 2024/1106 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 11 April 2024 amending Regulations (EU) No 1227/2011 and (EU) 2019/942 as regards improving the Union’s protection against market manipulation on the wholesale energy market (Text with EEA relevance)\":\n    - /url: /regulations/67adbecd-d572-4fd9-a9c8-b99a804775ab?list=regulations&pos=3&of=969&prev=99e2b81c-0bb0-4f6d-a24b-938f865b1930&next=1fbb6729-0383-4e03-9603-50f63d15ce1f\n  - text: Regulation (EU) 2024/1106 Applies in EU; next date May 8, 2027. EU Regulation May 8, 2027 · 187 days T1\n  - button \"Regulation actions\"\n  - link \"COMMISSION DELEGATED REGULATION (EU) 2025/1482 of 24 July 2025 amending Regulation (EU) 2019/1021 of the European Parliament and of the Council as regards the persistent organic pollutants tetrabromodiphenyl ether, pentabromodiphenyl ether, hexabromodiphenyl ether, heptabromodiphenyl ether and decabromodiphenyl ether (Text with EEA relevance) ANNEX\":\n    - /url: /regulations/1fbb6729-0383-4e03-9603-50f63d15ce1f?list=regulations&pos=4&of=969&prev=67adbecd-d572-4fd9-a9c8-b99a804775ab&next=36203bb4-cae7-4ba1-b165-4ff7f38d28cf\n  - text: Delegated Regulation (EU) 2025/1482 It sets the concentration limits and step-down dates a workspace moving plastics, consumer goods, toys, or childcare products made from recovered material must track, with the toys/childcare tier reaching a materially stricter final limit (10 mg/kg by 17 May 2027) than the general recovered-material tier (200 mg/kg by 30 December 2027). EU Regulation May 17, 2027 · 196 days T1\n  - button \"Regulation actions\"\n  - link \"DIRECTIVE (EU) 2019/904 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 5 June 2019 on the reduction of the impact of certain plastic products on the environment (Text with EEA relevance) ANNEX\":\n    - /url: /regulations/36203bb4-cae7-4ba1-b165-4ff7f38d28cf?list=regulations&pos=5&of=969&prev=1fbb6729-0383-4e03-9603-50f63d15ce1f&next=01ca1bdf-a09e-4caf-afea-c90bd1040860\n  - text: Directive (EU) 2019/904 on the reduction of the impact of certain plastic products on the environment Applies in EU; next date Jul 3, 2027. EU Directive Jul 3, 2027 · 243 days T1\n  - button \"Regulation actions\"\n  - button \"All 969 monitor →\"\n  - text: then Awareness · 320 Awareness later showing 5 of 320\n  - link \"REGULATION (EU) 2024/3005 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 November 2024 on the transparency and integrity of Environmental, Social and Governance (ESG) rating activities, and amending Regulations (EU) 2019/2088 and (EU) 2023/2859 (Text with EEA relevance) ANNEX I INFORMATION TO BE PROVIDED IN THE APPLICATION FOR AUTHORISATION ANNEX II ORGANISATIONAL REQUIREMENTS ANNEX III DISCLOSURE REQUIREMENTS\":\n    - /url: /regulations/9ba8b509-4624-4c39-b388-786dda389b08?list=regulations&pos=1&of=320&next=4a108d70-0062-4c46-a090-151683f202a6\n  - text: Regulation (EU) 2024/3005 on the transparency and integrity of Environmental, Social and Governance (ESG) rating activities, and amending Regulations (EU) 2019/2088 and (EU) 2023/2859 ESG ratings are used by investors, borrowers and issuers, and by undertakings that buy them to assess risks and opportunities within their operations, so the companies that sell them now sit under ESMA supervision from 2 July 2026. EU Regulation Nov 2, 2026 · 0 days T1\n  - button \"Regulation actions\"\n  - 'link \"Alternative Fuels Data Center: Federal and State Laws and Incentives Database\"':\n    - /url: /regulations/4a108d70-0062-4c46-a090-151683f202a6?list=regulations&pos=2&of=320&prev=9ba8b509-4624-4c39-b388-786dda389b08&next=l2\n  - text: \"Alternative Fuels Data Center: Federal and State Laws and Incentives Database For a freight business the federal entries set the cost side of trucks, chargers, fuel and port equipment: the commercial clean vehicle credit applies only to vehicles acquired on or before September 30, 2025, the charger and fuelling credit runs through June 30, 2026, and the clean fuel production credit covers fuel sold between January 1, 2025 and December 31, 2029. US Guidance Nov 15, 2026 · 13 days T2\"\n  - button \"Regulation actions\"\n  - link \"Euro 7 Standard\":\n    - /url: /regulations/l2?list=regulations&pos=3&of=320&prev=4a108d70-0062-4c46-a090-151683f202a6&next=dc40b36b-4602-490b-bb02-4e1efdcd469d\n  - text: Euro 7 Standard New vehicles of categories M 1 and N 1 that do not comply cannot be registered from 29 November 2027, and those of categories M 2, M 3, N 2, N 3, O 3 and O 4 from 29 May 2029, so orders for those vehicles depend on the vehicle type being approved under the Regulation. EU Regulation Nov 29, 2026 · 27 days T1\n  - button \"Regulation actions\"\n  - link:\n    - /url: /regulations/dc40b36b-4602-490b-bb02-4e1efdcd469d?list=regulations&pos=4&of=320&prev=l2&next=b0b883a3-3468-4912-a4b8-4bb65544aaf8\n  - text: Directive (EU) 2024/2881 on ambient air quality and cleaner air for Europe (recast) The Directive puts the duty on Member States, which keep pollutants below limit values in their zones and establish air quality plans where a limit is exceeded. EU Directive Dec 11, 2026 · 39 days T1\n  - button \"Regulation actions\"\n  - link \"COMMISSION DELEGATED REGULATION (EU) 2023/2485 of 27 June 2023 amending Delegated Regulation (EU) 2021/2139 establishing additional technical screening criteria for determining the conditions under which certain economic activities qualify as contributing substantially to climate change mitigation or climate change adaptation and for determining whether those activities cause no significant harm to any of the other environmental objectives (Text with EEA relevance) ANNEX I ANNEX II AMENDMENTS TO ANNEX II TO DELEGATED REGULATION (EU) 2021/2139\":\n    - /url: /regulations/b0b883a3-3468-4912-a4b8-4bb65544aaf8?list=regulations&pos=5&of=320&prev=dc40b36b-4602-490b-bb02-4e1efdcd469d&next=9ca79a35-b51a-442d-8220-7ae20b6086a4\n  - text: Delegated Regulation (EU) 2023/2485 The act sets no charge or penalty on a shipment. EU Regulation Dec 11, 2026 · 39 days T1\n  - button \"Regulation actions\"\n  - button \"All 320 awareness →\"\n  - text: end of list\n  - heading \"Themes across the corpus\" [level=2]\n  - text: 6 active\n  - region \"Themes across the corpus, scroll sideways for more\":\n    - 'link \"Truck makers must cut average emissions: targets in Europe and California, battery prices, chargers and the haulier''s cost\"':\n      - /url: /regulations/0cfbbe8c-f162-4399-bba6-32f79dadd0b4\n    - text: 277 items Regulations Market Intel Research Operations Written for an earlier membership\n    - paragraph: Linked by drayage, Scope 3 emissions reporting, urban truck zones\n    - paragraph: \"California also regulates some fleets directly: The ACF Regulation requires State and Local Government Agency fleets to reduce emissions by increasing the use of Zero-Emission Vehicles (ZEVs) as vehicles are normally replaced. One stored page said: A 2025 rulemaking process for ACF amendments is underway at CARB; the specific hearing date is unconfirmed; no record here gives the outcome. The truck makers' rule has an exemption for small makers: Manufacturers averaging ≤500 California vehicle sales annually over the three prior model years are exempt from sections 1963 through 1963.5 starting in the 2024 model year.\"\n    - link \"· American Trucking Associations\":\n      - /url: /market/l9\n    - link \"· ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation Framework\":\n      - /url: /market/432a5042-1a51-4713-bfa0-8aca3fbfee62\n    - link \"· Autonomous & Connected Freight Technology\":\n      - /url: /market/autonomous-connected-freight-technology\n    - 'link \"Companies must publish their emissions, including what they buy: the reporting laws, the EU method for counting transport emissions, and the warehouse bill\"':\n      - /url: /regulations/w4_ca_sb253\n    - text: 34 items Regulations Market Intel Research Operations Written for an earlier membership\n    - paragraph: Linked by Scope 3 emissions reporting, CSRD sustainability reporting, supplier data requests\n    - paragraph: \"The California rules are soft at first: Penalties assessed on scope 3 reporting, between 2027 and 2030, shall only occur for nonfiling, and A reporting entity shall not be subject to an administrative penalty under this section for any misstatements with regard to scope 3 emissions disclosures; the stored text does not show the conditions in full. The second California law covers climate-related financial risk rather than emissions: A covered entity is a business entity with total annual revenues in excess of $500,000,000 that does business in California. The EU counting law is already law (The regulation entered into force on 1 June 2026) and its duties begin later (see Watch). The provisional agreement on the proposal also kept the figures out of pricing (The agreed text explicitly prevents CountEmissions EU emissions information from being used as a basis for pricing, taxation, or contractual liability); no record here shows that the final law repeats it. For large buildings in New York City: NYC Local Law 97 sets annual greenhouse gas (GHG) emissions caps on buildings larger than 25,000 square feet in New York City; The regulation governs building owners, not tenants directly.\"\n    - link \"· USGBC LEED Framework and 2026 Initiatives\":\n      - /url: /market/b3b32236-047c-4011-a79b-25913a70a662\n    - link \"· California Energy Commission Business Meeting Materials and RPS Compliance Period 4 Summary\":\n      - /url: /market/7aa19423-f99d-4c2b-b634-f4f234b41068\n    - link \"· Carbon Trust\":\n      - /url: /research/r16\n    - link \"Linked by ETS allowance surrender, 2003/87 and 32003L0087\":\n      - /url: /regulations/0053d552-1856-4796-8873-968894400956\n    - text: 101 items Regulations Market Intel Research Operations\n    - link \"· Carbon Allowance Price Intelligence\":\n      - /url: /market/carbon-allowance-price-intelligence\n    - 'link \"· Aviation Week: Sustainability\"':\n      - /url: /market/a8\n    - 'link \"· Air Cargo Market Dynamics: Elevated Rates, Geopolitical Impacts, and Capacity Adjustments (May 2026)\"':\n      - /url: /market/5b37050b-7b9e-462c-8eae-84a51d3b3010\n    - link \"Linked by ocean bunkering, vessel port calls and ocean emissions monitoring and reporting (MRV)\":\n      - /url: /regulations/o9\n    - text: 42 items Regulations Market Intel Research Operations\n    - 'link \"· Maritime Singapore Decarbonisation Blueprint: Working Towards 2050\"':\n      - /url: /market/237b3cc1-9971-46d6-a4ef-07fd65b05eed\n    - link \"· Alternative Fuels Insight (IRENA/IMO)\":\n      - /url: /research/o8\n    - link \"· ADB Celebrates 30-Year Europe Partnership, Signals Private Sector Investment Opportunities in Asian Transport\":\n      - /url: /market/67c6e313-e501-48ec-82be-944296aad8db\n    - link \"Linked by drayage, urban truck zones and packaging recyclability design\":\n      - /url: /regulations/0e11ab16-409f-4238-ac12-0580336ddd6d\n    - text: 54 items Regulations Market Intel\n    - 'link \"· SPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability Standards\"':\n      - /url: /market/9d18608f-269e-405a-9ad8-afa638dda928\n    - link \"· The Waste and Emissions Trading Act 2003 (Commencement No.1) (England) Order 2004\":\n      - /url: /regulations/0b851900-bf96-48ef-8bd4-0311ae0e5b65\n    - link \"· The Greenhouse Gas Emissions Trading Scheme (Amendment) Regulations 2014\":\n      - /url: /regulations/0c2f19be-e9ba-4948-8861-6b589754b011\n    - link \"Linked by International Maritime Organization, Marine Environment Protection Committee and Maritime Safety Committee\":\n      - /url: /regulations/1917da73-7c0b-4dde-b283-610fdef77599\n    - text: 27 items Regulations\n    - link \"· Decision (EU) 2020/2023 on the position to be adopted, on behalf of the European Union, within the EEA Joint Committee concerning an amendment to Annex IV (Energy) to the EEA Agreement\":\n      - /url: /regulations/176416b7-8773-4121-8553-247165f0a3c8\n    - link \"· Decision (EU) 2024/990 on the position to be taken on behalf of the European Union within the International Maritime Organization during the 81st session of the Marine Environment Protection Committee and the 108th session of the Maritime Safety Committee on the adoption of amendments to MARPOL, SOLAS, the IGF Code, the 2011 ESP Code, the LSA Code, the FSS Code and the STCW Code\":\n      - /url: /regulations/4adef0ea-2d1f-4a83-8a9d-ce0c0c0fa264\n    - link \"· Decision 2002/409/EC\":\n      - /url: /regulations/9bbd2b43-43d1-4166-a951-53a3fb445765\n  - heading \"Cross-surface patterns\" [level=2]\n  - text: 8 found\n  - paragraph: Regulatory-to-market lead/lag\n  - paragraph: A dated regulatory step is followed by a move in a related market price, so watch that price after the date.\n  - paragraph:\n    - link \"Regulations\":\n      - /url: /regulations\n    - text: \":\"\n    - link \"Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003…\":\n      - /url: /regulations/0053d552-1856-4796-8873-968894400956\n  - paragraph:\n    - link \"Market Intel\":\n      - /url: /market\n    - text: \": Fossil kerosene-type jet fuel\"\n  - paragraph:\n    - link \"Operations\":\n      - /url: /operations\n    - text: \": Shanghai (CN) → Genoa (IT), ocean\"\n  - paragraph: \"Watch: confirmed if the dated steps still stand on Dec 31, 2026, Jan 1, 2027, Jun 30, 2027, Dec 31, 2027, Jan 1, 2028, Jan 31, 2028 and Sep 30, 2028.\"\n  - paragraph: Regulatory-to-market lead/lag\n  - paragraph: A dated regulatory step is followed by a move in a related market price, so watch that price after the date.\n  - paragraph:\n    - link \"Regulations\":\n      - /url: /regulations\n    - text: \":\"\n    - link \"EU Battery Regulation (Regulation (EU) 2023/1542)\":\n      - /url: /regulations/eu-battery-regulation-2023-1542\n  - paragraph:\n    - link \"Research\":\n      - /url: /research\n    - text: \": EU Battery Regulation (Regulation (EU) 2023/1542)\"\n  - paragraph: \"Watch: confirmed if the dated steps still stand on Feb 18, 2027, Aug 18, 2027, Dec 31, 2027 and Aug 18, 2028.\"\n  - paragraph: Regulatory-to-market lead/lag\n  - paragraph: A dated regulatory step is followed by a move in a related market price, so watch that price after the date.\n  - paragraph:\n    - link \"Regulations\":\n      - /url: /regulations\n    - text: \":\"\n    - link \"EU 2023/959 — Directive amending the EU Emissions Trading System\":\n      - /url: /regulations/eu_ets_directive_2023_959\n  - paragraph:\n    - link \"Operations\":\n      - /url: /operations\n    - text: \": Shanghai (CN) → Genoa (IT), ocean\"\n  - paragraph: \"Watch: confirmed if the dated steps still stand on Dec 31, 2026, Jan 1, 2027, Dec 31, 2027, Jan 1, 2028, Sep 1, 2028 and Sep 30, 2028.\"\n  - paragraph: Regulatory-to-market lead/lag\n  - paragraph: A dated regulatory step is followed by a move in a related market price, so watch that price after the date.\n  - paragraph:\n    - link \"Regulations\":\n      - /url: /regulations\n    - text: \":\"\n    - link \"Euro 7 Standard\":\n      - /url: /regulations/l2\n  - paragraph:\n    - link \"Research\":\n      - /url: /research\n    - text: \": HDV charging · Road freight · India · United Kingdom\"\n  - paragraph: \"Watch: confirmed if the dated steps still stand on Nov 29, 2026, Nov 29, 2027, Dec 31, 2027, Apr 1, 2028, May 29, 2028 and Jul 1, 2028.\"\n  - paragraph: Regulatory-to-market lead/lag\n  - paragraph: A dated regulatory step is followed by a move in a related market price, so watch that price after the date.\n  - paragraph:\n    - link \"Regulations\":\n      - /url: /regulations\n    - text: \":\"\n    - link \"Brazil National Policy on Alternative Fuels (PNCA)\":\n      - /url: /regulations/brazil-national-policy-on-alternative-fuels-pnca\n  - paragraph:\n    - link \"Research\":\n      - /url: /research\n    - text: \": Bio-methanol · GHG intensity (method) · Ocean freight\"\n  - paragraph: \"Watch: confirmed if the dated step still stands on Jan 1, 2027.\"\n  - paragraph: Regulatory lead/lag forming\n  - paragraph: The Alternative Fuels Infrastructure Regulations 2017 also applies to road charging infrastructure operations.\n  - paragraph:\n    - link \"The Alternative Fuel Labelling and Greenhouse Gas Emissions (Miscellaneous Amendments)…\":\n      - /url: /regulations/0e11ab16-409f-4238-ac12-0580336ddd6d\n    - text: ·\n    - link \"The Alternative Fuels Infrastructure Regulations 2017\":\n      - /url: /regulations/85234032-d379-498d-a66b-b7bcd1d3bfe6\n  - paragraph: \"Next link to watch: a Market Intel price series that ties these items together\"\n  - paragraph: Regulatory lead/lag forming\n  - paragraph: UN SDGs 9 & 13 also applies to Scope 3 emissions reporting operations in Global on transport and emissions.\n  - paragraph:\n    - link \"World Bank Transport\":\n      - /url: /research/g30\n    - text: ·\n    - link \"UN SDGs 9 & 13\":\n      - /url: /regulations/g27\n  - paragraph: \"Next link to watch: a Market Intel price series that ties these items together\"\n  - paragraph: Regulatory lead/lag forming\n  - paragraph: The Energy Efficiency (Private Rented Property) (England and Wales)… also applies to packaging EPR registration operations.\n  - paragraph:\n    - link \"DIRECTIVE (EU) 2025/1892 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 10 September…\":\n      - /url: /regulations/87d33edb-d51a-4ef5-90c2-797402806308\n    - text: ·\n    - link \"The Energy Efficiency (Private Rented Property) (England and Wales) Regulations 2015\":\n      - /url: /regulations/474ab4cd-c157-4451-8c7f-f9c9ab0015b6\n  - paragraph: \"Next link to watch: a Market Intel price series that ties these items together\"\n  - paragraph:\n    - text: \"Coverage: 2,056 of 2,278 catalogued Regulations instruments are dual-verified. 1,420 verified briefs are on the platform.\"\n    - link \"See coverage\":\n      - /url: /dashboard/coverage?data_class=regulations\n  - paragraph: Filters\n  - button \"Clear\" [disabled]\n  - paragraph: Mode\n  - checkbox \"Road 60\"\n  - text: Road 60\n  - checkbox \"Ocean 51\"\n  - text: Ocean 51\n  - checkbox \"Air 48\"\n  - text: Air 48\n  - checkbox \"Rail 17\"\n  - text: Rail 17\n  - checkbox \"Maritime 11\"\n  - text: Maritime 11\n  - checkbox \"Inland waterway 3\"\n  - text: Inland waterway 3\n  - paragraph: Jurisdiction\n  - checkbox \"EU 176\"\n  - text: EU 176\n  - checkbox \"US 23\"\n  - text: US 23\n  - checkbox \"Global 5\"\n  - text: Global 5\n  - checkbox \"Asia 4\"\n  - text: Asia 4\n  - checkbox \"GB 4\"\n  - text: GB 4\n  - checkbox \"BR 2\"\n  - text: BR 2\n  - button \"+ 26 more\"\n  - paragraph: Topic\n  - checkbox \"Transport 31\"\n  - text: Transport 31\n  - checkbox \"Emissions 29\"\n  - text: Emissions 29\n  - checkbox \"Aviation 17\"\n  - text: Aviation 17\n  - checkbox \"Maritime 16\"\n  - text: Maritime 16\n  - checkbox \"Reporting 11\"\n  - text: Reporting 11\n  - checkbox \"Corridors 8\"\n  - text: Corridors 8\n  - button \"+ 14 more\"\n  - paragraph: Source tier\n  - checkbox \"T1 1,286\"\n  - text: T1 1,286\n  - checkbox \"T2 27\"\n  - text: T2 27\n  - checkbox \"T3 2\"\n  - text: T3 2\n  - checkbox \"T4 1\"\n  - text: T4 1\n  - paragraph: Obligations · next 30 days\n  - link \"Calendar →\":\n    - /url: /regulations/register\n  - text: Nov 2 2026 Regulation (EU) 2024/3005 on the transparency and integrity of Environmental… By way of derogation from paragraph 1 of this Article, ESG rating providers categorised as small ESG rating providers, within the meaning… Nov 2 2026 Regulation (EU) 2024/3005 on the transparency and integrity of Environmental… shall notify ESMA in accordance with Article 5 no later than 2 November 2026 Nov 2 2026 Regulation (EU) 2024/3005 on the transparency and integrity of Environmental… …shall notify ESMA in accordance with Article 5 no later than 2 November 2026 if they wish to continue operating in the Union. Nov 9 2026 Delegated Decision (EU) 2025/934 It shall apply from 9 November 2026.\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -58,6 +59,10 @@
     {
       "level": 2,
       "text": "Themes across the corpus"
+    },
+    {
+      "level": 2,
+      "text": "Cross-surface patterns"
     }
   ],
   "controls": [
@@ -106,6 +111,11 @@
       "name": "Notifications"
     },
     {
+      "role": "link",
+      "name": "Regulation (EU) 2024/3005 on the transparency an…",
+      "item": true
+    },
+    {
       "role": "combobox",
       "name": "Search or ask across the workspace"
     },
@@ -115,19 +125,27 @@
     },
     {
       "role": "button",
-      "name": "Immediate — ≤ 90 days, 20 items"
+      "name": "Immediate — ≤ 90 days, 2 items"
     },
     {
       "role": "button",
-      "name": "Action — ≤ 6 months, 24 items"
+      "name": "Action — ≤ 6 months, 25 items"
     },
     {
       "role": "button",
-      "name": "Monitor — 6–12 months, 1,002 items"
+      "name": "Monitor — 6–12 months, 969 items"
     },
     {
       "role": "button",
-      "name": "Awareness — background, 270 items"
+      "name": "Awareness — later, 325 items"
+    },
+    {
+      "role": "textbox",
+      "name": "Name this view"
+    },
+    {
+      "role": "button",
+      "name": "Save this view"
     },
     {
       "role": "button",
@@ -151,243 +169,404 @@
     },
     {
       "role": "link",
-      "name": "Regulation (EU) 2024/1157 on shipments of waste"
+      "name": "COMMISSION DELEGATED DECISION (EU) 2025/934 of 5 March 2025 amending Decision 2000/532/EC as regards an update of the list of waste in relation to battery-related waste",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "EUDR (EU Deforestation Regulation)"
+      "name": "Regulation (EU) 2024/1157 on shipments of waste",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Commission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuels"
+      "name": "Council Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/EC",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "EU PPWR 2025/40"
+      "name": "REGULATION (EU) 2025/2650 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 19 December 2025 amending Regulation (EU) 2023/1115 as regards certain obligations of operators and traders ANNEX I ANNEX II ‘ANNEX III Simplified declaration for micro or small primary operators",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Directive (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance)"
+      "name": "EUDR (EU Deforestation Regulation)",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "The Greenhouse Gas Emissions Trading Scheme Order 2020",
+      "item": true
     },
     {
       "role": "button",
-      "name": "All 20 immediate →"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Alternative Fuels Data Center: Federal and State Laws and Incentives Database"
+      "name": "COMMISSION IMPLEMENTING REGULATION (EU) 2023/2122 of 12 October 2023 amending Implementing Regulation (EU) 2018/2066 as regards updating the monitoring and reporting of greenhouse gas emissions pursuant to Directive 2003/87/EC of the European Parliament and of the Council (Text with EEA relevance) ‘ANNEX IIa Tier definitions for calculation-based methodologies related to regulated entities ‘ANNEX IX Minimum data and information to be retained in accordance with Article 67(1) ‘ANNEX Xa Reports on fuel suppliers and fuel use of stationary installations and, where relevant, aircraft operators and shipping companies ANNEX Xb Reports on released fuels by regulated entities",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
-    },
-    {
-      "role": "link",
-      "name": "COMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 of 16 December 2025 laying down rules for the application of Regulation (EU) 2023/956 of the European Parliament and the Council as regards the establishment of default values (Text with EEA relevance) ANNEX I Default values for goods imported into the customs territory of the Union, except for electricity ANNEX II Default values for indirect emissions of goods listed in Annex I of Regulation (EU) 2023/956 and not listed in Annex II of that Regulation ANNEX III Default values for electricity imported into the customs territory of the Union ANNEX IV Default values for precursor for which the country of production cannot be identified"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "All 25 action →"
     },
     {
       "role": "link",
-      "name": "California SB 253 — Climate Corporate Data Accountability Act"
+      "name": "REGULATION (EU) 2024/1252 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 11 April 2024 establishing a framework for ensuring a secure and sustainable supply of critical raw materials and amending Regulations (EU) No 168/2013, (EU) 2018/858, (EU) 2018/1724 and (EU) 2019/1020 (Text with EEA relevance) ANNEX I Strategic raw materials ANNEX II Critical raw materials ANNEX III Assessment of the recognition criteria for Strategic Projects ANNEX IV Criteria for certification schemes ANNEX V Environmental footprint",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "EU Emissions Trading System (ETS) Extension to Maritime Transport"
+      "name": "REGULATION (EU) 2025/2365 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 12 November 2025 on preventing plastic pellet losses to reduce microplastic pollution ANNEX I RISK MANAGEMENT PLAN FOR INSTALLATIONS ANNEX II FORM FOR SELF-DECLARATION OF CONFORMITY ANNEX III ACTIONS FOR EU CARRIERS AND NON-EU CARRIERS ANNEX IV FORM OF THE CERTIFICATE OF CONFORMITY ANNEX V INFORMATION TO BE PROVIDED PURSUANT TO ARTICLE 10",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "EU Aviation ETS"
+      "name": "REGULATION (EU) 2024/1106 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 11 April 2024 amending Regulations (EU) No 1227/2011 and (EU) 2019/942 as regards improving the Union’s protection against market manipulation on the wholesale energy market (Text with EEA relevance)",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "COMMISSION DELEGATED REGULATION (EU) 2025/1482 of 24 July 2025 amending Regulation (EU) 2019/1021 of the European Parliament and of the Council as regards the persistent organic pollutants tetrabromodiphenyl ether, pentabromodiphenyl ether, hexabromodiphenyl ether, heptabromodiphenyl ether and decabromodiphenyl ether (Text with EEA relevance) ANNEX",
+      "item": true
     },
     {
       "role": "button",
-      "name": "All 24 action →"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Council Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/EC"
+      "name": "DIRECTIVE (EU) 2019/904 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 5 June 2019 on the reduction of the impact of certain plastic products on the environment (Text with EEA relevance) ANNEX",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
-    },
-    {
-      "role": "link",
-      "name": "COMMISSION DELEGATED REGULATION (EU) 2025/1482 of 24 July 2025 amending Regulation (EU) 2019/1021 of the European Parliament and of the Council as regards the persistent organic pollutants tetrabromodiphenyl ether, pentabromodiphenyl ether, hexabromodiphenyl ether, heptabromodiphenyl ether and decabromodiphenyl ether (Text with EEA relevance) ANNEX"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "All 969 monitor →"
     },
     {
       "role": "link",
-      "name": "DIRECTIVE (EU) 2024/3101 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 November 2024 amending Directive 2005/35/EC as regards ship-source pollution and on the introduction of administrative penalties for infringements (Text with EEA relevance) ANNEX ‘ANNEX I Non-exhaustive list of irregularities or information referred to in Article 6 ANNEX II Information to be included in the Union-wide overview published by the Commission, referred to in Article 10c"
+      "name": "REGULATION (EU) 2024/3005 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 November 2024 on the transparency and integrity of Environmental, Social and Governance (ESG) rating activities, and amending Regulations (EU) 2019/2088 and (EU) 2023/2859 (Text with EEA relevance) ANNEX I INFORMATION TO BE PROVIDED IN THE APPLICATION FOR AUTHORISATION ANNEX II ORGANISATIONAL REQUIREMENTS ANNEX III DISCLOSURE REQUIREMENTS",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Regulation (EU) 2024/3015 of the European Parliament and of the Council of 27 November 2024 on prohibiting products made with forced labour on the Union market and amending Directive (EU) 2019/1937 (Text with EEA relevance)"
+      "name": "Alternative Fuels Data Center: Federal and State Laws and Incentives Database",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Council Implementing Decision (EU) 2025/210 of 28 January 2025 authorising Spain to apply a reduced rate of taxation to electricity directly supplied to vessels berthed in ports in accordance with Directive 2003/96/EC"
+      "name": "Euro 7 Standard",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "Regulation actions",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "DIRECTIVE (EU) 2024/2881 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 23 October 2024 on ambient air quality and cleaner air for Europe (recast) ANNEX I Air quality standards ANNEX II Assessment thresholds ANNEX III Minimum numbers of sampling points for fixed measurement ANNEX IV Assessment of ambient air quality and location of sampling points ANNEX V Data quality objectives ANNEX VI Reference methods for assessment of concentrations in ambient air and deposition rates ANNEX VII Measurements at monitoring supersites and of mass concentration, chemical composition of PM 2,5 , ozone precursor substances and ultrafine particles ANNEX VIII Information to be included in air quality plans and air quality roadmaps for improvement in ambient air quality ANNEX IX Emergency measures to be considered for inclusion in the short-term action plans required under Article 20 ANNEX X Public information ANNEX XI ANNEX XII Correlation table",
+      "item": true
     },
     {
       "role": "button",
-      "name": "All 1,002 monitor →"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Euro 7 Standard"
+      "name": "COMMISSION DELEGATED REGULATION (EU) 2023/2485 of 27 June 2023 amending Delegated Regulation (EU) 2021/2139 establishing additional technical screening criteria for determining the conditions under which certain economic activities qualify as contributing substantially to climate change mitigation or climate change adaptation and for determining whether those activities cause no significant harm to any of the other environmental objectives (Text with EEA relevance) ANNEX I ANNEX II AMENDMENTS TO ANNEX II TO DELEGATED REGULATION (EU) 2021/2139",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
-    },
-    {
-      "role": "link",
-      "name": "COMMISSION DELEGATED REGULATION (EU) 2025/656 of 2 April 2025 amending Regulation (EU) 2023/1804 of the European Parliament and of the Council as regards standards for wireless recharging, electric road system, vehicle-to-grid communication and hydrogen supply for road transport vehicles ANNEX"
+      "name": "Regulation actions",
+      "item": true
     },
     {
       "role": "button",
-      "name": "Regulation actions"
+      "name": "All 320 awareness →"
     },
     {
       "role": "link",
-      "name": "Oregon Department of Environmental Quality: Central Hub for Environmental Compliance and Public Resources"
-    },
-    {
-      "role": "button",
-      "name": "Regulation actions"
+      "name": "Truck makers must cut average emissions: targets in Europe and California, battery prices, chargers and the haulier's cost",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Brazil National Policy on Alternative Fuels (PNCA)"
-    },
-    {
-      "role": "button",
-      "name": "Regulation actions"
+      "name": "· American Trucking Associations",
+      "item": true
     },
     {
       "role": "link",
-      "name": "China's National Carbon Market: 2027 All-Major-Industrial-Sectors Expansion Roadmap"
-    },
-    {
-      "role": "button",
-      "name": "Regulation actions"
-    },
-    {
-      "role": "button",
-      "name": "All 265 awareness →"
+      "name": "· ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation Framework",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Shared regulation identifier on Regulations"
+      "name": "· Autonomous & Connected Freight Technology",
+      "item": true
     },
     {
       "role": "link",
-      "name": "· Regulation (EC) No 923/2009 of the European Parliament and of the Council of 16 September 2009 amending Regulation (EC) No 1692/2006 establishing the second Marco Polo programme for the granting of Community financial assistance to improve the environmental performance of the freight transport system (Marco Polo II)"
+      "name": "Companies must publish their emissions, including what they buy: the reporting laws, the EU method for counting transport emissions, and the warehouse bill",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Shared source on Regulations"
+      "name": "· USGBC LEED Framework and 2026 Initiatives",
+      "item": true
     },
     {
       "role": "link",
-      "name": "· New Source Performance Standards Review for Stationary Combustion Turbines and Stationary Gas Turbines; Correction"
+      "name": "· California Energy Commission Business Meeting Materials and RPS Compliance Period 4 Summary",
+      "item": true
     },
     {
       "role": "link",
-      "name": "· Technical Guidelines for the Production of Regenerative Agricultural Biofuel Feedstocks"
+      "name": "· Carbon Trust",
+      "item": true
     },
     {
       "role": "link",
-      "name": "· Air Plan Approval; Delaware; 2006 24-Hour Fine Particulate Matter Limited Maintenance Plan for the Philadelphia Nonattainment Area"
+      "name": "Linked by ETS allowance surrender, 2003/87 and 32003L0087",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Shared regulation identifier on Regulations"
+      "name": "· Carbon Allowance Price Intelligence",
+      "item": true
     },
     {
       "role": "link",
-      "name": "· Commission Delegated Regulation (EU) 2026/52 of 16 December 2025 amending Annex III to Directive (EU) 2024/1275 of the European Parliament and of the Council as regards the Union framework for the national calculation of life-cycle global warming potential"
+      "name": "· Aviation Week: Sustainability",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Shared scenarios on Regulations"
+      "name": "· Air Cargo Market Dynamics: Elevated Rates, Geopolitical Impacts, and Capacity Adjustments (May 2026)",
+      "item": true
     },
     {
       "role": "link",
-      "name": "· Regulation (EU) No 649/2012 of the European Parliament and of the Council of 4 July 2012 concerning the export and import of hazardous chemicals (recast) (Text with EEA relevance)"
+      "name": "Linked by ocean bunkering, vessel port calls and ocean emissions monitoring and reporting (MRV)",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Shared title entity on Regulations"
+      "name": "· Maritime Singapore Decarbonisation Blueprint: Working Towards 2050",
+      "item": true
     },
     {
       "role": "link",
-      "name": "· Commission Implementing Decision (EU) 2016/422 of 18 March 2016 on the compliance of unit rates for charging zones for 2015 under Article 17 of Implementing Regulation (EU) No 391/2013 (notified under document C(2016) 1595) (Text with EEA relevance)"
+      "name": "· Alternative Fuels Insight (IRENA/IMO)",
+      "item": true
     },
     {
       "role": "link",
-      "name": "Shared regulation identifier on Regulations"
+      "name": "· ADB Celebrates 30-Year Europe Partnership, Signals Private Sector Investment Opportunities in Asian Transport",
+      "item": true
     },
     {
       "role": "link",
-      "name": "· Commission Regulation (EC) No 93/2007 of 30 January 2007 amending Regulation (EC) No 2099/2002 of the European Parliament and of the Council establishing a Committee on Safe Seas and the Prevention of Pollution from Ships (COSS) (Text with EEA relevance)"
+      "name": "Linked by drayage, urban truck zones and packaging recyclability design",
+      "item": true
     },
     {
       "role": "link",
-      "name": "· Commission Regulation (EC) No 415/2004 of 5 March 2004 amending Regulation (EC) No 2099/2002 of the European Parliament and of the Council establishing a Committee on Safe Seas and the Prevention of Pollution from Ships (COSS) and amending the regulations on maritime safety and the prevention of pollution from ships (Text with EEA relevance)"
+      "name": "· SPC Impact 2026: Industry-Wide Shift in Sustainable Packaging Practices and Recyclability Standards",
+      "item": true
     },
     {
       "role": "link",
-      "name": "· Regulation (EC) No 2099/2002 of the European Parliament and of the Council of 5 November 2002 establishing a Committee on Safe Seas and the Prevention of Pollution from Ships (COSS) and amending the Regulations on maritime safety and the prevention of pollution from ships"
+      "name": "· The Waste and Emissions Trading Act 2003 (Commencement No.1) (England) Order 2004",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "· The Greenhouse Gas Emissions Trading Scheme (Amendment) Regulations 2014",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Linked by International Maritime Organization, Marine Environment Protection Committee and Maritime Safety Committee",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "· Decision (EU) 2020/2023 on the position to be adopted, on behalf of the European Union, within the EEA Joint Committee concerning an amendment to Annex IV (Energy) to the EEA Agreement",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "· Decision (EU) 2024/990 on the position to be taken on behalf of the European Union within the International Maritime Organization during the 81st session of the Marine Environment Protection Committee and the 108th session of the Maritime Safety Committee on the adoption of amendments to MARPOL, SOLAS, the IGF Code, the 2011 ESP Code, the LSA Code, the FSS Code and the STCW Code",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "· Decision 2002/409/EC",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Regulations"
+    },
+    {
+      "role": "link",
+      "name": "Directive 2003/87/EC of the European Parliament and of the Council of 13 October 2003…",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Market Intel"
+    },
+    {
+      "role": "link",
+      "name": "Operations"
+    },
+    {
+      "role": "link",
+      "name": "Regulations"
+    },
+    {
+      "role": "link",
+      "name": "EU Battery Regulation (Regulation (EU) 2023/1542)",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Research"
+    },
+    {
+      "role": "link",
+      "name": "Regulations"
+    },
+    {
+      "role": "link",
+      "name": "EU 2023/959 — Directive amending the EU Emissions Trading System",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Operations"
+    },
+    {
+      "role": "link",
+      "name": "Regulations"
+    },
+    {
+      "role": "link",
+      "name": "Euro 7 Standard",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Research"
+    },
+    {
+      "role": "link",
+      "name": "Regulations"
+    },
+    {
+      "role": "link",
+      "name": "Brazil National Policy on Alternative Fuels (PNCA)",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Research"
+    },
+    {
+      "role": "link",
+      "name": "The Alternative Fuel Labelling and Greenhouse Gas Emissions (Miscellaneous Amendments)…",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "The Alternative Fuels Infrastructure Regulations 2017",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "World Bank Transport",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "UN SDGs 9 & 13",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "DIRECTIVE (EU) 2025/1892 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 10 September…",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "The Energy Efficiency (Private Rented Property) (England and Wales) Regulations 2015",
+      "item": true
     },
     {
       "role": "link",
@@ -399,15 +578,15 @@
     },
     {
       "role": "checkbox",
-      "name": "Road57"
+      "name": "Road60"
     },
     {
       "role": "checkbox",
-      "name": "Ocean48"
+      "name": "Ocean51"
     },
     {
       "role": "checkbox",
-      "name": "Air47"
+      "name": "Air48"
     },
     {
       "role": "checkbox",
@@ -415,7 +594,7 @@
     },
     {
       "role": "checkbox",
-      "name": "maritime11"
+      "name": "Maritime11"
     },
     {
       "role": "checkbox",
@@ -423,7 +602,7 @@
     },
     {
       "role": "checkbox",
-      "name": "EU172"
+      "name": "EU176"
     },
     {
       "role": "checkbox",
@@ -431,15 +610,15 @@
     },
     {
       "role": "checkbox",
-      "name": "GLOBAL5"
+      "name": "Global5"
+    },
+    {
+      "role": "checkbox",
+      "name": "Asia4"
     },
     {
       "role": "checkbox",
       "name": "GB4"
-    },
-    {
-      "role": "checkbox",
-      "name": "ASIA3"
     },
     {
       "role": "checkbox",
@@ -451,27 +630,27 @@
     },
     {
       "role": "checkbox",
-      "name": "transport30"
+      "name": "Transport31"
     },
     {
       "role": "checkbox",
-      "name": "emissions27"
+      "name": "Emissions29"
     },
     {
       "role": "checkbox",
-      "name": "aviation17"
+      "name": "Aviation17"
     },
     {
       "role": "checkbox",
-      "name": "maritime16"
+      "name": "Maritime16"
     },
     {
       "role": "checkbox",
-      "name": "reporting10"
+      "name": "Reporting11"
     },
     {
       "role": "checkbox",
-      "name": "corridors8"
+      "name": "Corridors8"
     },
     {
       "role": "button",
@@ -479,11 +658,11 @@
     },
     {
       "role": "checkbox",
-      "name": "T11,280"
+      "name": "T11,286"
     },
     {
       "role": "checkbox",
-      "name": "T228"
+      "name": "T227"
     },
     {
       "role": "checkbox",
@@ -507,153 +686,149 @@
     "items": [
       {
         "tag": "div",
-        "text": "GLOBALRegulation (EU) 2024/1157 on shipments of wasteregulationneeds more dataGovernment fundedRegulator aligned+1 moreNov 21, 202632 daysT1Government fundedRegulator aligned+1 more⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Delegated Decision (EU) 2025/934The Decision rewrites the waste codes for batteries and for the waste from making and recycling them: lithium-based, sodium-based and nickel-based batteries each get their own entries, and a new hazardous code covers lithium-based batteries separately collected from m",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUEUDR (EU Deforestation Regulation)regulation · ocean, road · packagingneeds more dataGovernment fundedRegulator aligned+1 moreDec 30, 202671 daysT1Government fundedRegulator aligned+1 more⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Regulation (EU) 2024/1157Since 21 May 2026 prior-consent procedures run electronically through the Commission's central system, with the paper route allowed for green-listed waste only until 31 December 2026.RegulationNov 21, 2026 · 19 daysT1⋯",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUCommission Delegated Regulation (EU) 2024/3214 of 16 October 2024 amending Regulation (EU) 2015/757 of the European Parliament and of the Council as regards the rules for the monitoring of greenhouse gas emissions from offshore ships and the zero-rating of sustainable fuelsregulationneeds more dat",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Implementing Decision (EU) 2026/1295A road operator that buys diesel or petrol in Sweden between 1 July 2026 and 30 November 2026 can face a lower fuel tax than the EU minimum, because the Council has authorised Sweden to cut it by up to 2,4 SEK per litre.EUFrameworkNov 30, 2026 · 28 daysT1⋯",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUEU PPWR 2025/40regulation · air, ocean, road · packagingneeds more dataGovernment fundedRegulator aligned+2 moreDec 31, 202672 daysT2Government fundedRegulator aligned+2 more⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Regulation (EU) 2025/2650For a forwarder the change lands at the border and in the booking record.EURegulationDec 30, 2026 · 58 daysT1⋯",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUDirective (EU) 2025/794 of the European Parliament and of the Council of 14 April 2025 amending Directives (EU) 2022/2464 and (EU) 2024/1760 as regards the dates from which Member States are to apply certain corporate sustainability reporting and due diligence requirements (Text with EEA relevance",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "EUDR (EU Deforestation Regulation)The main duties apply from 30 December 2026 to large and medium operators and, as the Commission's trade page states, to downstream operators and traders of all sizes, dates the Commission pages attribute to Regulation (EU) 2025/2650; natural persons and micro-enter",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "USAlternative Fuels Data Center: Federal and State Laws and Incentives Databaseguidance · fuelsneeds more dataGovernment fundedRegulator aligned+1 moreNov 15, 202626 daysT2Government fundedRegulator aligned+1 more⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "The Greenhouse Gas Emissions Trading Scheme Order 2020Aircraft operators and, since the 2026 extension, maritime operators must report their emissions and hand back allowances each year, for aircraft by 30th April of the following year and for 2026 maritime emissions by 30th April 2028.GBRegulationD",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUCOMMISSION IMPLEMENTING REGULATION (EU) 2025/2621 of 16 December 2025 laying down rules for the application of Regulation (EU) 2023/956 of the European Parliament and the Council as regards the establishment of default values (Text with EEA relevance) ANNEX I Default values for goods imported into",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Implementing Regulation (EU) 2023/2122A second EU carbon market for fuels used in road transport and buildings starts reporting on 1 January 2025, with the recitals expecting trading to start in 2027.EURegulationDec 31, 2026 · 59 daysT1⋯",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "US-CACalifornia SB 253 — Climate Corporate Data Accountability Actregulation · road, ocean, air, rail · reportingneeds more dataGovernment fundedRegulator aligned+1 moreJan 1, 202773 daysT1Government fundedRegulator aligned+1 more⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Regulation (EU) 2024/1252The regulation reaches freight through the goods and their paperwork, not through a charge on carriage.EURegulationNov 24, 2026 · 22 daysT1⋯",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUEU Emissions Trading System (ETS) Extension to Maritime Transportregulation · ocean · emissionsneeds more dataGovernment fundedStandards defining+1 moreJan 1, 202773 daysT1Government fundedStandards defining+1 more⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Regulation (EU) 2025/2365 on preventing plastic pellet losses to reduce microplastic pollutionFor a forwarder the regulation reaches the booking and the carrier contract, on a staged calendar.EURegulationDec 17, 2026 · 45 daysT1⋯",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUEU Aviation ETSregulation · air · emissionsneeds more dataGovernment fundedRegulator aligned+2 moreJan 1, 202773 daysT2Government fundedRegulator aligned+2 more⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Regulation (EU) 2024/1106Applies in EU; next date May 8, 2027.EURegulationMay 8, 2027 · 187 daysT1⋯",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUCouncil Implementing Decision (EU) 2026/1295 of 4 June 2026 authorising Sweden to apply reduced rates of excise duty to gas oil and unleaded petrol used as motor fuels, in accordance with Article 19 of Directive 2003/96/ECframework · roadneeds more dataNov 30, 202641 daysT1⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Delegated Regulation (EU) 2025/1482It sets the concentration limits and step-down dates a workspace moving plastics, consumer goods, toys, or childcare products made from recovered material must track, with the toys/childcare tier reaching a materially stricter final limit (10 mg/kg by 17 May 2027) ",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUCOMMISSION DELEGATED REGULATION (EU) 2025/1482 of 24 July 2025 amending Regulation (EU) 2019/1021 of the European Parliament and of the Council as regards the persistent organic pollutants tetrabromodiphenyl ether, pentabromodiphenyl ether, hexabromodiphenyl ether, heptabromodiphenyl ether and dec",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Directive (EU) 2019/904 on the reduction of the impact of certain plastic products on the environmentApplies in EU; next date Jul 3, 2027.EUDirectiveJul 3, 2027 · 243 daysT1⋯",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUDIRECTIVE (EU) 2024/3101 OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL of 27 November 2024 amending Directive 2005/35/EC as regards ship-source pollution and on the introduction of administrative penalties for infringements (Text with EEA relevance) ANNEX ‘ANNEX I Non-exhaustive list of irregulari",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Regulation (EU) 2024/3005 on the transparency and integrity of Environmental, Social and Governance (ESG) rating activities, and amending Regulations (EU) 2019/2088 and (EU) 2023/2859ESG ratings are used by investors, borrowers and issuers, and by undertakings that buy them to assess risks and oppor",
+        "width": 946,
+        "height": 101.5625,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EURegulation (EU) 2024/3015 of the European Parliament and of the Council of 27 November 2024 on prohibiting products made with forced labour on the Union market and amending Directive (EU) 2019/1937 (Text with EEA relevance)regulationneeds more dataDec 14, 2027420 daysT1⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Alternative Fuels Data Center: Federal and State Laws and Incentives DatabaseFor a freight business the federal entries set the cost side of trucks, chargers, fuel and port equipment: the commercial clean vehicle credit applies only to vehicles acquired on or before September 30, 2025, the charger a",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUCouncil Implementing Decision (EU) 2025/210 of 28 January 2025 authorising Spain to apply a reduced rate of taxation to electricity directly supplied to vessels berthed in ports in accordance with Directive 2003/96/ECregulationneeds more dataDec 31, 2028803 daysT1⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Euro 7 StandardNew vehicles of categories M 1 and N 1 that do not comply cannot be registered from 29 November 2027, and those of categories M 2, M 3, N 2, N 3, O 3 and O 4 from 29 May 2029, so orders for those vehicles depend on the vehicle type being approved under the Regulation.EURegulationNov 2",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUEuro 7 Standardregulation · road · transportneeds more dataGovernment fundedRegulator aligned+2 moreNov 29, 202640 daysT1Government fundedRegulator aligned+2 more⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Directive (EU) 2024/2881 on ambient air quality and cleaner air for Europe (recast)The Directive puts the duty on Member States, which keep pollutants below limit values in their zones and establish air quality plans where a limit is exceeded.EUDirectiveDec 11, 2026 · 39 daysT1⋯",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       },
       {
         "tag": "div",
-        "text": "EUCOMMISSION DELEGATED REGULATION (EU) 2025/656 of 2 April 2025 amending Regulation (EU) 2023/1804 of the European Parliament and of the Council as regards standards for wireless recharging, electric road system, vehicle-to-grid communication and hydrogen supply for road transport vehicles ANNEXregu",
-        "width": 618,
-        "height": 56,
-        "container": "main"
-      },
-      {
-        "tag": "div",
-        "text": "USOregon Department of Environmental Quality: Central Hub for Environmental Compliance and Public Resourcesguidance · infrastructureneeds more dataGovernment fundedRegulator aligned+2 moreJan 1, 202773 daysT2Government fundedRegulator aligned+2 more⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
-      },
-      {
-        "tag": "div",
-        "text": "BRBrazil National Policy on Alternative Fuels (PNCA)regulation · road, rail · fuelsneeds more dataGovernment fundedRegulator aligned+1 moreJan 1, 202773 daysT2Government fundedRegulator aligned+1 more⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
-      },
-      {
-        "tag": "div",
-        "text": "CNChina's National Carbon Market: 2027 All-Major-Industrial-Sectors Expansion Roadmapregulation · road, rail, ocean, air · emissionsneeds more dataJan 1, 202773 daysT2⋯",
-        "width": 618,
-        "height": 56,
-        "container": "main"
+        "text": "Delegated Regulation (EU) 2023/2485The act sets no charge or penalty on a shipment.EURegulationDec 11, 2026 · 39 daysT1⋯",
+        "width": 946,
+        "height": 83.375,
+        "container": "main",
+        "item": true
       }
     ],
     "containers": [
       {
         "label": "main",
-        "count": 20
+        "count": 17
       }
     ]
   },
-  "document_height": 2488,
+  "document_height": 5808,
   "tiles": 1,
   "truncated": false,
   "offences": []
