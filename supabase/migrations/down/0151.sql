@@ -1,5 +1,4 @@
 -- Down for 0151_reconcile_dependent_claims: ledger_reconcile_sections returns to its 0074 body (a claim another claim rests on is not handled; the reconcile fails on the basis_claim_id foreign key as before).
-BEGIN;
 
 CREATE OR REPLACE FUNCTION public.ledger_reconcile_sections(p_item_id uuid, p_sections jsonb, p_now timestamptz) RETURNS jsonb
     LANGUAGE plpgsql SECURITY DEFINER
@@ -47,4 +46,3 @@ BEGIN
 END;
 $$;
 
-COMMIT;
