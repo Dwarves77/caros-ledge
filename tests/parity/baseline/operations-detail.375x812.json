@@ -6,14 +6,14 @@
     "width": 375,
     "height": 812
   },
-  "captured_at": "2026-10-30T21:00:02.383Z",
+  "captured_at": "2026-11-02T03:12:41.499Z",
   "http_status": 200,
   "final_path": "/operations/india-regional-operations-profile",
   "settled": true,
   "settle_reason": null,
   "accessibility": {
     "source": "locator.ariaSnapshot",
-    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Operations\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 44 · Operations / Indiana, United States\n  - heading \"India Regional Operations Profile\" [level=1]\n  - text: Operations · Indiana, United States · International Council on Clean Transportation (ICCT) · published Apr 11, 2026 · OCEAN · ROAD · AIR\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - text: Awareness · later Regional profile Indiana, United States OCEAN ROAD emissions T4 2 sources · 19 connections\n  - group \"Source bias tags\":\n    - text: Source Foundation funded Analytical synthesis Method disclosed\n    - button \"+2 more\"\n  - button \"Export brief\"\n  - button \"Share\"\n  - button \"Watch\"\n  - button \"+ Tag\"\n  - paragraph: Where\n  - text: Indiana, United States\n  - paragraph: Who pays\n  - text: \"Obligated: freight forwarder, road fleet operator\"\n  - paragraph: Your lanes\n  - text: \"ASIA · Ocean, Road, Air · Scenarios: ev fleet transition, port decarbonisation\"\n  - paragraph: Next milestone\n  - button \"Show more\"\n  - text: 2030 — Harit Sagar Green Port Guidelines target over 60% renewable energy use and half of port equipment electrified. · 2030 · in 1159 days\n  - paragraph: Timeline\n  - text: 3 milestones · 1 passed · next 2030\n  - 'img \"Milestone timeline: 3 milestones, 1 passed\"':\n    - button \"July 2025 — Ministry of Heavy Industries released electric-truck guidelines under the PM e-DRIVE scheme. · Jul 2025\": Jul 2025 July 2025 — Ministry of Heavy Industries released electric-truck guidelines under the PM e-DRIVE scheme.\n    - button \"Harit Sagar Green Port Guidelines target over 60% renewable energy use and half of port equipment electrified. · 2030\": 2030 Harit Sagar Green Port Guidelines target over 60% renewable energy use and half of port equipment electrified.\n    - button \"Harit Sagar targets 90% renewable energy use and 90% port-equipment electrification; Maritime Amrit Kaal Vision 2047 targets over 10,000 MMTPA port capacity and shore power at all major ports. · 2047\": 2047 Harit Sagar targets 90% renewable energy use and 90% port-equipment electrification; Maritime Amrit Kaal Vision 2047 targets over 10,000 MMTPA port capacity and shore power at all major ports.\n  - paragraph: Connections\n  - link \"References · regulations California Advanced Clean Fleets Rule (CARB) Bound by shared scenario\":\n    - /url: /regulations/w4_ca_acf\n    - paragraph: References · regulations\n    - paragraph: California Advanced Clean Fleets Rule (CARB)\n    - paragraph: Bound by shared scenario\n  - link \"References · regulations Euro 7 Standard Bound by shared scenario\":\n    - /url: /regulations/l2\n    - paragraph: References · regulations\n    - paragraph: Euro 7 Standard\n    - paragraph: Bound by shared scenario\n  - link \"References · research MIT Center for Transportation & Logistics — Sustainable Trucking Bound by shared scenario\":\n    - /url: /research/mit-center-for-transportation-logistics-sustainable-trucking\n    - paragraph: References · research\n    - paragraph: MIT Center for Transportation & Logistics — Sustainable Trucking\n    - paragraph: Bound by shared scenario\n  - link \"References · market ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation Framework Bound by shared scenario\":\n    - /url: /market/432a5042-1a51-4713-bfa0-8aca3fbfee62\n    - paragraph: References · market\n    - paragraph: ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation Framework\n    - paragraph: Bound by shared scenario\n  - group: 15 more connections below\n  - navigation \"Section index\":\n    - link \"S1 Summary\":\n      - /url: \"#summary\"\n    - link \"S2 Findings\":\n      - /url: \"#findings\"\n    - link \"S3 Aux. energy\":\n      - /url: \"#auxiliary-energy\"\n    - link \"S4 Grid queue\":\n      - /url: \"#grid-queue\"\n    - link \"S5 Sources\":\n      - /url: \"#sources\"\n    - link \"S7 Connected\":\n      - /url: \"#across-pages\"\n    - group \"Summary depth\":\n      - button \"Summary\" [pressed]\n      - button \"Full brief\"\n  - text: S1\n  - heading \"Summary\" [level=2]\n  - paragraph: Executive overview of what this item covers, key takeaways, and how its timeline and scope affect freight operations.\n  - paragraph: Operations profile for India covering road-freight cost and emissions structure, the PM e-DRIVE electric-truck scheme, BEE draft fuel-efficiency regulations, the Harit Sagar Green Port Guidelines, and the Maritime Amrit Kaal Vision 2047 port-capacity and shore-power targets.\n  - text: S2\n  - heading \"Substantive findings\" [level=2]\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Detailed analytical breakdown of operational drivers, cost baselines, mode impacts, and strategic talking points.\n  - paragraph: Operational cost baseline\n  - paragraph: This profile synthesises current intelligence on operational costs, regulatory environment, infrastructure feasibility, and the road-freight decarbonisation landscape for freight-forwarding and logistics operations in India. It is written for workspaces whose primary transport mode is ocean, with air and road as secondary, operating across high-value and time-sensitive cargo verticals, with India serving Asia-Europe and Asia-Americas trade lanes plus significant domestic road-freight legs.\n  - paragraph: Feasibility of operational choices\n  - paragraph: SCOPE\n  - paragraph: India has only 869 electric medium- and heavy-duty freight vehicles.\n  - paragraph: — WRI India\n  - link \"wri-india.org\":\n    - /url: https://wri-india.org/initiatives/accelerating-indias-freight-decarbonization\n  - group: Additional Operational Breakdown (3 sections) Showing top 2 operational sub-sections in Summary view. Expand or switch to Full brief to inspect all 5 sub-sections. Expand 3 more sections ▾\n  - text: S3\n  - heading \"Auxiliary energy load\" [level=2]\n  - text: energy and emissions of loads that run in place\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Stationary auxiliary load energy draw (kWh) and grid-intensity emissions (gCO2e) across monitored regional assets.\n  - status:\n    - text: Not covered\n    - paragraph: Auxiliary energy loads is not covered yet.\n    - paragraph: \"No rows yet: auxiliary-load facts are specific to each asset and no public source publishes them.\"\n    - paragraph: No roadmap position is recorded for this yet.\n    - button \"Request coverage\"\n  - text: S4\n  - heading \"Grid connection queue\" [level=2]\n  - text: p90 queue months against an assumed 24-month planning horizon\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Substation connection-queue lead times (p50/p90 months) evaluated against a 24-month infrastructure planning horizon.\n  - text: 25 substations monitored against 24-month horizon 0 Clear · 0 Blocked · 25 Unknown Sevington 11kV UNKNOWN UK Power Networks, South Eastern Power Network. -5.2 MW demand headroom of 18 MW firm, constraint GREEN (Thermal) p50 not recorded · p90 not recorded · as of 2026-05-29 No p90 queue time is recorded for this operator and capacity band, so no gate is stated. White Roding Primary 11kV UNKNOWN UK Power Networks, Eastern Power Network. -4.2 MW demand headroom of 2.9 MW firm, constraint RED (Thermal) p50 not recorded · p90 not recorded · as of 2026-05-29 No p90 queue time is recorded for this operator and capacity band, so no gate is stated. North Dr Primary 11kV UNKNOWN UK Power Networks, Eastern Power Network. -3.6 MW demand headroom of 11.5 MW firm, constraint RED (Thermal) p50 not recorded · p90 not recorded · as of 2026-05-29 No p90 queue time is recorded for this operator and capacity band, so no gate is stated. Ripe 11kV UNKNOWN UK Power Networks, South Eastern Power Network. -3.3 MW demand headroom of 2.2 MW firm, constraint RED (Thermal) p50 not recorded · p90 not recorded · as of 2026-05-29 No p90 queue time is recorded for this operator and capacity band, so no gate is stated.\n  - group: All Monitored Substations in Queue (21 additional) Showing 4 of 25 substations above. Expand to inspect the remaining 21 substation connection queues. Expand 21 more substations ▾\n  - text: S5\n  - heading \"Sources\" [level=2]\n  - text: 2 · tier = provenance, never urgency\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Primary statutory, regulatory, and institutional sources backing this brief, rated by provenance tier and bias profile.\n  - 'link \"needs primary-source figure \\\"India''s Transport Transformation: Three Policies to Shape the Road Ahead,\\\" International Council on Clean Transportation (ICCT) Independent research organisation\"':\n    - /url: https://theicct.org/indias-transport-transformation-three-policies-to-shape-the-road-ahead-sep25/\n    - text: —\n    - paragraph: \"\\\"India's Transport Transformation: Three Policies to Shape the Road Ahead,\\\" International Council on Clean Transportation (ICCT)\"\n    - paragraph: Independent research organisation\n  - link \"T4 \\\"Accelerating India's Freight Decarbonization,\\\" WRI India Independent research organisation\":\n    - /url: https://wri-india.org/initiatives/accelerating-indias-freight-decarbonization\n    - text: T4\n    - paragraph: \"\\\"Accelerating India's Freight Decarbonization,\\\" WRI India\"\n    - paragraph: Independent research organisation\n  - paragraph: At a glance\n  - text: Topic emissions Comparison Available\n  - paragraph: Impact assessment\n  - text: 6/12\n  - paragraph: Relevance to you\n  - text: High relevance\n  - paragraph: \"Relevance to your operation: affects your ocean/road/air operations, your role as freight forwarder/importer/exporter in ASIA, US-IN.\"\n  - paragraph: Needs more of your profile to say\n  - paragraph: Your organisation's role is not set, add it in your profile to see whether this applies to you.\n  - paragraph: Related in Indiana, United States\n  - link \"Australia Regional Operations Profile\":\n    - /url: /operations/australia-regional-operations-profile\n  - link \"Singapore Regional Operations Profile\":\n    - /url: /operations/singapore-regional-operations-profile\n  - link \"Japan Regional Operations Profile\":\n    - /url: /operations/japan-regional-operations-profile\n  - paragraph: Recalculated figures\n  - list:\n    - listitem:\n      - paragraph: One-week movement · Heavy fuel oil 3.5%S (EU average, before taxes)\n      - text: 132.881815 EUR/tonne (was 132.881815)\n      - paragraph: T2 Derived · recomputed Oct 25, 2026\n      - paragraph: \"From 2 inputs: Heavy fuel oil 3.5%S (EU average, before taxes), 2026-10-19, European Commission Weekly Oil Bulletin (DG ENER); Heavy fuel oil 3.5%S (EU average, before taxes), 2026-08-31, European Commission Weekly Oil Bulletin (DG ENER)\"\n    - listitem:\n      - paragraph: One-week movement · Heating gas oil (EU average, before taxes)\n      - text: 220.452174 EUR/1000L (was 220.452174)\n      - paragraph: T2 Derived · recomputed Oct 25, 2026\n      - paragraph: \"From 2 inputs: Heating gas oil (EU average, before taxes), 2026-10-19, European Commission Weekly Oil Bulletin (DG ENER); Heating gas oil (EU average, before taxes), 2026-08-31, European Commission Weekly Oil Bulletin (DG ENER)\"\n    - listitem:\n      - paragraph: One-week movement · Automotive gas oil / diesel (EU average, before taxes)\n      - text: 116.81645 EUR/1000L (was 116.81645)\n      - paragraph: T2 Derived · recomputed Oct 25, 2026\n      - paragraph: \"From 2 inputs: Automotive gas oil / diesel (EU average, before taxes), 2026-10-19, European Commission Weekly Oil Bulletin (DG ENER); Automotive gas oil / diesel (EU average, before taxes), 2026-08-31, European Commission Weekly Oil Bulletin (DG ENER)\"\n  - group: 5 more recalculated figures below\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n  - paragraph: In this list\n  - paragraph: Opened directly\n  - link \"Back to list\":\n    - /url: /operations\n  - heading \"Notes\" [level=2]\n  - text: Visible to your workspace only\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Private workspace notes shared only with members of your organisation.\n  - text: Add a note for your workspace\n  - textbox \"Add a note for your workspace\":\n    - /placeholder: Which lanes or clients this touches, who is on it, what was decided\n  - button \"Add note\" [disabled]\n  - text: 0 / 4,000\n  - status\n  - paragraph: No notes on this item yet. Notes are visible to your workspace only, never to other organisations.\n  - heading \"Assignments\" [level=2]\n  - text: Assign teammates, with a notification\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Workspace task assignments and ownership tracking for your team.\n  - paragraph: Nobody is assigned to this item yet.\n  - status\n  - group \"Assign to\":\n    - text: Assign to\n    - button \"Jason\"\n    - button \"Jason\"\n  - text: Due date (optional)\n  - textbox \"Due date (optional)\"\n  - button \"Assign\" [disabled]\n  - text: Pick at least one person. S7\n  - heading \"Connected intelligence\" [level=2]\n  - text: Intersections and theme analysis\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: How this item connects across the Caro’s Ledge repository — related regulations, market signals, research findings, and operations profiles.\n  - paragraph: Theme analysis\n  - paragraph: 24 items across Regulations, Market Intel, Research, Operations\n  - text: Narrative synthesis pending for this cluster. Items below are linked by shared scenarios, shared jurisdiction and topic.\n  - paragraph: Members by horizon\n  - text: Within 6 months 3 items 107 dated obligations · Regulations 3 to 5 years 1 item 2 dated obligations · Regulations 5 to 10 years 1 item 1 dated obligation · Regulations Ongoing / no fixed date 19 items Regulations, Market Intel, Research, Operations\n  - paragraph: Other items in this theme\n  - paragraph: Regulations · 9 items\n  - link \"California Advanced Clean Fleets Rule (CARB) Regulations\":\n    - /url: /regulations/w4_ca_acf\n    - paragraph: California Advanced Clean Fleets Rule (CARB)\n    - paragraph: Regulations\n  - 'link \"2013/807/EU: Commission Implementing Decision of 17 December 2013 confirming or amending the average specific emissions of CO2 and specific emissions targets for manufacturers of new light commercial vehicles for the calendar year 2012 pursuant to Regulation (EU) No 510/2011 of the European Parliament and of the Council Regulations\"':\n    - /url: /regulations/f1993422-37b9-4826-b285-90881a16b72c\n    - paragraph: \"2013/807/EU: Commission Implementing Decision of 17 December 2013 confirming or amending the average specific emissions of CO2 and specific emissions targets for manufacturers of new light commercial vehicles for the calendar year 2012 pursuant to Regulation (EU) No 510/2011 of the European Parliament and of the Council\"\n    - paragraph: Regulations\n  - link \"CARB Advanced Clean Trucks Regulations\":\n    - /url: /regulations/l7\n    - paragraph: CARB Advanced Clean Trucks\n    - paragraph: Regulations\n  - link \"Directive 2009/33/EC of the European Parliament and of the Council of 23 April 2009 on the promotion of clean and energy-efficient road transport vehicles (Text with EEA relevance) Regulations\":\n    - /url: /regulations/68e6a627-6a3f-46d0-bf58-bcf773aba3a9\n    - paragraph: Directive 2009/33/EC of the European Parliament and of the Council of 23 April 2009 on the promotion of clean and energy-efficient road transport vehicles (Text with EEA relevance)\n    - paragraph: Regulations\n  - link \"EPA SmartWay Regulations\":\n    - /url: /regulations/g8\n    - paragraph: EPA SmartWay\n    - paragraph: Regulations\n  - link \"EU 2024/1610 — CO₂ emission performance standards for new heavy-duty vehicles Regulations\":\n    - /url: /regulations/eu_clean_trucking_2024_1610\n    - paragraph: EU 2024/1610 — CO₂ emission performance standards for new heavy-duty vehicles\n    - paragraph: Regulations\n  - link \"and 3 more on Regulations\":\n    - /url: /regulations\n    - paragraph: and 3 more on Regulations\n  - paragraph: Market Intel · 5 items\n  - link \"American Trucking Associations Market Intel\":\n    - /url: /market/l9\n    - paragraph: American Trucking Associations\n    - paragraph: Market Intel\n  - link \"Autonomous & Connected Freight Technology Market Intel\":\n    - /url: /market/autonomous-connected-freight-technology\n    - paragraph: Autonomous & Connected Freight Technology\n    - paragraph: Market Intel\n  - link \"Battery & Electric Vehicle Technology Market Intel\":\n    - /url: /market/battery-electric-vehicle-technology\n    - paragraph: Battery & Electric Vehicle Technology\n    - paragraph: Market Intel\n  - link \"Critical Minerals & EV Supply Chain Market Intel\":\n    - /url: /market/critical-minerals-ev-supply-chain\n    - paragraph: Critical Minerals & EV Supply Chain\n    - paragraph: Market Intel\n  - link \"European Clean Trucking Alliance Market Intel\":\n    - /url: /market/l5\n    - paragraph: European Clean Trucking Alliance\n    - paragraph: Market Intel\n  - paragraph: Research · 5 items\n  - link \"IEA Global EV Outlook 2024 - Access Verification Research\":\n    - /url: /research/af277afd-b925-4583-852a-eaa6db310888\n    - paragraph: IEA Global EV Outlook 2024 - Access Verification\n    - paragraph: Research\n  - link \"ITF-OECD Automated and Autonomous Driving Resource Research\":\n    - /url: /research/605a2d06-80e5-4645-82d1-58ec57fc81d0\n    - paragraph: ITF-OECD Automated and Autonomous Driving Resource\n    - paragraph: Research\n  - link \"NREL Transportation R&D Research\":\n    - /url: /research/r29\n    - paragraph: NREL Transportation R&D\n    - paragraph: Research\n  - link \"Project JOLT Advances eHGV Real-World Trials; Decarbonization Challenges and Digital Innovation in Road Freight Research\":\n    - /url: /research/388b2ce8-1740-4e61-b3c6-a890ab4bdd03\n    - paragraph: Project JOLT Advances eHGV Real-World Trials; Decarbonization Challenges and Digital Innovation in Road Freight\n    - paragraph: Research\n  - 'link \"Project JOLT: Real-World eHGV Trials and Sustainable Road Freight Initiatives Research\"':\n    - /url: /research/b813d0a5-211b-4b56-9cee-503087c11486\n    - paragraph: \"Project JOLT: Real-World eHGV Trials and Sustainable Road Freight Initiatives\"\n    - paragraph: Research\n  - paragraph: Operations (this page) · 4 items\n  - link \"United States Regional Operations Profile Operations\":\n    - /url: /operations/united-states-regional-operations-profile\n    - paragraph: United States Regional Operations Profile\n    - paragraph: Operations\n  - link \"Brazil Regional Operations Profile Operations\":\n    - /url: /operations/brazil-regional-operations-profile\n    - paragraph: Brazil Regional Operations Profile\n    - paragraph: Operations\n  - link \"Brazilian Ministry of Transportation - Official Portal Navigation and Services Operations\":\n    - /url: /operations/282e480c-3d79-4ab8-8f60-b4c77fa3b228\n    - paragraph: Brazilian Ministry of Transportation - Official Portal Navigation and Services\n    - paragraph: Operations\n  - link \"Iowa Department of Transportation Freight Planning and Transportation Systems Overview Operations\":\n    - /url: /operations/496340f0-1dbf-47f9-bc7d-c5e3f452c107\n    - paragraph: Iowa Department of Transportation Freight Planning and Transportation Systems Overview\n    - paragraph: Operations\n  - region \"Recalculation notices\":\n    - text: Recalculation notices\n    - paragraph: No recalculations on your team's watchlist in this window.\n- button \"Back to top\"\n- alert"
+    "tree": "- button \"Notifications\"\n- banner:\n  - button \"Open navigation\"\n  - heading \"Operations\" [level=1]\n  - button \"Search\"\n  - link \"Account\":\n    - /url: /profile\n- main:\n  - paragraph: VOL IV · No. 45 · Operations / Indiana, United States\n  - heading \"India Regional Operations Profile\" [level=1]\n  - text: Operations · Indiana, United States · International Council on Clean Transportation (ICCT) · published Apr 11, 2026 · OCEAN · ROAD · AIR\n  - search:\n    - combobox \"Search or ask across the workspace\"\n    - button \"Ask\"\n  - text: Awareness · later Regional profile Indiana, United States OCEAN ROAD emissions T4 2 sources · 34 connections\n  - group \"Source bias tags\":\n    - text: Source Foundation funded Analytical synthesis Method disclosed\n    - button \"+2 more\"\n  - button \"Export brief\"\n  - button \"Share\"\n  - button \"Watch\"\n  - button \"+ Tag\"\n  - paragraph: Where\n  - text: Indiana, United States\n  - paragraph: Who pays\n  - text: \"Obligated: freight forwarder, carrier road, road fleet operator, port operator\"\n  - paragraph: Your lanes\n  - button \"Show more\"\n  - text: \"ASIA · Ocean, Road, Air · Scenarios: ev fleet transition, port decarbonisation, vessel shore power\"\n  - paragraph: Next milestone\n  - text: 2070 — «commitment to achieving net-zero emissions by 2070» · 2070 · in 15766 days\n  - paragraph: Timeline\n  - text: 4 milestones · 1 passed · next 2030\n  - 'img \"Milestone timeline: 4 milestones, 1 passed\"':\n    - button \"July 2025 — «In July 2025, the Ministry of Heavy Industries released guidelines for electric trucks under the PM e-DRIVE scheme» (already released) · Jul 2025\": Jul 2025 July 2025 — «In July 2025, the Ministry of Heavy Industries released guidelines for electric trucks under the PM e-DRIVE scheme» (already released)\n    - button \"«over 60% renewable energy use by 2030» and half of port equipment electrified, under the Harit Sagar Green Port Guidelines · 2030\": 2030 «over 60% renewable energy use by 2030» and half of port equipment electrified, under the Harit Sagar Green Port Guidelines\n    - button \"«shore power at all major ports by 2047» and 90% of port equipment electrified, under the Maritime Amrit Kaal Vision 2047 and the Harit Sagar Green Port Guidelines · 2047\": 2047 «shore power at all major ports by 2047» and 90% of port equipment electrified, under the Maritime Amrit Kaal Vision 2047 and the Harit Sagar Green Port Guidelines\n    - button \"«commitment to achieving net-zero emissions by 2070» · 2070\": 2070 «commitment to achieving net-zero emissions by 2070»\n  - paragraph: Connections\n  - 'link \"Referenced by · regulations EU Regulation 2023/1805 - Official Journal EU Regulation 2023/1805 - Official Journal also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.\"':\n    - /url: /regulations/7a0ead55-7a7b-403b-8ba3-33862cb296e2\n    - paragraph: Referenced by · regulations\n    - paragraph: EU Regulation 2023/1805 - Official Journal\n    - paragraph: \"EU Regulation 2023/1805 - Official Journal also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.\"\n  - 'link \"Referenced by · regulations EU Alternative Fuels Infrastructure Regulation (AFIR) EU Alternative Fuels Infrastructure Regulation (AFIR) also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.\"':\n    - /url: /regulations/eu-alternative-fuels-infrastructure-regulation-afir\n    - paragraph: Referenced by · regulations\n    - paragraph: EU Alternative Fuels Infrastructure Regulation (AFIR)\n    - paragraph: \"EU Alternative Fuels Infrastructure Regulation (AFIR) also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.\"\n  - 'link \"Referenced by · regulations EU Fit for 55 Package EU Fit for 55 Package also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.\"':\n    - /url: /regulations/g1\n    - paragraph: Referenced by · regulations\n    - paragraph: EU Fit for 55 Package\n    - paragraph: \"EU Fit for 55 Package also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.\"\n  - 'link \"References · regulations Implementing Decision (EU) 2020/1629 COUNCIL IMPLEMENTING DECISION (EU) 2020/1629 of 29 October 2020… also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.\"':\n    - /url: /regulations/5885a604-1ceb-4630-8fc2-9955a51f280a\n    - paragraph: References · regulations\n    - paragraph: Implementing Decision (EU) 2020/1629\n    - paragraph: \"COUNCIL IMPLEMENTING DECISION (EU) 2020/1629 of 29 October 2020… also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.\"\n  - group: 24 more connections below\n  - paragraph: Developing\n  - 'link \"Regulatory lead/lag forming · operations ESPO Green Ports ESPO Green Ports also applies to vessel shore power operations. Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together\"':\n    - /url: /operations/r32\n    - paragraph: Regulatory lead/lag forming · operations\n    - paragraph: ESPO Green Ports\n    - paragraph: ESPO Green Ports also applies to vessel shore power operations.\n    - paragraph: \"Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together\"\n  - 'link \"Regulatory lead/lag forming · operations Australia Regional Operations Profile Australia Regional Operations Profile also applies to operations in Asia (other) on emissions. Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together\"':\n    - /url: /operations/australia-regional-operations-profile\n    - paragraph: Regulatory lead/lag forming · operations\n    - paragraph: Australia Regional Operations Profile\n    - paragraph: Australia Regional Operations Profile also applies to operations in Asia (other) on emissions.\n    - paragraph: \"Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together\"\n  - 'link \"Regulatory lead/lag forming · operations Singapore Regional Operations Profile Singapore Regional Operations Profile also applies to operations in Asia (other) on corridors and emissions. Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together\"':\n    - /url: /operations/singapore-regional-operations-profile\n    - paragraph: Regulatory lead/lag forming · operations\n    - paragraph: Singapore Regional Operations Profile\n    - paragraph: Singapore Regional Operations Profile also applies to operations in Asia (other) on corridors and emissions.\n    - paragraph: \"Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together\"\n  - 'link \"Regulatory lead/lag forming · regulations Singapore Green Plan 2030 Singapore Green Plan 2030 also applies to operations in Asia (other) on corridors and emissions. Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together\"':\n    - /url: /regulations/g20\n    - paragraph: Regulatory lead/lag forming · regulations\n    - paragraph: Singapore Green Plan 2030\n    - paragraph: Singapore Green Plan 2030 also applies to operations in Asia (other) on corridors and emissions.\n    - paragraph: \"Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together\"\n  - navigation \"Section index\":\n    - link \"S1 Summary\":\n      - /url: \"#summary\"\n    - link \"S2 Findings\":\n      - /url: \"#findings\"\n    - link \"S3 Aux. energy\":\n      - /url: \"#auxiliary-energy\"\n    - link \"S4 Grid queue\":\n      - /url: \"#grid-queue\"\n    - link \"S5 Sources\":\n      - /url: \"#sources\"\n    - link \"S7 Connected\":\n      - /url: \"#across-pages\"\n    - group \"Summary depth\":\n      - button \"Summary\" [pressed]\n      - button \"Full brief\"\n  - text: S1\n  - heading \"Summary\" [level=2]\n  - paragraph: Executive overview of what this item covers, key takeaways, and how its timeline and scope affect freight operations.\n  - paragraph: \"An operations profile of India's road freight and port sector from an ICCT policy commentary (September 15, 2025) and a WRI India programme page: freight cost weight, the electric truck scheme, draft fuel-efficiency rules and port targets.\"\n  - paragraph: Why it matters\n  - paragraph: India's logistics costs are about 13% of GDP nationally and 70% of freight moves by road; the pages do not tie either figure to a lane cost. Only 869 electric medium- and heavy-duty freight vehicles run against 6.3 million trucks, held back by upfront cost and limited charging, so an electric truck option on Indian lanes is a supply question first. Draft fuel-efficiency rules and port targets for 2030 and 2047 may change which trucks carriers can buy and how ports are powered. The pages state no tariff, fuel price or haulage rate.\n  - paragraph: What it changes\n  - paragraph: India has 869 electric freight vehicles against 6.3 million trucks, so an electric truck option needs carrier confirmation; draft fuel rules and port targets are still ahead.\n  - paragraph: Key data\n  - paragraph: \"Road freight: 70% of India's freight moves by road; medium/heavy trucks are 44% of transport GHG share on just 3% of vehicles\"\n  - paragraph: \"Logistics costs: about 13% of GDP nationally; 10-15% of company expenses at the corporate level\"\n  - paragraph: Fewer than 900 electric medium- and heavy-duty freight vehicles in service nationally\n  - paragraph: \"Maritime Amrit Kaal Vision 2047: port capacity from 2500 to over 10000 MMTPA; shore power at all major ports by 2047\"\n  - text: S2\n  - heading \"Substantive findings\" [level=2]\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Detailed analytical breakdown of operational drivers, cost baselines, mode impacts, and strategic talking points.\n  - paragraph: Operational cost baseline\n  - paragraph: This profile covers India's road freight and port sector, drawn from a policy commentary by the International Council on Clean Transportation (ICCT), dated September 15, 2025, and a programme page of WRI India, a research institute. The pages state no industrial electricity tariff, diesel price per litre, driver or warehouse labour rate, port handling charge or haulage rate, so a unit cost baseline cannot be given and none is invented.\n  - paragraph: Feasibility of operational choices\n  - paragraph:\n    - text: \"Electric trucks: «India has only 869 electric medium- and heavy-duty freight vehicles», against the fleet of 6.3 million trucks quoted in section 1. WRI India gives the reason: «The high upfront cost of electric trucks, coupled with limited charging infrastructure, remains a significant roadblock.» It adds that «Additional barriers, including a fragmented industry, the absence of standardized contracts, and a lack of strong regulatory mandates, further slow progress.» Direction exists on the policy side: «In July 2025, the Ministry of Heavy Industries released guidelines for electric trucks under the PM e-DRIVE scheme», and the e-FAST India platform, on which WRI India is lead partner, reports «securing commitments for 7,750 e-trucks at the Clean Energy Ministerial.», with «Facilitating early e-truck pilots in Gujarat, Rajasthan, and Maharashtra».\"\n    - emphasis: \"Analytical inference:\"\n    - text: resting on these sentences, the position is restricted by cost and charging rather than barred by any rule the pages state, and the 7,750 trucks committed are many times the 869 on the road, so the first constraint on an electric truck option for a forwarder's Indian lanes is availability and charging, and the pages give no price or range for a truck to cost it.\n  - group: Additional Operational Breakdown (2 sections) Showing top 2 operational sub-sections in Summary view. Expand or switch to Full brief to inspect all 4 sub-sections. Expand 2 more sections ▾\n  - text: S3\n  - heading \"Auxiliary energy load\" [level=2]\n  - text: energy and emissions of loads that run in place\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Stationary auxiliary load energy draw (kWh) and grid-intensity emissions (gCO2e) across monitored regional assets.\n  - status:\n    - text: Not covered\n    - paragraph: Auxiliary energy loads is not covered yet.\n    - paragraph: \"No rows yet: auxiliary-load facts are specific to each asset and no public source publishes them.\"\n    - paragraph: No roadmap position is recorded for this yet.\n    - button \"Request coverage\"\n  - text: S4\n  - heading \"Grid connection queue\" [level=2]\n  - text: p90 queue months against an assumed 24-month planning horizon\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Substation connection-queue lead times (p50/p90 months) evaluated against a 24-month infrastructure planning horizon.\n  - status:\n    - text: Not covered\n    - paragraph: Grid connection queue is not covered yet.\n    - paragraph: No grid-connection queue data is held for Indiana, United States yet. The UK is the only network with published queue figures in the ledger.\n    - paragraph: No roadmap position is recorded for this yet.\n    - button \"Request coverage\"\n  - text: S5\n  - heading \"Sources\" [level=2]\n  - text: 2 · tier = provenance, never urgency\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Primary statutory, regulatory, and institutional sources backing this brief, rated by provenance tier and bias profile.\n  - 'link \"needs primary-source figure International Council on Clean Transportation, \\\"India''s transport transformation: Three policies to shape the road ahead\\\": https://theicct.org/indias-transport-transformation-three-policies-to-shape-the-road-ahead-sep25/\"':\n    - /url: https://theicct.org/indias-transport-transformation-three-policies-to-shape-the-road-ahead-sep25/\n    - text: —\n    - paragraph: \"International Council on Clean Transportation, \\\"India's transport transformation: Three policies to shape the road ahead\\\": https://theicct.org/indias-transport-transformation-three-policies-to-shape-the-road-ahead-sep25/\"\n  - 'link \"T4 WRI India, \\\"Accelerating India''s Freight Decarbonization\\\": https://wri-india.org/initiatives/accelerating-indias-freight-decarbonization\"':\n    - /url: https://wri-india.org/initiatives/accelerating-indias-freight-decarbonization\n    - text: T4\n    - paragraph: \"WRI India, \\\"Accelerating India's Freight Decarbonization\\\": https://wri-india.org/initiatives/accelerating-indias-freight-decarbonization\"\n  - paragraph: At a glance\n  - text: Topic emissions Comparison Available\n  - paragraph: Impact assessment\n  - text: 6/12 Cost 0 Compliance 0 Client-facing 3 Operational 3\n  - paragraph: Relevance to you\n  - text: High relevance\n  - paragraph: \"Relevance to your operation: affects your ocean/road/air operations, your role as freight forwarder/importer/exporter in ASIA, US-IN.\"\n  - paragraph: Needs more of your profile to say\n  - paragraph: Your organisation's role is not set, add it in your profile to see whether this applies to you.\n  - paragraph: Related in Indiana, United States\n  - link \"Australia Regional Operations Profile\":\n    - /url: /operations/australia-regional-operations-profile\n  - link \"Singapore Regional Operations Profile\":\n    - /url: /operations/singapore-regional-operations-profile\n  - link \"Japan Regional Operations Profile\":\n    - /url: /operations/japan-regional-operations-profile\n  - paragraph: Recalculated figures\n  - status:\n    - text: No data yet\n    - paragraph: \"Recalculated figures: the source has not published yet.\"\n    - paragraph: No figure has been recomputed from an Operations input yet.\n    - paragraph: No refresh date is recorded for this source.\n    - paragraph: No earlier value is on file.\n  - paragraph: Legend\n  - term: Impact\n  - definition: 8/12\n  - term: Timeline\n  - definition: Passed · next · ahead.\n  - term: Source tier\n  - definition: T1 binding law → T7 overflow / uncategorized.\n  - paragraph: In this list\n  - paragraph: Opened directly\n  - link \"Back to list\":\n    - /url: /operations\n  - heading \"Notes\" [level=2]\n  - text: Visible to your workspace only\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Private workspace notes shared only with members of your organisation.\n  - text: Add a note for your workspace\n  - textbox \"Add a note for your workspace\":\n    - /placeholder: Which lanes or clients this touches, who is on it, what was decided\n  - button \"Add note\" [disabled]\n  - text: 0 / 4,000\n  - status\n  - paragraph: No notes on this item yet. Notes are visible to your workspace only, never to other organisations.\n  - heading \"Assignments\" [level=2]\n  - text: Assign teammates, with a notification\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: Workspace task assignments and ownership tracking for your team.\n  - paragraph: Nobody is assigned to this item yet.\n  - status\n  - group \"Assign to\":\n    - text: Assign to\n    - button \"Jason\"\n    - button \"Jason\"\n  - text: Due date (optional)\n  - textbox \"Due date (optional)\"\n  - button \"Assign\" [disabled]\n  - text: Pick at least one person. S7\n  - heading \"Connected intelligence\" [level=2]\n  - text: Intersections and theme analysis\n  - button \"Collapse ▴\" [expanded]\n  - paragraph: How this item connects across the Caro’s Ledge repository — related regulations, market signals, research findings, and operations profiles.\n  - paragraph: Cross-surface patterns\n  - paragraph: Regulatory-to-market lead/lag\n  - paragraph: A dated regulatory step is followed by a move in a related market price, so watch that price after the date.\n  - paragraph:\n    - link \"Regulations\":\n      - /url: /regulations\n    - text: \":\"\n    - link \"Euro 7 Standard\":\n      - /url: /regulations/l2\n  - paragraph:\n    - link \"Research\":\n      - /url: /research\n    - text: \": HDV charging · Road freight · India · United Kingdom\"\n  - paragraph: \"Watch: confirmed if the dated steps still stand on Nov 29, 2026, Nov 29, 2027, May 29, 2028 and Jul 1, 2028.\"\n  - paragraph: Regulatory-to-market lead/lag\n  - paragraph: A dated regulatory step is followed by a move in a related market price, so watch that price after the date.\n  - paragraph:\n    - link \"Regulations\":\n      - /url: /regulations\n    - text: \":\"\n    - link \"EU 2024/1610 — CO₂ emission performance standards for new heavy-duty vehicles\":\n      - /url: /regulations/eu_clean_trucking_2024_1610\n  - paragraph:\n    - link \"Research\":\n      - /url: /research\n    - text: \": Grid connection queues · Renewable electricity · United States\"\n  - paragraph: \"Watch: confirmed if the dated step still stands on Oct 1, 2028.\"\n  - paragraph: Regulatory-to-market lead/lag\n  - paragraph: A dated regulatory step is followed by a move in a related market price, so watch that price after the date.\n  - paragraph:\n    - link \"Regulations\":\n      - /url: /regulations\n    - text: \":\"\n    - link \"EU CO2 Standards for Heavy Trucks\":\n      - /url: /regulations/l1\n  - paragraph:\n    - link \"Research\":\n      - /url: /research\n    - text: \": Grid connection queues · Renewable electricity · United States\"\n  - paragraph: \"Watch: confirmed if the dated step still stands on Dec 31, 2026.\"\n  - paragraph: What moves with this\n  - paragraph: Figures and rules tied to the same entities as this item\n  - paragraph: Obligation\n  - paragraph: Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). It reaches this item through EU Regulation 2023/1805 - Official Journal.\n  - paragraph: Obligation\n  - paragraph: Regulation (EU) 2023/1805, Article 4(2) states 14.5 % reduction of the reference value (as of Oct 25, 2026). It reaches this item through EU Regulation 2023/1805 - Official Journal.\n  - paragraph: Obligation\n  - paragraph: Regulation (EU) 2023/1805, Annex IV Part B (formula referred to in Article 23(2)) states 2,400 EUR per equivalent metric ton of VLSFO (as of Oct 25, 2026). It reaches this item through EU Regulation 2023/1805 - Official Journal.\n  - paragraph: Obligation\n  - paragraph: Regulation (EU) 2023/1805, Article 4(2) states 62 % reduction of the reference value (as of Oct 25, 2026). It reaches this item through EU Regulation 2023/1805 - Official Journal.\n  - paragraph: Obligation\n  - paragraph: Regulation (EU) 2023/1805, Article 4(2) states 31 % reduction of the reference value (as of Oct 25, 2026). It reaches this item through EU Regulation 2023/1805 - Official Journal.\n  - paragraph: Obligation\n  - paragraph: Regulation (EU) 2023/1805, Article 23(5) states 1.5 EUR (as of Oct 25, 2026). It reaches this item through EU Regulation 2023/1805 - Official Journal.\n  - paragraph: Obligation\n  - paragraph: Regulation (EU) 2023/1805, Article 4(2) states 2 % reduction of the reference value (as of Oct 25, 2026). It reaches this item through EU Regulation 2023/1805 - Official Journal.\n  - paragraph: Obligation\n  - paragraph: Regulation (EU) 2023/1805, Annex IV Part B (formula referred to in Article 23(2)) states 41,000 MJ per metric ton of VLSFO (as of Oct 25, 2026). It reaches this item through EU Regulation 2023/1805 - Official Journal.\n  - paragraph: Theme analysis\n  - paragraph: 49 items across Regulations, Market Intel, Research, Operations\n  - paragraph: \"Truck makers must cut average emissions: targets in Europe and California, battery prices, chargers and the haulier's cost\"\n  - text: Written for an earlier membership of this theme; the items below are today's.\n  - paragraph: What it means\n  - paragraph: \"For a freight operator with no sustainability background: these rules do not order a haulier to buy an electric truck. They order the maker to lower the average emissions of the trucks it sells. In Europe, the Regulation applies to new heavy-duty vehicles of categories N2 and N3, that is, new heavy trucks. Article 3a(1): reductions are measured against the average CO2 emissions of the reporting period of the year 2019. A maker that misses pays per unit of excess: from 2025 to 2029 the premium is excess emissions times 4 250 EUR/gCO2/tkm, and from 2030 onwards the premium is excess emissions times 6 800 EUR/gCO2/tkm.\"\n  - paragraph: \"Battery prices have fallen: Battery pack prices for lithium-ion fell 20% in 2024 — the largest single-year drop since 2017 — and a further 8% reduction has been reported for 2025 by BloombergNEF via CALSTART, putting the current market price at approximately $108/kWh. The obstacles that remain are named in interviews reported by a clean-transport research council: ICCT interviews: barriers are lack of publicly accessible charging and refueling for trucks, limited truck availability, limited range and higher purchase costs.\"\n  - paragraph:\n    - emphasis: \"Analytical inference:\"\n    - text: the European law itself expects makers to meet the later targets by selling more zero-emission trucks (see Watch); whether hauliers buy them then turns on the purchase cost and the charging these records describe.\n  - paragraph:\n    - emphasis: \"Analytical inference:\"\n    - text: the cost reaches a forwarder through its road subcontractors' truck purchase and charging costs; no record here gives a per-kilometre cost of an electric truck against a diesel one, so the size of that change is not shown.\n  - paragraph: What follows on Operations\n  - paragraph: \"In the United States, medium- and heavy-duty vehicles produce about 26 percent of transportation emissions, and Over 94% of transportation fuel is petroleum-based. Charging is a constraint: one source counts 384 open federally funded chargers nationally as of April 2025. These are public points funded by two programs that support public electric vehicle charging infrastructure, and the source says the count does not support calling the network ready for commercial freight at scale. Later, a federal judge issued a final judgment on January 30, 2026 in Washington v. U.S. Department of Transportation, determining USDOT's February-to-August pause of the National Electric Vehicle Infrastructure (NEVI) program to be a violation of the Administrative Procedure Act; no record here shows its effect on the chargers opened.\"\n  - paragraph: What to watch\n  - list:\n    - listitem: \"Europe's charging infrastructure law is reviewed: By 31 December 2026 and every five years thereafter, the Commission shall review this Regulation. A clean-trucking advocacy alliance has set out its asks: ECTA published its priorities for the review of the Alternative Fuels Infrastructure Regulation as a position paper on 28 May 2026. A revised law would appear on Regulations.\"\n    - listitem: \"The Commission must report on fleet initiatives: by 30 June 2027 the Commission shall submit a report on initiatives to increase the share of zero-emission heavy-duty vehicles owned or leased by large fleet operators. If it proposes duties on fleets, a forwarder that runs or contracts large fleets would see them on Regulations.\"\n    - listitem: \"The European truck emission law's own review: By 31 December 2027 the Commission shall review the effectiveness and impact of the Regulation, in particular as regards climate neutrality at the latest by 2050. Its result would appear on Regulations.\"\n    - listitem: The next vehicle pollutant standard reaches new models of buses, coaches, heavy trucks and heavy trailers (It shall apply from 29 May 2028 for new types of vehicles), and a year later every new vehicle of those kinds.\n    - listitem: \"The next step for makers: 45 % for all vehicle sub-groups other than vocational vehicles for the reporting periods of the years 2030 to 2034. The law's recital says that with these targets manufacturers are to deploy significantly more zero-emission heavy-duty vehicles on the Union market.\"\n    - listitem: \"In California a maker covers its obligations with credits earned from zero-emission sales; ZEV or NZEV credits generated in the 2021, 2022 and 2023 model years expire at of the end of the 2030 model year, and are no longer available to be used to meet compliance for 2031 and later model years. The next link this theme needs is on Market Intel: a published total cost per kilometre for electric against diesel heavy trucks in a European country or in California.\"\n  - paragraph: Members by horizon\n  - text: Within 6 months 7 items 120 dated obligations · Regulations 6 to 18 months 1 item 1 dated obligation · Market Intel 3 to 5 years 1 item 2 dated obligations · Regulations 5 to 10 years 1 item 1 dated obligation · Regulations Ongoing / no fixed date 37 items Regulations, Market Intel, Research, Operations\n  - paragraph: Other items in this theme\n  - paragraph: Regulations · 23 items\n  - link \"California Advanced Clean Fleets Rule (CARB) Regulations\":\n    - /url: /regulations/w4_ca_acf\n    - paragraph: California Advanced Clean Fleets Rule (CARB)\n    - paragraph: Regulations\n  - link \"Implementing Decision 2013/807/EU Regulations\":\n    - /url: /regulations/f1993422-37b9-4826-b285-90881a16b72c\n    - paragraph: Implementing Decision 2013/807/EU\n    - paragraph: Regulations\n  - link \"Alaska Department of Transportation Measurement Standards & Commercial Vehicle Compliance Resources Regulations\":\n    - /url: /regulations/de7f09fc-b66e-41d2-a3a9-876aeda6a7e1\n    - paragraph: Alaska Department of Transportation Measurement Standards & Commercial Vehicle Compliance Resources\n    - paragraph: Regulations\n  - link \"California Highway Patrol Commercial Vehicle Section - Motor Carrier Safety and Compliance Regulations\":\n    - /url: /regulations/4929e6a9-5f55-4eec-9c97-1e14caa75a52\n    - paragraph: California Highway Patrol Commercial Vehicle Section - Motor Carrier Safety and Compliance\n    - paragraph: Regulations\n  - link \"CARB Advanced Clean Trucks Regulations\":\n    - /url: /regulations/l7\n    - paragraph: CARB Advanced Clean Trucks\n    - paragraph: Regulations\n  - link \"Implementing Decision (EU) 2025/1488 Regulations\":\n    - /url: /regulations/34f8aa17-b554-4cca-b62e-42561eeff398\n    - paragraph: Implementing Decision (EU) 2025/1488\n    - paragraph: Regulations\n  - link \"and 17 more on Regulations\":\n    - /url: /regulations\n    - paragraph: and 17 more on Regulations\n  - paragraph: Market Intel · 8 items\n  - 'link \"Joint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling Infrastructure Market Intel\"':\n    - /url: /market/537b8131-280b-47c8-b9fe-5a96070917b7\n    - paragraph: \"Joint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling Infrastructure\"\n    - paragraph: Market Intel\n  - link \"Autonomous & Connected Freight Technology Market Intel\":\n    - /url: /market/autonomous-connected-freight-technology\n    - paragraph: Autonomous & Connected Freight Technology\n    - paragraph: Market Intel\n  - link \"American Trucking Associations Market Intel\":\n    - /url: /market/l9\n    - paragraph: American Trucking Associations\n    - paragraph: Market Intel\n  - link \"ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation Framework Market Intel\":\n    - /url: /market/432a5042-1a51-4713-bfa0-8aca3fbfee62\n    - paragraph: ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation Framework\n    - paragraph: Market Intel\n  - link \"Battery & Electric Vehicle Technology Market Intel\":\n    - /url: /market/battery-electric-vehicle-technology\n    - paragraph: Battery & Electric Vehicle Technology\n    - paragraph: Market Intel\n  - link \"Critical Minerals & EV Supply Chain Market Intel\":\n    - /url: /market/critical-minerals-ev-supply-chain\n    - paragraph: Critical Minerals & EV Supply Chain\n    - paragraph: Market Intel\n  - link \"and 2 more on Market Intel\":\n    - /url: /market\n    - paragraph: and 2 more on Market Intel\n  - paragraph: Research · 9 items\n  - link \"IEA Global EV Outlook 2024 - Access Verification Research\":\n    - /url: /research/af277afd-b925-4583-852a-eaa6db310888\n    - paragraph: IEA Global EV Outlook 2024 - Access Verification\n    - paragraph: Research\n  - link \"IPCC Opens Second-Order Draft Review for Special Report on Climate Change and Cities (March 2027 Release) Research\":\n    - /url: /research/85a7a629-744d-4e59-9b9a-959cf76e5226\n    - paragraph: IPCC Opens Second-Order Draft Review for Special Report on Climate Change and Cities (March 2027 Release)\n    - paragraph: Research\n  - link \"IPCC Second-Order Draft Review Period Opens for Special Report on Climate Change and Cities Research\":\n    - /url: /research/6af04bf0-bebd-4dd5-a900-72974c87fa69\n    - paragraph: IPCC Second-Order Draft Review Period Opens for Special Report on Climate Change and Cities\n    - paragraph: Research\n  - link \"ITF-OECD Automated and Autonomous Driving Resource Research\":\n    - /url: /research/605a2d06-80e5-4645-82d1-58ec57fc81d0\n    - paragraph: ITF-OECD Automated and Autonomous Driving Resource\n    - paragraph: Research\n  - link \"MIT Center for Transportation & Logistics — Sustainable Trucking Research\":\n    - /url: /research/mit-center-for-transportation-logistics-sustainable-trucking\n    - paragraph: MIT Center for Transportation & Logistics — Sustainable Trucking\n    - paragraph: Research\n  - link \"NREL Transportation and Mobility Research Program Research\":\n    - /url: /research/c0eab829-5402-4c8a-8c0c-60954e88cc52\n    - paragraph: NREL Transportation and Mobility Research Program\n    - paragraph: Research\n  - link \"and 3 more on Research\":\n    - /url: /research\n    - paragraph: and 3 more on Research\n  - paragraph: Operations (this page) · 6 items\n  - link \"Dubai / UAE Regional Operations Profile Operations\":\n    - /url: /operations/dubai-uae-regional-operations-profile\n    - paragraph: Dubai / UAE Regional Operations Profile\n    - paragraph: Operations\n  - link \"Iowa Department of Transportation Freight Planning and Transportation Systems Overview Operations\":\n    - /url: /operations/496340f0-1dbf-47f9-bc7d-c5e3f452c107\n    - paragraph: Iowa Department of Transportation Freight Planning and Transportation Systems Overview\n    - paragraph: Operations\n  - link \"Logistics Labor Cost & Availability Benchmarks Operations\":\n    - /url: /operations/logistics-labor-cost-availability-benchmarks\n    - paragraph: Logistics Labor Cost & Availability Benchmarks\n    - paragraph: Operations\n  - link \"Louisiana State Freight Plan 2024 and Commodity Flow Dashboard Operations\":\n    - /url: /operations/595117e9-a35f-414c-8182-53ef5b34c647\n    - paragraph: Louisiana State Freight Plan 2024 and Commodity Flow Dashboard\n    - paragraph: Operations\n  - link \"North Carolina General Assembly News Feed and Legislative Updates Operations\":\n    - /url: /operations/7227b685-4ff9-47e1-868d-6d84d19c5f6f\n    - paragraph: North Carolina General Assembly News Feed and Legislative Updates\n    - paragraph: Operations\n  - link \"United States Regional Operations Profile Operations\":\n    - /url: /operations/united-states-regional-operations-profile\n    - paragraph: United States Regional Operations Profile\n    - paragraph: Operations\n  - group: How the items connect and what is missing\n  - region \"Recalculation notices\":\n    - text: Recalculation notices\n    - paragraph: No recalculations on your team's watchlist in this window.\n- button \"Back to top\"\n- alert"
   },
   "landmarks": [
     {
@@ -64,10 +64,6 @@
     {
       "level": 2,
       "text": "Substantive findings"
-    },
-    {
-      "level": 5,
-      "text": "MONITORING"
     },
     {
       "level": 2,
@@ -145,109 +141,178 @@
     },
     {
       "role": "button",
-      "name": "July 2025 — Ministry of Heavy Industries released electric-truck guidelines under the PM e-DRIVE scheme. · Jul 2025"
+      "name": "July 2025 — «In July 2025, the Ministry of Heavy Industries released guidelines for electric trucks under the PM e-DRIVE scheme» (already released) · Jul 2025"
     },
     {
       "role": "button",
-      "name": "Harit Sagar Green Port Guidelines target over 60% renewable energy use and half of port equipment electrified. · 2030"
+      "name": "«over 60% renewable energy use by 2030» and half of port equipment electrified, under the Harit Sagar Green Port Guidelines · 2030"
     },
     {
       "role": "button",
-      "name": "Harit Sagar targets 90% renewable energy use and 90% port-equipment electrification; Maritime Amrit Kaal Vision 2047 targets over 10,000 MMTPA port capacity and shore power at all major ports. · 2047"
+      "name": "«shore power at all major ports by 2047» and 90% of port equipment electrified, under the Maritime Amrit Kaal Vision 2047 and the Harit Sagar Green Port Guidelines · 2047"
+    },
+    {
+      "role": "button",
+      "name": "«commitment to achieving net-zero emissions by 2070» · 2070"
     },
     {
       "role": "link",
-      "name": "References · regulationsCalifornia Advanced Clean Fleets Rule (CARB)Bound by shared scenario",
+      "name": "Referenced by · regulationsEU Regulation 2023/1805 - Official JournalEU Regulation 2023/1805 - Official Journal also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · regulationsEuro 7 StandardBound by shared scenario",
+      "name": "Referenced by · regulationsEU Alternative Fuels Infrastructure Regulation (AFIR)EU Alternative Fuels Infrastructure Regulation (AFIR) also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · researchMIT Center for Transportation & Logistics — Sustainable TruckingBound by shared scenario",
+      "name": "Referenced by · regulationsEU Fit for 55 PackageEU Fit for 55 Package also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · marketASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation FrameworkBound by shared scenario",
+      "name": "References · regulationsImplementing Decision (EU) 2020/1629COUNCIL IMPLEMENTING DECISION (EU) 2020/1629 of 29 October 2020… also turns on Shore power. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026). UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · marketJoint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling InfrastructureBound by shared scenario",
+      "name": "References · researchIEA Electricity Mid-Year Update 2025 - Key Market and Grid AnalysisGrid connection queues shares a grid zone with Shore power, so a change in one reaches the other. UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · researchIPCC Opens Second-Order Draft Review for Special Report on Climate Change and Cities (March 2027 Release)Bound by shared scenario",
+      "name": "References · regulationsSouth Korea MOFShore power serves Seaport, so a change in one reaches the other. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026).",
       "item": true
     },
     {
       "role": "link",
-      "name": "Referenced by · regulationsCalifornia Highway Patrol Commercial Vehicle Section - Motor Carrier Safety and ComplianceBound by shared scenario",
+      "name": "References · regulationsZero-Emission Requirements for World Heritage Fjords: Implementation Timeline and Compliance Rules AdoptedEU Regulation 2023/1805 - Official Journal implements Shore power, so a change in one reaches the other. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026).",
       "item": true
     },
     {
       "role": "link",
-      "name": "Referenced by · regulationsThe Road Traffic (Vehicle Emissions) (Fixed Penalty) Regulations 1997Bound by shared scenario",
+      "name": "References · regulationsImplementing Regulation (EU) 2025/1127EU Regulation 2023/1805 - Official Journal implements Shore power, so a change in one reaches the other. Regulation (EU) 2023/1805, Article 4(2) states 6 % reduction of the reference value (as of Oct 25, 2026).",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · marketCritical Minerals & EV Supply ChainBound by shared scenario",
+      "name": "References · regulationsDelegated Regulation (EU) 2025/656EU Alternative Fuels Infrastructure Regulation (AFIR) implements Shore power, so a change in one reaches the other. UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · researchProject JOLT Advances eHGV Real-World Trials; Decarbonization Challenges and Digital Innovation in Road FreightBound by shared scenario",
+      "name": "References · regulationsDelegated Regulation (EU) 2025/671EU Alternative Fuels Infrastructure Regulation (AFIR) implements Shore power, so a change in one reaches the other. megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · researchITF-OECD Automated and Autonomous Driving ResourceBound by shared scenario",
+      "name": "References · researchProject JOLT Advances eHGV Real-World Trials; Decarbonization Challenges and Digital Innovation in Road FreightHDV charging shares a grid zone with Shore power, so a change in one reaches the other. UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · marketAutonomous & Connected Freight TechnologyBound by shared scenario",
+      "name": "References · marketJoint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling InfrastructureHDV charging shares a grid zone with Shore power, so a change in one reaches the other. UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · marketAmerican Trucking AssociationsBound by shared scenario",
+      "name": "References · regulationsCalifornia Advanced Clean Fleets Rule (CARB)California Advanced Clean Fleets Rule (CARB) also applies to urban truck zones, truck CO2 standards and drayage operations.",
       "item": true
     },
     {
       "role": "link",
-      "name": "References · regulationsEU CO2 Standards for Heavy TrucksBound by shared scenario",
+      "name": "References · regulationsEuro 7 StandardEuro 7 Standard also applies to urban truck zones, truck CO2 standards and drayage operations. megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "Referenced by · regulationsMissouri Department of Natural Resources - Division of Environmental QualityBound by shared scenario",
+      "name": "References · researchMIT Center for Transportation & Logistics — Sustainable TruckingMIT Center for Transportation & Logistics — Sustainable Trucking also applies to urban truck zones, drayage and Scope 3 emissions reporting operations.",
       "item": true
     },
     {
       "role": "link",
-      "name": "Referenced by · researchNREL Transportation R&DBound by shared scenario",
+      "name": "References · marketASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation FrameworkASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation… also applies to urban truck zones, drayage and Scope 3 emissions reporting operations.",
       "item": true
     },
     {
       "role": "link",
-      "name": "Referenced by · regulationsCARB Advanced Clean TrucksBound by shared scenario",
+      "name": "References · researchIPCC Opens Second-Order Draft Review for Special Report on Climate Change and Cities (March 2027 Release)IPCC Opens Second-Order Draft Review for Special Report on Climate… also applies to urban truck zones, drayage and Scope 3 emissions reporting operations.",
       "item": true
     },
     {
       "role": "link",
-      "name": "Referenced by · operationsBrazilian Ministry of Transportation - Official Portal Navigation and ServicesBound by shared scenario",
+      "name": "Referenced by · regulationsEU CO2 Standards for Heavy TrucksEU CO2 Standards for Heavy Trucks also applies to truck CO2 standards, drayage and Scope 3 emissions reporting operations. UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.",
       "item": true
     },
     {
       "role": "link",
-      "name": "Referenced by · operationsEU Core Markets Regional Operations ProfileBound by shared scenario",
+      "name": "Referenced by · regulationsCalifornia Highway Patrol Commercial Vehicle Section - Motor Carrier Safety and ComplianceCalifornia Highway Patrol Commercial Vehicle Section - Motor Carrier… also applies to urban truck zones and drayage operations.",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Referenced by · regulationsThe Road Traffic (Vehicle Emissions) (Fixed Penalty) Regulations 1997The Road Traffic (Vehicle Emissions) (Fixed Penalty) Regulations 1997 also applies to urban truck zones and drayage operations.",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "References · marketCritical Minerals & EV Supply ChainCritical Minerals & EV Supply Chain also applies to truck CO2 standards, drayage and Scope 3 emissions reporting operations.",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "References · researchITF-OECD Automated and Autonomous Driving ResourceITF-OECD Automated and Autonomous Driving Resource also applies to truck CO2 standards, drayage and Scope 3 emissions reporting operations.",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "References · marketAutonomous & Connected Freight TechnologyAutonomous & Connected Freight Technology also applies to truck CO2 standards, drayage and Scope 3 emissions reporting operations.",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "References · marketAmerican Trucking AssociationsAmerican Trucking Associations also applies to truck CO2 standards, drayage and Scope 3 emissions reporting operations.",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Referenced by · regulationsMissouri Department of Natural Resources - Division of Environmental QualityMissouri Department of Natural Resources - Division of Environmental… also applies to urban truck zones and drayage operations.",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Referenced by · researchNREL Transportation R&DNREL Transportation R&D also applies to truck CO2 standards and drayage operations. UK Power Networks, Eastern Power Network: 11.9 MW (as of May 29, 2026). megawatt_charging is at the pilot demonstration stage.",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Referenced by · regulationsCARB Advanced Clean TrucksCARB Advanced Clean Trucks also applies to truck CO2 standards and drayage operations.",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Referenced by · operationsEU Core Markets Regional Operations ProfileEU Core Markets Regional Operations Profile also applies to ev fleet transition operations.",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Regulatory lead/lag forming · operationsESPO Green PortsESPO Green Ports also applies to vessel shore power operations.Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Regulatory lead/lag forming · operationsAustralia Regional Operations ProfileAustralia Regional Operations Profile also applies to operations in Asia (other) on emissions.Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Regulatory lead/lag forming · operationsSingapore Regional Operations ProfileSingapore Regional Operations Profile also applies to operations in Asia (other) on corridors and emissions.Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Regulatory lead/lag forming · regulationsSingapore Green Plan 2030Singapore Green Plan 2030 also applies to operations in Asia (other) on corridors and emissions.Next link to watch: a Research abatement-cost or maturity evaluation that ties these items together",
       "item": true
     },
     {
@@ -294,21 +359,6 @@
     },
     {
       "role": "link",
-      "name": "wri-india.org ↗",
-      "item": true
-    },
-    {
-      "role": "link",
-      "name": "theicct.org ↗",
-      "item": true
-    },
-    {
-      "role": "link",
-      "name": "theicct.org ↗",
-      "item": true
-    },
-    {
-      "role": "link",
       "name": "https://theicct.org/indias-transport-transformation-three-policies-to-shape-the-road-ahead-sep25/",
       "item": true
     },
@@ -331,16 +381,20 @@
     },
     {
       "role": "button",
+      "name": "Request coverage"
+    },
+    {
+      "role": "button",
       "name": "Collapse ▴"
     },
     {
       "role": "link",
-      "name": "—\"India's Transport Transformation: Three Policies to Shape the Road Ahead,\" International Council on Clean Transportation (ICCT)Independent research organisation",
+      "name": "—International Council on Clean Transportation, \"India's transport transformation: Three policies to shape the road ahead\": https://theicct.org/indias-transport-transformation-three-policies-to-shape-the-road-ahead-sep25/",
       "item": true
     },
     {
       "role": "link",
-      "name": "T4\"Accelerating India's Freight Decarbonization,\" WRI IndiaIndependent research organisation",
+      "name": "T4WRI India, \"Accelerating India's Freight Decarbonization\": https://wri-india.org/initiatives/accelerating-indias-freight-decarbonization",
       "item": true
     },
     {
@@ -401,12 +455,67 @@
     },
     {
       "role": "link",
+      "name": "Regulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Euro 7 Standard",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Research",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Regulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "EU 2024/1610 — CO₂ emission performance standards for new heavy-duty vehicles",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Research",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Regulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "EU CO2 Standards for Heavy Trucks",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Research",
+      "item": true
+    },
+    {
+      "role": "link",
       "name": "California Advanced Clean Fleets Rule (CARB)Regulations",
       "item": true
     },
     {
       "role": "link",
-      "name": "2013/807/EU: Commission Implementing Decision of 17 December 2013 confirming or amending the average specific emissions of CO2 and specific emissions targets for manufacturers of new light commercial vehicles for the calendar year 2012 pursuant to Regulation (EU) No 510/2011 of the European Parliament and of the CouncilRegulations",
+      "name": "Implementing Decision 2013/807/EURegulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Alaska Department of Transportation Measurement Standards & Commercial Vehicle Compliance ResourcesRegulations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "California Highway Patrol Commercial Vehicle Section - Motor Carrier Safety and ComplianceRegulations",
       "item": true
     },
     {
@@ -416,22 +525,22 @@
     },
     {
       "role": "link",
-      "name": "Directive 2009/33/EC of the European Parliament and of the Council of 23 April 2009 on the promotion of clean and energy-efficient road transport vehicles (Text with EEA relevance)Regulations",
+      "name": "Implementing Decision (EU) 2025/1488Regulations",
       "item": true
     },
     {
       "role": "link",
-      "name": "EPA SmartWayRegulations",
+      "name": "and 17 more on Regulations",
       "item": true
     },
     {
       "role": "link",
-      "name": "EU 2024/1610 — CO₂ emission performance standards for new heavy-duty vehiclesRegulations",
+      "name": "Joint Office of Energy and Transportation: Industry Alignment for EV Charging and Refueling InfrastructureMarket Intel",
       "item": true
     },
     {
       "role": "link",
-      "name": "and 3 more on Regulations",
+      "name": "Autonomous & Connected Freight TechnologyMarket Intel",
       "item": true
     },
     {
@@ -441,7 +550,7 @@
     },
     {
       "role": "link",
-      "name": "Autonomous & Connected Freight TechnologyMarket Intel",
+      "name": "ASEAN Transport Strategic Plan 2016-2025 and Regional Cooperation FrameworkMarket Intel",
       "item": true
     },
     {
@@ -456,7 +565,7 @@
     },
     {
       "role": "link",
-      "name": "European Clean Trucking AllianceMarket Intel",
+      "name": "and 2 more on Market Intel",
       "item": true
     },
     {
@@ -466,42 +575,62 @@
     },
     {
       "role": "link",
+      "name": "IPCC Opens Second-Order Draft Review for Special Report on Climate Change and Cities (March 2027 Release)Research",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "IPCC Second-Order Draft Review Period Opens for Special Report on Climate Change and CitiesResearch",
+      "item": true
+    },
+    {
+      "role": "link",
       "name": "ITF-OECD Automated and Autonomous Driving ResourceResearch",
       "item": true
     },
     {
       "role": "link",
-      "name": "NREL Transportation R&DResearch",
+      "name": "MIT Center for Transportation & Logistics — Sustainable TruckingResearch",
       "item": true
     },
     {
       "role": "link",
-      "name": "Project JOLT Advances eHGV Real-World Trials; Decarbonization Challenges and Digital Innovation in Road FreightResearch",
+      "name": "NREL Transportation and Mobility Research ProgramResearch",
       "item": true
     },
     {
       "role": "link",
-      "name": "Project JOLT: Real-World eHGV Trials and Sustainable Road Freight InitiativesResearch",
+      "name": "and 3 more on Research",
       "item": true
     },
     {
       "role": "link",
-      "name": "United States Regional Operations ProfileOperations",
-      "item": true
-    },
-    {
-      "role": "link",
-      "name": "Brazil Regional Operations ProfileOperations",
-      "item": true
-    },
-    {
-      "role": "link",
-      "name": "Brazilian Ministry of Transportation - Official Portal Navigation and ServicesOperations",
+      "name": "Dubai / UAE Regional Operations ProfileOperations",
       "item": true
     },
     {
       "role": "link",
       "name": "Iowa Department of Transportation Freight Planning and Transportation Systems OverviewOperations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Logistics Labor Cost & Availability BenchmarksOperations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "Louisiana State Freight Plan 2024 and Commodity Flow DashboardOperations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "North Carolina General Assembly News Feed and Legislative UpdatesOperations",
+      "item": true
+    },
+    {
+      "role": "link",
+      "name": "United States Regional Operations ProfileOperations",
       "item": true
     },
     {
@@ -514,7 +643,7 @@
     "items": [],
     "containers": []
   },
-  "document_height": 9746,
+  "document_height": 15682,
   "tiles": 1,
   "truncated": false,
   "offences": []

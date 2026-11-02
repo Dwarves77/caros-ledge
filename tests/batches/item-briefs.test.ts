@@ -375,3 +375,20 @@ test("ruling 73: a full brief whose omitted_events names the stored compliance_d
   assert.equal(kept.counts.residue, 1, "a date the entry does not name still trips the rule");
   assert.equal(item(k).compliance_deadline, "2031-06-30");
 });
+
+// ---- DRY-MINT-1: the dry run mirrors the fact-mint gates ------------------------------------------------------------------------
+const mintMirror = (claimText: string, span: string) => {
+  const w = batchWorld();
+  const live = { items: new Map([[ITEM, { itemType: "regulation", grade: "record", status: "quarantined", hash: String(recordEntry(w.db).source_pool_hash), poolText: SPAN_REPORT, bytes: 10, fullBrief: null }]]), slots: new Map(), adopted: {}, now: NOW, allowOverwrite: false, emit: new Map() };
+  const e = recordEntry(w.db, { claims: [factClaim(span, { section: "1", claim_text: claimText })] });
+  return validateRecordBriefEntry(e, 0, live as never).errors.join("\n");
+};
+test("DRY-MINT-1: a figure whose unit kind differs from the span is refused by the S-NUMERIC mint-gate mirror", () => {
+  assert.match(mintMirror("Output is 3 million tonnes", "Output is 3 million tCO₂e"), /S-NUMERIC mint-gate mirror.*3 million tonnes/s);
+});
+test("DRY-MINT-1: a currency figure the span states without the currency symbol is refused (S-NUMERIC)", () => {
+  assert.match(mintMirror("The levy is $69 per tonne", "81 69 95 79"), /S-NUMERIC mint-gate mirror.*\$69/s);
+});
+test("DRY-MINT-1: the same figure in the same unit passes the mint-gate mirror", () => {
+  assert.doesNotMatch(mintMirror("Output is 3 million tCO₂e", "Output is 3 million tCO₂e"), /mint-gate mirror/);
+});
