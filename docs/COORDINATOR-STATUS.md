@@ -101,3 +101,41 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 - Content runs touch no src; repair, not reject.
 - One home per mechanism; no word lists.
 - Root cause, never re-run.
+
+---
+
+## 8. Wave P58 (2026-11-01/02): ruling 73 full re-authoring
+
+Ruling 73: no legacy content is evidence; every processed item is re-authored from its own capture pool, independently judged, and flywheel-connected. Ruling 74: every Agent call carries `model` (standing rule 23). Detail: vault session-log addenda 2026-11-02 (i) and (j).
+
+### Counts: new-system vs legacy per surface (final, read-only SQL 07:35 UTC 2026-11-02, after push run 41399680083)
+New-system = item_changelog `record-briefs` full_brief `item-briefs-%` since 2026-10-30; live = not archived (verified + quarantined).
+- Regulations (domain 1): 94 new-system of 1361 live; 44 quarantined; 951 verified items still carry no what_is_it/why_matters/what_it_changes (the REG-BACKFILL backlog).
+- Market (domain 4): 22 new-system of 53 live; 22 quarantined (pre-existing).
+- Operations (domain 3): 23 new-system of 38 live; 10 quarantined (pre-existing); all 23 P58 items verified.
+- Research (domain 7): 30 new-system of 49 live; 10 quarantined (pre-existing).
+- Technology etc. (domain 2): 6 new-system of 15 live.
+- Per bundle applied: IMMEDIATE-20 20/20; MARKET-20 20/20 (18 + 2 via MARKET-2); OPERATIONS-23 23/23 (18 + 5 via ops-refire-5); RESEARCH-30 30/30; REG-ACTION-12 12/12 (11 + 1 via reg-refire-1); REG-CRITICAL/HIGH-30 30/30; REG-DASH-2 2/2. Total P58 new-system entries applied: 137.
+- PR 235 ruled run (push run 41399680083): research-30 (dea2bf82) 30 applied; ops-refire-5 (73ffcd9e) 5 applied; reg-dash-2 (eda002f8) 2 applied; reg-refire-1 (f2a6924e) 1 applied; migrate job applied 0151 at 06:24; visible job success. All nine re-fired items (053123bc, 282e480c, 71b03469, b4811af8, e5c17fac, c3fa4cc2, 51b2c91e, 67adbecd, 36203bb4) are verified with fresh section sets.
+- Merges: PR 230 6291029db, PR 229 303fd8a73, PR 235 ff6d829ba; PR 236 LOCK-NO-BLOAT open and green (LIMITS src 67535 / core 20836 / brief 1335 / digest 270 / features 39924), merging.
+- Live gate after the re-fire: 11 of 12 live checks pass (run 41407236336, 2026-11-02 07:45 UTC): member-reads, sign-in, pages, identity-anonymous, notification-drain, admin-pages, production-shape, applied-items-render, signed-in, no-404, no-raw-ids, rows-have-why PASS; no-fallback-summary FAIL on /regulations: 2 of 17 rows (Directive (EU) 2024/3101, Directive (EU) 2024/3099), the next two legacy Monitor-band items by due date. The Monitor band draws its five nearest-due rows and only three authored Monitor items carry a future date, so the gate stays red until REG-BACKFILL re-authors the nearest-due legacy Monitor items (batch 1 of 25 dispatched at close).
+
+### Held and heal queues
+- Held, no closed theme fits (THEME-VOCAB-1, operator ruling owed), research: ee8f4e71, 85a7a629, 97d22488, b88753be. Held, market: be729a3a (residue), 538c2774 (not a freight signal). Heal-queue items also held: ccee10a4, 67c6e313, b94cd283, fcf98c3d.
+- Heal queue (pool < 2,000 chars): market 67c6e313, b94cd283; research fcf98c3d; regulation 35ab535c, 18eb5d1d, 6f240e0a, e8753abe, ccee10a4; framework 816b28ef, b90a8e25, f055f739.
+- Quarantined by S-NUMERIC after apply: market 8c0049b4, ed63f522 (rewrites tested, follow-up bundle owed); operations 053123bc, 282e480c, 71b03469, b4811af8 (claim edits approved, re-fire in PR 235); FK failures e5c17fac (ops) and 51b2c91e (reg) re-fire after migration 0151.
+
+### PR map
+219 WAVE-P58 (LOC headroom, ruling 70); 220 RUNS-FIX-1; 221 ENTITY-MINT-1; 222 NORMALISE-2b; 223 LIST-RPC-1 (+0150); 224 STORED-DATE-1; 225 MARKET-20; 226 IMMEDIATE-20; 227 OPERATIONS-23; 228 RESEARCH-30; 229 DRY-MINT-1 (code, mirror of the mint gates in the dry; merged 303fd8a73); 230 RUNS-FIX-2 (+ ruled-runs queue step, parity baselines; green run 41396402099; merged 6291029db); 231 MARKET-2; 232 REG-ACTION-12; 233 refire-2 (merged 239199b5c); 234 REG-CRITICAL-HIGH-30; 235 FIX-1 (migration 0151 RECONCILE-FK-1 + ops-refire-5 + reg-refire-1 + reg-dash-2 + research-30 re-fire; green on ci/parity/schema; ruled run ok, push run 41399680083, merged ff6d829ba). Migrations: 0150 applied; 0151 lands through the CI migrate job (ADR-055).
+- Live gate 41392850276 failed no-fallback-summary on /regulations (67adbecd, 36203bb4 legacy); REG-DASH-2 re-authored both, judged 20/20 (three passes). Last green live gate: 12/12 on run 41341590602 (before P58).
+- Judge statistics: 441 first-pass fails across the wave, all revised and re-judged clean, 0 bundled failing.
+
+### Refuted this wave
+Antigravity's `list_workspace_items`; the 1c `cooldownMinutes`; the "dead row / cancelled CI run" reading (row 04a0da2b was a live, successful apply); "0 applied" in the MERGE-QUEUE-1 report; REG-SEV-1 "severity understated" (41 items; stored severity is snake_case); TEXT-CORRUPT-1 (display artifact; conditional section 3); CAPTURE-ANNEX-1 (pool holds Annex A-G); STORED-DATE-1 and RPC 0150 as causes of the parity failure (cause: CRITICAL band shrank from 20 to 2).
+
+### Debts
+DRY-MINT-1 (PR 229), MERGE-SERIAL-1, THEME-VOCAB-1, TITLE-POOL-1, JUR-FIX-1, SLOT-GAP-1, KIT-DATES-1, EXPORT-YEARS-1, GATE-A-CURRENCY-1, KIT-POINTERS-1, GATE-A-ASOF-1, DOCS-LEN-1, CHANGELOG-FIELDS-1, TIMELINE-MIRROR-1 [HYPOTHESIS], APPLY-SECTIONS-1 [HYPOTHESIS], the schema.sql S-NUMERIC comment (soft vs hard), POOL-DEDUP-1, DOCS-SEV-1, SKILL-TIER-1, RENDER-ENTITY-1 [HYPOTHESIS], OBL-DERIVE-2 (decision-ready), TEST-CLOCK-1, MINT-HOLD-1 follow-up bundle, ATOMIC-APPLY-1 (the apply writes full_brief before the section reconcile, so a reconcile failure leaves a new brief over legacy sections live; per-item apply must be one transaction or roll back), CI-STATUS-RUNS-1 (each main push fires 2-4 `status`-event CI runs, two fully skipped). CAPTURE-ANNEX-1 withdrawn.
+
+### Backlog
+- No-context legacy: 1065 regulations + 64 directives (monitoring) for REG-BACKFILL in 25-item batches. Corpus-wide: framework 45/256, initiative 403/441, guidance 28/82, market_signal 14/80, regional_data 4/35, research_finding 3/49.
+- Next: fill the placeholders, live gate 12/12, LOC re-pin, REG-BACKFILL batches, PR 229 landed or pending.
