@@ -1,0 +1,21 @@
+{
+  "ruling": "coordinator 2026-11-02 (Wave P58, ruling 73): full new-system regulatory briefs for the two /regulations rows (67adbecd, 36203bb4) that live gate 41392850276 found drawing the composed fallback; authored from each item's own capture pool and judged by the independent second reader; allowBriefOverwrite; nothing is fetched (rule 16)",
+  "steps": [
+    {
+      "name": "p58-reg-dash-2-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-11-02-p58-reg-dash-2.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "p58-reg-dash-2-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-11-02-p58-reg-dash-2.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
