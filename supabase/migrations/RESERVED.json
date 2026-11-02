@@ -120,6 +120,12 @@
       "slice": "LIST-RPC-1",
       "status": "reserved",
       "reserved_on": "2026-11-01"
+    },
+    {
+      "number": "0151",
+      "slice": "RECONCILE-FK-1",
+      "status": "reserved",
+      "reserved_on": "2026-11-02"
     }
   ]
 }

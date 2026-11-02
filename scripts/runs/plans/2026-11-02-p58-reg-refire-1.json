@@ -1,0 +1,21 @@
+{
+  "ruling": "coordinator 2026-11-02 (Wave P58, ruling 73; RECONCILE-FK-1 migration 0151): re-fire of the reg-action-12 brief 51b2c91e, which failed the section reconcile on the basis_claim_id foreign key that 0151 now handles by archiving the dependent claims first; entry unchanged and judged by the independent second reader; allowBriefOverwrite; nothing is fetched (rule 16)",
+  "steps": [
+    {
+      "name": "p58-reg-refire-1-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-11-02-p58-reg-refire-1.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "p58-reg-refire-1-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-11-02-p58-reg-refire-1.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}

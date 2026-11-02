@@ -1,0 +1,21 @@
+{
+  "ruling": "coordinator 2026-11-02 (Wave P58, ruling 73; RECONCILE-FK-1 migration 0151): re-fire of five Operations briefs (053123bc, 282e480c, 71b03469, b4811af8 quarantined under fact_mint_hold S-NUMERIC because a claim re-typed a unit the span writes differently; e5c17fac failed the section reconcile on the basis_claim_id foreign key, fixed by 0151); the four claims are corrected, all five re-judged by the independent second reader; allowBriefOverwrite; nothing is fetched (rule 16)",
+  "steps": [
+    {
+      "name": "p58-ops-refire-5-dry",
+      "stage": "briefs",
+      "mode": "dry",
+      "input_file": "data/2026-11-02-p58-ops-refire-5.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    },
+    {
+      "name": "p58-ops-refire-5-items",
+      "stage": "briefs",
+      "mode": "apply",
+      "input_file": "data/2026-11-02-p58-ops-refire-5.items.json",
+      "producer_env": [],
+      "on_failure": "stop"
+    }
+  ]
+}
