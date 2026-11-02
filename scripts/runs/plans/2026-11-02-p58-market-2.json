@@ -1,0 +1,7 @@
+{
+  "ruling": "coordinator 2026-11-02 (Wave P58, ruling 73): re-apply of the two /market briefs (8c0049b4 World Bank Transport, ed63f522 EIA STEO) that the p58-market-20 apply left quarantined under fact_mint_hold S-NUMERIC (a figure's unit kind or currency symbol did not match its span); the claims are corrected, re-judged by the independent second reader, and the dry run now mirrors the mint gates (DRY-MINT-1); allowBriefOverwrite; nothing is fetched (rule 16)",
+  "steps": [
+    { "name": "p58-market-2-dry", "stage": "briefs", "mode": "dry", "input_file": "data/2026-11-02-p58-market-2.items.json", "producer_env": [], "on_failure": "stop" },
+    { "name": "p58-market-2-items", "stage": "briefs", "mode": "apply", "input_file": "data/2026-11-02-p58-market-2.items.json", "producer_env": [], "on_failure": "stop" }
+  ]
+}
