@@ -28,7 +28,7 @@ import { RegionMatrix } from "./RegionMatrix";
 import { StatementsBlock } from "./StatementsBlock";
 
 const PER_BAND_CAP = 5;
-const PLACEHOLDER = 'Search regions and dimensions — or ask "warehouse labor rates, Singapore vs LA?"';
+const PLACEHOLDER = 'Search regions and dimensions — or ask "port drayage ZEV mandates and grid queues, Rotterdam vs LA?"';
 
 export interface OperationsListProps {
   data: OperationsPageData;
