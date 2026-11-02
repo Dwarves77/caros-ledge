@@ -101,3 +101,39 @@ This file is the canonical handoff status for the coordinator session. Whenever 
 - Content runs touch no src; repair, not reject.
 - One home per mechanism; no word lists.
 - Root cause, never re-run.
+
+---
+
+## 8. Wave P58 (2026-11-01/02): ruling 73 full re-authoring
+
+Ruling 73: no legacy content is evidence; every processed item is re-authored from its own capture pool, independently judged, and flywheel-connected. Ruling 74: every Agent call carries `model` (standing rule 23). Detail: vault session-log addenda 2026-11-02 (i) and (j).
+
+### Counts: new-system vs legacy per surface (as of 05:45 UTC, before the PR 235 re-fire)
+New-system = item_changelog `record-briefs` full_brief `item-briefs-%` since 2026-10-30; live = not archived (verified + quarantined).
+- Regulations (domain 1): live 1361 (regulation 1135, directive 105, framework 87, guidance 22, other 12); new-system 91 (regulation 74, directive 12, framework 2, guidance 2, market_signal 1); quarantined 44; legacy = live minus new-system.
+- Market (market_signal): live 41, new-system 22, quarantined 16 (pre-existing, not P58).
+- Operations (regional_data): live 28, new-system 18, quarantined 9 (incl. e5c17fac). Note: 23 applied vs 18 counted; re-check the predicate per item before publishing.
+- Research (research_finding): live 39, new-system 1; research-30 not yet applied.
+- Technology 4, other domains untouched.
+- Per-bundle corrected (DIAG): ops 18 (+5 pending), reg-action 11 (+1 pending), reg-ch 30, market 20, immediate 20, research 0 (+30 pending).
+- <<FINAL_COUNTS>> (read after the PR 235 ruled run; not final until filled).
+
+### Held and heal queues
+- Held, no closed theme fits (THEME-VOCAB-1, operator ruling owed), research: ee8f4e71, 85a7a629, 97d22488, b88753be. Held, market: be729a3a (publisher page, no dated signal), 538c2774 (pool never mentions freight).
+- Heal queue (pool < 2,000 chars): market 67c6e313, b94cd283; research fcf98c3d; regulation 35ab535c, 18eb5d1d, 6f240e0a, e8753abe, ccee10a4; framework 816b28ef, b90a8e25, f055f739.
+- Quarantined by S-NUMERIC after apply: market 8c0049b4, ed63f522 (rewrites tested, follow-up bundle owed); operations 053123bc, 282e480c, 71b03469, b4811af8 (claim edits approved, re-fire in PR 235); FK failures e5c17fac (ops) and 51b2c91e (reg) re-fire after migration 0151.
+
+### PR map
+219 WAVE-P58 (LOC headroom, ruling 70); 220 RUNS-FIX-1; 221 ENTITY-MINT-1; 222 NORMALISE-2b; 223 LIST-RPC-1 (+0150); 224 STORED-DATE-1; 225 MARKET-20; 226 IMMEDIATE-20; 227 OPERATIONS-23; 228 RESEARCH-30; 229 DRY-MINT-1 (code, mirror of the mint gates in the dry; unmerged, behind 230); 230 RUNS-FIX-2 (+ ruled-runs queue step, parity baselines; green run 41396402099; unmerged at last read); 231 MARKET-2; 232 REG-ACTION-12; 233 refire-2 (merged 239199b5c); 234 REG-CRITICAL-HIGH-30; 235 FIX-1 (migration 0151 RECONCILE-FK-1 + ops-refire-5 + reg-refire-1 + reg-dash-2 + research-30 re-fire; green on ci/parity/schema; ruled run <<FINAL_COUNTS>>). Migrations: 0150 applied; 0151 lands through the CI migrate job (ADR-055).
+- Live gate 41392850276 failed no-fallback-summary on /regulations (67adbecd, 36203bb4 legacy); REG-DASH-2 re-authored both, judged 20/20 (three passes). Last green live gate: 12/12 on run 41341590602 (before P58).
+- Judge statistics: 441 first-pass fails across the wave, all revised and re-judged clean, 0 bundled failing.
+
+### Refuted this wave
+Antigravity's `list_workspace_items`; the 1c `cooldownMinutes`; the "dead row / cancelled CI run" reading (row 04a0da2b was a live, successful apply); "0 applied" in the MERGE-QUEUE-1 report; REG-SEV-1 "severity understated" (41 items; stored severity is snake_case); TEXT-CORRUPT-1 (display artifact; conditional section 3); CAPTURE-ANNEX-1 (pool holds Annex A-G); STORED-DATE-1 and RPC 0150 as causes of the parity failure (cause: CRITICAL band shrank from 20 to 2).
+
+### Debts
+DRY-MINT-1 (PR 229), MERGE-SERIAL-1, THEME-VOCAB-1, TITLE-POOL-1, JUR-FIX-1, SLOT-GAP-1, KIT-DATES-1, EXPORT-YEARS-1, GATE-A-CURRENCY-1, KIT-POINTERS-1, GATE-A-ASOF-1, DOCS-LEN-1, CHANGELOG-FIELDS-1, TIMELINE-MIRROR-1 [HYPOTHESIS], APPLY-SECTIONS-1 [HYPOTHESIS], the schema.sql S-NUMERIC comment (soft vs hard), POOL-DEDUP-1, DOCS-SEV-1, SKILL-TIER-1, RENDER-ENTITY-1 [HYPOTHESIS], OBL-DERIVE-2 (decision-ready), TEST-CLOCK-1, MINT-HOLD-1 follow-up bundle. CAPTURE-ANNEX-1 withdrawn.
+
+### Backlog
+- No-context legacy: 1065 regulations + 64 directives (monitoring) for REG-BACKFILL in 25-item batches. Corpus-wide: framework 45/256, initiative 403/441, guidance 28/82, market_signal 14/80, regional_data 4/35, research_finding 3/49.
+- Next: fill the placeholders, live gate 12/12, LOC re-pin, REG-BACKFILL batches, PR 229 landed or pending.
