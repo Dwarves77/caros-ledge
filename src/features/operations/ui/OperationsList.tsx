@@ -73,12 +73,12 @@ export function OperationsList({ data, nowIso, chips, radar, denominator, chipsF
   const matrixDimensions = useMemo(() => (dimensionFilter ? DIMENSIONS.filter((d) => d.db === dimensionFilter) : DIMENSIONS), [dimensionFilter]);
   const statements = useMemo(() => buildStatements({ facts: data.facts ?? [], regions: (roster ?? []).map((r) => ({ code: r.code, label: r.label, displayOrder: r.displayOrder })), dimensions: DIMENSIONS.map((d) => d.db) }), [data.facts, roster]);
   const statementNames = useMemo(() => Object.fromEntries(DIMENSIONS.map((d) => [d.db, dimensionLabel(d)])), []);
-  // A region's own profile row is its first item the roster resolves to; a region with none gets no link rather than a dead href.
+  // A region's own profile row is its "Regional Operations Profile" item, else the first item the roster resolves to; a region with none gets no link rather than a dead href.
   const profileHrefByRegion = useMemo(() => {
-    const out: Record<string, string> = {};
+    const out: Record<string, string> = {}, named = new Set<string>();
     for (const r of rows) {
       const region = regionsForItem((roster ?? []).map((x) => ({ code: x.code, isoCodes: x.isoCodes })), { jurisdictionIso: r.jurisdictionIso, jurisdiction: r.jurisdiction })[0];
-      if (region && !out[region]) out[region] = `/operations/${encodeURIComponent(r.id)}`;
+      if (region && (!out[region] || (!named.has(region) && /regional operations profile/i.test(r.title)))) { out[region] = `/operations/${encodeURIComponent(r.id)}`; if (/regional operations profile/i.test(r.title)) named.add(region); }
     }
     return out;
   }, [rows, roster]);

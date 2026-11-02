@@ -230,6 +230,25 @@ test("Why this matters: two lines naming the regulation with its next date and p
   assert.match(textOf(renderApp(createElement(WhyMatters, { lines: whyLines([], "propane") }))), /^Why this matters No regulation/);
 });
 
+test("Why this matters: a past first deadline does not hide the obligation's later date of application", async () => {
+  const E_FUEL = "cl:material:bbbbbbbbbbbbbbb1", E_ACT = "cl:instrument:bbbbbbbbbbbbbbb2";
+  const REG = "22222222-2222-4222-8222-222222222222", S1 = "50000000-0000-4000-8000-000000000011";
+  const ent = (entity_id: string, canonical_name: string) => ({ entity_id, kind: entity_id.split(":")[1], canonical_name, status: "active" });
+  const ref = (ref_id: string, entity_id: string, role: string, ref_table = "intelligence_items") => ({ ref_table, ref_id, entity_id, role, asserted_by: "test", method_version: "refs@3.0.0" });
+  const world = (obligation: Record<string, unknown>) => memoryDb({
+    entities: [ent(E_FUEL, "marine gasoil"), ent(E_ACT, "the maritime fuel standard")],
+    intelligence_items: [ITEM(REG, "Maritime fuel standard")],
+    entity_refs: [ref(REG, E_ACT, "cites_instrument"), ref(S1, E_FUEL, "cites_feedstock", "market_series")],
+    entity_relations: [{ parent_entity_id: E_FUEL, child_entity_id: E_ACT, relation: "fuel_for_mode", asserted_by: "test" }],
+    market_series: [{ id: S1, series_key: "mgo", label: "MGO", value_numeric: 100, unit: "USD/t", as_at_date: "2026-10-01" }],
+    obligation_objects: [{ obligation_id: "obl:fe", instrument_item_id: REG, duty_holder_class: ["operator"], ...obligation }],
+  }).db;
+  const read = async (obligation: Record<string, unknown>) => (await readWhyMatters(world(obligation), "market_series", [{ id: S1, subject: "marine gasoil" }], "2026-10-31T00:00:00Z")).get(S1)?.[0];
+  assert.equal(await read({ first_deadline: "2023-01-01", date_of_application: "2030-01-01" }), "Maritime fuel standard: next dated obligation Jan 1, 2030.");
+  assert.equal(await read({ first_deadline: "2027-06-01", date_of_application: "2030-01-01" }), "Maritime fuel standard: next dated obligation Jun 1, 2027.");
+  assert.equal(await read({ first_deadline: "2023-01-01", date_of_application: "2024-01-01" }), "Maritime fuel standard.", "every date past: no next obligation is stated");
+});
+
 test("What moves with this: each structured row tied to the item's entities as one line, the strongest kind first", async () => {
   const rows = (await readItemExtras(memoryDb({}).db, "i1", [], [HFO, ETS, link("oem_tech_roadmaps", { label: "Methanol dual-fuel engines", stage: "series_production" }, { hop: 1, entity: { id: "e3", kind: "technology", canonicalName: "Methanol" } })])).moves;
   assert.deepEqual(rows.map((r) => r.kind), ["Obligation", "Price or figure", "Technology"]);
