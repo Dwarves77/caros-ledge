@@ -6,7 +6,7 @@
 // (core/brief FORMAT_SPECS), so the old second copy of the section list and its drift test are gone. Pure: the caller supplies the live material.
 import { analysisLabelRe, buildTimelineRows, checkBriefContent, findTimelineSection, FORMAT_SPECS, LEGAL_CALLOUT, MODAL_RE, parseTimeline, validateClaimRecords, validateMetadata, type AdoptedTerms, type BriefMetadata, type SectionRow } from "@/core/brief";
 import { precisionKey, REGISTRY, runRule, severityToken, validateBrief, type ItemColumns } from "@/core/brief/rules";
-import { scanGateA, uncoveredSlots, type SlotRow } from "@/core/grounding";
+import { mintGateHits, scanGateA, uncoveredSlots, type SlotRow } from "@/core/grounding";
 import { digestKind } from "@/core/digest/kinds";
 import { review } from "@/core/digest/review";
 
@@ -176,6 +176,9 @@ export function validateRecordBriefEntry(entry: unknown, i: number, live: Record
     const gate = scanGateA([body, ...prose].join("\n"), claims.filter((c) => c.claim_kind === "FACT").map((c) => ({ claim_text: String(c.claim_text ?? ""), source_span: String(c.source_span ?? "") })));
     if (gate.orphan_count > 0) at(`Gate A mirror: ${gate.orphan_count} orphan token(s) in the body with no covering FACT claim: ${gate.orphans.map((o) => `${JSON.stringify(o.token)} (${o.class})`).join(", ")}. Add a FACT claim whose claim_text or source_span carries the token verbatim, or remove the token from the body.`);
   }
+  // MIRROR d: the fact-mint gates (S-NUMERIC, S-CONFLATE) the apply holds a FACT on (criterion 3, mint_hold_reason): refused here so a held figure never reaches the ruled run.
+  const gateClaims = claims.map((c) => ({ claim_kind: String(c.claim_kind ?? ""), claim_text: String(c.claim_text ?? ""), source_span: String(c.source_span ?? ""), source_id: null, source_tier_at_grounding: null }));
+  for (const h of mintGateHits(gateClaims)) at(`${h.signature} mint-gate mirror: claims[${h.idx}] (${JSON.stringify(String(claims[h.idx ?? 0]?.claim_text ?? "").slice(0, 80))}) would be held at apply: ${h.rationale} -- state the figure in the span in the same unit and form, or drop it from claim_text`);
   // MIRROR b: criterion 4, stricter than the database in one way: a FACT attached to the section does not stand in for a label (attachment is only known at the write site).
   for (const s of sections) {
     if (MODAL_RE.test(s.content_md) && !(LABEL_RE.test(s.content_md) || norm(s.content_md).includes(norm(LEGAL_CALLOUT)))) at(`criterion 4 mirror: unlabeled assertion in section ${JSON.stringify(s.section_key)} -- matches /requires|must|mandates|obligates|prohibits|applies to/i with no analysis label and no ${LEGAL_CALLOUT} callout in that section.`);
