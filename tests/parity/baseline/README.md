@@ -28,3 +28,9 @@ Ruling 41 (operator, 2026-10-30) approves the detail-page redesign (970d2be, bd2
 ## Market band refresh (CONTENT-1, 2026-10-31)
 
 CONTENT-1, 2026-10-31: five Oil Bulletin items re-banded by their briefs, Monitor band empty. The CONTENT-1 ruled run (PR 193, applied 19:37 to 19:40 UTC) wrote COST ALERT / HIGH briefs for the six EU Weekly Oil Bulletin items; five of them were the MODERATE rows of the Market page's Monitor band, so the band and its "All # monitor" control are no longer drawn. The two records `market.1280x900` and `market.375x812` were replaced from artifact `parity-baseline-41235576827` of the `baseline` job (CI run 41235576827, dispatched with `only` = `baseline` and `routes` = `market`, production https://carosledge.com at main 8950506, captured 2026-10-31T19:44:44Z, same member account). No e-mail address is in either record. The other routes, `index.json` and the PNGs are unchanged.
+
+## Regulation detail refresh (PARITY-BASE-1, 2026-11-02)
+
+The ruling-73 IMMEDIATE-20 apply (harness run 04a0da2b, CI run 41371084958) re-authored the reference regulation item, so its section set changed. The two records `regulation-detail.1280x900` and `regulation-detail.375x812` were replaced from the `parity-capture` artifact of the parity job of CI run 41378151073 (PR 230, built app on the runner, same member account and same targets), the same method as the detail-page look refresh above (a first attempt from the `baseline` job against production did not match the runner capture and was discarded). The other routes, `index.json` and the PNGs are unchanged.
+
+PARITY-BASE-1 (continued): the ruling-73 OPERATIONS-23 apply re-authored the reference operations item the same way, so `operations-detail.1280x900` and `operations-detail.375x812` were replaced from the `parity-capture` artifact of the parity job of CI run 41381028345 (PR 230), by the same method.

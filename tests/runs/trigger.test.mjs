@@ -37,7 +37,7 @@ test('the ruled-runs job: after changes and migrate, only on a push to main with
   assert.equal(job.concurrency['cancel-in-progress'], false);
   assert.match(job.if, /github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/);
   assert.match(job.if, /needs\.changes\.outputs\.plans != ''/);
-  assert.equal(job.permissions, undefined, 'it takes the read default: nothing is committed back');
+  assert.deepEqual(job.permissions, { contents: 'read', actions: 'read' }, 'read only (actions: read lets it queue behind earlier ruled-runs jobs, RUNS-FIX-2): nothing is committed back');
   const steps = job.steps.map((s) => String(s.run ?? s.uses));
   assert.ok(steps.some((s) => /node scripts\/runs\/execute\.mjs \$PLANS/.test(s)), 'executes the pending plans');
   assert.ok(steps.some((s) => s.startsWith('actions/upload-artifact') && s.length > 0));
