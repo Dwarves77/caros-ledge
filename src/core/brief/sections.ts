@@ -96,12 +96,8 @@ function proseExtractor(sections: readonly SectionDef[]) {
     const rows: SectionRow[] = [];
     if (!fullBrief) return rows;
     for (const sec of sections) {
-      // Number first (a numbered heading resolves whatever its text), then the heading, then each alternate.
-      let got = extractSectionByNumber(fullBrief, sec.key);
-      for (const h of [sec.heading, ...(sec.headingAlts ?? [])]) {
-        if (present(got)) break;
-        got = extractSectionByHeading(fullBrief, h);
-      }
+      // Heading first (then each alternate), the number last: a numbered H2 inside another section ("## 8. Excessive Packaging") must not win over the top-level heading.
+      const got = [sec.heading, ...(sec.headingAlts ?? [])].map((h) => extractSectionByHeading(fullBrief, h)).find(present) ?? extractSectionByNumber(fullBrief, sec.key);
       const body = (got?.contentMarkdown ?? "").trim();
       if (!body || /^\*?no content for this section/i.test(body)) continue; // an honest omission note is no row
       rows.push({ section_key: sec.key, section_order: sec.order, content_md: body, is_conditional: sec.conditional });

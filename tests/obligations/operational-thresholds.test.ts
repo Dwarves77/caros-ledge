@@ -24,7 +24,7 @@ test("operational thresholds: derives void space, recycled content, and de minim
     "Article 6(1) Manufacturers shall ensure packaging contains at least 35% post-consumer recycled plastic content by weight.",
     "Article 10(2) Economic operators shall ensure packaging components representing less than 5% by weight of the packaging unit are exempt.",
     "Article 14(3) Undertakings handling less than 10 tonnes of packaging per calendar year shall be exempt.",
-    "Article 28(4) Operators shall be exempt with respect to transport packaging used in B2B transactions within a closed loop system.",
+    "Article 28(4) Economic operators shall be exempt with respect to transport packaging used in B2B transactions within a closed loop system.",
   ].join("\n");
 
   const capture = {
@@ -67,7 +67,7 @@ test("operational thresholds: derives void space, recycled content, and de minim
     {
       id: "claim-exemption",
       claim_kind: "FACT",
-      source_span: "Article 28(4) Operators shall be exempt with respect to transport packaging used in B2B transactions within a closed loop system.",
+      source_span: "Article 28(4) Economic operators shall be exempt with respect to transport packaging used in B2B transactions within a closed loop system.",
       search_result_id: "c-ppwr",
       intelligence_item_id: "i-ppwr",
     },

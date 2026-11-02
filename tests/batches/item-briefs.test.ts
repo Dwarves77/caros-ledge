@@ -392,3 +392,13 @@ test("DRY-MINT-1: a currency figure the span states without the currency symbol 
 test("DRY-MINT-1: the same figure in the same unit passes the mint-gate mirror", () => {
   assert.doesNotMatch(mintMirror("Output is 3 million tCO₂e", "Output is 3 million tCO₂e"), /mint-gate mirror/);
 });
+
+test("FLY-FIX-1 completeness mirror: an overwrite that shrinks a 30k+ character, 15-Article stored brief is refused; one that keeps its depth is not", () => {
+  const w = batchWorld();
+  const prev = Array.from({ length: 15 }, (_, i) => `Article ${i + 1} sets a duty. ${"The duty is described in full here. ".repeat(60)}`).join("\n\n");
+  const live = { items: new Map([[ITEM, { itemType: "regulation", grade: "brief", status: "published", hash: String(recordEntry(w.db).source_pool_hash), poolText: SPAN_REPORT, bytes: 10, fullBrief: prev }]]), slots: new Map(), adopted: {}, now: NOW, allowOverwrite: true, emit: new Map() };
+  const run = (body: string) => validateRecordBriefEntry({ item_id: ITEM, source_pool_hash: recordEntry(w.db).source_pool_hash, body, metadata: {}, claims: [] }, 0, live as never).errors.join("\n");
+  assert.match(run(`Article 1 and Article 2 only. ${"Short summary. ".repeat(80)}`), /completeness mirror: the overwrite shrinks the stored brief/);
+  assert.match(run(prev.split("\n\n").slice(0, 8).join("\n\n")), /completeness mirror/, "fewer than 75% of the Articles is refused even before the length floor");
+  assert.doesNotMatch(run(prev), /completeness mirror/);
+});

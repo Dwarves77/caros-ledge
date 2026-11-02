@@ -16,6 +16,7 @@ import { quoteIn, validateEmission, type EmissionPlan, type EmitLive } from "./e
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MIN_BODY_CHARS = 600;
+const articlesIn = (t: string): Set<string> => new Set((t.match(/\bArticle\s+\d+\b/gi) ?? []).map((a) => a.toLowerCase().replace(/\s+/g, " ")));
 
 const LABEL_RE = analysisLabelRe();
 // The numeric-figure mirror keeps the decimal point (the mint-time soft gate strips it, which would false-positive a correctly cited "3.5%" in a HARD refusal) and ignores provenance pointers: the leading slot tag, a legal locator.
@@ -122,22 +123,21 @@ function validateRefresh(entry: Obj, tag: string, item: RecordItemLive, live: Re
 /** Validate ONE entry: every message names the item and the offending field or claim index. */
 export function validateRecordBriefEntry(entry: unknown, i: number, live: RecordLive): EntryResult<RecordPlan> {
   if (!isObj(entry)) return { errors: [`entries[${i}]: must be an object`] };
-  const itemId = nonEmpty(entry.item_id) ? entry.item_id : `entries[${i}]`;
-  const tag = `item ${itemId}`;
-  const errors: string[] = [];
-  const residue: string[] = [];
+  const tag = `item ${nonEmpty(entry.item_id) ? entry.item_id : `entries[${i}]`}`;
+  const errors: string[] = [], residue: string[] = [];
   const at = (msg: string) => void errors.push(`${tag}: ${msg}`);
   if (!nonEmpty(entry.item_id) || !UUID_RE.test(entry.item_id)) return { errors: [`${tag}: item_id must be a UUID`] };
   const item = live.items.get(entry.item_id);
   if (!item) return { errors: [`${tag}: item not found`] };
-  const stale = poolHashError(tag, entry.source_pool_hash, item.hash);
-  if (stale) return { errors: [stale] };
+  const stale = poolHashError(tag, entry.source_pool_hash, item.hash); if (stale) return { errors: [stale] };
   if (isRefresh(entry)) return validateRefresh(entry, tag, item, live);
   if (item.grade !== "record" && !live.allowOverwrite) return { errors: [`${tag}: item_grade is '${item.grade ?? "brief"}', not 'record': an existing brief is regenerated only with allowBriefOverwrite`] };
   const body = typeof entry.body === "string" ? entry.body : "";
   if (body.trim() === "") at("body must be a non-empty string");
   else {
     if (body.trim().length < MIN_BODY_CHARS) at(`body is ${body.trim().length} characters, under the ${MIN_BODY_CHARS} the brief write requires`);
+    const prev = item.fullBrief ?? "", before = articlesIn(prev), after = articlesIn(body);
+    if (prev.length >= 25000 && (body.length < prev.length * 0.7 || (before.size >= 10 && after.size < Math.ceil(before.size * 0.75)))) at(`completeness mirror: the overwrite shrinks the stored brief (${prev.length} to ${body.length} characters, ${before.size} to ${after.size} Articles cited)`);
     const content = checkBriefContent(body);
     if (!content.ok) at(`brief failure gate: ${content.reason}`);
     const unaddressed = uncoveredSlots(body, live.slots.get(item.itemType) ?? []);

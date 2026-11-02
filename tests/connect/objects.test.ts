@@ -5,6 +5,7 @@ import { test } from "node:test";
 
 import { isVerbatim } from "@/core/contracts";
 import { deriveObligationObjects, type Candidate } from "@/features/obligations";
+import objectRules from "@/features/obligations/derive/data/object-rules.json" with { type: "json" };
 import fueleuTargets from "@/features/obligations/derive/data/fueleu-targets.json" with { type: "json" };
 
 const FUELEU_TARGETS = fueleuTargets as { referenceValue: { value: number }; periods: Array<{ from_date: string; quote: string; reduction_percent: number; target_gco2e_per_mj: number }> };
@@ -137,4 +138,12 @@ test("G3: a reader candidate's due date is stored with its precision; an omitted
   assert.deepEqual([bare?.due_date, bare?.due_date_precision], ["2027-06-15", "day"], "the column's default, written explicitly");
   const none = (await planFor(candidate())).toInsert[0]?.row;
   assert.equal("due_date_precision" in (none ?? {}), false, "a derived (non-reader) candidate does not write the reader's columns");
+});
+
+test("FLY-FIX-1: 'economic operators' resolve to economic_operator and never to carrier; a transport operator is still a carrier", () => {
+  const holders = (span: string) => objectRules.phrases.filter((p) => new RegExp(p.pattern, "i").test(span)).map((p) => p.class);
+  assert.deepEqual(holders("Economic operators shall ensure that packaging is recyclable."), ["economic_operator"]);
+  assert.deepEqual(holders("System operators shall report annually."), []);
+  assert.deepEqual(holders("Transport operators shall report the emissions of each voyage."), ["carrier"]);
+  assert.deepEqual(holders("Fuel suppliers shall report."), ["fuel_supplier"]);
 });
