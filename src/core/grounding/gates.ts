@@ -87,6 +87,11 @@ function identityCongruenceHolds(facts: GateFact[]): Set<string | number | null 
   const list = (facts ?? []).filter((f) => String(f.claim_kind).toUpperCase() === "FACT").map((f, i) => ({ idx: i + 1, id: f.id ?? i + 1, claim_text: f.claim_text, source_span: f.source_span }));
   return new Set(detectConflate(list).map((h) => h.id));
 }
+/** The HARD mint-gate hits (S-NUMERIC per FACT, S-CONFLATE across the FACTs) with their rationale, `idx` = the FACT's position in `facts`: the dry-run mirror of what mintGates holds at apply. */
+export function mintGateHits(facts: GateFact[]): DefectHit[] {
+  const list = facts.flatMap((f, i) => (String(f.claim_kind).toUpperCase() === "FACT" ? [{ idx: i, id: i, claim_text: f.claim_text, source_span: f.source_span }] : []));
+  return [...list.flatMap((f) => detectNumeric(f) ?? []), ...detectConflate(list)];
+}
 export interface MintGateReport { conflateHeldIds: string[]; numericHeldIds: string[]; numericFacts: GateFact[]; belowFloor: number; genericSource: number }
 /** All four mint gates over the FACTs a ground added or changed: the HARD hold ids (S-CONFLATE and S-NUMERIC: a figure the span does not state is a hold, not a flag), the facts behind the numeric holds, the counts already enforced elsewhere. */
 export function mintGates(facts: GateFact[], ctx: { itemFloor: number | null; suspendedSourceIds?: Iterable<string> }): MintGateReport {
