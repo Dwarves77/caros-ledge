@@ -65,7 +65,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
   const kind = severityLabel(r.severity);
   const bandLabel = signalBand ? `B${BAND_NUM[signalBand]} · ${BAND_LABEL[signalBand]}` : null;
   const isRecord = r.itemGrade === "record";
-  const [depth, setDepth] = useState<"summary" | "full">("summary");
+  const [depth, setDepth] = useState<"summary" | "full">("full");
   const [tagOpen, setTagOpen] = useState(false);
   const map = useMemo(() => Object.fromEntries(claimsDegraded ? [] : sections.filter((s) => (s.content_md || "").trim()).map((s) => [s.section_key, s.content_md.trim()])), [sections, claimsDegraded]);
   const parsed = useMemo(() => (isRecord ? parseRecordSections(sections, claimTiers) : null), [isRecord, sections, claimTiers]);
@@ -155,7 +155,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
           nowIso={nowIso}
           footer={<><CrossPageSection surfaceKey="market" surfaceLabel="Market Intel" crossPage={crossPage} onRetry={retry} kindLabels={kindLabels ?? {}} /><NoticesRail /></>}
         >
-          <DetailMasthead title={r.title} band={band} surface="Market Intel" jurisdiction={jurisLabel} dek={meta} placeholder="Ask about this signal, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} />
+          <DetailMasthead title={r.title} band={band} surface="Market Intel" jurisdiction={jurisLabel} dek={meta} placeholder="Ask about this signal, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} impactSlot={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />} atAGlanceSlot={<AtAGlanceCard rows={[{ label: "Band", value: `${band.label} · ${band.window}` }, { label: "Kind", value: kind }, { label: "Corporate band", value: bandLabel }, { label: "Jurisdiction", value: jurisLabel }, { label: "Topic", value: r.topic }, { label: "Status", value: promotion.label }, { label: "Published", value: published }, { label: "Next release", value: nextRelease ? formatDate(nextRelease.slice(0, 10)) : null }]} />} relevanceSlot={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />} />
           {claimsDegraded && (
             <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
               The facts of this signal did not load, so none is shown. Nothing was changed; try again.
@@ -167,30 +167,7 @@ export function MarketDetailView({ resource: r, sections, claimTiers, claimsDegr
             </StateNote>
           )}
           <SectionIndex sections={index} depth={depth} onDepthChange={setDepth} />
-          <DetailLayout
-            rail={
-              <DetailRail
-                atAGlance={
-                  <AtAGlanceCard
-                    rows={[
-                      { label: "Band", value: `${band.label} · ${band.window}` },
-                      { label: "Kind", value: kind },
-                      { label: "Corporate band", value: bandLabel },
-                      { label: "Jurisdiction", value: jurisLabel },
-                      { label: "Topic", value: r.topic },
-                      { label: "Status", value: promotion.label },
-                      { label: "Published", value: published },
-                      { label: "Next release", value: nextRelease ? formatDate(nextRelease.slice(0, 10)) : null },
-                    ]}
-                  />
-                }
-                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />}
-                relevance={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />}
-                designed={<InThisListStat backHref="/market" backLabel="Back to list" band={band} />}
-                legend={<LegendRailCard />}
-              />
-            }
-          >
+          <DetailLayout rail={<DetailRail designed={<InThisListStat backHref="/market" backLabel="Back to list" band={band} />} legend={<LegendRailCard />} />}>
             <DetailSection id="summary" title="Summary" aside="Generated · 30-second read" index={1}>
               <PriceBoardBlock bundle={bundle} nowIso={nowIso} />
               {r.whatIsIt || r.note ? <p className={styles.muted} style={{ color: "var(--ink)", fontSize: "var(--fs-14)", lineHeight: 1.65 }}>{r.whatIsIt || r.note}</p> : null}

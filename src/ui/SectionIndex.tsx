@@ -47,21 +47,21 @@ export const SECTION_DESCRIPTIONS: Readonly<Record<string, string>> = {
 };
 
 /** The index of the section nearest the top of the viewport (the first one when none intersects). */
-function useSectionScrollSpy(ids: string[]): number {
+function useSectionScrollSpy(ids: string[], depth?: SectionIndexDepth): [number, (i: number) => void] {
   const [active, setActive] = useState(0);
   const key = ids.join("|");
   useEffect(() => {
-    const els = key.split("|").map((id) => document.getElementById(id)).filter((el): el is HTMLElement => el != null);
+    const idList = key.split("|"), els = idList.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => el != null);
     if (els.length === 0) return;
     const observer = new IntersectionObserver((entries) => {
       const first = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-      const idx = first ? els.indexOf(first.target as HTMLElement) : -1;
+      const idx = first ? idList.indexOf((first.target as HTMLElement).id) : -1;
       if (idx >= 0) setActive(idx);
     }, { rootMargin: "-64px 0px -70% 0px", threshold: 0 });
     els.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [key]);
-  return active;
+  }, [key, depth]);
+  return [active, setActive];
 }
 
 /** The Summary | Full brief switch, inside the index bar so it sits at the same position on every detail page. */
@@ -72,10 +72,12 @@ function SummaryDepthSwitch({ depth, onChange }: { depth: SectionIndexDepth; onC
 
 /** The detail section index bar: scroll-spy tabs that never truncate, the depth switch inside the same bordered card. Clicking a full-brief section while in summary depth expands to full brief and scrolls to it. */
 export function SectionIndex({ sections, depth, onDepthChange }: { sections: SectionIndexEntry[]; depth?: SectionIndexDepth; onDepthChange?: (d: SectionIndexDepth) => void }) {
-  const active = useSectionScrollSpy(sections.map((s) => s.id));
+  const [active, setActive] = useSectionScrollSpy(sections.map((s) => s.id), depth);
   if (sections.length === 0) return null;
-  const onTabClick = (id: string) => {
+  const onTabClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string, idx: number) => {
+    setActive(idx);
     if (depth === "summary" && onDepthChange && typeof document !== "undefined" && !document.getElementById(id)) {
+      e.preventDefault();
       onDepthChange("full");
       setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
     }
@@ -85,7 +87,7 @@ export function SectionIndex({ sections, depth, onDepthChange }: { sections: Sec
       <div data-guard-strip className="cl-section-index-strip">
         <div data-guard-strip className="cl-section-index-tabs">
           {sections.map((s, i) => (
-            <a key={s.id} href={`#${s.id}`} onClick={() => onTabClick(s.id)} data-sec-theme={sectionThemeOf(s.id)} className="cl-section-index-link" aria-current={i === active ? "true" : undefined}>
+            <a key={s.id} href={`#${s.id}`} onClick={(e) => onTabClick(e, s.id, i)} data-sec-theme={sectionThemeOf(s.id)} className="cl-section-index-link" aria-current={i === active ? "true" : undefined}>
               S{s.ord ?? i + 1} {s.shortName}
             </a>
           ))}

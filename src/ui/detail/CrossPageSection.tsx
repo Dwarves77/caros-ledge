@@ -210,25 +210,26 @@ function ThemeAnalysis({ theme, surfaceLabel, first }: { theme: ThemeAnalysisVie
 }
 
 /** Which of the two cross-page sections this item has (the section index lists only those). */
-export function crossPagePresence(crossPage?: CrossPageData | null): { connected: boolean; inferences: boolean } {
-  return { connected: !!crossPage?.intersections || !!crossPage?.theme || (crossPage?.moves?.length ?? 0) > 0 || !!crossPage?.radar?.patterns.length || (crossPage?.degraded?.includes("themes") ?? false), inferences: (crossPage?.degraded?.includes("inferences") ?? false) || pickVisibleInferences(crossPage?.inferences?.claims ?? [], admissibleForDisplay).length > 0 };
+export function crossPagePresence(crossPage?: CrossPageData | null, hasConnections = false): { connected: boolean; inferences: boolean } {
+  return { connected: hasConnections || !!crossPage?.intersections || !!crossPage?.theme || (crossPage?.moves?.length ?? 0) > 0 || !!crossPage?.radar?.patterns.length || (crossPage?.degraded?.includes("themes") ?? false), inferences: (crossPage?.degraded?.includes("inferences") ?? false) || pickVisibleInferences(crossPage?.inferences?.claims ?? [], admissibleForDisplay).length > 0 };
 }
 
 /** "Connected intelligence" (intersections and the theme analysis) and the Inferences section; the view is computed once here from the rows the page read. */
-export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, onRetry }: { surfaceKey: string; surfaceLabel: string; crossPage?: CrossPageData | null; onRetry?: () => void; kindLabels?: Readonly<Record<string, string>> }) {
+export function CrossPageSection({ surfaceKey, surfaceLabel, crossPage, connections, onRetry }: { surfaceKey: string; surfaceLabel: string; crossPage?: CrossPageData | null; connections?: ReactNode; onRetry?: () => void; kindLabels?: Readonly<Record<string, string>> }) {
   const view = crossPage?.intersections ?? null;
   const theme = crossPage?.theme ?? null;
   const themesFailed = crossPage?.degraded?.includes("themes") ?? false;
   const inferences = <InferenceSection inferences={crossPage?.inferences} index={crossPageOrd(surfaceKey, INFERENCES_SECTION_ID)} failed={crossPage?.degraded?.includes("inferences") ?? false} onRetry={onRetry} />;
   const moves = crossPage?.moves ?? [];
   const radarShown = crossPage?.radar === null || !!crossPage?.radar?.patterns.length;
-  if (!view && !theme && !themesFailed && moves.length === 0 && !radarShown) return inferences;
+  if (!connections && !view && !theme && !themesFailed && moves.length === 0 && !radarShown) return inferences;
   return (
     <>
       <DetailSection id={CONNECTED_SECTION_ID} title="Connected intelligence" aside="Intersections and theme analysis" index={crossPageOrd(surfaceKey, CONNECTED_SECTION_ID)}>
         <div data-guard-container="cross-page">
+          {connections}
           {radarShown && <FlywheelRadar view={crossPage?.radar ?? null} variant="inline" quiet />}
-          <MovesWith rows={moves} first={!view && !theme && !radarShown} />
+          <MovesWith rows={moves} first={!connections && !view && !theme && !radarShown} />
           {view && (
             <DetailSubSection title="Intersections" subtitle="Items that share an operational scenario and a compliance object with this one" first={moves.length === 0 && !radarShown}>
               {view.summary && (

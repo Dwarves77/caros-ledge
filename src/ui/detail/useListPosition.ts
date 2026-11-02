@@ -21,9 +21,9 @@ const num = (v: string | null): number | null => (v !== null && v.trim() !== "" 
 
 export function useListPosition(): ListPosition {
   const q = useSearchParams();
-  const pos = num(q.get("pos"));
-  const of = num(q.get("of"));
-  return { list: q.get("list"), pos, of, known: pos !== null && of !== null, prev: q.get("prev"), next: q.get("next") };
+  const pos = num(q?.get("pos") ?? null);
+  const of = num(q?.get("of") ?? null);
+  return { list: q?.get("list") ?? null, pos, of, known: pos !== null && of !== null, prev: q?.get("prev") ?? null, next: q?.get("next") ?? null };
 }
 
 /** The href of the previous or next row of the list, carrying the list position forward; null when there is no such neighbour. */

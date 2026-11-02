@@ -82,7 +82,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
   const router = useRouter();
   const relevance = useItemRelevance(r.id);
   const band = bandFromPriority(r.priority);
-  const [depth, setDepth] = useState<"summary" | "full">("summary");
+  const [depth, setDepth] = useState<"summary" | "full">("full");
   const [tagOpen, setTagOpen] = useState(false);
   const jurisLabel = jurisLabelOf(r);
   const regionGroup = regionGroupForLabel(jurisLabel);
@@ -92,7 +92,7 @@ export function OperationsDetail(p: OperationsDetailProps) {
   const parsed = useMemo(() => (isRecord ? parseRecordSections(p.sections, p.claimTiers) : null), [isRecord, p.sections, p.claimTiers]);
   const split = parsed ? splitKeyDateFacts(parsed.facts) : { dateFacts: [], otherFacts: [] };
   const unparsedBrief = known.length === 0 && r.fullBrief ? stripSourcesSection(r.fullBrief) : "";
-  const presence = crossPagePresence(p.crossPage);
+  const presence = crossPagePresence(p.crossPage, p.connectionRows.length > 0);
   const dek = [`Operations · ${jurisLabel}`, r.sourceName, r.added ? `published ${formatDate(r.added)}` : null, r.modes && r.modes.length > 0 ? r.modes.map((m) => m.toUpperCase()).join(" · ") : null].filter(Boolean).join(" · ");
   const index = [
     { id: "summary", shortName: "Summary", ord: 1 },
@@ -146,9 +146,9 @@ export function OperationsDetail(p: OperationsDetailProps) {
           band={band}
           action={topRecommendedAction(p.recommendedActions)}
           nowIso={nowIso}
-          footer={<><CrossPageSection surfaceKey="operations" surfaceLabel="Operations" crossPage={p.crossPage} onRetry={retry} kindLabels={p.kindLabels ?? {}} /><NoticesRail /></>}
+          footer={<><CrossPageSection surfaceKey="operations" surfaceLabel="Operations" crossPage={p.crossPage} onRetry={retry} kindLabels={p.kindLabels ?? {}} connections={p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} /><NoticesRail /></>}
         >
-          <DetailMasthead title={r.title} band={band} surface="Operations" jurisdiction={regionGroup || jurisLabel} dek={dek} placeholder="Ask about this profile, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} connectionsSlot={p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} />
+          <DetailMasthead title={r.title} band={band} surface="Operations" jurisdiction={regionGroup || jurisLabel} dek={dek} placeholder="Ask about this profile, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} impactSlot={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />} atAGlanceSlot={<AtAGlanceCard rows={[{ label: "Topic", value: r.topic ?? null }, { label: "Comparison", value: p.eligibility.unavailable ? "Not available" : p.eligibility.s3Eligible ? "Available" : `Building${p.eligibility.resolvedRegionCodes.length > 0 ? ` (${p.eligibility.resolvedRegionCodes.join(", ")})` : ""}` }]} />} relevanceSlot={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />} />
           {r.conversionTrigger && <p className={styles.noteText}>{r.conversionTrigger}</p>}
           {p.claimsDegraded && (
             <StateNote tone="error" action={{ label: "Retry", onClick: retry }}>
@@ -169,9 +169,6 @@ export function OperationsDetail(p: OperationsDetailProps) {
           <DetailLayout
             rail={
               <DetailRail
-                atAGlance={<AtAGlanceCard rows={[{ label: "Topic", value: r.topic ?? null }, { label: "Comparison", value: p.eligibility.unavailable ? "Not available" : p.eligibility.s3Eligible ? "Available" : `Building${p.eligibility.resolvedRegionCodes.length > 0 ? ` (${p.eligibility.resolvedRegionCodes.join(", ")})` : ""}` }]} />}
-                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />}
-                relevance={<RelevanceRailCard state={relevance.phase === "ready" ? { phase: "ready", relevance: relevance.data.relevance } : relevance.phase === "failed" ? { phase: "failed", retry: relevance.retry } : { phase: "loading" }} />}
                 designed={<><RelatedRegionCard related={p.related} region={regionGroup || jurisLabel} onRetry={retry} /><DerivedFigures figures={p.derived} retryHref={here} /></>}
                 legend={<LegendRailCard />}
                 undesigned={<InThisListStat backHref="/operations" backLabel="Back to list" band={band} />}

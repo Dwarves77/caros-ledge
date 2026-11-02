@@ -238,3 +238,51 @@ test("commonActionCardProps and RelevanceRailCard surface deterministic applicab
   assert.ok(railHtml.includes("In scope because: Your organisation role is Freight forwarder"), "Expected RelevanceRailCard to render explicit scope triggers");
   assert.ok(railHtml.includes("Applies to EU road and ocean freight forwarders."), "Expected RelevanceRailCard to render applicability reasons");
 });
+
+test("DetailMasthead places Impact Assessment in .cl-masthead-impact, At a glance + Relevance in .cl-masthead-context-grid, and CrossPageSection hosts Connections", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { BAND_ORDER } = await import("@/core/lists/bands");
+  const { CrossPageSection, crossPagePresence } = await import("@/ui/detail/CrossPageSection");
+  const { AtAGlanceCard, DetailMasthead, ImpactRailCard } = await import("@/ui/detail/DetailShell");
+  const { ItemConnections, RelevanceRailCard } = await import("@/ui/detail/ItemConnections");
+  const { renderApp } = await import("../_support/render.ts");
+
+  const mastheadHtml = renderApp(
+    createElement(DetailMasthead, {
+      title: "EU PPWR 2025/40",
+      band: BAND_ORDER[0]!,
+      surface: "Regulations",
+      jurisdiction: "European Union",
+      dek: "European Union · Packaging",
+      placeholder: "Ask about this regulation",
+      nowIso: "2026-11-02T00:00:00Z",
+      actionSlot: createElement("div", { className: "test-action" }, "Action"),
+      impactSlot: createElement(ImpactRailCard, { scores: { cost: 0, compliance: 3, client: 2, operational: 3 }, reasoning: "Affects all EU shipment packaging" }),
+      atAGlanceSlot: createElement(AtAGlanceCard, { rows: [{ label: "Topic", value: "packaging" }, { label: "Deadline", value: "Aug 12, 2026" }] }),
+      relevanceSlot: createElement(RelevanceRailCard, { state: { phase: "loading" } }),
+    }),
+  );
+  assert.ok(mastheadHtml.includes('data-masthead-impact=""'), "Expected data-masthead-impact on DetailMasthead when impactSlot is passed");
+  assert.ok(mastheadHtml.includes('class="cl-masthead-impact"'), "Expected .cl-masthead-impact slot in DetailMasthead");
+  assert.ok(mastheadHtml.includes('class="cl-masthead-context-grid"'), "Expected .cl-masthead-context-grid holding At a glance and Relevance to you under Timeline");
+
+  const emptyCrossPage = { theme: null, developing: [], inferences: { claims: [], titles: {}, hrefs: {} }, inferencesFailed: false };
+  assert.equal(crossPagePresence(emptyCrossPage, true).connected, true, "Expected crossPagePresence.connected to be true when connections exist");
+  const connectedHtml = renderApp(
+    createElement(CrossPageSection, {
+      surfaceKey: "regulations",
+      surfaceLabel: "Regulations",
+      crossPage: emptyCrossPage,
+      onRetry: () => {},
+      kindLabels: {},
+      connections: createElement(ItemConnections, {
+        rows: [{ id: "c1", title: "Directive 94/62/EC", priority: "HIGH", label: "Supersedes", surface: "regulations", href: "/regulations/g1", origin: "provenance_discovery", discovered: true, reason: "Replaces packaging directive." }] as never,
+      }),
+    }),
+  );
+  assert.ok(connectedHtml.includes('id="across-pages"'), "Expected #across-pages S9 section to render when connections are passed");
+  assert.ok(connectedHtml.includes("Directive 94/62/EC"), "Expected ItemConnections to render inside S9 Connected intelligence");
+
+  const themeCss = readFileSync("src/ui/theme.css", "utf8");
+  assert.match(themeCss, /--sec-summary-tint:\s*#E2E8F0/i, "Expected --sec-summary-tint to have visible slate contrast so S1/S11/S12 tabs look interactive");
+});

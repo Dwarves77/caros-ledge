@@ -64,7 +64,7 @@ export function RegulationDetail(p: Props) {
   const band = bandFromPriority(r.priority);
   const { jurisLabel, dek } = regulationMeta(r);
   const isRecord = r.itemGrade === "record";
-  const [depth, setDepth] = useState<"summary" | "full">("summary");
+  const [depth, setDepth] = useState<"summary" | "full">("full");
   const [tagOpen, setTagOpen] = useState(false);
   const rows = useMemo(() => sourceEntriesOf(r), [r]);
   const pendingEvents = useMemo(() => pendingTriggers(p.events), [p.events]);
@@ -72,7 +72,8 @@ export function RegulationDetail(p: Props) {
   const hasPendingSection = stored.has("6") || !!r.doesNotResolve || pendingEvents.length > 0;
   const factSections = isRecord ? [] : SECTION_INDEX.filter((e) => e.key && (stored.has(e.key) || (e.key === "6" && hasPendingSection)));
   const unparsedBrief = !isRecord && factSections.length === 0 && r.fullBrief ? stripSourcesSection(r.fullBrief) : "";
-  const presence = crossPagePresence(p.crossPage);
+  const hasConnections = !!(p.connectionRows && p.connectionRows.length > 0);
+  const presence = crossPagePresence(p.crossPage, hasConnections);
   // D4: the instrument's penalty objects are read first (the object is canonical); the brief's penalty fields answer only when no penalty object exists
   const penalties = p.relevance.phase === "ready" ? (p.relevance.data.binding?.penalties ?? []) : [];
   const present = new Set(["summary", "sources", ...(penalties.length || hasPenalties(r) ? ["penalties"] : []), ...factSections.map((e) => e.id), ...(presence.connected ? [CONNECTED_SECTION_ID] : []), ...(presence.inferences ? [INFERENCES_SECTION_ID] : [])]);
@@ -101,8 +102,8 @@ export function RegulationDetail(p: Props) {
   return (
     <ClaimTierProvider claimTiers={p.claimTiers}>
       <div style={{ paddingTop: "var(--sp-16)" }}>
-        <DetailPageWrapper itemId={r.itemUuid ?? r.id} band={band} action={topRecommendedAction(p.recommendedActions)} nowIso={nowIso} footer={<CrossPageSection surfaceKey="regulations" surfaceLabel="Regulations" crossPage={p.crossPage} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} />}>
-          <DetailMasthead title={r.title} band={band} surface="Regulations" jurisdiction={jurisLabel} dek={dek} placeholder="Ask about this regulation, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} connectionsSlot={p.connectionRows && p.connectionRows.length > 0 ? <ItemConnections rows={p.connectionRows} /> : undefined} />
+        <DetailPageWrapper itemId={r.itemUuid ?? r.id} band={band} action={topRecommendedAction(p.recommendedActions)} nowIso={nowIso} footer={<CrossPageSection surfaceKey="regulations" surfaceLabel="Regulations" crossPage={p.crossPage} connections={hasConnections ? <ItemConnections rows={p.connectionRows!} /> : undefined} onRetry={() => router.refresh()} kindLabels={p.kindLabels ?? {}} />}>
+          <DetailMasthead title={r.title} band={band} surface="Regulations" jurisdiction={jurisLabel} dek={dek} placeholder="Ask about this regulation, e.g. when does the largest deadline hit" nowIso={nowIso} actionSlot={actionCard} impactSlot={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />} atAGlanceSlot={<AtAGlanceCard rows={[{ label: "Instrument", value: r.legalInstrument }, { label: "Topic", value: r.topic }, { label: "Deadline", value: r.complianceDeadline ? formatDate(r.complianceDeadline) : null }, { label: "Penalty", value: r.penaltyRange ?? null }, { label: "Cost mechanism", value: r.costMechanism ?? null }, { label: "Enforcement", value: r.enforcementBody ?? null }]} />} relevanceSlot={<RelevanceRailCard state={p.relevance.phase === "ready" ? { phase: "ready", relevance: p.relevance.data.relevance } : p.relevance.phase === "failed" ? { phase: "failed", retry: p.relevance.retry } : { phase: "loading" }} />} />
           {isAdminViewer && r.agentIntegrityFlag === true && r.agentIntegrityPhrase && <StateNote tone="error">Flagged for review: the brief carries the phrase “{r.agentIntegrityPhrase}”.</StateNote>}
           {p.claimsDegraded && <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>The facts of this regulation did not load, so none is shown. Nothing was changed; try again.</StateNote>}
           {p.eventsFailed && <StateNote tone="error" action={{ label: "Retry", onClick: () => router.refresh() }}>The dated obligations did not load, so the timeline shows only the stored milestones.</StateNote>}
@@ -110,9 +111,6 @@ export function RegulationDetail(p: Props) {
           <DetailLayout
             rail={
               <DetailRail
-                atAGlance={<AtAGlanceCard rows={[{ label: "Instrument", value: r.legalInstrument }, { label: "Topic", value: r.topic }, { label: "Deadline", value: r.complianceDeadline ? formatDate(r.complianceDeadline) : null }, { label: "Penalty", value: r.penaltyRange ?? null }, { label: "Cost mechanism", value: r.costMechanism ?? null }, { label: "Enforcement", value: r.enforcementBody ?? null }]} />}
-                impact={<ImpactRailCard scores={r.impactScores ?? null} absence={r.impactAbsence} reasoning={r.impactReasoning || r.reasoning} />}
-                relevance={<RelevanceRailCard state={p.relevance.phase === "ready" ? { phase: "ready", relevance: p.relevance.data.relevance } : p.relevance.phase === "failed" ? { phase: "failed", retry: p.relevance.retry } : { phase: "loading" }} />}
                 designed={<><OwnerCard itemId={r.id} assigneeName={r.actionOwner ?? null} lastVerifiedDate={r.lastVerifiedDate ?? null} hasWorkspace={p.hasWorkspace} /><InThisListStat backHref="/regulations" backLabel="Back to list" band={band} /></>}
                 legend={<LegendRailCard />}
               />
