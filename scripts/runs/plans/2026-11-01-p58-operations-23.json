@@ -1,0 +1,7 @@
+{
+  "ruling": "coordinator 2026-11-01 (Wave P58, ruling 73 zero trust in legacy content): full new-system operations profiles for all 23 legacy verified regional_data items on /operations, authored by three reader lanes from each item's own capture pool and judged by independent second readers (rulings 60, 72; 20 judges per entry, 82 first-pass fails all revised); allowBriefOverwrite replaces the legacy full_brief, claims and events; nothing is fetched (rule 16)",
+  "steps": [
+    { "name": "p58-operations-23-dry", "stage": "briefs", "mode": "dry", "input_file": "data/2026-11-01-p58-operations-23.items.json", "producer_env": [], "on_failure": "stop" },
+    { "name": "p58-operations-23-items", "stage": "briefs", "mode": "apply", "input_file": "data/2026-11-01-p58-operations-23.items.json", "producer_env": [], "on_failure": "stop" }
+  ]
+}
