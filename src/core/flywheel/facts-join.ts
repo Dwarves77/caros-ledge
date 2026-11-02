@@ -190,8 +190,8 @@ export async function readEntityFacts(sb: Db, itemIds: readonly string[]): Promi
   return out;
 }
 
-/** The first column that states when an obligation falls due. */
-export const dueOf = (o: Row): string | undefined => str(o.due_date) ?? str(o.first_deadline) ?? str(o.date_of_application);
+/** When an obligation falls due: with `today` (YYYY-MM-DD) the earliest of its dates on or after today, so a past first deadline does not hide a later date of application; otherwise, or when every date is past, the first column that states one. */
+export const dueOf = (o: Row, today?: string): string | undefined => ((ds) => (today ? ds.filter((d) => d.slice(0, 10) >= today).sort()[0] : undefined) ?? ds[0])([str(o.due_date), str(o.first_deadline), str(o.date_of_application)].filter((d): d is string => d !== undefined));
 
 /**
  * The live items filed under the entities of structured rows (hop 0), or one relation away (hop 1), each with its next dated obligation (on or after `now`) and the penalty figure the statutory computations hold for it.
@@ -215,12 +215,12 @@ export async function readFactItems(sb: Db, refTable: string, refIds: readonly s
   for (const r of filed) byEntity.set(r.entity_id, [...(byEntity.get(r.entity_id) ?? []), r.ref_id]);
   const stateOf = (item: string): FactSummary => {
     const mine = obligations.filter((o) => o.instrument_item_id === item);
-    const next = mine.filter((o) => (dueOf(o) ?? "") >= today && dueOf(o)).sort((a, b) => String(dueOf(a)).localeCompare(String(dueOf(b))) || String(a.obligation_id).localeCompare(String(b.obligation_id)))[0];
+    const next = mine.filter((o) => (dueOf(o, today) ?? "") >= today && dueOf(o, today)).sort((a, b) => String(dueOf(a, today)).localeCompare(String(dueOf(b, today))) || String(a.obligation_id).localeCompare(String(b.obligation_id)))[0];
     const pool = computations.filter((c) => mine.some((o) => o.obligation_id === c.obligation_id));
     const latest = (xs: Row[]): Row | undefined => [...xs].sort((a, b) => String(b.computed_at).localeCompare(String(a.computed_at)))[0];
     const pick = latest(next ? pool.filter((c) => c.obligation_id === next.obligation_id) : []) ?? latest(pool);
     const [value, unit] = [num(pick?.result), str(pick?.result_unit)];
-    return clean({ label: items.get(item)?.title, date: next ? dueOf(next) : undefined, dutyHolder: Array.isArray(next?.duty_holder_class) ? (next?.duty_holder_class as string[]) : undefined, penalty: value !== undefined && unit ? { value, unit } : undefined });
+    return clean({ label: items.get(item)?.title, date: next ? dueOf(next, today) : undefined, dutyHolder: Array.isArray(next?.duty_holder_class) ? (next?.duty_holder_class as string[]) : undefined, penalty: value !== undefined && unit ? { value, unit } : undefined });
   };
   for (const [row, entities] of own) {
     const links = new Map<string, FactLink>();
