@@ -1,0 +1,7 @@
+{
+  "ruling": "coordinator 2026-11-02 (Wave P58, ruling 73 zero trust in legacy content): full new-system regulatory fact documents for 30 of the 31 legacy verified regulation-like items in the CRITICAL / HIGH priority band on /regulations (ccee10a4 heal-queued: a 3,001-character landing page cannot ground a brief), authored by four reader lanes from each item's own capture pool and judged by independent second readers (rulings 60, 72; 20 judges per entry, 77 first-pass fails all revised); severity labels follow the vocabulary, not the legacy priority; allowBriefOverwrite replaces the legacy full_brief, claims and events; nothing is fetched (rule 16)",
+  "steps": [
+    { "name": "p58-reg-critical-high-30-dry", "stage": "briefs", "mode": "dry", "input_file": "data/2026-11-02-p58-reg-critical-high-30.items.json", "producer_env": [], "on_failure": "stop" },
+    { "name": "p58-reg-critical-high-30-items", "stage": "briefs", "mode": "apply", "input_file": "data/2026-11-02-p58-reg-critical-high-30.items.json", "producer_env": [], "on_failure": "stop" }
+  ]
+}
