@@ -40,8 +40,15 @@ export const isSeriesRowCapture = (transform: string | null | undefined): boolea
 export const isUsableCapture = (row: { result_content: string | null; result_url?: string | null; transform?: string | null | undefined }): boolean =>
   isSeriesRowCapture(row.transform) ? (row.result_content ?? "").trim().length > 0 : (row.result_content ?? "").trim().length > GROUND_CONFIG.MIN_USABLE_POOL_CHARS && captureWallClass(row) === null;
 
+/** A capture cut at the old 256 KB ceiling mid-sentence (FLY-FIX-1): callers and audits flag it as truncated. */
+const isLikelyTruncated256k = (text: string): boolean => text.length >= 250_000 && text.length <= 262_144 && !/[.;)]\s*$/.test(text.trim());
+
 /** Rows that carry real content (usable captures), in result_index order: the pool the author reads and the hash covers. */
-export const usableCaptures = (rows: PoolRow[]): PoolRow[] => rows.filter((r) => isUsableCapture({ result_content: r.text, result_url: r.url, transform: r.transform })).sort((a, b) => a.index - b.index);
+export const usableCaptures = (rows: PoolRow[]): PoolRow[] => {
+  const usable = rows.filter((r) => isUsableCapture({ result_content: r.text, result_url: r.url, transform: r.transform }));
+  // FLY-FIX-1: a capture cut at the 256 KB ceiling yields to a whole capture of the same URL.
+  return usable.filter((r) => !isLikelyTruncated256k(r.text) || !usable.some((o) => o.url === r.url && !isLikelyTruncated256k(o.text))).sort((a, b) => a.index - b.index);
+};
 export async function readPool(sb: Db, itemId: string): Promise<PoolRow[]> {
   return usableCaptures(await readAllPoolRows(sb, itemId));
 }

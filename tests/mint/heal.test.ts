@@ -488,3 +488,11 @@ test("INV-HW-3: capturePage never returns a stored wall row (it goes to the fetc
   const got = await capturePage({ ...base, captures: [{ id: "w", result_url: CELEX_URL, result_content: WALL }] } as never, CELEX_URL).catch((e: unknown) => e);
   assert.notEqual((got as { id?: string } | null)?.id, "w", "the stored wall is not offered");
 });
+
+test("FLY-FIX-1: a capture cut mid-sentence at the 256 KB ceiling yields to a whole capture of the same URL, and stands alone when it is the only one", () => {
+  const cut = `${"The duty applies to every operator. ".repeat(7000)}and the duty of Art`.slice(0, 256_074);
+  const whole = `${"The duty applies to every operator. ".repeat(7500)}`;
+  const row = (id: string, text: string, index: number) => ({ id, url: "https://eur-lex.europa.eu/x", text, index });
+  assert.deepEqual(usableCaptures([row("a", cut, 0), row("b", whole, 1)]).map((r) => r.id), ["b"]);
+  assert.deepEqual(usableCaptures([row("a", cut, 0)]).map((r) => r.id), ["a"]);
+});

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
+import { extractSections } from "@/core/brief";
 import { namesLacking, REGISTRY, severityToken, validateBrief, type BriefModel, type ItemColumns } from "@/core/brief/rules";
 import { tokenHash } from "@/core/contracts/token-hash";
 
@@ -203,4 +204,10 @@ test("stored-date-stated (ruling 73): a stored date the body omits is satisfied 
   assert.equal(omit([{ date: "2031-06-30", reason: "no capture states this stored date" }]), null);
   assert.equal(omit([{ date: "2031-06-30", reason: "  " }])?.rule, "stored-date-stated", "a blank reason does not satisfy");
   assert.equal(omit([{ date: "2031-07-01", reason: "a different date" }])?.rule, "stored-date-stated", "another date does not satisfy");
+});
+
+test("FLY-FIX-1: an unnumbered top-level 'Substantive Requirements' beats a numbered H2 ('## 8. Excessive Packaging') inside another section", () => {
+  const brief = ["# Purpose and Scope of This Document", "Scope prose.", "## 1. Substances in Packaging", "Substance prose.", "# Substantive Requirements", "Whole requirements prose.", "## 8. Excessive Packaging", "Empty-space prose."].join("\n\n");
+  const row = extractSections(brief, "regulation").find((r) => r.section_key === "8");
+  assert.match(row?.content_md ?? "", /Whole requirements prose/);
 });

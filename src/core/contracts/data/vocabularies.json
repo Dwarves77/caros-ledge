@@ -641,6 +641,30 @@
     ],
     "origin": "supply chain role attribution",
     "definition": "The vessel, its master, or the shipping company that operates it, where a rule is addressed to vessels or shipping companies rather than to a carrier by contract."
+   },
+   "economic_operator": {
+    "code": "economic_operator",
+    "label": "Economic operator",
+    "order": 22,
+    "orgRoles": [],
+    "origin": "FLY-FIX-1 (duty-holder phrase split from carrier)",
+    "definition": "A manufacturer, importer, distributor or other party in the supply chain that an EU instrument addresses as an economic operator."
+   },
+   "fulfilment_service_provider": {
+    "code": "fulfilment_service_provider",
+    "label": "Fulfilment service provider",
+    "order": 23,
+    "orgRoles": [],
+    "origin": "FLY-FIX-1 (duty-holder phrase split from carrier)",
+    "definition": "A party offering warehousing, packing, labelling or dispatch services to others, as an EU instrument addresses it."
+   },
+   "supplier": {
+    "code": "supplier",
+    "label": "Supplier",
+    "order": 24,
+    "orgRoles": [],
+    "origin": "FLY-FIX-1 (duty-holder phrase split from carrier)",
+    "definition": "A party that supplies goods, materials or products to another party in the supply chain."
    }
   },
   "freshness": {

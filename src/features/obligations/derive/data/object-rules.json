@@ -6,7 +6,19 @@
     },
     {
       "class": "carrier",
-      "pattern": "\\bcarriers?\\b|\\btransport operators?\\b|\\boperators?\\b"
+      "pattern": "\\bcarriers?\\b|\\btransport operators?\\b|\\broad haulage operators?\\b|\\brail(?:way)? operators?\\b"
+    },
+    {
+      "class": "economic_operator",
+      "pattern": "\\beconomic operators?\\b"
+    },
+    {
+      "class": "fulfilment_service_provider",
+      "pattern": "\\bfulfilment service providers?\\b"
+    },
+    {
+      "class": "supplier",
+      "pattern": "(?<!fuel )\\bsuppliers?\\b"
     },
     {
       "class": "shipper",
@@ -74,7 +86,7 @@
   "crossReference": "^[^.;\\n]{0,48}?\\b(?:of|to|in|under)\\s+(?:the\\s+)?(?:Directive|Regulation|Decision|Treaty|Council|Commission|Convention|Annex)",
   "window": {
     "maxSentence": 400,
-    "pinpointLookBack": 200,
+    "pinpointLookBack": 800,
     "headingOverlap": 16,
     "subjectDistance": 80
   },
