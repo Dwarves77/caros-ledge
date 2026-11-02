@@ -116,7 +116,7 @@ const statedAtPrecision = (body: string, key: string): boolean => {
 const LARGE_POOL_CHARS = 200_000;
 export const ACCOUNTING_RE = /Obligations surveyed:\s*(\d+);\s*workspace-adjacent:\s*(\d+);\s*extracted as FACT:\s*(\d+)\.?/i;
 const SHORTFALL_RE = /^Shortfall:\s*\S.*$/im;
-const NEGATION_RE = /\b(no|not|none|never|nor)\b/i;
+const NEGATION_RE = /\b(no(?!\.?\s*\d)|not|none|never|nor)\b/i; // "No 528/2012", "No. 1234" is an instrument number (also "Nos 1/2024"), not a negation
 const NEGATION_WINDOW = 24;
 // Small named stem lists with their inflections, matched on a claim's own verbatim span behind the negation guard.
 const EXCEPTION_RE = /\b(exempt|exempts|exempted|exemption|exemptions|except|carve-?out|condition|conditions|conditional|subject to)\b/i;

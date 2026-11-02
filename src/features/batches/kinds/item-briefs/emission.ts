@@ -4,6 +4,8 @@
 import { stated } from "@/core/brief/rules";
 import { RELATIONS } from "@/core/coupling";
 import { isVerbatim } from "@/core/contracts/verbatim";
+import { VALIDATORS } from "@/core/entities/crosswalk";
+import { entityId } from "@/core/entities/id";
 import { isKindToken } from "@/core/entities/kinds";
 import { DUTY_HOLDER_TOKEN, isValid, LEG_MODE_CODES } from "@/core/contracts/vocabularies";
 import { normaliseTermKey, PROPOSED_ENTITY_KIND, proposedEntityId } from "@/core/vocabulary/adopted";
@@ -32,11 +34,13 @@ export interface EmissionPlan {
   connections: { parent: string; child: string; relation: string; reason_token: string; quote: Quote; /** The record that asserted the connection when no item did (a synthesis finding or the cluster it analysed): carried in the relation's basis. */ asserted_in?: string }[];
   events: { event_kind: string; event_date: string; date_precision: "day" | "month" | "year"; quote: Quote; mode: string | null; entity_ids: string[] }[];
   document_date: { date: string; quote: Quote } | null;
-  /** Entities the reader mints (G3): a new entity with the kind, the canonical name and the quote that names it; usable in the same entry by `entity_id`. `existing` when the live graph already holds it. */
-  candidates: { proposed_kind: string; kind: string; canonical_name: string; entity_id: string; existing: boolean; quote: Quote }[];
+  /** Entities the reader mints (G3): a new entity with the kind, the canonical name and the quote that names it; usable in the same entry by `entity_id`. `existing` when the live graph already holds it. ENTITY-MINT-1 (ADR-054): a formal code the graph does not hold mints through this same path, with `identifier` the crosswalk row that makes the next entry resolve it. */
+  candidates: { proposed_kind: string; kind: string; canonical_name: string; entity_id: string; existing: boolean; quote: Quote; identifier?: { scheme: "CELEX"; value: string } }[];
   /** Every capture of the item (a capture-backed event is judged stale against them). */
   captureIds: string[];
 }
+/** A formal code where an entity id goes: resolved through the crosswalk to the active entity that holds it (loadEmit); a CELEX code nothing holds is minted on its quote (entityOf). */
+export const FORMAL = /^(CELEX|UNLOCODE|ISO3166_1|ISO3166_2):(.+)$/;
 const BLOCKS = ["entity_ids", "obligation_fields", "connections", "events", "document_date", "new_entity_candidates"] as const;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const LOCODE = /(?<![A-Za-z0-9])[A-Z]{2}[A-Z2-9]{3}(?![A-Za-z0-9])/;
@@ -105,11 +109,20 @@ export function validateEmission(entry: Obj, tag: string, live: EmitLive): { err
   const err = (at: string, msg: string): null => (errors.push(`${tag} ${at}: ${msg}`), null);
   if (!live.locate) return { errors: [`${tag}: the locate door is not wired, so a quote cannot be located and the typed blocks are refused`], plan: null };
   const quote = (v: unknown, at: string): Quote | null => { const q = quoteIn(live, v); return typeof q === "string" ? err(at, q) : q; };
-  const entityOf = (tokenValue: unknown, at: string): string | null => {
-    const id = typeof tokenValue === "string" ? (live.ids.get(tokenValue) ?? (candidateIds.has(tokenValue) ? tokenValue : undefined)) : undefined;
+  // ENTITY-MINT-1 (ADR-054): a CELEX code no active entity holds, named in entity_ids with a verified quote, is MINTED as an instrument entity through the candidate path (the deterministic id planInstrument gives it, the code as its identifier row), never refused for being new; the same code in a later block of the entry resolves to the mint. No quote, no mint.
+  const entityOf = (tokenValue: unknown, at: string, q?: Quote | null): string | null => {
+    const id = typeof tokenValue === "string" ? (live.ids.get(tokenValue) ?? candidateIds.get(tokenValue)) : undefined;
+    const m = id === undefined && typeof tokenValue === "string" ? FORMAL.exec(tokenValue) : null;
+    if (id === undefined && q && m?.[1] === "CELEX" && VALIDATORS.CELEX(m[2] as string)) {
+      const code = m[2] as string;
+      const minted = entityId("instrument", code);
+      candidateIds.set(tokenValue as string, minted);
+      plan.candidates.push({ proposed_kind: "instrument", kind: "instrument", canonical_name: code, entity_id: minted, existing: false, quote: q, identifier: { scheme: "CELEX", value: code } });
+      return minted;
+    }
     return id ?? (err(at, `unknown entity id ${JSON.stringify(tokenValue)}: it is not on the candidate menu and no formal code resolves it`));
   };
-  const candidateIds = new Set<string>();
+  const candidateIds = new Map<string, string>();
   const list = (b: string): unknown[] | null => (entry[b] === undefined ? null : Array.isArray(entry[b]) ? (entry[b] as unknown[]) : (err(b, "must be an array")));
   const plan: EmissionPlan = { entities: [], objects: [], connections: [], events: [], document_date: null, candidates: [], captureIds: [...live.captures.keys()] };
   (list("new_entity_candidates") ?? []).forEach((c, i) => {
@@ -122,15 +135,15 @@ export function validateEmission(entry: Obj, tag: string, live: EmitLive): { err
     const kind = (PROPOSED_ENTITY_KIND as Record<string, string>)[c.proposed_kind] ?? c.proposed_kind;
     const key = normaliseTermKey(c.canonical_name);
     const held = live.named?.get(`${kind}|${key}`);
-    const entityId = held ?? proposedEntityId(kind, key);
-    candidateIds.add(entityId);
-    plan.candidates.push({ proposed_kind: c.proposed_kind, kind, canonical_name: c.canonical_name.trim(), entity_id: entityId, existing: held !== undefined, quote: q });
+    const mintId = held ?? proposedEntityId(kind, key);
+    candidateIds.set(mintId, mintId);
+    plan.candidates.push({ proposed_kind: c.proposed_kind, kind, canonical_name: c.canonical_name.trim(), entity_id: mintId, existing: held !== undefined, quote: q });
   });
   (list("entity_ids") ?? []).forEach((e, i) => {
     const at = `entity_ids[${i}]`;
     if (!isObj(e)) return err(at, "must be { entity_id, quote }");
-    const id = entityOf(e.entity_id, at);
     const q = quote(e.quote, `${at}.quote`);
+    const id = entityOf(e.entity_id, at, q);
     if (id && q) plan.entities.push({ entity_id: id, quote: q });
   });
   (list("obligation_fields") ?? []).forEach((o, i) => {

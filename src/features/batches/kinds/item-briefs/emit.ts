@@ -8,7 +8,7 @@ import { LEG_MODE_CODES as MODE_TOKENS } from "@/core/contracts/vocabularies";
 import { readAll } from "@/core/coupling/read";
 import { allRows, fetchAllByIdChunks, rowsByIds, type Db } from "@/core/db";
 import { READER_METHOD } from "@/core/digest/kinds";
-import { VALIDATORS } from "@/core/entities/crosswalk";
+import { identifierRow, VALIDATORS } from "@/core/entities/crosswalk";
 import { readPool } from "@/core/grounding";
 import { normaliseTermKey, PROPOSED_ENTITY_KIND } from "@/core/vocabulary/adopted";
 import { currentObligationObjects } from "@/core/workspace";
@@ -17,9 +17,8 @@ import { deriveObligationObjects, forwardEventKey, insertForwardEvents, type Can
 import type { BatchDeps, Obj } from "../../kit/session-batch";
 
 import { candidateMenu, itemSeed } from "./candidates";
-import type { EmissionPlan, EmitLive } from "./emission";
+import { FORMAL, type EmissionPlan, type EmitLive } from "./emission";
 
-const FORMAL = /^(CELEX|UNLOCODE|ISO3166_1|ISO3166_2):(.+)$/;
 const norm = (s: string): string => s.replace(/\s+/g, " ").trim().toLowerCase();
 type Row = Record<string, unknown>;
 
@@ -95,6 +94,13 @@ export async function writeEmission(deps: BatchDeps, itemId: string, sourceId: s
     const { error } = await sb.from("entities").upsert(fresh.map((c) => ({ entity_id: c.entity_id, kind: c.kind, canonical_name: c.canonical_name, status: "active", basis: { quote: c.quote.text, capture_id: c.quote.capture_id }, method_version: READER_METHOD })), { onConflict: "entity_id", ignoreDuplicates: true });
     if (error) notes.push(`entities mint failed: ${error.message}`);
     else bump("entities_minted", fresh.length);
+    // ENTITY-MINT-1: a formal code minted on is written as the entity's identifier row (the crosswalk the next entry resolves it through); a code another entity already holds is refused by the one_entity_per_identifier index and noted.
+    const idents = fresh.flatMap((c) => (c.identifier && !error ? [identifierRow(c.entity_id, c.identifier.scheme, c.identifier.value, "reader", { now: deps.now() })] : []));
+    if (idents.length) {
+      const r = await sb.from("entity_identifiers").upsert(idents, { onConflict: "entity_id,scheme,value", ignoreDuplicates: true });
+      if (r.error) notes.push(`entity_identifiers write failed: ${r.error.message}`);
+      else bump("identifiers_written", idents.length);
+    }
   }
   bump("entities_reused", plan.candidates.filter((c) => c.existing).length);
   const refs: Row[] = plan.entities.map((e) => ref(onto, "intelligence_items", itemId, e.entity_id, { quote: e.quote.text, capture_id: e.quote.capture_id }));

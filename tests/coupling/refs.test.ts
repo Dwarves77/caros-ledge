@@ -102,6 +102,7 @@ test("C2b: a typed table's rows are mined through the column map: an entity id c
   const ob = of("obligation_objects", "mode:air");
   assert.equal(ob[0]?.ref_id, uuidOf(OBLIGATION.air));
   assert.equal((ob[0]?.basis as { pk: string }).pk, OBLIGATION.air, "the real key rides in the basis");
+  assert.equal((ob[0]?.basis as { value: unknown }).value, "air", "ENTITY-MINT-1: a mode ref's basis carries the one token the entity was filed from, not the row's whole mode array");
   assert.equal(of("obligation_objects", "instrument:32023R2405").length, 1, "the instrument entity the obligation names");
   assert.equal(of("market_series", "carrier:hvo").length, 2, "both points of the series filed under the entity by its typed entity_id column");
   assert.equal(of("item_forward_events", "carrier:hvo").length, 1, "the event takes the refs of the claim it rests on");

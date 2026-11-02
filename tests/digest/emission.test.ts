@@ -13,7 +13,7 @@ import { locateSpan } from "@/core/contracts/verbatim";
 
 import { batchFile, ITEM, NOW, SPAN_FORCE } from "../batches/world.ts";
 
-import { emissionEntry, emissionWorld, HVO, OCEAN, ORG, SELF, UCO, type EmissionWorld } from "./emission-world.ts";
+import { emissionEntry, emissionWorld, FEED, HVO, OCEAN, ORG, SELF, UCO, type EmissionWorld } from "./emission-world.ts";
 
 const live = async (w: EmissionWorld, e: Record<string, unknown>) => loadEmit(w.deps, ITEM, entityTokens(e));
 const check = async (w: EmissionWorld, e: Record<string, unknown>) => validateEmission(e, "item X", await live(w, e));
@@ -73,7 +73,7 @@ test("the contract checks: an id outside the menu, a candidate used as an id, an
   assert.match(reasons(await check(w, emissionEntry(w, { events: [{ event_kind: "entry_into_force", event_date: "2027-01-02", quote: q(SPAN_FORCE) }] }))), /event_date 2027-01-02 is not stated in the quote/);
   assert.match(reasons(await check(w, emissionEntry(w, { document_date: { date: "2023-09-14", quote: q("Done at Strasbourg, 13 September 2023.") } }))), /2023-09-14 is not stated in the quote/);
   assert.match(reasons(await check(w, emissionEntry(w, { new_entity_candidates: [{ proposed_kind: "port", canonical_name: "Rotterdam", quote: q("the port of Rotterdam NLRTM") }] }))), /UN\/LOCODE/);
-  assert.match(reasons(await check(w, emissionEntry(w, { entity_ids: [{ entity_id: "CELEX:32099R0000", quote: q("Strasbourg") }] }))), /unknown entity id "CELEX:32099R0000"/);
+  assert.match(reasons(await check(w, emissionEntry(w, { entity_ids: [{ entity_id: "CELEX:32099R0000", quote: q("not a sentence of the capture") }] }))), /unknown entity id "CELEX:32099R0000"/, "ENTITY-MINT-1: a formal code with no verified quote has nothing to mint on");
   assert.match(reasons(await check(w, emissionEntry(w, { obligation_fields: [{ pinpoint: "Article 5", provision: q(ORG), fields: { sanction_class: { value: "fine", quote: q(ORG) } } }] }))), /sanction_class "fine" is not a closed token/);
 });
 const entityId16 = (prefix: string, hex: string): string => `${prefix}${hex}`;
@@ -329,4 +329,24 @@ test("INV-OD-4: an item-briefs apply that verifies an item derives its obligatio
   assert.deepEqual(calls.at(-1), { id: ITEM, status: "verified" }, "the batch's own derive ran last, over a verified item");
   assert.equal(typeof down.counts.obligations_derived, "number", down.notes.join("\n"));
   assert.ok(w.db.rows("obligation_objects").some((o) => o.instrument_item_id === ITEM), "the fixture instrument has obligation objects after one briefs apply");
+});
+
+test("ENTITY-MINT-1 (ADR-054): a CELEX code the graph does not hold mints an instrument entity on its verified quote, is usable by the same entry, and lands with its identifier row at apply; without the quote it is refused with the existing message; a malformed code is refused", async () => {
+  const w = emissionWorld();
+  const q = (text: string) => ({ capture_id: w.cap, text });
+  const code = "32024R1789";
+  const minted = await check(w, emissionEntry(w, { entity_ids: [{ entity_id: `CELEX:${code}`, quote: q("Regulation (EU) 2023/9999") }], connections: [{ from_entity_id: `CELEX:${code}`, to_entity_id: HVO, relation: "implements", reason_token: "named_act", quote: q(FEED) }] }));
+  assert.deepEqual(minted.errors, [], reasons(minted));
+  const id = entityId("instrument", code);
+  assert.deepEqual(minted.plan?.candidates.filter((c) => c.kind === "instrument"), [{ proposed_kind: "instrument", kind: "instrument", canonical_name: code, entity_id: id, existing: false, quote: { capture_id: w.cap, text: "Regulation (EU) 2023/9999" }, identifier: { scheme: "CELEX", value: code } }]);
+  assert.ok(minted.plan?.entities.some((e) => e.entity_id === id), "the entity_ids ref names the minted id");
+  assert.ok(minted.plan?.connections.some((c) => c.parent === id && c.child === HVO), "a connection of the same entry resolves the code to the minted id");
+  assert.match(reasons(await check(w, emissionEntry(w, { entity_ids: [{ entity_id: `CELEX:${code}` }] }))), new RegExp(`unknown entity id "CELEX:${code}"`), "no quote, no mint");
+  assert.match(reasons(await check(w, emissionEntry(w, { entity_ids: [{ entity_id: "CELEX:not-a-code", quote: q("Regulation (EU) 2023/9999") }] }))), /unknown entity id "CELEX:not-a-code"/);
+  const r = await apply(w, emissionEntry(w, { entity_ids: [{ entity_id: `CELEX:${code}`, quote: q("Regulation (EU) 2023/9999") }] }));
+  assert.equal(r.counts.applied, 1, r.notes.join("; "));
+  assert.deepEqual(w.db.rows("entities").filter((e) => e.entity_id === id).map((e) => [e.kind, e.canonical_name, e.status]), [["instrument", code, "active"]]);
+  assert.deepEqual(w.db.rows("entity_identifiers").filter((x) => x.entity_id === id).map((x) => [x.scheme, x.value]), [["CELEX", code]], "the formal code is written as the entity's identifier, so the next entry resolves it through the crosswalk");
+  const again = await loadEmit(w.deps, ITEM, [`CELEX:${code}`]);
+  assert.equal(again.ids.get(`CELEX:${code}`), id, "after the apply the code resolves to the minted entity: no second mint");
 });
