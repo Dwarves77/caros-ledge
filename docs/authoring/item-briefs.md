@@ -98,8 +98,30 @@ The reader is a freight operator with no background in the subject. A section th
 
 - Every section and every numbered subsection opens with a plain-English guide before any quoted span: two or three sentences on what it covers and why it matters to an operator, then one bullet per year in chronological order wherever the section holds phased dates, targets or thresholds ("In 2026 ...", "In 2030 ..."). Each bullet states the year, what changes, the figure and the provision. The guide restates only what the section's own cited spans hold (J08, J24); a figure or date they do not hold is not written.
 - When a provision says something must be done (register, notify, report, file, certify, pay) and does not say where, to whom, through which portal or by when, it is a missing execution detail. Close it before authoring: add the authority, registry, portal or scheme page that names the process to the item's pool as a captured source (a national producer register, the competent authority, the approved scheme), then write who to contact, the portal, the per-country list where the duty is national, the deadline and the order of steps, each quoted from that capture. A term still enters the brief only from the pool.
-- If no page can be captured, write a GAP claim naming exactly which detail is missing and request the source. Never fill the detail from memory, and never leave the bare obligation as the whole answer.
+- A detail is never filled from memory and never left as the bare obligation. The remedy for a missing execution detail is research and capture (PRACTITIONER-DEPTH-1 below), not a Gap line.
 - Illustrative: a producer-registration duty that applies in every Member State is answered with a country-by-country table (register, scheme, who must register, filing deadline), not with the sentence that registration is required.
+
+### PRACTITIONER-DEPTH-1 and NO-LAZY-GAPS (supersedes the closed-world section-only authoring of waves 2 to 24)
+
+Trigger: a regulation, market signal, research paper or operations profile states that something happens or must happen but omits the practical legal, operational or financial mechanics. That omission is the signal to go and research it, not to write around it.
+
+1. Research: find the authoritative page (the statute article, the competent authority, the national register, the scheme or portal guidance).
+2. Capture: add it to the item's pool as a capture (an `agent_run_searches` row) so a `sources` row and the capture are joined.
+3. Ground: every new figure, date, name, role or step is a verbatim FACT claim in `section_claim_provenance`, its `source_span` an exact substring of the capture, so `validate_item_provenance` returns `valid = true` and `provenance_status = verified`.
+4. Write the complete practitioner answer into the section, opening with the plain-English guide and chronological year bullets, then concrete Practitioner Execution and Blocker bullets.
+
+Ban on lazy Gap lines: a GAP claim is valid ONLY when the fact does not yet exist in the real world (for example a delegated act not yet adopted); it names the exact article and the deadline. "Gap: not stated in captured sources" or "this section does not state" for a rule, portal or prerequisite that exists in public law or guidance is forbidden; capture the source and write the answer. Capturing never licenses memory: a claim whose span is not in a capture is not written.
+
+Required coverage by surface:
+
+| Format | Must explicitly cover |
+|---|---|
+| Regulation (`regulatory_fact_document`) | (a) Role, Incoterms and Customs Identity Matrix: DDP versus DAP, CIF, FOB, FCA, EXW; EORI and Importer of Record; Indirect Customs Representative; first placer on the market or producer; ISM Document of Compliance holder versus charterer; 3PL or fulfilment service provider; online marketplace gatekeeping. (b) Mandatory representation and registration prerequisites and real-world portal blockers: when a non-resident cannot self-register and must appoint a local authorised representative under a written (notarised or apostilled where the national rule says so) mandate; local VAT, NIF or tax-ID prerequisites; EORI-to-registry cross-checks; two-step state registry plus producer-responsibility-organisation locks. (c) B2B freight and transport packaging or commercial scope: pallets, shrink wrap, Gaylord boxes, crating, dunnage, reusable transport items, modal freight scope. (d) De minimis thresholds, exemptions, penalty arithmetic and commercial contract clauses (BIMCO, supplier warranties, importer-of-record allocation). |
+| Market Intel (`market_signal_brief`) | Carrier surcharge formula (per TEU, FEU, kg or tkm), contract pass-through or indexation clause, statutory and physical drivers. |
+| Research (`research_summary`, `technology_profile`) | Delivered commercial economics against the fossil baseline, physical infrastructure, grid or feedstock bottlenecks, statutory credit, multiplier or book-and-claim accounting eligibility. |
+| Operations (`operations_profile`) | Port, terminal, LEZ and customs access prerequisites, utility, grid and bunkering lead times, live grant, voucher or toll-exemption execution portals. |
+
+Authoring tooling (scratch directory, outside the repository): `check_practitioner.mjs` replaces the section-only token check. It requires every figure, date, acronym and URL new in a section to be covered by a verbatim FACT claim backed by a capture, and fails a lazy Gap line. The judge rubric `JUDGE_PRACTITIONER.md` replaces the wave-15 rubric.
 
 ### The four-surface rule: what triggers it and which dots to connect
 
